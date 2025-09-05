@@ -1,0 +1,7 @@
+{
+  "provider": "google",
+  "family": "gemini",
+  "allow_training": true,
+  "allow_rag_index": true,
+  "notes": "Utiliser sorties UNIQUEMENT pour modèles étroits internes. Pas d'entraînement d'un LLM concurrent."
+}

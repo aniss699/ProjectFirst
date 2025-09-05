@@ -1,0 +1,17 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _WEB_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-web:manual"
+  _API_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-api:manual"
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_WEB_IMAGE}", "-f", "infra/web.Dockerfile", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_WEB_IMAGE}"]
+
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_API_IMAGE}", "-f", "infra/api.Dockerfile", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_API_IMAGE}"]

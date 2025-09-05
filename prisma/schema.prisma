@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  role         Role     @default(CLIENT)
+  rating_mean  Float?
+  rating_count Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  client_projects   Project[] @relation("ClientProjects")
+  provider_bids     Bid[]     @relation("ProviderBids")
+  provider_profile  ProviderProfile?
+  client_profile    ClientProfile?
+
+  @@map("users")
+}
+
+model ProviderProfile {
+  id          String @id @default(cuid())
+  user_id     String @unique
+  user        User   @relation(fields: [user_id], references: [id])
+  skills      String[]
+  hourly_rate Float?
+  location    String?
+  bio         String?
+  portfolio   Json?
+
+  @@map("provider_profiles")
+}
+
+model ClientProfile {
+  id          String @id @default(cuid())
+  user_id     String @unique
+  user        User   @relation(fields: [user_id], references: [id])
+  company     String?
+  industry    String?
+
+  @@map("client_profiles")
+}
+
+model Project {
+  id                  String              @id @default(cuid())
+  title               String
+  description         String
+  budget              String
+  category            String
+  quality_target      QualityTarget?
+  risk_tolerance      Float?
+  geo_required        Boolean?            @default(false)
+  onsite_radius_km    Float?
+  status              ProjectStatus       @default(DRAFT)
+  loc_score           Float?
+  client_id           String
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+
+  // Relations
+  client              User                @relation("ClientProjects", fields: [client_id], references: [id])
+  bids                Bid[]
+  standardization     ProjectStandardization?
+  sourcing_matches    SourcingMatch[]
+
+  @@map("projects")
+}
+
+// NOUVEAU: Standardisation d'annonces
+model ProjectStandardization {
+  id                    String   @id @default(cuid())
+  project_id            String   @unique
+  project               Project  @relation(fields: [project_id], references: [id])
+  title_std             String
+  summary_std           String
+  acceptance_criteria   String[]
+  category_std          String
+  sub_category_std      String
+  tags_std              String[]
+  tasks_std             Json[]
+  deliverables_std      Json[]
+  skills_std            String[]
+  constraints_std       String[]
+  brief_quality_score   Float
+  richness_score        Float
+  missing_info          Json[]
+  price_suggested_min   Int?
+  price_suggested_med   Int?
+  price_suggested_max   Int?
+  delay_suggested_days  Int?
+  loc_uplift_reco       Json?
+  rewrite_version       String
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("project_standardizations")
+}
+
+model Bid {
+  id              String   @id @default(cuid())
+  project_id      String
+  provider_id     String
+  amount          Float
+  timeline_days   Int
+  message         String
+  score_breakdown Json?
+  is_leading      Boolean  @default(false)
+  flagged         Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  // Relations
+  project         Project  @relation(fields: [project_id], references: [id])
+  provider        User     @relation("ProviderBids", fields: [provider_id], references: [id])
+
+  @@map("bids")
+}
+
+// NOUVEAU: Sources Web
+model WebSource {
+  id           String    @id @default(cuid())
+  domain       String    @unique
+  robots_txt   Json?
+  crawl_policy Json?
+  last_ok_at   DateTime?
+  blocked      Boolean   @default(false)
+  created_at   DateTime  @default(now())
+
+  // Relations
+  web_docs     WebDoc[]
+
+  @@map("web_sources")
+}
+
+model WebDoc {
+  id           String      @id @default(cuid())
+  url          String      @unique
+  domain       String
+  type         DocType
+  title        String
+  text_summary String
+  lang         String      @default("fr")
+  published_at DateTime?
+  fetched_at   DateTime    @default(now())
+  etag         String?
+  hash         String
+  source_type  SourceType
+  meta         Json?
+
+  // Relations
+  web_source   WebSource   @relation(fields: [domain], references: [domain])
+
+  @@map("web_docs")
+}
+
+model ExternalCompany {
+  id             String    @id @default(cuid())
+  name           String
+  siren          String?
+  siret          String?
+  naf_code       String?
+  website        String?
+  emails         String[]
+  phones         String[]
+  address        Json?
+  city           String?
+  postal_code    String?
+  country        String?   @default("France")
+  geo            Json?
+  social         Json?
+  raw_tags       String[]
+  skills         String[]
+  confidence     Float
+  first_seen_at  DateTime @default(now())
+  last_seen_at   DateTime @default(now())
+
+  // Relations
+  signals        ExternalCompanySignal[]
+  sourcing_matches SourcingMatch[]
+
+  @@map("external_companies")
+}
+
+model ExternalCompanySignal {
+  id         String          @id @default(cuid())
+  company_id String
+  kind       SignalKind
+  payload    Json
+  score      Float
+  seen_at    DateTime        @default(now())
+
+  // Relations
+  company    ExternalCompany @relation(fields: [company_id], references: [id])
+
+  @@map("external_company_signals")
+}
+
+model SourcingMatch {
+  id         String          @id @default(cuid())
+  project_id String
+  company_id String
+  lead_score Float
+  reasons    Json
+  status     MatchStatus     @default(CANDIDATE)
+  created_at DateTime        @default(now())
+
+  // Relations
+  project    Project         @relation(fields: [project_id], references: [id])
+  company    ExternalCompany @relation(fields: [company_id], references: [id])
+
+  @@map("sourcing_matches")
+}
+
+// Added model for project change logs
+model ProjectChangeLog {
+  id        String   @id @default(cuid())
+  project_id String
+  action    String   // 'apply_standardization' | 'apply_budget' | 'apply_delay'
+  changes   Json
+  created_at DateTime @default(now())
+
+  project Project @relation(fields: [project_id], references: [id])
+
+  @@map("project_change_logs")
+}
+
+// Enums
+enum Role {
+  CLIENT
+  PRO
+  PERSON
+  ADMIN
+}
+
+enum QualityTarget {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum DocType {
+  HOME
+  ABOUT
+  SERVICES
+  PORTFOLIO
+  PRICING
+  CONTACT
+  OTHER
+}
+
+enum SourceType {
+  RSS
+  SITEMAP
+  CRAWL
+}
+
+enum SignalKind {
+  PRICE
+  AVAILABILITY
+  PORTFOLIO
+  RATING
+  CLAIMED
+}
+
+enum MatchStatus {
+  CANDIDATE
+  CONTACTED
+  REFUSED
+  CONVERTED
+}
+
+model AiEvent {
+  id             String   @id @default(cuid())
+  phase          String
+  provider       String
+  modelFamily    String
+  modelName      String
+  allowTraining  Boolean
+  inputRedacted  Json
+  output         Json
+  confidence     Float?
+  tokens         Int?
+  latencyMs      Int?
+  provenance     String
+  promptHash     String   @index
+  accepted       Boolean?
+  rating         Int?
+  edits          String?
+  createdAt      DateTime @default(now())
+
+  @@map("ai_events")
+}

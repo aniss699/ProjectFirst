@@ -1,0 +1,80 @@
+
+category,sub_category,skills,keywords
+web-development,frontend,"React,Vue.js,Angular,JavaScript,TypeScript,HTML,CSS,SASS,Bootstrap,Tailwind","site web,application web,frontend,interface,UI/UX,responsive,SPA"
+web-development,backend,"Node.js,Python,PHP,Java,C#,.NET,Ruby,API,Express,Django,Laravel","backend,serveur,API,base de données,architecture,microservices"
+web-development,fullstack,"React,Node.js,Python,JavaScript,TypeScript,MongoDB,PostgreSQL","développement complet,full-stack,application web,site dynamique"
+mobile-development,ios,"Swift,Objective-C,Xcode,iOS SDK,UIKit,SwiftUI","application iOS,iPhone,iPad,App Store,mobile"
+mobile-development,android,"Java,Kotlin,Android Studio,Android SDK,Firebase","application Android,Google Play,mobile,smartphone"
+mobile-development,hybrid,"React Native,Flutter,Ionic,Cordova,PhoneGap","application mobile,cross-platform,multi-plateforme"
+design,graphic-design,"Photoshop,Illustrator,InDesign,Figma,Sketch","design graphique,logo,identité visuelle,charte graphique,print"
+design,ui-ux,"Figma,Sketch,Adobe XD,Principle,InVision,Framer","UI/UX,interface utilisateur,expérience utilisateur,wireframe,prototype"
+design,web-design,"HTML,CSS,JavaScript,Figma,Photoshop,Webflow","design web,site internet,maquette web,responsive design"
+marketing,digital-marketing,"SEO,SEM,Google Ads,Facebook Ads,Analytics,Social Media","marketing digital,référencement,publicité,réseaux sociaux,campagne"
+marketing,content-marketing,"Rédaction,SEO,WordPress,Blog,Newsletter,Social Media","contenu,rédaction,blog,newsletter,stratégie éditoriale"
+marketing,seo,"SEO,Google Analytics,Search Console,Semrush,Ahrefs","référencement,SEO,positionnement,Google,trafic organique"
+data-science,data-analysis,"Python,R,SQL,Excel,Tableau,Power BI,Pandas","analyse de données,statistiques,reporting,tableau de bord"
+data-science,machine-learning,"Python,TensorFlow,Scikit-learn,Keras,PyTorch","intelligence artificielle,machine learning,IA,algorithme,prédiction"
+data-science,data-engineering,"Python,SQL,Apache Spark,Kafka,Airflow,ETL","ingénierie données,pipeline,ETL,big data,architecture données"
+consulting,business-consulting,"Stratégie,Management,Finance,Marketing,Analyse","conseil en stratégie,management,business,transformation"
+consulting,it-consulting,"Architecture,DevOps,Cloud,Sécurité,Infrastructure","conseil IT,architecture,transformation digitale,cloud"
+writing,copywriting,"Rédaction,Marketing,SEO,Storytelling,Communication","rédaction,copywriting,contenu,communication,storytelling"
+writing,technical-writing,"Documentation,API,Manuel,Procédure,Formation","documentation technique,manuel,procédure,formation,API"
+translation,french-english,"Français,Anglais,Traduction,Localisation,Révision","traduction,anglais,français,localisation,langue"
+translation,multilingual,"Traduction,Localisation,Révision,Langue,Culture","traduction,langue,localisation,international,culture"
+category,sub_category,skill,keywords
+développement,web,React,react reactjs jsx
+développement,web,Vue.js,vue vuejs nuxt
+développement,web,Angular,angular typescript
+développement,web,Node.js,node nodejs express fastify
+développement,web,PHP,php laravel symfony wordpress
+développement,web,Python,python django flask fastapi
+développement,web,JavaScript,javascript js es6 typescript
+développement,web,HTML/CSS,html css sass scss bootstrap tailwind
+développement,mobile,React Native,react native rn expo
+développement,mobile,Flutter,flutter dart
+développement,mobile,iOS,ios swift objective-c xcode
+développement,mobile,Android,android kotlin java
+développement,mobile,Ionic,ionic cordova phonegap
+développement,api,REST API,api rest restful json
+développement,api,GraphQL,graphql apollo
+développement,api,Microservices,microservices architecture
+développement,database,MySQL,mysql mariadb
+développement,database,PostgreSQL,postgresql postgres
+développement,database,MongoDB,mongodb nosql
+développement,database,Redis,redis cache
+design,ui_ux,Figma,figma design prototype
+design,ui_ux,Adobe XD,xd adobe prototype
+design,ui_ux,Sketch,sketch design
+design,ui_ux,UX Research,ux research utilisateur
+design,ui_ux,UI Design,ui interface design
+design,graphique,Photoshop,photoshop ps retouche
+design,graphique,Illustrator,illustrator ai vectoriel
+design,graphique,InDesign,indesign mise en page
+design,graphique,Logo,logo identité branding
+design,web,Responsive,responsive mobile-first
+marketing,digital,SEO,seo référencement google
+marketing,digital,Google Ads,google ads adwords ppc
+marketing,digital,Facebook Ads,facebook ads instagram
+marketing,digital,Analytics,analytics google tracking
+marketing,social,Community Management,community management réseaux sociaux
+marketing,social,Influence,influence influenceur
+marketing,contenu,Rédaction,rédaction contenu copywriting
+marketing,contenu,Video,video montage production
+marketing,email,Newsletter,newsletter email marketing
+conseil,stratégie,Business Plan,business plan stratégie
+conseil,stratégie,Audit,audit analyse diagnostic
+conseil,formation,Formation,formation accompagnement
+services,traduction,Français-Anglais,traduction français anglais
+services,traduction,Autres langues,traduction multilingue
+services,juridique,Droit,droit juridique legal
+services,comptabilité,Comptabilité,comptabilité fiscalité
+services,rh,Recrutement,recrutement rh ressources humaines
+travaux,construction,Maçonnerie,maçonnerie construction gros oeuvre
+travaux,construction,Plomberie,plomberie chauffage sanitaire
+travaux,construction,Électricité,électricité électricien
+travaux,rénovation,Peinture,peinture décoration
+travaux,rénovation,Carrelage,carrelage sol revêtement
+travaux,jardinage,Jardinage,jardinage paysage espaces verts
+services_personne,ménage,Ménage,ménage nettoyage entretien
+services_personne,garde,Garde enfants,garde enfants baby-sitting
+services_personne,aide,Aide à domicile,aide domicile personnes âgées
