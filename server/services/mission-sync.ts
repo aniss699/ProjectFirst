@@ -1,15 +1,16 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { announcements } from '../../shared/schema.js';
 import { Mission } from '../types/mission.js';
 
 export class MissionSyncService {
   private db: ReturnType<typeof drizzle>;
+  private pool: Pool;
 
   constructor(databaseUrl: string) {
-    const connection = neon(databaseUrl);
-    this.db = drizzle(connection);
+    this.pool = new Pool({ connectionString: databaseUrl });
+    this.db = drizzle(this.pool);
   }
 
   async syncMissionsToFeed(missions: Mission[]): Promise<void> {

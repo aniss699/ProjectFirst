@@ -1,11 +1,11 @@
 import express from 'express';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { users } from '../shared/schema.js';
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const db = drizzle(pool);
 
 const router = express.Router();
 

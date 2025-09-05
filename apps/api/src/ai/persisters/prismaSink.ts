@@ -1,11 +1,11 @@
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { aiEvents } from '../../../../../shared/schema.js';
 import { LoggedEvent } from '../shadow-logger';
 import { randomUUID } from 'crypto';
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const db = drizzle(pool);
 
 export async function prismaSink(e: LoggedEvent){
   await db.insert(aiEvents).values({
