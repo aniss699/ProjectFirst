@@ -595,50 +595,60 @@
   /* Logo et branding optimisés pour mobile portrait */
   .mobile-logo-container {
     display: flex;
-    align-items: flex-start;
-    space-gap: 0.5rem;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .mobile-logo-wrapper {
-    margin-top: 0.125rem;
+    flex-shrink: 0;
   }
 
   .mobile-brand-text {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 3rem;
     min-width: 0;
+    height: auto;
   }
 
   .mobile-brand-title {
-    font-size: 1.125rem;
-    line-height: 1.2;
+    font-size: 1.25rem;
+    line-height: 1;
     font-weight: 700;
+    margin-bottom: 2px;
   }
 
   .mobile-brand-subtitle {
-    font-size: 0.625rem;
-    line-height: 1.1;
+    font-size: 0.75rem;
+    line-height: 1;
     font-weight: 600;
     letter-spacing: 0.025em;
+    margin-bottom: 2px;
   }
 
   .mobile-brand-description {
-    font-size: 0.625rem;
-    line-height: 1.1;
+    font-size: 0.675rem;
+    line-height: 1;
     font-weight: 500;
-    display: none;
+    margin-top: 2px;
   }
 
   /* Affichage amélioré pour les écrans très étroits */
   @media (max-width: 360px) {
+    .mobile-logo-container {
+      gap: 0.5rem;
+    }
+    
     .mobile-brand-title {
-      font-size: 1rem;
+      font-size: 1.125rem;
     }
     
     .mobile-brand-subtitle {
-      font-size: 0.5rem;
+      font-size: 0.625rem;
+    }
+    
+    .mobile-brand-description {
+      font-size: 0.625rem;
     }
   }
 
