@@ -1,0 +1,126 @@
+Tu es un ingénieur front/back TypeScript sur une app Vite/React (TS), router léger (Wouter/React Router), shadcn/ui & Tailwind. Objectif : créer/brancher une page /services mobile-first avec 5 “modes révolutionnaires” SANS rien casser, en conservant l’IA existante et le design actuel.
+
+Contexte & Contraintes
+	•	Ne supprime rien d’existant ; n’altère pas l’IA, ni les pages actuelles.
+	•	Si la navigation/routeur est Wouter, utilise-le ; si c’est React Router, adapte (même signatures).
+	•	Respecte le design system : Tailwind + shadcn/ui (Card, Button, Input, Select, Badge…).
+	•	ZÉRO référence à Replit dans le code (pas d’URL *.replit.dev).
+	•	Code en TypeScript strict, composants fonctionnels, hooks, pas de any.
+	•	Mobile-first, accessible (labels, aria-*), performances ok (pas de rerenders lourds).
+
+Livrables attendus (fichiers & routes)
+	1.	Route /services : page d’entrée listant 5 modes sous forme de grosses cartes CTA.
+	2.	Sous-routes (toutes avec formulaires fonctionnels + validations client) :
+	•	/services/flash (Flash Deals Services)
+	•	/services/abonnement (Abonnement inversé)
+	•	/services/groupe (Demandes groupées)
+	•	/services/ia (Catalogue “IA-first”)
+	•	/services/opportunites (Opportunités locales “slots” en live + feed swipe)
+	3.	Composants réutilisables (crée si absent) :
+	•	src/components/ServiceModeCard.tsx (icône, titre, pitch, CTA, href)
+	•	src/components/forms/* pour chaque mode (schémas Zod + React Hook Form)
+	•	src/components/swipe/SwipeDeck.tsx pour le flux “opportunités” (touch + clavier)
+	4.	Types/validation : src/lib/types/services.ts + src/lib/validation/services.ts (Zod)
+	5.	Mock API layer (non bloquant, branchable plus tard) : src/lib/api/services.ts avec fonctions stub asynchrones (fetch/post) et TODO pour brancher backend réel.
+	6.	Ajoute /services au menu principal (desktop + burger mobile).
+
+Spécifications UI/UX par mode
+
+A) Page /services (hub)
+	•	Header : “Choisissez votre mode de service” + sous-titre.
+	•	5 cartes (ServiceModeCard) avec émoji/icône, pitch court, CTA → route dédiée :
+	•	⚡ Flash Deals → /services/flash
+	•	📅 Abonnement inversé → /services/abonnement
+	•	🤝 Demandes groupées → /services/groupe
+	•	🤖 IA + Humain → /services/ia
+	•	⏳ Opportunités locales → /services/opportunites
+	•	Responsive : grille 1 col (mobile), 2 cols (md+).
+
+B) /services/flash
+
+Formulaire minimal, soumission crée une “mission flash” :
+	•	Champs : besoin (textarea), budget max (€ number), délai max (select: 1h, 2h, 4h, 24h), localisation (auto ou input), téléphone/email (optionnel).
+	•	Validation Zod : besoin >= 10 chars, budget > 0, délai requis.
+	•	UX : bouton “Publier le flash deal”, état loading, toast succès/erreur.
+	•	Appel api.createFlashDeal(payload) (stub).
+
+C) /services/abonnement
+
+Crée une demande récurrente inversée :
+	•	Champs : besoin, fréquence (hebdo/mensuel/bi-hebdo), durée par occurrence (minutes), budget mensuel max, créneau préféré (date/time picker simple), localisation.
+	•	Validation stricte (budget > 0, fréquence requise).
+	•	Appel api.createReverseSubscription(payload).
+
+D) /services/groupe
+
+Mutualisation par participants :
+	•	Champs : catégorie (select), besoin, zone géo (city/postcode), prix proposé par participant, nb participants visé (min 2), date fenêtre.
+	•	Affiche un compteur “X personnes intéressées” (mock via api.getGroupInterest(zone, cat)).
+	•	Appel api.createGroupRequest(payload).
+
+E) /services/ia
+
+Pipeline IA + humain :
+	•	Champs : description besoin libre.
+	•	Au submit :
+	1.	api.aiDraftBrief(input) → affiche “Brief IA” (sections: périmètre, livrables, risques, checklist).
+	2.	Bouton “Valider & envoyer aux experts” → api.createIaHumanJob(brief) → success.
+	•	UI en 2 étapes (draft puis validation). Ajoute “Modifier le brief” (éditable avant envoi).
+
+F) /services/opportunites
+
+Feed “slots libres” façon TikTok/swipe :
+	•	SwipeDeck affichant des cartes : prestataire (nom, rating mock), créneau (date/heure), durée, prix/h, distance, tags.
+	•	Gestes : swipe droite = “Je réserve”, gauche = “Passer”, haut/bas = suivant/précédent. Support clavier (← →).
+	•	Boutons “Réserver” / “Passer” visibles.
+	•	Source mock : api.getLiveSlots({nearby, category}) (interval refetch 30s).
+	•	Au swipe droite : api.reserveSlot(id) + toast.
+	•	Ajoute filtres simples en haut (catégorie, rayon km).
+
+Implémentation détaillée (à appliquer)
+	1.	Routes
+	•	Si Wouter : dans src/main.tsx ou src/router.tsx, ajoute <Route path="/services" component={ServicesPage} /> et les 5 sous-routes.
+	•	Si React Router : ajoute Route équivalents dans createBrowserRouter/Routes.
+	2.	Fichiers
+	•	src/pages/services/ServicesPage.tsx (hub)
+	•	src/pages/services/FlashDealPage.tsx
+	•	src/pages/services/ReverseSubscriptionPage.tsx
+	•	src/pages/services/GroupRequestPage.tsx
+	•	src/pages/services/IaHumanPage.tsx
+	•	src/pages/services/OpportunitiesPage.tsx
+	•	src/components/ServiceModeCard.tsx
+	•	src/components/forms/* (un fichier par mode, réutiliser Form, Input, Textarea, Select de shadcn)
+	•	src/components/swipe/SwipeDeck.tsx (utilise pointer events, pas de lib externe)
+	•	src/lib/types/services.ts, src/lib/validation/services.ts, src/lib/api/services.ts
+	3.	Validation
+	•	Utilise Zod + @hookform/resolvers/zod. Si non installés, installe-les et configure sans casser le reste.
+	4.	API mocks
+	•	Retourne Promises avec setTimeout (300–600ms) pour simuler réseau.
+	•	Place des // TODO: wire to backend clairs.
+	5.	Navigation
+	•	Ajoute “Services” dans le menu principal (desktop + burger) pointant vers /services.
+	•	Pas de doublons ; respecte l’ordre existant.
+
+Styles & Accessibilité
+	•	Boutons larges, coins arrondis, spacing généreux, police actuelle.
+	•	Icônes via emojis par défaut (pas d’ajout de lib).
+	•	Champs avec label et aria-describedby, messages d’erreur lisibles.
+	•	Skeletons sur chargements (cards du feed, bouton loading).
+
+Critères d’acceptation (vérifie avant de conclure)
+	•	/services s’affiche sans erreur en mobile & desktop.
+	•	Chaque CTA ouvre sa sous-route correspondante.
+	•	Tous formulaires valident correctement et appellent l’API mock.
+	•	Le feed “Opportunités” supporte swipe tactile + clavier, réserve un slot (toast).
+	•	Aucune régression sur routes existantes ; build OK (npm run build).
+	•	Aucune mention Replit dans code/URLs.
+	•	TypeScript sans any inutile ; ESLint/tsc propres.
+
+Tests manuels rapides
+	•	Entrer de fausses valeurs → voir erreurs Zod.
+	•	Soumettre chaque mode → toast succès.
+	•	Swiper 5 cartes d’affilée sans crash.
+	•	Recharger /services/opportunites → feed se recharge.
+	•	Naviguer via menu vers /services puis revenir ailleurs, pas de mémoire de state problématique.
+
+Applique tout cela maintenant et montre-moi le diff des fichiers créés/modifiés.
