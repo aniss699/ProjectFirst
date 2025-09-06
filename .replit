@@ -19,10 +19,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "SwipDEAL App"
+args = "Start application"
 
 [[workflows.workflow]]
-name = "SwipDEAL App"
+name = "Start application"
 author = "agent"
 
 [[workflows.workflow.tasks]]
@@ -35,5 +35,5 @@ outputType = "webview"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm"]
+run = ["npm", "run"]
 build = ["npm", "run", "build"]

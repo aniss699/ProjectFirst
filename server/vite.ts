@@ -26,12 +26,6 @@ export async function setupVite(app: Express, server: Server) {
       server,
       clientPort: 443,
     },
-    allowedHosts: true,
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-    },
   };
 
   const vite = await createViteServer({
