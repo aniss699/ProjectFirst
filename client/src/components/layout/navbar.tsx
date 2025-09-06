@@ -133,6 +133,46 @@ export default function Navbar() {
 
           {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Desktop quick mission creator button */}
+            {location !== ROUTES.HOME && (
+              <Sheet open={showQuickCreator} onOpenChange={setShowQuickCreator}>
+                <SheetTrigger asChild>
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                    <Plus className="w-4 h-4 mr-1 xl:mr-2" />
+                    <span className="hidden xl:inline">Nouvelle mission</span>
+                    <span className="hidden lg:inline xl:hidden">Mission</span>
+                    <span className="lg:hidden text-xs">Créer</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-[400px] sm:w-[500px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-blue-600" />
+                      Création rapide avec IA
+                    </SheetTitle>
+                    <SheetDescription>
+                      Créez votre mission en quelques clics grâce à notre assistant IA intelligent.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Créez votre mission avec notre assistant intelligent
+                      </p>
+                      <Button
+                        onClick={() => {
+                          setShowQuickCreator(false);
+                          handleNavigation('/create-mission');
+                        }}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        Commencer la création
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
 
             {user ? (
               <div className="flex items-center space-x-2 sm:space-x-4">
@@ -220,15 +260,16 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('/login')}
-                  className="text-sm px-3"
+                  className="hidden sm:flex text-sm px-3"
                 >
                   Se connecter
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
-                  className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 whitespace-nowrap"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 whitespace-nowrap"
                 >
-                  Créer un compte
+                  <span className="hidden sm:inline">Créer un compte</span>
+                  <span className="sm:hidden">Créer</span>
                 </Button>
               </div>
             )}
@@ -321,6 +362,16 @@ export default function Navbar() {
                       </button>
                       <button
                         onClick={() => {
+                          handleNavigation('/services');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <Briefcase className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-left">Services</span>
+                      </button>
+                      <button
+                        onClick={() => {
                           handleNavigation('/notre-concept');
                           setIsMobileMenuOpen(false);
                         }}
@@ -349,7 +400,28 @@ export default function Navbar() {
                         <Brain className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Hub IA</span>
                       </button>
-                      
+                      <button
+                          onClick={() => {
+                            handleNavigation('/services');
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="mobile-quick-action flex items-center space-x-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <Target className="w-4 h-4" />
+                          <span className="text-sm font-medium text-left">Services</span>
+                        </button>
+                      {location !== ROUTES.HOME && (
+                        <button
+                          onClick={() => {
+                            handleNavigation('/create-mission');
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="mobile-quick-action flex items-center space-x-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="text-sm font-medium text-left">Créer une mission</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -374,7 +446,20 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  
+                  {/* Mobile quick mission creator button */}
+                  <div className="mt-6 px-4">
+                    <Button
+                      onClick={() => {
+                        handleNavigation('/create-mission');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nouvelle mission
+                    </Button>
+                  </div>
 
                   {/* Authentication buttons for mobile */}
                   {!user && (
