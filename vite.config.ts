@@ -32,7 +32,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: Number(process.env.PORT) || 5000,
     strictPort: true,
-    allowedHosts: true,
+    allowedHosts: 'all',
     hmr: {
       clientPort: 443,
     },
