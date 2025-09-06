@@ -103,9 +103,9 @@ export default function Navbar() {
           <div className="flex items-center">
             <button
               onClick={() => handleNavigation(ROUTES.HOME)}
-              className="group flex items-start space-x-2 sm:space-x-3 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
+              className="group flex items-center space-x-2 sm:space-x-3 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
             >
-              <div className="relative mt-0.5 sm:mt-1 mobile-logo-wrapper">
+              <div className="relative mobile-logo-wrapper">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
                   <img
                     src="/swideal-logo.png"
@@ -115,7 +115,7 @@ export default function Navbar() {
                 </div>
                 <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </div>
-              <div className="flex flex-col items-start justify-center h-10 sm:h-12 mobile-brand-text">
+              <div className="flex flex-col items-start justify-center mobile-brand-text">
                 <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-tight mobile-brand-title">
                   SWIDEAL
                 </span>
@@ -266,10 +266,10 @@ export default function Navbar() {
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 whitespace-nowrap"
                 >
-                  <span className="hidden xs:inline">Créer un compte</span>
-                  <span className="xs:hidden">Créer</span>
+                  <span className="hidden sm:inline">Créer un compte</span>
+                  <span className="sm:hidden">Créer</span>
                 </Button>
               </div>
             )}
