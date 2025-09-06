@@ -360,16 +360,7 @@ export default function Navbar() {
                         <Users className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Prestataires</span>
                       </button>
-                      <button
-                        onClick={() => {
-                          handleNavigation('/services');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Briefcase className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Services</span>
-                      </button>
+                      
                       <button
                         onClick={() => {
                           handleNavigation('/notre-concept');
@@ -400,28 +391,8 @@ export default function Navbar() {
                         <Brain className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Hub IA</span>
                       </button>
-                      <button
-                          onClick={() => {
-                            handleNavigation('/services');
-                            setIsMobileMenuOpen(false);
-                          }}
-                          className="mobile-quick-action flex items-center space-x-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          <Target className="w-4 h-4" />
-                          <span className="text-sm font-medium text-left">Services</span>
-                        </button>
-                      {location !== ROUTES.HOME && (
-                        <button
-                          onClick={() => {
-                            handleNavigation('/create-mission');
-                            setIsMobileMenuOpen(false);
-                          }}
-                          className="mobile-quick-action flex items-center space-x-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span className="text-sm font-medium text-left">Créer une mission</span>
-                        </button>
-                      )}
+                      
+                      
                     </div>
                   </div>
 
