@@ -21,15 +21,24 @@ const Legal = React.lazy(() => import('@/pages/legal'));
 const Sitemap = React.lazy(() => import('@/pages/sitemap'));
 const Features = React.lazy(() => import('@/pages/features'));
 const NotreConcept = React.lazy(() => import('@/pages/notre-concept'));
-const AIHub = React.lazy(() => import('@/pages/ai-hub'));
+const AIHubPage = React.lazy(() => import('@/pages/ai-hub'));
 const DemoMissions = React.lazy(() => import('@/pages/demo-missions'));
 const AvailableProviders = React.lazy(() => import('@/pages/available-providers'));
 const AIMonitoring = React.lazy(() => import('@/pages/AIMonitoring'));
 const LoginPage = React.lazy(() => import('@/pages/login'));
 const Feed = React.lazy(() => import('@/pages/Feed'));
 const AdminFeedMetrics = React.lazy(() => import('@/pages/AdminFeedMetrics'));
-const NotFound = React.lazy(() => import('@/pages/not-found'));
+const NotFoundPage = React.lazy(() => import('@/pages/not-found'));
 const FeedbackButtonsTest = React.lazy(() => import('@/components/ai/feedback-buttons-test'));
+
+// Services pages
+const ServicesPage = React.lazy(() => import('@/pages/services'));
+const FlashDealPage = React.lazy(() => import('@/pages/services/FlashDealPage'));
+const ReverseSubscriptionPage = React.lazy(() => import('@/pages/services/ReverseSubscriptionPage'));
+const GroupRequestPage = React.lazy(() => import('@/pages/services/GroupRequestPage'));
+const IaHumanPage = React.lazy(() => import('@/pages/services/IaHumanPage'));
+const OpportunitiesPage = React.lazy(() => import('@/pages/services/OpportunitiesPage'));
+
 
 // Loading component
 const LoadingSpinner = () => (
@@ -56,12 +65,17 @@ function App() {
                     <Route path="/profile" component={Profile} />
                     <Route path="/dashboard" component={Dashboard} />
                     <Route path="/messages" component={Messages} />
-                    <Route path="/services" component={Services} />
+                    <Route path="/services" component={ServicesPage} />
+                    <Route path="/services/flash" component={FlashDealPage} />
+                    <Route path="/services/abonnement" component={ReverseSubscriptionPage} />
+                    <Route path="/services/groupe" component={GroupRequestPage} />
+                    <Route path="/services/ia" component={IaHumanPage} />
+                    <Route path="/services/opportunites" component={OpportunitiesPage} />
                     <Route path="/notre-concept" component={NotreConcept} />
                     <Route path="/legal" component={Legal} />
                     <Route path="/sitemap" component={Sitemap} />
                     <Route path="/features" component={Features} />
-                    <Route path="/ai-hub" component={AIHub} />
+                    <Route path="/ai-hub" component={AIHubPage} />
                     {/* Redirects des anciennes pages IA vers le hub unifié */}
                     <Route path="/ai-features">
                       {() => { window.location.href = '/ai-hub?tab=algorithms'; return null; }}
@@ -85,7 +99,7 @@ function App() {
                     <Route path="/admin/feed-metrics" component={AdminFeedMetrics} />
                     <Route path="/test-feedback" component={FeedbackButtonsTest} />
                     <Route path="/login" component={LoginPage} />
-                    <Route component={NotFound} />
+                    <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>
               </main>
