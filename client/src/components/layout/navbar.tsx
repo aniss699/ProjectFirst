@@ -103,27 +103,27 @@ export default function Navbar() {
           <div className="flex items-center">
             <button
               onClick={() => handleNavigation(ROUTES.HOME)}
-              className="group flex items-start space-x-3 hover:scale-105 transition-all duration-300 ease-out"
+              className="group flex items-start space-x-2 sm:space-x-3 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
             >
-              <div className="relative mt-1">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
+              <div className="relative mt-0.5 sm:mt-1 mobile-logo-wrapper">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
                   <img
                     src="/swideal-logo.png"
                     alt="Swideal Logo"
                     className="w-full h-full object-cover brightness-0 invert group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </div>
-              <div className="flex flex-col items-start justify-center h-12">
-                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-tight">
+              <div className="flex flex-col items-start justify-center h-10 sm:h-12 mobile-brand-text">
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-tight mobile-brand-title">
                   SWIDEAL
                 </span>
-                <span className="text-xs font-semibold tracking-wide leading-tight">
+                <span className="text-xs font-semibold tracking-wide leading-tight mobile-brand-subtitle">
                   <span className="text-gray-900">Le meilleur prix </span>
                   <span className="text-emerald-600">vient à toi</span>
                 </span>
-                <span className="text-xs text-gray-500 hidden lg:block font-medium leading-tight">
+                <span className="text-xs text-gray-500 hidden lg:block font-medium leading-tight mobile-brand-description">
                   IA • Missions • Talents
                 </span>
               </div>
@@ -132,16 +132,16 @@ export default function Navbar() {
 
 
           {/* User Menu / Auth Buttons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop quick mission creator button */}
             {location !== ROUTES.HOME && (
               <Sheet open={showQuickCreator} onOpenChange={setShowQuickCreator}>
                 <SheetTrigger asChild>
-                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
                     <Plus className="w-4 h-4 mr-1 xl:mr-2" />
                     <span className="hidden xl:inline">Nouvelle mission</span>
                     <span className="hidden lg:inline xl:hidden">Mission</span>
-                    <span className="lg:hidden">Créer</span>
+                    <span className="lg:hidden text-xs">Créer</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-[400px] sm:w-[500px]">
@@ -175,7 +175,7 @@ export default function Navbar() {
             )}
 
             {user ? (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 {/* Desktop User Menu */}
                 <div className="hidden xl:flex items-center space-x-3">
                   <button
@@ -195,14 +195,14 @@ export default function Navbar() {
                 {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-medium text-sm">
+                    <Button variant="ghost" className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 px-2 sm:px-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-xs sm:text-sm">
                           {user.email.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="hidden sm:block text-gray-700">{user.email.split('@')[0]}</span>
-                      <ChevronDown className="w-4 h-4" />
+                      <span className="hidden sm:block text-gray-700 text-sm max-w-20 truncate">{user.email.split('@')[0]}</span>
+                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -256,19 +256,20 @@ export default function Navbar() {
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('/login')}
-                  className="hidden sm:flex"
+                  className="hidden sm:flex text-sm px-3"
                 >
                   Se connecter
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-2"
                 >
-                  Créer un compte
+                  <span className="hidden xs:inline">Créer un compte</span>
+                  <span className="xs:hidden">Créer</span>
                 </Button>
               </div>
             )}

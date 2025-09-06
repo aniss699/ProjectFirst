@@ -577,6 +577,61 @@
     overflow-x: hidden;
   }
 
+  /* Ajustements spécifiques pour mobile portrait */
+  .navbar-sticky {
+    padding: 0.5rem 1rem;
+  }
+
+  /* Logo et branding optimisés pour mobile portrait */
+  .mobile-logo-container {
+    display: flex;
+    align-items: flex-start;
+    space-gap: 0.5rem;
+  }
+
+  .mobile-logo-wrapper {
+    margin-top: 0.125rem;
+  }
+
+  .mobile-brand-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 3rem;
+    min-width: 0;
+  }
+
+  .mobile-brand-title {
+    font-size: 1.125rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .mobile-brand-subtitle {
+    font-size: 0.625rem;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+  }
+
+  .mobile-brand-description {
+    font-size: 0.625rem;
+    line-height: 1.1;
+    font-weight: 500;
+    display: none;
+  }
+
+  /* Affichage amélioré pour les écrans très étroits */
+  @media (max-width: 360px) {
+    .mobile-brand-title {
+      font-size: 1rem;
+    }
+    
+    .mobile-brand-subtitle {
+      font-size: 0.5rem;
+    }
+  }
+
   /* Navigation mobile améliorée */
   .mobile-nav-button {
     min-height: 48px;
