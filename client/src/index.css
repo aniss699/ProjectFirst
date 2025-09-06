@@ -544,6 +544,16 @@
   }
 }
 
+/* Breakpoint xs pour très petits écrans */
+@media (min-width: 475px) {
+  .xs\:inline {
+    display: inline;
+  }
+  .xs\:hidden {
+    display: none;
+  }
+}
+
 /* Fix pour responsivité mobile */
 @media (max-width: 768px) {
   .container {
@@ -643,6 +653,30 @@
     background: transparent;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  /* Boutons d'authentification mobile optimisés */
+  .auth-buttons-mobile {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .auth-buttons-mobile button {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.75rem;
+    padding: 0.5rem;
+    text-align: center;
+  }
+
+  /* Amélioration pour écrans très étroits */
+  @media (max-width: 360px) {
+    .auth-buttons-mobile button {
+      font-size: 0.65rem;
+      padding: 0.4rem;
+    }
   }
 
   .mobile-nav-button:hover {

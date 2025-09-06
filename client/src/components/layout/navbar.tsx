@@ -266,10 +266,10 @@ export default function Navbar() {
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 whitespace-nowrap"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap min-w-fit"
                 >
-                  <span className="hidden sm:inline">Créer un compte</span>
-                  <span className="sm:hidden">Créer</span>
+                  <span className="hidden xs:inline sm:inline">Créer un compte</span>
+                  <span className="xs:hidden sm:hidden text-xs">S'inscrire</span>
                 </Button>
               </div>
             )}
