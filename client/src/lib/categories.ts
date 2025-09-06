@@ -233,6 +233,342 @@ export function getCategoryById(id: string): Category | undefined {
          connectionCategories.find(category => category.id === id);
 }
 
+// Interface pour les champs dynamiques
+export interface DynamicField {
+  id: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'textarea';
+  placeholder?: string;
+  required?: boolean;
+  options?: { value: string; label: string }[];
+  min?: number;
+  max?: number;
+}
+
+// Configuration des champs dynamiques par catégorie
+export const categoryDynamicFields: Record<string, DynamicField[]> = {
+  // Garde d'enfants
+  childcare: [
+    {
+      id: 'children_count',
+      label: 'Nombre d\'enfants',
+      type: 'number',
+      placeholder: 'Ex: 2',
+      required: true,
+      min: 1,
+      max: 10
+    },
+    {
+      id: 'children_ages',
+      label: 'Âges des enfants',
+      type: 'text',
+      placeholder: 'Ex: 3 ans et 7 ans',
+      required: true
+    },
+    {
+      id: 'special_needs',
+      label: 'Besoins particuliers',
+      type: 'textarea',
+      placeholder: 'Allergies, régime alimentaire, handicap...'
+    },
+    {
+      id: 'schedule_type',
+      label: 'Type de garde',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'ponctuel', label: 'Ponctuel' },
+        { value: 'regulier', label: 'Régulier' },
+        { value: 'urgence', label: 'Urgence' }
+      ]
+    }
+  ],
+
+  // Cours particuliers
+  tutoring: [
+    {
+      id: 'subject',
+      label: 'Matière',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'mathematiques', label: 'Mathématiques' },
+        { value: 'francais', label: 'Français' },
+        { value: 'anglais', label: 'Anglais' },
+        { value: 'sciences', label: 'Sciences' },
+        { value: 'histoire', label: 'Histoire-Géographie' },
+        { value: 'musique', label: 'Musique' },
+        { value: 'autre', label: 'Autre' }
+      ]
+    },
+    {
+      id: 'student_level',
+      label: 'Niveau de l\'élève',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'primaire', label: 'Primaire' },
+        { value: 'college', label: 'Collège' },
+        { value: 'lycee', label: 'Lycée' },
+        { value: 'superieur', label: 'Supérieur' },
+        { value: 'adulte', label: 'Adulte' }
+      ]
+    },
+    {
+      id: 'frequency',
+      label: 'Fréquence souhaitée',
+      type: 'select',
+      required: true,
+      options: [
+        { value: '1_semaine', label: '1 fois par semaine' },
+        { value: '2_semaine', label: '2 fois par semaine' },
+        { value: '3_semaine', label: '3 fois ou plus par semaine' },
+        { value: 'ponctuel', label: 'Ponctuel' }
+      ]
+    }
+  ],
+
+  // Automobile
+  automotive: [
+    {
+      id: 'vehicle_type',
+      label: 'Type de véhicule',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'voiture', label: 'Voiture' },
+        { value: 'moto', label: 'Moto' },
+        { value: 'utilitaire', label: 'Utilitaire' },
+        { value: 'camion', label: 'Camion' }
+      ]
+    },
+    {
+      id: 'vehicle_brand',
+      label: 'Marque du véhicule',
+      type: 'text',
+      placeholder: 'Ex: Renault, Peugeot...',
+      required: true
+    },
+    {
+      id: 'vehicle_year',
+      label: 'Année du véhicule',
+      type: 'number',
+      placeholder: 'Ex: 2018',
+      min: 1990,
+      max: new Date().getFullYear() + 1
+    },
+    {
+      id: 'service_type',
+      label: 'Type de service',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'reparation', label: 'Réparation' },
+        { value: 'entretien', label: 'Entretien' },
+        { value: 'nettoyage', label: 'Nettoyage' },
+        { value: 'controle', label: 'Contrôle technique' }
+      ]
+    }
+  ],
+
+  // Restauration & Traiteur
+  catering: [
+    {
+      id: 'guest_count',
+      label: 'Nombre de personnes',
+      type: 'number',
+      placeholder: 'Ex: 50',
+      required: true,
+      min: 1
+    },
+    {
+      id: 'event_type',
+      label: 'Type d\'événement',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'mariage', label: 'Mariage' },
+        { value: 'anniversaire', label: 'Anniversaire' },
+        { value: 'entreprise', label: 'Événement d\'entreprise' },
+        { value: 'bapteme', label: 'Baptême/Communion' },
+        { value: 'repas_famille', label: 'Repas de famille' },
+        { value: 'autre', label: 'Autre' }
+      ]
+    },
+    {
+      id: 'dietary_restrictions',
+      label: 'Restrictions alimentaires',
+      type: 'textarea',
+      placeholder: 'Allergies, végétarien, halal, casher...'
+    },
+    {
+      id: 'service_style',
+      label: 'Style de service',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'buffet', label: 'Buffet' },
+        { value: 'service_table', label: 'Service à table' },
+        { value: 'cocktail', label: 'Cocktail dinatoire' },
+        { value: 'chef_domicile', label: 'Chef à domicile' }
+      ]
+    }
+  ],
+
+  // Bien-être & Santé
+  wellness: [
+    {
+      id: 'service_type',
+      label: 'Type de service',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'massage', label: 'Massage' },
+        { value: 'kinesitherapie', label: 'Kinésithérapie' },
+        { value: 'osteopathie', label: 'Ostéopathie' },
+        { value: 'coaching', label: 'Coaching sportif' },
+        { value: 'nutrition', label: 'Nutrition/Diététique' },
+        { value: 'psychologie', label: 'Psychologie' }
+      ]
+    },
+    {
+      id: 'session_location',
+      label: 'Lieu des séances',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'domicile', label: 'À domicile' },
+        { value: 'cabinet', label: 'En cabinet' },
+        { value: 'les_deux', label: 'Les deux possibles' }
+      ]
+    },
+    {
+      id: 'session_duration',
+      label: 'Durée des séances',
+      type: 'select',
+      options: [
+        { value: '30min', label: '30 minutes' },
+        { value: '60min', label: '1 heure' },
+        { value: '90min', label: '1h30' },
+        { value: '120min', label: '2 heures' }
+      ]
+    }
+  ],
+
+  // Travaux & Construction
+  construction: [
+    {
+      id: 'work_type',
+      label: 'Type de travaux',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'renovation', label: 'Rénovation' },
+        { value: 'plomberie', label: 'Plomberie' },
+        { value: 'electricite', label: 'Électricité' },
+        { value: 'peinture', label: 'Peinture' },
+        { value: 'carrelage', label: 'Carrelage' },
+        { value: 'toiture', label: 'Toiture' },
+        { value: 'menuiserie', label: 'Menuiserie' }
+      ]
+    },
+    {
+      id: 'surface_area',
+      label: 'Surface concernée (m²)',
+      type: 'number',
+      placeholder: 'Ex: 50',
+      min: 1
+    },
+    {
+      id: 'property_type',
+      label: 'Type de bien',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'appartement', label: 'Appartement' },
+        { value: 'maison', label: 'Maison' },
+        { value: 'local_commercial', label: 'Local commercial' },
+        { value: 'bureau', label: 'Bureau' }
+      ]
+    }
+  ],
+
+  // Services à domicile
+  'home-services': [
+    {
+      id: 'service_type',
+      label: 'Type de service',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'menage', label: 'Ménage' },
+        { value: 'jardinage', label: 'Jardinage' },
+        { value: 'bricolage', label: 'Bricolage' },
+        { value: 'livraison', label: 'Livraison' },
+        { value: 'garde_animaux', label: 'Garde d\'animaux' }
+      ]
+    },
+    {
+      id: 'frequency',
+      label: 'Fréquence',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'ponctuel', label: 'Ponctuel' },
+        { value: 'hebdomadaire', label: 'Hebdomadaire' },
+        { value: 'bi_hebdomadaire', label: 'Bi-hebdomadaire' },
+        { value: 'mensuel', label: 'Mensuel' }
+      ]
+    },
+    {
+      id: 'home_size',
+      label: 'Taille du logement (m²)',
+      type: 'number',
+      placeholder: 'Ex: 80',
+      min: 10
+    }
+  ],
+
+  // Événementiel
+  events: [
+    {
+      id: 'event_type',
+      label: 'Type d\'événement',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'mariage', label: 'Mariage' },
+        { value: 'anniversaire', label: 'Anniversaire' },
+        { value: 'entreprise', label: 'Événement d\'entreprise' },
+        { value: 'concert', label: 'Concert/Spectacle' },
+        { value: 'conference', label: 'Conférence' },
+        { value: 'autre', label: 'Autre' }
+      ]
+    },
+    {
+      id: 'guest_count',
+      label: 'Nombre d\'invités',
+      type: 'number',
+      placeholder: 'Ex: 100',
+      required: true,
+      min: 1
+    },
+    {
+      id: 'event_services',
+      label: 'Services souhaités',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'organisation_complete', label: 'Organisation complète' },
+        { value: 'animation', label: 'Animation' },
+        { value: 'dj', label: 'DJ' },
+        { value: 'decoration', label: 'Décoration' },
+        { value: 'coordination', label: 'Coordination jour J' }
+      ]
+    }
+  ]
+};
+
 // Fonction pour formater le temps relatif
 export function formatRelativeTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -244,4 +580,9 @@ export function formatRelativeTime(date: string | Date): string {
   if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} heures`;
   if (diffInSeconds < 2592000) return `Il y a ${Math.floor(diffInSeconds / 86400)} jours`;
   return formatDate(d);
+}
+
+// Fonction pour obtenir les champs dynamiques d'une catégorie
+export function getCategoryDynamicFields(categoryId: string): DynamicField[] {
+  return categoryDynamicFields[categoryId] || [];
 }
