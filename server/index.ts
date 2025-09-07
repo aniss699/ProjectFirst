@@ -13,7 +13,8 @@ const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
 // Initialize services
-const missionSyncService = new MissionSyncService(process.env.DATABASE_URL!);
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
+const missionSyncService = new MissionSyncService(databaseUrl);
 
 // Stockage temporaire des missions
 const missions: Mission[] = [
@@ -42,6 +43,13 @@ if (!global.aiEnhancementCache) {
 if (!global.performanceMetrics) {
   global.performanceMetrics = new Map();
 }
+
+// Log Vertex AI configuration for debugging
+console.log('🔍 Vertex AI Environment Variables:', {
+  GOOGLE_CLOUD_PROJECT_ID: !!process.env.GOOGLE_CLOUD_PROJECT_ID,
+  GOOGLE_CLOUD_LOCATION: !!process.env.GOOGLE_CLOUD_LOCATION,
+  GOOGLE_APPLICATION_CREDENTIALS_JSON: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+});
 
 // Middleware anti-cache pour développement
 app.use((req, res, next) => {
@@ -75,7 +83,7 @@ import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
 import aiRoutes from './routes/ai-routes.js';
 import aiSuggestionsRoutes from './routes/ai-suggestions-routes.js';
 import aiMissionsRoutes from './routes/ai-missions-routes.js';
-import aiOrchestratorRoutes from '../apps/api/src/routes/ai';
+import aiOrchestratorRoutes from '../apps/api/src/routes/ai.js';
 import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';
@@ -123,6 +131,21 @@ app.get('/healthz', (req, res) => {
     service: 'swideal-api',
     version: '1.0.0',
     node_env: process.env.NODE_ENV
+  });
+});
+
+// Vertex AI diagnostic endpoint
+app.get('/api/ai/vertex-diagnostic', (req, res) => {
+  const hasProjectId = !!process.env.GOOGLE_CLOUD_PROJECT_ID;
+  const hasLocation = !!process.env.GOOGLE_CLOUD_LOCATION;
+  const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  
+  res.json({
+    vertex_ai_configured: hasProjectId && hasLocation && hasCredentials,
+    project_id: hasProjectId ? process.env.GOOGLE_CLOUD_PROJECT_ID : 'MISSING',
+    location: hasLocation ? process.env.GOOGLE_CLOUD_LOCATION : 'MISSING',
+    credentials: hasCredentials ? 'CONFIGURED' : 'MISSING',
+    status: hasProjectId && hasLocation && hasCredentials ? 'ready' : 'incomplete'
   });
 });
 

@@ -11,7 +11,7 @@ localPort = 5000
 externalPort = 80
 
 [workflows]
-runButton = "Start Full App"
+runButton = "Start App"
 
 [[workflows.workflow]]
 name = "Project"
@@ -51,6 +51,15 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd server && node index.ts"
+
+[[workflows.workflow]]
+name = "Start App"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npm install && npm run dev"
 
 [deployment]
 deploymentTarget = "autoscale"
