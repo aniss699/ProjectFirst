@@ -1,17 +1,43 @@
+
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
 
 substitutions:
-  _WEB_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-web:manual"
-  _API_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-api:manual"
+  _WEB_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-web:latest"
+  _API_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-api:latest"
 
 steps:
-  - name: gcr.io/cloud-builders/docker
-    args: ["build", "-t", "${_WEB_IMAGE}", "-f", "infra/web.Dockerfile", "."]
-  - name: gcr.io/cloud-builders/docker
-    args: ["push", "${_WEB_IMAGE}"]
+  # Build frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - '${_WEB_IMAGE}'
+      - '-f'
+      - 'infra/web.Dockerfile'
+      - '.'
+    timeout: '600s'
 
-  - name: gcr.io/cloud-builders/docker
-    args: ["build", "-t", "${_API_IMAGE}", "-f", "infra/api.Dockerfile", "."]
-  - name: gcr.io/cloud-builders/docker
-    args: ["push", "${_API_IMAGE}"]
+  # Push frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_WEB_IMAGE}']
+    timeout: '300s'
+
+  # Build API image (with frontend integrated)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build' 
+      - '-t'
+      - '${_API_IMAGE}'
+      - '-f'
+      - 'infra/api.Dockerfile'
+      - '.'
+    timeout: '600s'
+
+  # Push API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_API_IMAGE}']
+    timeout: '300s'
+
+timeout: '1200s'

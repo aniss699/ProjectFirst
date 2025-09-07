@@ -1,19 +1,51 @@
+
+# Build stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy dependency files
+COPY package*.json ./
+RUN npm ci --include=dev
+
+# Copy source code
+COPY client/ ./client/
+COPY shared/ ./shared/
+COPY server/ ./server/
+COPY apps/ ./apps/
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.js ./
+COPY components.json ./
+
+# Build frontend and API
+RUN npm run build
+
+# Production stage  
 FROM node:20-alpine
 WORKDIR /app
 
-# 1) dépendances API avec fallback si pas de lock
-COPY server/package*.json ./server/
-WORKDIR /app/server
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
-# 2) code API + shared
-WORKDIR /app
-COPY server ./server
-# shared est optionnel; copie seulement s'il existe
-COPY shared ./shared
-WORKDIR /app/server
+# Copy built files
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/server/package*.json ./server/ 2>/dev/null || true
 
-# 3) Exécution
-ENV PORT=8080 NODE_ENV=production
+# Install production dependencies
+RUN npm ci --omit=dev --ignore-scripts
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Expose port
 EXPOSE 8080
-CMD ["npm", "start"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8080/api/health || exit 1
+
+# Start application
+CMD ["node", "dist/index.js"]

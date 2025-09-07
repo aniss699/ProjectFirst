@@ -1,13 +1,51 @@
-FROM node:20-alpine AS build
+
+# Build stage
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Copy dependency files
 COPY package*.json ./
-# npm ci nécessite un lock; fallback sur npm install si absent
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-COPY . .
+RUN npm ci --include=dev
+
+# Copy source code
+COPY client/ ./client/
+COPY shared/ ./shared/
+COPY server/ ./server/
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.js ./
+COPY components.json ./
+
+# Build frontend
 RUN npm run build
 
+# Production stage
 FROM nginx:alpine
-COPY infra/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
+
+# Copy built files
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration for SPA
+COPY infra/nginx.conf /etc/nginx/nginx.conf
+
+# Add serve.json for SPA routing
+RUN echo '{ \
+  "public": "/usr/share/nginx/html", \
+  "rewrites": [ \
+    { "source": "**", "destination": "/index.html" } \
+  ], \
+  "headers": [ \
+    { \
+      "source": "**/*.@(js|css|png|jpg|jpeg|gif|ico|svg)", \
+      "headers": [ \
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" } \
+      ] \
+    } \
+  ] \
+}' > /usr/share/nginx/html/serve.json
+
 EXPOSE 8080
+
 CMD ["nginx", "-g", "daemon off;"]
