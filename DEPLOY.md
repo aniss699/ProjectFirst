@@ -14,7 +14,7 @@ gcloud services enable cloudresourcemanager.googleapis.com
 
 ### 2. Variables d'environnement
 ```bash
-export PROJECT_ID="secure-electron-471013-r0"
+export PROJECT_ID="swideal"
 export REGION="europe-west1"
 export ARTIFACT_LOCATION="europe-west1"
 export REPO_NAME="swideal"
@@ -154,11 +154,11 @@ Configurez ces secrets dans votre repository GitHub :
 
 ```
 GCP_SA_KEY=<contenu de key.json en base64>
-GCP_PROJECT_ID=secure-electron-471013-r0
+GCP_PROJECT_ID=swideal
 GCP_REGION=europe-west1
 GEMINI_API_KEY=<votre-clé-gemini>
-DATABASE_URL=postgresql://swideal_user:PASSWORD@/swideal_prod?host=/cloudsql/secure-electron-471013-r0:europe-west1:swideal-postgres
-DB_INSTANCE_CONNECTION_NAME=secure-electron-471013-r0:europe-west1:swideal-postgres
+DATABASE_URL=postgresql://swideal_user:PASSWORD@/swideal_prod?host=/cloudsql/swideal:europe-west1:swideal-postgres
+DB_INSTANCE_CONNECTION_NAME=swideal:europe-west1:swideal-postgres
 ```
 
 ## ⚡ Optimisations Production

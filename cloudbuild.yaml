@@ -1,11 +1,10 @@
-
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
 
 substitutions:
-  _WEB_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-web:latest"
-  _API_IMAGE: "europe-west1-docker.pkg.dev/secure-electron-471013-r0/swideal/swideal-api:latest"
+  _WEB_IMAGE: "europe-west1-docker.pkg.dev/swideal/swideal/swideal-web:latest"
+  _API_IMAGE: "europe-west1-docker.pkg.dev/swideal/swideal/swideal-api:latest"
 
 steps:
   # Build frontend image

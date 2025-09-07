@@ -1,4 +1,3 @@
-
 name: Deploy to Google Cloud Run
 
 on:
@@ -7,14 +6,14 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: secure-electron-471013-r0
+  PROJECT_ID: swideal
   REGION: europe-west1
   SERVICE_NAME: swideal-app
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
