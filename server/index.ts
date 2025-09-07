@@ -206,12 +206,21 @@ const server = createServer(app);
 // Setup Vite or static serving based on environment
 if (process.env.NODE_ENV === 'development') {
   setupVite(app, server).then(() => {
-    console.log('11:01:22 AM [express] Vite middleware configured for development');
+    console.log('✅ Vite middleware configured for development');
   }).catch(console.error);
 } else {
   serveStatic(app);
-  console.log('Production mode: serving static files');
+  console.log('✅ Production mode: serving static files');
 }
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${port} is already in use. Trying to kill existing processes...`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', err);
+  }
+});
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);

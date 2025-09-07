@@ -94,10 +94,14 @@ export function TextSuggestionButton({
 
     } catch (error) {
         console.error('Erreur suggestion texte:', error);
-        setIsLoading(false);
         // Afficher un message d'erreur à l'utilisateur
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-        console.warn('Service AI temporairement indisponible:', errorMessage);
+        setError(errorMessage);
+        toast({
+          title: 'Erreur',
+          description: errorMessage,
+          variant: 'destructive'
+        });
       } finally {
       setIsLoading(false);
     }
