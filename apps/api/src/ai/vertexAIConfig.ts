@@ -26,8 +26,8 @@ export class VertexAIConfigManager {
   }
 
   private loadConfig(): VertexAIConfig {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-    const location = process.env.GOOGLE_CLOUD_LOCATION || 'europe-west1';
+    const projectId = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID || 'secure-electron-471013-r0';
+    const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
     const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
     const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 

@@ -7,14 +7,16 @@ import { vertexAIConfig } from '../vertexAIConfig';
 export async function geminiCall(phase: AIPhase, prompt:any) : Promise<UnifiedAIOutput> {
   const t0 = Date.now();
   
-  // Configuration Vertex AI centralisée - PRIORITÉ ABSOLUE
-  console.log('🎯 Initialisation Vertex AI (mode production)...');
+  // Configuration Vertex AI avec variables d'environnement
+  const projectId = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID || 'secure-electron-471013-r0';
+  const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
   
-  const config = vertexAIConfig.getConfig();
-  console.log('✅ Configuration Vertex AI validée:', {
-    projectId: config.projectId,
-    location: config.location,
-    model: config.modelName,
+  console.log('🎯 Initialisation Vertex AI (mode production)...');
+  console.log('✅ Configuration Vertex AI:', {
+    projectId,
+    location,
+    hasCredentials: !!credentialsJson,
     status: '🚀 PRODUCTION READY'
   });
   
@@ -28,13 +30,17 @@ export async function geminiCall(phase: AIPhase, prompt:any) : Promise<UnifiedAI
   
   // Parse et validation des credentials Vertex AI
   let credentials: any;
-  try {
-    credentials = JSON.parse(credentialsJson!);
-    clientConfig.credentials = credentials;
-    console.log('✅ Credentials Vertex AI validés et chargés');
-  } catch (credError) {
-    console.error('❌ Erreur parsing credentials Vertex AI:', credError);
-    throw new Error(`Format JSON des credentials Vertex AI invalide: ${credError.message}`);
+  if (credentialsJson) {
+    try {
+      credentials = JSON.parse(credentialsJson);
+      clientConfig.credentials = credentials;
+      console.log('✅ Credentials Vertex AI validés et chargés');
+    } catch (credError) {
+      console.error('❌ Erreur parsing credentials Vertex AI:', credError);
+      throw new Error(`Format JSON des credentials Vertex AI invalide: ${credError.message}`);
+    }
+  } else {
+    console.warn('⚠️ Pas de credentials JSON fournis, utilisation des credentials par défaut');
   }
   
   const client = new PredictionServiceClient(clientConfig);
