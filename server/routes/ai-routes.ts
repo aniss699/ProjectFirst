@@ -37,19 +37,19 @@ const enhanceTextSchema = z.object({
 router.post('/suggest-pricing', async (req, res) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
-    
+
     const priceSuggestion = await aiEnhancementService.suggestPricing(
       title, 
       description, 
       category
     );
-    
+
     res.json({
       success: true,
       data: priceSuggestion,
       message: 'Suggestion de prix générée avec succès'
     });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -58,7 +58,7 @@ router.post('/suggest-pricing', async (req, res) => {
         details: error.errors
       });
     }
-    
+
     console.error('Erreur suggestion prix:', error);
     res.status(500).json({
       success: false,
@@ -74,19 +74,19 @@ router.post('/suggest-pricing', async (req, res) => {
 router.post('/enhance-description', async (req, res) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
-    
+
     const enhancedDescription = await aiEnhancementService.enhanceProjectDescription(
       description,
       category,
       additionalInfo
     );
-    
+
     res.json({
       success: true,
       data: enhancedDescription,
       message: 'Description améliorée avec succès'
     });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -95,7 +95,7 @@ router.post('/enhance-description', async (req, res) => {
         details: error.errors
       });
     }
-    
+
     console.error('Erreur amélioration description:', error);
     res.status(500).json({
       success: false,
@@ -111,15 +111,15 @@ router.post('/enhance-description', async (req, res) => {
 router.post('/analyze-quality', async (req, res) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
-    
+
     const qualityAnalysis = await aiEnhancementService.analyzeDescriptionQuality(description);
-    
+
     res.json({
       success: true,
       data: qualityAnalysis,
       message: 'Analyse de qualité effectuée avec succès'
     });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -128,7 +128,7 @@ router.post('/analyze-quality', async (req, res) => {
         details: error.errors
       });
     }
-    
+
     console.error('Erreur analyse qualité:', error);
     res.status(500).json({
       success: false,
@@ -144,15 +144,15 @@ router.post('/analyze-quality', async (req, res) => {
 router.post('/enhance-text', async (req, res) => {
   try {
     const { text, fieldType, category } = enhanceTextSchema.parse(req.body);
-    
+
     const enhancedText = await aiEnhancementService.enhanceText(text, fieldType, category);
-    
+
     res.json({
       success: true,
       data: { enhancedText },
       message: 'Texte amélioré avec succès'
     });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -161,9 +161,9 @@ router.post('/enhance-text', async (req, res) => {
         details: error.errors
       });
     }
-    
+
     console.error('Erreur amélioration texte:', error);
-    
+
     // Gestion spéciale de l'erreur de quota
     if ((error as any).status === 429) {
       return res.status(429).json({ 
@@ -171,7 +171,7 @@ router.post('/enhance-text', async (req, res) => {
         error: 'Quota IA dépassé - Veuillez réessayer plus tard' 
       });
     }
-    
+
     res.status(500).json({
       success: false,
       error: 'Erreur lors de l\'amélioration du texte'
@@ -181,18 +181,22 @@ router.post('/enhance-text', async (req, res) => {
 
 /**
  * GET /api/ai/health
- * Vérifie le statut de l'intégration IA
+ * Vérifie l'état des services IA
  */
 router.get('/health', async (req, res) => {
   try {
     const hasVertexAI = !!(process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_LOCATION);
     const hasGeminiKey = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
-    
+    const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
     res.json({
       success: true,
       data: {
         vertex_ai_configured: hasVertexAI,
+        vertex_credentials_configured: hasCredentials,
         gemini_fallback_configured: hasGeminiKey,
+        project_id: process.env.GOOGLE_CLOUD_PROJECT_ID ? 'configured' : 'missing',
+        location: process.env.GOOGLE_CLOUD_LOCATION || 'not_set',
         services_available: [
           'price_suggestions',
           'description_enhancement',
@@ -202,12 +206,44 @@ router.get('/health', async (req, res) => {
         status: hasVertexAI ? 'vertex_ai_operational' : hasGeminiKey ? 'gemini_fallback' : 'no_ai_configured'
       }
     });
-    
+
   } catch (error) {
-    console.error('Erreur health check IA:', error);
+    console.error('Erreur vérification santé IA:', error);
     res.status(500).json({
       success: false,
-      error: 'Erreur lors de la vérification du statut IA'
+      error: 'Erreur lors de la vérification'
+    });
+  }
+});
+
+/**
+ * GET /api/ai/test-config
+ * Test rapide de la configuration Vertex AI
+ */
+router.get('/test-config', async (req, res) => {
+  try {
+    const { geminiCall } = await import('../../apps/api/src/ai/adapters/geminiAdapter.js');
+
+    const testResponse = await geminiCall('text_enhance', { 
+      prompt: 'Dites simplement "Test réussi" en JSON: {"message": "Test réussi"}' 
+    });
+
+    res.json({
+      success: true,
+      data: {
+        provider: testResponse.meta.provider,
+        model: testResponse.model_name,
+        response: testResponse.output,
+        message: 'Configuration AI fonctionnelle'
+      }
+    });
+
+  } catch (error) {
+    console.error('Test config échoué:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: 'Configuration AI non fonctionnelle'
     });
   }
 });
