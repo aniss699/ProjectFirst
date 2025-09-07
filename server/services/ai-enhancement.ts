@@ -1,5 +1,6 @@
 import { getPricingSuggestion, enhanceBrief } from "../../apps/api/src/ai/aiOrchestrator.js";
 import { geminiCall } from "../../apps/api/src/ai/adapters/geminiAdapter.js";
+import { aiLearningEngine } from "../../apps/api/src/ai/learning-engine.js";
 
 export interface PriceSuggestion {
   minPrice: number;
@@ -419,7 +420,16 @@ Répondez au format JSON:
           break;
       }
 
-      console.log('📡 Envoi requête IA pour amélioration...');
+      // D'abord, vérifier si on a appris un pattern pour ce type de demande
+      console.log('🧠 Vérification des patterns appris...');
+      const learnedSuggestion = await aiLearningEngine.generateImprovedSuggestion(text, fieldType, category);
+      
+      if (learnedSuggestion) {
+        console.log('✨ Suggestion basée sur l\'apprentissage automatique utilisée');
+        return learnedSuggestion;
+      }
+
+      console.log('📡 Envoi requête Gemini (pas de pattern appris)...');
       const geminiResponse = await geminiCall('text_enhance', { prompt });
       
       console.log('🔍 Réponse Gemini complète:', JSON.stringify(geminiResponse, null, 2));
@@ -447,6 +457,21 @@ Répondez au format JSON:
         
         if (enhancedText && enhancedText.trim().length > 0) {
           console.log('✅ Amélioration Gemini réussie:', enhancedText.substring(0, 100) + '...');
+          
+          // 🧠 APPRENTISSAGE AUTOMATIQUE : Apprendre de cette réponse réussie
+          try {
+            await aiLearningEngine.learnFromSuccess(
+              text, 
+              enhancedText, 
+              fieldType, 
+              category, 
+              'positive'
+            );
+            console.log('📚 Pattern appris avec succès');
+          } catch (learnError) {
+            console.warn('⚠️ Erreur apprentissage (non bloquant):', learnError);
+          }
+          
           return enhancedText.trim();
         }
       }

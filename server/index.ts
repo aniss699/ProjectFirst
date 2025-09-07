@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -100,7 +99,8 @@ import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';
 import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
-import aiDiagnosticRoutes from './routes/ai-diagnostic.js';
+import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js';
+import aiLearningRoutes from './routes/ai-learning-routes.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -122,8 +122,10 @@ app.use('/api/ai/missions', aiRateLimit, aiMissionsRoutes);
 app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe
 app.use('/api', aiRateLimit, aiQuickAnalysisRoutes);  // Analyses IA rapides
 
-// Register AI diagnostic routes
-app.use('/api/ai', aiRateLimit, aiDiagnosticRoutes);
+// Register AI diagnostic and learning routes
+app.use('/api/ai/diagnostic', aiDiagnosticRoutes);
+app.use('/api/ai/suggestions', aiSuggestionsRoutes);
+app.use('/api/ai/learning', aiLearningRoutes);
 
 app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
