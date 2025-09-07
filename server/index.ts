@@ -1,3 +1,4 @@
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -46,7 +47,8 @@ if (!global.performanceMetrics) {
 
 // Log Gemini AI configuration for debugging
 console.log('🔍 Gemini AI Environment Variables:', {
-  GEMINI_API_KEY: !!process.env.GEMINI_API_KEY
+  GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+  PROVIDER: 'gemini-api-only'
 });
 
 // Middleware anti-cache pour développement
@@ -98,7 +100,7 @@ import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';
 import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
-import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js'; // Import AI diagnostic routes
+import aiDiagnosticRoutes from './routes/ai-diagnostic.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -155,7 +157,8 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
   res.json({
     gemini_ai_configured: hasApiKey,
     api_key: hasApiKey ? 'CONFIGURED' : 'MISSING',
-    status: hasApiKey ? 'ready' : 'incomplete'
+    status: hasApiKey ? 'ready' : 'incomplete',
+    provider: 'gemini-api-only'
   });
 });
 
@@ -231,12 +234,13 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`📱 Frontend: http://0.0.0.0:${port}`);
   console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
+  console.log(`🎯 AI Provider: Gemini API Only`);
 });
 
 // Launch mission synchronization
 missionSyncService.syncMissionsToFeed(missions).catch(console.error);
 
-console.log('✅ Advanced AI routes registered');
+console.log('✅ Advanced AI routes registered - Gemini API Only');
 
 // Graceful shutdown
 process.on('SIGINT', () => {

@@ -1,7 +1,9 @@
+
 {
   "provider": "google",
   "family": "gemini",
-  "allow_training": true,
+  "service": "gemini-api",
+  "allow_training": false,
   "allow_rag_index": true,
-  "notes": "Utiliser sorties UNIQUEMENT pour modèles étroits internes. Pas d'entraînement d'un LLM concurrent."
+  "notes": "Utiliser Gemini API uniquement. Pas de Vertex AI. Sorties UNIQUEMENT pour modèles étroits internes. Pas d'entraînement d'un LLM concurrent."
 }

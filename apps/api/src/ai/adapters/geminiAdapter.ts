@@ -1,10 +1,11 @@
+
 import { UnifiedAIOutput, AIPhase } from '../types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function geminiCall(phase: AIPhase, prompt: any): Promise<UnifiedAIOutput> {
   const t0 = Date.now();
   
-  // Configuration Gemini API direct
+  // Configuration Gemini API uniquement
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is required');

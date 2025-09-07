@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import { aiEnhancementService } from '../services/ai-enhancement.js';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 
 const router = Router();
@@ -34,13 +33,16 @@ const enhanceTextSchema = z.object({
  * POST /api/ai/suggest-pricing
  * Suggère des prix pour un projet basé sur l'analyse IA du marché
  */
-router.post('/suggest-pricing', async (req, res) => {
+router.post('/suggest-pricing', async (req: Request, res: Response) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
 
+    const { AIEnhancementService } = await import('../services/ai-enhancement.js');
+    const aiEnhancementService = new AIEnhancementService();
+
     const priceSuggestion = await aiEnhancementService.suggestPricing(
-      title, 
-      description, 
+      title,
+      description,
       category
     );
 
@@ -71,9 +73,12 @@ router.post('/suggest-pricing', async (req, res) => {
  * POST /api/ai/enhance-description
  * Améliore une description vague de projet en description détaillée
  */
-router.post('/enhance-description', async (req, res) => {
+router.post('/enhance-description', async (req: Request, res: Response) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
+
+    const { AIEnhancementService } = await import('../services/ai-enhancement.js');
+    const aiEnhancementService = new AIEnhancementService();
 
     const enhancedDescription = await aiEnhancementService.enhanceProjectDescription(
       description,
@@ -108,9 +113,12 @@ router.post('/enhance-description', async (req, res) => {
  * POST /api/ai/analyze-quality
  * Analyse la qualité d'une description et suggère des améliorations
  */
-router.post('/analyze-quality', async (req, res) => {
+router.post('/analyze-quality', async (req: Request, res: Response) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
+
+    const { AIEnhancementService } = await import('../services/ai-enhancement.js');
+    const aiEnhancementService = new AIEnhancementService();
 
     const qualityAnalysis = await aiEnhancementService.analyzeDescriptionQuality(description);
 
@@ -139,17 +147,14 @@ router.post('/analyze-quality', async (req, res) => {
 
 /**
  * POST /api/ai/enhance-text
- * Améliore n'importe quel texte selon son type
+ * Améliore un texte via Gemini API
  */
-router.post('/enhance-text', async (req, res) => {
+router.post('/enhance-text', async (req: Request, res: Response) => {
   try {
-    console.log('📨 Requête /enhance-text reçue:', req.body);
-
     const { text, fieldType, category } = req.body;
 
-    // Validation des paramètres
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      console.warn('❌ Texte manquant ou invalide');
+      console.warn('❌ Texte vide ou invalide reçu');
       return res.status(400).json({
         success: false,
         error: 'Texte requis et non vide'
@@ -165,6 +170,9 @@ router.post('/enhance-text', async (req, res) => {
     }
 
     console.log(`🎯 Amélioration ${fieldType} demandée pour:`, text.substring(0, 100) + '...');
+
+    const { AIEnhancementService } = await import('../services/ai-enhancement.js');
+    const aiEnhancementService = new AIEnhancementService();
 
     const enhancedText = await aiEnhancementService.enhanceText(text, fieldType, category);
 
@@ -193,40 +201,32 @@ router.post('/enhance-text', async (req, res) => {
 
 /**
  * GET /api/ai/health
- * Vérifie l'état des services IA - VERTEX AI PRIORITÉ
+ * Vérifie l'état des services IA - GEMINI UNIQUEMENT
  */
-router.get('/health', async (req, res) => {
+router.get('/health', async (req: Request, res: Response) => {
   try {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-    const location = process.env.GOOGLE_CLOUD_LOCATION || 'europe-west1';
-    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    
-    const vertexAIComplete = !!(projectId && credentialsJson);
-    
-    // VERTEX AI est maintenant obligatoire
-    const status = vertexAIComplete ? 'vertex_ai_production_ready' : 'vertex_ai_configuration_incomplete';
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    const geminiConfigured = !!geminiApiKey;
+
+    const status = geminiConfigured ? 'gemini_api_ready' : 'gemini_api_configuration_incomplete';
 
     res.json({
       success: true,
       data: {
-        ai_provider: 'vertex-ai-priority',
-        vertex_ai_ready: vertexAIComplete,
-        project_id: projectId ? `✅ ${projectId}` : '❌ MANQUANT',
-        location: `✅ ${location}`,
-        credentials_configured: credentialsJson ? '✅ Configuré' : '❌ MANQUANT',
-        services_available: vertexAIComplete ? [
-          'vertex_ai_text_enhancement',
-          'vertex_ai_price_suggestions',
-          'vertex_ai_description_enhancement',
-          'vertex_ai_quality_analysis',
-          'vertex_ai_semantic_analysis'
+        ai_provider: 'gemini-api-only',
+        gemini_ready: geminiConfigured,
+        api_key: geminiApiKey ? '✅ Configuré' : '❌ MANQUANT',
+        services_available: geminiConfigured ? [
+          'gemini_text_enhancement',
+          'gemini_price_suggestions',
+          'gemini_description_enhancement',
+          'gemini_quality_analysis',
+          'gemini_semantic_analysis'
         ] : [],
         status: status,
-        configuration_required: !vertexAIComplete ? [
-          ...(projectId ? [] : ['GOOGLE_CLOUD_PROJECT_ID']),
-          ...(credentialsJson ? [] : ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
-        ] : [],
-        mode: 'production_vertex_ai'
+        configuration_required: !geminiConfigured ? ['GEMINI_API_KEY'] : [],
+        mode: 'production_gemini_api'
       }
     });
 
@@ -241,44 +241,50 @@ router.get('/health', async (req, res) => {
 
 /**
  * GET /api/ai/test-config
- * Test rapide de la configuration Vertex AI
+ * Test rapide de la configuration Gemini API
  */
-router.get('/test-config', async (req, res) => {
+router.get('/test-config', async (req: Request, res: Response) => {
   try {
-    const { geminiCall } = await import('../../apps/api/src/ai/adapters/geminiAdapter.js');
+    // Dynamically import the Gemini adapter
+    const geminiAdapter = await import('../../apps/api/src/ai/adapters/geminiAdapter.js');
+    const geminiCall = geminiAdapter.geminiCall;
 
-    const testResponse = await geminiCall('text_enhance', { 
-      prompt: 'Dites simplement "Test réussi" en JSON: {"message": "Test réussi"}' 
+    // Test the Gemini API call
+    const testResponse = await geminiCall('text_enhance', {
+      prompt: 'Dites simplement "Configuration Gemini OK"'
     });
 
     res.json({
       success: true,
       data: {
-        provider: testResponse.meta.provider,
-        model: testResponse.model_name,
+        test_result: 'success',
         response: testResponse.output,
-        message: 'Configuration AI fonctionnelle'
+        latency_ms: testResponse.quality?.latency_ms,
+        provider: testResponse.meta?.provider
       }
     });
 
   } catch (error) {
-    console.error('Test config échoué:', error);
+    console.error('❌ Test configuration échoué:', error);
     res.status(500).json({
       success: false,
-      error: error.message,
-      details: 'Configuration AI non fonctionnelle'
+      error: 'Test de configuration échoué',
+      details: error.message
     });
   }
 });
 
-export default router;
+
 // Endpoint agrégateur attendu par le client : POST /api/ai/analyze
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', async (req: Request, res: Response) => {
   const { title = '', description = '', category = 'autre' } = req.body ?? {};
   if (typeof description !== 'string' || description.trim().length < 5) {
     return res.status(400).json({ error: 'Description trop courte' });
   }
   try {
+    const { AIEnhancementService } = await import('../services/ai-enhancement.js');
+    const aiEnhancementService = new AIEnhancementService();
+
     const quality = await aiEnhancementService.analyzeDescriptionQuality(description);
     const pricing = await aiEnhancementService.suggestPricing(title, description, category);
     res.json({ quality, pricing });
@@ -287,3 +293,5 @@ router.post('/analyze', async (req, res) => {
     res.status(500).json({ error: 'Erreur analyse IA' });
   }
 });
+
+export default router;

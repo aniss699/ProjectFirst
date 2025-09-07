@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 
 const router = Router();
@@ -23,14 +24,14 @@ router.get('/diagnostic', async (req, res) => {
     // Test Gemini API uniquement
     try {
       const { geminiCall } = await import('../../apps/api/src/ai/adapters/geminiAdapter.js');
-
+      
       const testPrompt = {
         task: 'test_connection',
         text: 'Répondez uniquement: {"status": "OK", "provider": "gemini-api"}'
       };
 
       const result = await geminiCall('text_enhance', testPrompt);
-
+      
       diagnostics.endpoints_tested['gemini_api'] = {
         status: 'success',
         provider: result.meta?.provider || 'gemini-api',
@@ -42,7 +43,7 @@ router.get('/diagnostic', async (req, res) => {
 
     } catch (geminiError) {
       console.error('❌ Gemini API échoué:', geminiError);
-
+      
       diagnostics.endpoints_tested['gemini_api'] = {
         status: 'failed',
         error: geminiError.message
