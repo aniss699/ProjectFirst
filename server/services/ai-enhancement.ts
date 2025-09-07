@@ -358,8 +358,16 @@ VOLUMES TYPIQUES :
     fieldType: 'title' | 'description' | 'requirements',
     category?: string
   ): Promise<string> {
+    if (!text || text.trim().length === 0) {
+      console.warn('Texte vide fourni pour l\'amélioration');
+      return text;
+    }
+
     try {
+      console.log(`🎯 Amélioration ${fieldType} avec IA:`, text.substring(0, 50) + '...');
+      
       let prompt = '';
+      let expectedFormat = 'text';
 
       switch (fieldType) {
         case 'title':
@@ -368,25 +376,31 @@ VOLUMES TYPIQUES :
 
 Catégorie: ${category || 'Non spécifiée'}
 
-Répondez avec UNIQUEMENT le titre amélioré, sans guillemets ni format JSON.`;
+Répondez au format JSON:
+{
+  "enhancedText": "titre amélioré ici"
+}`;
+          expectedFormat = 'json';
           break;
 
         case 'description':
-          const categoryContext = this.getCategorySpecificPrompt(category || '', text);
-          prompt = `INSTRUCTIONS STRICTES : Votre réponse doit faire EXACTEMENT 60-80 mots. Pas plus.
+          prompt = `INSTRUCTIONS : Améliorez cette description de projet (60-80 mots maximum).
 
 Texte à améliorer:
 "${text}"
 
 Catégorie: ${category || 'Non spécifiée'}
 
-Créez une description ULTRA-CONCISE qui inclut SEULEMENT :
-1. L'objectif en 1 phrase
-2. Les attentes essentielles de la catégorie ${category}
-3. La durée/modalités en quelques mots
+Créez une description professionnelle qui inclut :
+1. L'objectif principal
+2. Les attentes essentielles
+3. Le contexte professionnel
 
-IMPÉRATIF : 60-80 mots MAXIMUM. Soyez synthétique, direct, professionnel.
-Répondez avec UNIQUEMENT le texte amélioré, rien d'autre.`;
+Répondez au format JSON:
+{
+  "enhancedText": "description améliorée ici"
+}`;
+          expectedFormat = 'json';
           break;
 
         case 'requirements':
@@ -395,18 +409,45 @@ Répondez avec UNIQUEMENT le texte amélioré, rien d'autre.`;
 
 Catégorie: ${category || 'Non spécifiée'}
 
-Transformez ces exigences en une liste claire et structurée d'exigences techniques et fonctionnelles.
+Transformez ces exigences en une liste claire et structurée.
 
-Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
+Répondez au format JSON:
+{
+  "enhancedText": "exigences améliorées ici"
+}`;
+          expectedFormat = 'json';
           break;
       }
 
+      console.log('📡 Envoi requête IA pour amélioration...');
       const vertexResponse = await geminiCall('text_enhance', { prompt });
-      return vertexResponse.output?.enhancedText || this.enhanceTextLocal(text, fieldType, category);
+      
+      if (vertexResponse && vertexResponse.output) {
+        let enhancedText = '';
+        
+        if (expectedFormat === 'json') {
+          enhancedText = vertexResponse.output.enhancedText || 
+                        vertexResponse.output.enhanced_text ||
+                        vertexResponse.output.result ||
+                        '';
+        } else {
+          enhancedText = typeof vertexResponse.output === 'string' ? 
+                        vertexResponse.output : 
+                        vertexResponse.output.enhancedText || '';
+        }
+        
+        if (enhancedText && enhancedText.length > 0) {
+          console.log('✅ Amélioration IA réussie');
+          return enhancedText.trim();
+        }
+      }
+      
+      console.warn('⚠️ Réponse IA vide, utilisation du fallback local');
+      return this.enhanceTextLocal(text, fieldType, category);
 
     } catch (error) {
-      console.error('Erreur amélioration texte:', error);
-      // Fallback vers les suggestions locales si l'API échoue
+      console.error('❌ Erreur amélioration texte IA:', error);
+      console.log('🔄 Utilisation du fallback local');
       return this.enhanceTextLocal(text, fieldType, category);
     }
   }

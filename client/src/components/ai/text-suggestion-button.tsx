@@ -20,52 +20,85 @@ export function TextSuggestionButton({
 }: TextSuggestionButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false); // Pour gérer l'affichage du feedback après succès
 
-  const getSuggestion = async () => {
+  const handleSuggestion = async () => {
+    console.log('🎯 Déclenchement suggestion pour:', { text: currentText.substring(0, 50), fieldType, category });
+
     if (!currentText.trim()) {
-      toast({
-        title: 'Texte manquant',
-        description: 'Veuillez d\'abord saisir du texte à améliorer',
-        variant: 'destructive'
-      });
+      console.warn('❌ Texte vide fourni');
+      setError('Aucun texte à améliorer');
       return;
     }
 
     setIsLoading(true);
+    setError(null); // Réinitialiser l'erreur avant une nouvelle tentative
+    setShowFeedback(false); // Réinitialiser le feedback
+
     try {
+      console.log('📡 Envoi requête /api/ai/enhance-text...');
+
+      const requestBody = {
+        text: currentText.trim(),
+        fieldType,
+        category: category || 'général' // Assurer une valeur par défaut si category est undefined
+      };
+
+      console.log('📦 Corps de la requête:', requestBody);
+
       const response = await fetch('/api/ai/enhance-text', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text: currentText,
-          fieldType,
-          category
-        })
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('📨 Réponse reçue, status:', response.status);
 
       if (!response.ok) {
-        // Fallback si quota OpenAI dépassé
+        const errorText = await response.text();
+        console.error('❌ Erreur HTTP:', response.status, errorText);
+        // Ajuster le message d'erreur pour être plus précis
+        let errorMessage = `Erreur ${response.status}`;
         if (response.status === 429) {
-          throw new Error('Quota IA dépassé - Essayez plus tard');
+            errorMessage = 'Quota IA dépassé - Essayez plus tard';
+        } else {
+            try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorText;
+            } catch (e) {
+                errorMessage = errorText || `Erreur ${response.status}`;
+            }
         }
-        throw new Error('Erreur lors de la suggestion');
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      onSuggestion(result.data.enhancedText);
+      const data = await response.json();
+      console.log('📋 Données reçues:', data);
 
-      toast({
-        title: 'Texte amélioré !',
-        description: 'L\'IA a optimisé votre texte',
-      });
+      if (data.success && data.data?.enhancedText) {
+        console.log('✅ Suggestion reçue avec succès');
+        onSuggestion(data.data.enhancedText);
+        setShowFeedback(true); // Afficher le feedback de succès
+        toast({
+          title: 'Texte amélioré !',
+          description: 'L\'IA a optimisé votre texte',
+        });
+      } else {
+        console.error('❌ Réponse invalide:', data);
+        const serverError = data.error || 'Réponse invalide du serveur';
+        throw new Error(serverError);
+      }
 
     } catch (error) {
-      console.error('Erreur suggestion texte:', error);
+      console.error('❌ Erreur suggestion texte:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue lors de la suggestion';
+      setError(errorMessage);
       toast({
         title: 'Erreur',
-        description: (error as Error).message || 'Impossible de générer la suggestion',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -84,7 +117,7 @@ export function TextSuggestionButton({
 
   return (
     <Button 
-      onClick={getSuggestion}
+      onClick={handleSuggestion} // Utiliser handleSuggestion ici
       disabled={isLoading || !currentText.trim()}
       variant="outline"
       size="sm"

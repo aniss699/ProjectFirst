@@ -143,38 +143,50 @@ router.post('/analyze-quality', async (req, res) => {
  */
 router.post('/enhance-text', async (req, res) => {
   try {
-    const { text, fieldType, category } = enhanceTextSchema.parse(req.body);
+    console.log('📨 Requête /enhance-text reçue:', req.body);
+
+    const { text, fieldType, category } = req.body;
+
+    // Validation des paramètres
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      console.warn('❌ Texte manquant ou invalide');
+      return res.status(400).json({
+        success: false,
+        error: 'Texte requis et non vide'
+      });
+    }
+
+    if (!fieldType || !['title', 'description', 'requirements'].includes(fieldType)) {
+      console.warn('❌ Type de champ invalide:', fieldType);
+      return res.status(400).json({
+        success: false,
+        error: 'Type de champ invalide. Attendu: title, description ou requirements'
+      });
+    }
+
+    console.log(`🎯 Amélioration ${fieldType} demandée pour:`, text.substring(0, 100) + '...');
 
     const enhancedText = await aiEnhancementService.enhanceText(text, fieldType, category);
 
+    console.log('✅ Amélioration terminée avec succès');
+
     res.json({
       success: true,
-      data: { enhancedText },
-      message: 'Texte amélioré avec succès'
+      data: {
+        originalText: text,
+        enhancedText,
+        fieldType,
+        category: category || 'non-spécifiée',
+        timestamp: new Date().toISOString()
+      }
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: 'Données invalides',
-        details: error.errors
-      });
-    }
-
-    console.error('Erreur amélioration texte:', error);
-
-    // Gestion spéciale de l'erreur de quota
-    if ((error as any).status === 429) {
-      return res.status(429).json({ 
-        success: false,
-        error: 'Quota IA dépassé - Veuillez réessayer plus tard' 
-      });
-    }
-
+    console.error('❌ Erreur amélioration texte:', error);
     res.status(500).json({
       success: false,
-      error: 'Erreur lors de l\'amélioration du texte'
+      error: error.message || 'Erreur lors de l\'amélioration du texte',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

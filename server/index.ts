@@ -85,8 +85,8 @@ import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
 
 // Mount routes
-app.use('/api/auth', authRoutes);
 app.use('/api/missions', missionsRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
 // Apply rate limiting to AI routes
@@ -98,7 +98,7 @@ app.use('/api/ai/enhance-text', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai', aiRateLimit, aiRoutes);  // Rate limiting général pour les autres routes IA
 app.use('/api/ai', aiRateLimit, aiSuggestionsRoutes);
 app.use('/api/ai/missions', aiRateLimit, aiMissionsRoutes);
-app.use('/api/ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe
+app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe
 app.use('/api', aiRateLimit, aiQuickAnalysisRoutes);  // Analyses IA rapides
 
 app.use('/api', feedRoutes);
@@ -155,10 +155,10 @@ app.post('/api/missions', async (req, res) => {
   try {
     // Ajouter à la mémoire
     missions.push(newMission);
-    
+
     // Ajouter à la base de données pour le feed
     await missionSyncService.addMissionToFeed(newMission);
-    
+
     res.status(201).json(newMission);
   } catch (error) {
     console.error('Erreur création mission:', error);
