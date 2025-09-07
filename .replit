@@ -10,7 +10,7 @@ localPort = 5000
 externalPort = 80
 
 [workflows]
-runButton = "Project"
+runButton = "Start Full App"
 
 [[workflows.workflow]]
 name = "Project"
@@ -32,6 +32,24 @@ outputType = "webview"
 task = "shell.exec"
 args = "cd dist && python3 -m http.server 5000"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start Full App"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npm install && npm run dev"
+
+[[workflows.workflow]]
+name = "Start API Server"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && node index.ts"
 
 [deployment]
 deploymentTarget = "autoscale"
