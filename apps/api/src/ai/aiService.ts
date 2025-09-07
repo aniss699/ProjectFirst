@@ -558,15 +558,21 @@ class AIService {
     
     return this.getCachedOrFetch(cacheKey, async () => {
       try {
+        console.log('🧠 Moteur IA: Consultation Gemini pour prédiction de succès...');
+        
+        // Consultation Gemini AVANT analyse
+        const geminiInsights = await this.consultGeminiForPrediction(missionData, marketContext);
+        
         if (this.isOfflineMode) {
-          return this.advancedPredictorFallback(missionData, marketContext);
+          return this.advancedPredictorFallback(missionData, marketContext, geminiInsights);
         }
 
-        // Utilisation du moteur neural avancé
+        // Utilisation du moteur neural avancé ENRICHI par Gemini
         const { neuralPredictionEngine } = await import('./neural-predictor');
-        const prediction = await neuralPredictionEngine.predict({
+        const prediction = await neuralPredictionEngine.predictWithGemini({
           mission: missionData,
-          market_context: marketContext
+          market_context: marketContext,
+          gemini_insights: geminiInsights
         });
         
         return {
@@ -575,7 +581,10 @@ class AIService {
           risk_assessment: prediction.risk_assessment,
           optimization_suggestions: prediction.optimization_suggestions,
           confidence_level: prediction.confidence_level,
-          neural_insights: prediction.neural_insights,
+          neural_insights: {
+            ...prediction.neural_insights,
+            gemini_contribution: geminiInsights
+          },
           market_positioning: prediction.market_positioning.position,
           competition_analysis: prediction.competition_analysis
         };
@@ -587,15 +596,26 @@ class AIService {
   }
 
   /**
-   * Neural Pricing Engine - Prix optimal temps réel
+   * Neural Pricing Engine - Prix optimal temps réel avec Gemini
    */
   async calculateNeuralPricing(pricingRequest: any): Promise<any> {
     const cacheKey = `neural_pricing_${JSON.stringify(pricingRequest)}`;
     
     return this.getCachedOrFetch(cacheKey, async () => {
       try {
+        console.log('🧠 Moteur IA: Consultation Gemini pour pricing neural...');
+        
+        // Consultation Gemini AVANT calcul neural
+        const geminiPricingInsights = await this.consultGeminiForPricing(pricingRequest);
+        
         const { neuralPricingEngine } = await import('./neural-pricing-engine');
-        return await neuralPricingEngine.calculateOptimalPricing(pricingRequest);
+        const result = await neuralPricingEngine.calculateOptimalPricingWithGemini({
+          ...pricingRequest,
+          gemini_insights: geminiPricingInsights
+        });
+        
+        console.log('✅ Prix neural calculé avec aide Gemini');
+        return result;
       } catch (error) {
         console.error('Neural pricing failed:', error);
         return this.optimizePricingRealTimeFallback(pricingRequest.mission.id, pricingRequest.market_data);
@@ -604,15 +624,26 @@ class AIService {
   }
 
   /**
-   * Semantic Deep Matching - Matching ultra-précis
+   * Semantic Deep Matching - Matching ultra-précis avec Gemini
    */
   async performSemanticMatching(matchingRequest: any): Promise<any> {
     const cacheKey = `semantic_matching_${JSON.stringify(matchingRequest)}`;
     
     return this.getCachedOrFetch(cacheKey, async () => {
       try {
+        console.log('🧠 Moteur IA: Consultation Gemini pour matching sémantique...');
+        
+        // Consultation Gemini AVANT matching
+        const geminiMatchingInsights = await this.consultGeminiForMatching(matchingRequest);
+        
         const { semanticMatchingEngine } = await import('./semantic-matching-engine');
-        return await semanticMatchingEngine.performDeepMatching(matchingRequest);
+        const result = await semanticMatchingEngine.performDeepMatchingWithGemini({
+          ...matchingRequest,
+          gemini_insights: geminiMatchingInsights
+        });
+        
+        console.log('✅ Matching sémantique effectué avec aide Gemini');
+        return result;
       } catch (error) {
         console.error('Semantic matching failed:', error);
         return this.intelligentMatchingFallback(matchingRequest);
@@ -1156,7 +1187,7 @@ class AIService {
     };
   }
 
-  private advancedPredictorFallback(missionData: any, marketContext: any) {
+  private advancedPredictorFallback(missionData: any, marketContext: any, geminiInsights?: any) {
     const complexity = missionData.complexity || 5;
     const budget = missionData.budget || 1000;
     const urgency = missionData.urgency === 'high' ? 0.7 : 1.0;
@@ -1192,7 +1223,14 @@ class AIService {
           message: 'Analyse en mode dégradé - précision limitée',
           confidence: 0.6,
           impact: 'neutral'
-        }
+        },
+        ...(geminiInsights ? [{
+          type: 'gemini_enhancement',
+          message: 'Enrichi par analyse Gemini',
+          confidence: 0.8,
+          impact: 'positive',
+          gemini_data: geminiInsights
+        }] : [])
       ],
       market_positioning: budget > 5000 ? 'premium' : 'standard',
       competition_analysis: {
@@ -1626,6 +1664,198 @@ class AIService {
     );
     
     return Math.round((matches.length / Math.max(required.length, 1)) * 100);
+  }
+
+  /**
+   * Consultation Gemini pour enrichir les prédictions
+   */
+  private async consultGeminiForPrediction(missionData: any, marketContext: any): Promise<any> {
+    try {
+      const { geminiCall } = await import('./adapters/geminiAdapter');
+      
+      const prompt = {
+        role: 'expert_business_analyst',
+        task: 'mission_success_prediction',
+        mission: {
+          title: missionData.title,
+          description: missionData.description,
+          budget: missionData.budget,
+          category: missionData.category,
+          urgency: missionData.urgency
+        },
+        market_context: marketContext,
+        request: 'Analyse cette mission et prédit son taux de succès avec tes insights d\'expert'
+      };
+
+      console.log('🤖 Gemini consultation pour prédiction...');
+      const response = await geminiCall('prediction_analysis', prompt);
+      
+      if (response && response.output) {
+        console.log('✅ Insights Gemini reçus pour prédiction');
+        return {
+          gemini_success_score: this.extractSuccessScore(response.output),
+          gemini_recommendations: this.extractRecommendations(response.output),
+          gemini_risks: this.extractRisks(response.output),
+          raw_analysis: response.output
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur consultation Gemini:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Consultation Gemini pour enrichir les calculs de prix
+   */
+  private async consultGeminiForPricing(pricingRequest: any): Promise<any> {
+    try {
+      const { geminiCall } = await import('./adapters/geminiAdapter');
+      
+      const prompt = {
+        role: 'expert_pricing_analyst',
+        task: 'optimal_pricing_calculation',
+        mission: pricingRequest.mission,
+        market_data: pricingRequest.market_data,
+        request: 'Calcule le prix optimal en tenant compte du marché et de la complexité'
+      };
+
+      console.log('💰 Gemini consultation pour prix optimal...');
+      const response = await geminiCall('pricing_analysis', prompt);
+      
+      if (response && response.output) {
+        console.log('✅ Insights Gemini reçus pour pricing');
+        return {
+          gemini_price_range: this.extractPriceRange(response.output),
+          gemini_justification: this.extractPricingJustification(response.output),
+          market_positioning: this.extractMarketPositioning(response.output),
+          raw_analysis: response.output
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur consultation Gemini pricing:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Consultation Gemini pour enrichir le matching
+   */
+  private async consultGeminiForMatching(matchingRequest: any): Promise<any> {
+    try {
+      const { geminiCall } = await import('./adapters/geminiAdapter');
+      
+      const prompt = {
+        role: 'expert_matching_analyst',
+        task: 'semantic_deep_matching',
+        mission: matchingRequest.mission,
+        providers: matchingRequest.providers,
+        request: 'Analyse la compatibilité sémantique profonde entre mission et prestataires'
+      };
+
+      console.log('🎯 Gemini consultation pour matching...');
+      const response = await geminiCall('matching_analysis', prompt);
+      
+      if (response && response.output) {
+        console.log('✅ Insights Gemini reçus pour matching');
+        return {
+          gemini_matches: this.extractMatches(response.output),
+          compatibility_insights: this.extractCompatibilityInsights(response.output),
+          hidden_connections: this.extractHiddenConnections(response.output),
+          raw_analysis: response.output
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur consultation Gemini matching:', error);
+      return null;
+    }
+  }
+
+  // Méthodes d'extraction des insights Gemini
+  private extractSuccessScore(output: any): number {
+    if (typeof output === 'string') {
+      const match = output.match(/(\d+)%|\b(\d+)/);
+      return match ? parseInt(match[1] || match[2]) / 100 : 0.7;
+    }
+    return output.success_score || 0.7;
+  }
+
+  private extractRecommendations(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line => 
+        line.includes('recommand') || line.includes('suggest') || line.includes('conseil')
+      );
+      return lines.slice(0, 3);
+    }
+    return output.recommendations || [];
+  }
+
+  private extractRisks(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line => 
+        line.includes('risque') || line.includes('attention') || line.includes('danger')
+      );
+      return lines.slice(0, 3);
+    }
+    return output.risks || [];
+  }
+
+  private extractPriceRange(output: any): any {
+    if (typeof output === 'string') {
+      const match = output.match(/(\d+).*?(\d+)/);
+      return match ? { min: parseInt(match[1]), max: parseInt(match[2]) } : null;
+    }
+    return output.price_range || null;
+  }
+
+  private extractPricingJustification(output: any): string {
+    if (typeof output === 'string') {
+      return output.substring(0, 200) + '...';
+    }
+    return output.justification || 'Analyse Gemini';
+  }
+
+  private extractMarketPositioning(output: any): string {
+    if (typeof output === 'string') {
+      const keywords = ['premium', 'standard', 'économique', 'budget'];
+      const found = keywords.find(kw => output.toLowerCase().includes(kw));
+      return found || 'standard';
+    }
+    return output.positioning || 'standard';
+  }
+
+  private extractMatches(output: any): any[] {
+    if (typeof output === 'string') {
+      // Extraction basique si format texte
+      return [];
+    }
+    return output.matches || [];
+  }
+
+  private extractCompatibilityInsights(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line => 
+        line.includes('compatib') || line.includes('adapté') || line.includes('correspond')
+      );
+      return lines.slice(0, 3);
+    }
+    return output.insights || [];
+  }
+
+  private extractHiddenConnections(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line => 
+        line.includes('potentiel') || line.includes('opportunité') || line.includes('synerg')
+      );
+      return lines.slice(0, 2);
+    }
+    return output.hidden_connections || [];
   }
 
   /**
