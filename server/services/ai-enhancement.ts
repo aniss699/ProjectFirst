@@ -420,29 +420,39 @@ Répondez au format JSON:
       }
 
       console.log('📡 Envoi requête IA pour amélioration...');
-      const vertexResponse = await geminiCall('text_enhance', { prompt });
+      const geminiResponse = await geminiCall('text_enhance', { prompt });
       
-      if (vertexResponse && vertexResponse.output) {
+      console.log('🔍 Réponse Gemini complète:', JSON.stringify(geminiResponse, null, 2));
+      
+      if (geminiResponse && geminiResponse.output) {
         let enhancedText = '';
         
-        if (expectedFormat === 'json') {
-          enhancedText = vertexResponse.output.enhancedText || 
-                        vertexResponse.output.enhanced_text ||
-                        vertexResponse.output.result ||
-                        '';
-        } else {
-          enhancedText = typeof vertexResponse.output === 'string' ? 
-                        vertexResponse.output : 
-                        vertexResponse.output.enhancedText || '';
+        // Traiter la réponse Gemini qui peut être directement du texte ou du JSON
+        if (typeof geminiResponse.output === 'string') {
+          // Essayer de parser le JSON si c'est une chaîne
+          try {
+            const parsed = JSON.parse(geminiResponse.output);
+            enhancedText = parsed.enhancedText || parsed.enhanced_text || parsed.result || geminiResponse.output;
+          } catch {
+            // Si ce n'est pas du JSON valide, utiliser le texte tel quel
+            enhancedText = geminiResponse.output;
+          }
+        } else if (geminiResponse.output && typeof geminiResponse.output === 'object') {
+          // Si c'est déjà un objet
+          enhancedText = geminiResponse.output.enhancedText || 
+                        geminiResponse.output.enhanced_text ||
+                        geminiResponse.output.result ||
+                        JSON.stringify(geminiResponse.output);
         }
         
-        if (enhancedText && enhancedText.length > 0) {
-          console.log('✅ Amélioration IA réussie');
+        if (enhancedText && enhancedText.trim().length > 0) {
+          console.log('✅ Amélioration Gemini réussie:', enhancedText.substring(0, 100) + '...');
           return enhancedText.trim();
         }
       }
       
-      console.warn('⚠️ Réponse IA vide, utilisation du fallback local');
+      console.warn('⚠️ Réponse Gemini vide ou non traitée, utilisation du fallback local');
+      console.warn('📋 Contenu reçu:', geminiResponse);
       return this.enhanceTextLocal(text, fieldType, category);
 
     } catch (error) {

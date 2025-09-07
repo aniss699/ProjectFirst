@@ -37,9 +37,13 @@ export async function geminiCall(phase: AIPhase, prompt: any): Promise<UnifiedAI
 
   let parsed: any;
   try { 
+    // Essayer de parser en JSON d'abord
     parsed = JSON.parse(text); 
+    console.log('✅ Réponse Gemini parsée en JSON:', parsed);
   } catch { 
-    parsed = { raw: text }; 
+    // Si échec, retourner le texte brut directement
+    console.log('📝 Réponse Gemini en texte brut (pas JSON):', text.substring(0, 200) + '...');
+    parsed = text; // Retourner directement le texte au lieu d'un objet
   }
 
   const latency = Date.now() - t0;
