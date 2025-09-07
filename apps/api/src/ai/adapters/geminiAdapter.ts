@@ -14,10 +14,22 @@ export async function geminiCall(phase: AIPhase, prompt:any) : Promise<UnifiedAI
   
   if (useVertexAI) {
     // Configuration Vertex AI
-    const client = new PredictionServiceClient({
+    let clientConfig: any = {
       projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
       location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
-    });
+    };
+    
+    // Si les credentials JSON sont fournis, les utiliser
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      try {
+        const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+        clientConfig.credentials = credentials;
+      } catch (error) {
+        console.error('Erreur parsing GOOGLE_APPLICATION_CREDENTIALS_JSON:', error);
+      }
+    }
+    
+    const client = new PredictionServiceClient(clientConfig);
     
     modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     const endpoint = `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/locations/${process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'}/publishers/google/models/${modelName}`;
