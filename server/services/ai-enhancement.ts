@@ -18,13 +18,13 @@ export interface EnhancedDescription {
 }
 
 export class AIEnhancementService {
-  
+
   /**
    * Suggère des prix basés sur l'analyse du marché et de la description du projet
    */
   async suggestPricing(
-    projectTitle: string, 
-    description: string, 
+    projectTitle: string,
+    description: string,
     category: string
   ): Promise<PriceSuggestion> {
     try {
@@ -36,13 +36,13 @@ export class AIEnhancementService {
         guidance: this.getCategoryPricingGuidance(category),
         expertise: this.getCategoryExpertise(category)
       };
-      
+
       const result = await getPricingSuggestion(prompt);
-      
+
       // Validation et correction des prix retournés par l'IA
       const minPrice = Math.max(500, result.minPrice || 1000); // Minimum 500€
       const maxPrice = Math.max(minPrice * 1.5, result.maxPrice || 3000); // Au moins 1.5x le min
-      
+
       return {
         minPrice,
         maxPrice,
@@ -53,20 +53,10 @@ export class AIEnhancementService {
 
     } catch (error) {
       console.error('Erreur suggestion prix:', error);
-      
+
       // Fallback basé sur la catégorie avec tarifs réalistes 2025
-      const fallbackPrices = {
-        'développement': { min: 2500, max: 12000, avg: 6000 },
-        'design': { min: 1200, max: 5000, avg: 2800 },
-        'marketing': { min: 1800, max: 8000, avg: 4000 },
-        'rédaction': { min: 800, max: 3000, avg: 1500 },
-        'conseil': { min: 2000, max: 10000, avg: 5000 },
-        'services': { min: 1500, max: 6000, avg: 3000 },
-        'travaux': { min: 2000, max: 8000, avg: 4500 }
-      };
-      
-      const prices = fallbackPrices[category as keyof typeof fallbackPrices] || fallbackPrices.conseil;
-      
+      const prices = this.getFallbackPrices(category);
+
       return {
         minPrice: prices.min,
         maxPrice: prices.max,
@@ -87,7 +77,7 @@ export class AIEnhancementService {
   ): Promise<EnhancedDescription> {
     try {
       const categorySpecificPrompt = this.getCategorySpecificPrompt(category, vagueDescription, additionalInfo);
-      
+
       const prompt = `En tant qu'expert en ${this.getCategoryExpertise(category)}, aidez un client à clarifier et structurer sa demande.
 
 DEMANDE INITIALE:
@@ -113,20 +103,20 @@ La complexity doit être "simple", "medium" ou "complex".`;
 
       const vertexResponse = await geminiCall('brief_enhance', { prompt });
       const result = vertexResponse.output;
-      
+
       return {
         improvedTitle: result.improvedTitle || 'Projet amélioré',
         detailedDescription: result.detailedDescription || vagueDescription,
         suggestedRequirements: Array.isArray(result.suggestedRequirements) ? result.suggestedRequirements : [],
         estimatedTimeline: result.estimatedTimeline || '2-4 semaines',
-        complexity: ['simple', 'medium', 'complex'].includes(result.complexity) 
-          ? result.complexity 
+        complexity: ['simple', 'medium', 'complex'].includes(result.complexity)
+          ? result.complexity
           : 'medium'
       };
 
     } catch (error) {
       console.error('Erreur amélioration description:', error);
-      
+
       return {
         improvedTitle: 'Projet à préciser',
         detailedDescription: `Demande initiale : ${vagueDescription}\n\nCette demande nécessite des précisions supplémentaires pour être mieux comprise par les prestataires.`,
@@ -143,7 +133,7 @@ La complexity doit être "simple", "medium" ou "complex".`;
   private getDetailedFallbackFactors(category: string, minPrice: number, maxPrice: number): string[] {
     const avgPrice = Math.round((minPrice + maxPrice) / 2);
     const estimatedHours = Math.round(avgPrice / 50); // Estimation à 50€/h moyenne
-    
+
     const categoryFactors = {
       'développement': [
         `Développement ${category} : ${estimatedHours}h estimées à 45-80€/h selon complexité`,
@@ -181,7 +171,7 @@ La complexity doit être "simple", "medium" ou "complex".`;
         `Déplacements, outils professionnels et garantie résultat inclus`
       ]
     };
-    
+
     return categoryFactors[category as keyof typeof categoryFactors] || [
       `Prestation professionnelle : ${estimatedHours}h à 50-80€/h selon expertise requise`,
       `Tarifs marché France 2025 : ${minPrice}-${maxPrice}€ incluant conseils et suivi`,
@@ -218,7 +208,7 @@ La complexity doit être "simple", "medium" ou "complex".`;
 - Type d'intervention (neuf, rénovation, entretien)
 - Contraintes d'accès ou techniques
 - Période souhaitée (saison, planning)`;
-        
+
       case 'développement':
         return `SPÉCIFICITÉS DÉVELOPPEMENT - Précisez obligatoirement :
 - Durée de développement estimée (semaines/mois)
@@ -227,7 +217,7 @@ La complexity doit être "simple", "medium" ou "complex".`;
 - Type d'application (web, mobile, desktop)
 - Intégrations nécessaires (API, bases de données)
 - Maintenance post-livraison incluse ou non`;
-        
+
       case 'design':
         return `SPÉCIFICITÉS DESIGN - Précisez obligatoirement :
 - Durée du projet créatif (jours/semaines)
@@ -236,25 +226,25 @@ La complexity doit être "simple", "medium" ou "complex".`;
 - Charte graphique existante ou création complète
 - Nombre de révisions incluses
 - Fichiers sources inclus ou non`;
-        
+
       case 'marketing':
         return `SPÉCIFICITÉS MARKETING - Précisez obligatoirement :
 - Durée de la campagne ou mission (mois)
 - Budget média inclus ou non (si pub payante)
 - Canaux prioritaires (réseaux sociaux, SEO, etc.)
-- Secteur d'activité et cible
+- Secteur d\'activité et cible
 - Objectifs mesurables (leads, ventes, notoriété)
 - Reporting inclus (fréquence, KPIs)`;
-        
+
       case 'conseil':
         return `SPÉCIFICITÉS CONSEIL - Précisez obligatoirement :
 - Durée de la mission (jours/mois)
 - Nombre de séances/ateliers inclus
-- Livrables attendus (rapport, présentation, plan d'action)
-- Secteur d'activité et taille de l'entreprise
-- Niveau d'accompagnement (audit, stratégie, mise en œuvre)
+- Livrables attendus (rapport, présentation, plan d\'action)
+- Secteur d\'activité et taille de l\'entreprise
+- Niveau d\'accompagnement (audit, stratégie, mise en œuvre)
 - Déplacements inclus ou facturés en sus`;
-        
+
       case 'rédaction':
         return `SPÉCIFICITÉS RÉDACTION - Précisez obligatoirement :
 - Volume de contenu (nombre de mots, pages, articles)
@@ -263,7 +253,7 @@ La complexity doit être "simple", "medium" ou "complex".`;
 - Recherches documentaires incluses ou non
 - Nombre de révisions incluses
 - SEO et optimisation web inclus ou non`;
-        
+
       default:
         return `Précisez la durée estimée, les livrables attendus et les contraintes spécifiques à cette catégorie.`;
     }
@@ -288,7 +278,7 @@ CONSIDÉRATIONS IMPORTANTES :
 - Durée réaliste : 1-3j (petits travaux), 1-4 semaines (rénovation)
 - Contraintes : accès difficile, étage, période (+10-20%)
 - Garanties décennales et assurances incluses`;
-        
+
       case 'développement':
         return `TARIFS DÉVELOPPEMENT 2025 (France) :
 - Développement web : 45-80€/h (projets : 3000-25000€)
@@ -301,7 +291,7 @@ DURÉES RÉALISTES :
 - E-commerce : 6-12 semaines (200-500h)
 - App mobile : 8-16 semaines (300-800h)
 - Maintenance : 10-20% du coût initial/an`;
-        
+
       case 'design':
         return `TARIFS DESIGN 2025 (France) :
 - Logo + charte : 1500-5000€ (3-6 semaines)
@@ -313,19 +303,19 @@ DURÉES TYPIQUES :
 - Logo : 2-3 semaines (3-5 propositions + révisions)
 - Charte graphique : 3-4 semaines
 - Maquettes web : 2-6 semaines selon nombre de pages`;
-        
+
       case 'marketing':
         return `TARIFS MARKETING 2025 (France) :
 - Community management : 800-2500€/mois (hors budget pub)
 - SEO/référencement : 60-100€/h ou 1500-5000€/mois
 - Campagnes Google Ads : 15-20% du budget pub + setup 800-2000€
-- Stratégie digitale : 2000-8000€ (audit + plan d'actions)
+- Stratégie digitale : 2000-8000€ (audit + plan d\'actions)
 
 BUDGETS PUBLICITAIRES :
 - Google Ads : 500-5000€/mois minimum
 - Facebook/Instagram : 300-3000€/mois minimum
 - Précisez si budget média inclus dans la prestation ou en sus`;
-        
+
       case 'conseil':
         return `TARIFS CONSEIL 2025 (France) :
 - Conseil stratégique : 80-150€/h ou 1200-2500€/jour
@@ -337,7 +327,7 @@ DURÉES MISSIONS :
 - Audit express : 5-10 jours
 - Mission stratégique : 20-60 jours étalés
 - Accompagnement : 3-12 mois (suivi régulier)`;
-        
+
       case 'rédaction':
         return `TARIFS RÉDACTION 2025 (France) :
 - Articles web : 0,10-0,30€/mot (SEO : +20-40%)
@@ -350,7 +340,7 @@ VOLUMES TYPIQUES :
 - Article blog : 800-1500 mots
 - Page site : 300-800 mots
 - Délais : 2-7 jours/1000 mots selon recherches`;
-        
+
       default:
         return `TARIFS SERVICES GÉNÉRAUX 2025 :
 - Prestations intellectuelles : 50-120€/h
@@ -370,7 +360,7 @@ VOLUMES TYPIQUES :
   ): Promise<string> {
     try {
       let prompt = '';
-      
+
       switch (fieldType) {
         case 'title':
           prompt = `Améliorez ce titre de projet pour qu'il soit plus professionnel et accrocheur:
@@ -380,7 +370,7 @@ Catégorie: ${category || 'Non spécifiée'}
 
 Répondez avec UNIQUEMENT le titre amélioré, sans guillemets ni format JSON.`;
           break;
-          
+
         case 'description':
           const categoryContext = this.getCategorySpecificPrompt(category || '', text);
           prompt = `INSTRUCTIONS STRICTES : Votre réponse doit faire EXACTEMENT 60-80 mots. Pas plus.
@@ -398,7 +388,7 @@ Créez une description ULTRA-CONCISE qui inclut SEULEMENT :
 IMPÉRATIF : 60-80 mots MAXIMUM. Soyez synthétique, direct, professionnel.
 Répondez avec UNIQUEMENT le texte amélioré, rien d'autre.`;
           break;
-          
+
         case 'requirements':
           prompt = `Précisez et structurez ces exigences de projet:
 "${text}"
@@ -444,10 +434,10 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
 
   private enhanceTitleLocal(title: string, category?: string): string {
     let enhanced = title.trim();
-    
+
     // Capitaliser la première lettre
     enhanced = enhanced.charAt(0).toUpperCase() + enhanced.slice(1);
-    
+
     // Ajouter des mots-clés spécifiques selon la catégorie
     const categoryKeywords = {
       'développement': 'Développement',
@@ -473,27 +463,27 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
 
   private enhanceDescriptionLocal(description: string, category?: string): string {
     let enhanced = description.trim();
-    
+
     // Ajouter un contexte professionnel si manquant
     if (enhanced.length < 100) {
       enhanced += '\n\nCe projet nécessite une approche professionnelle et une expertise confirmée dans le domaine.';
     }
-    
+
     // Ajouter des détails sur les livrables si non mentionnés
     if (!enhanced.toLowerCase().includes('livrable') && !enhanced.toLowerCase().includes('résultat')) {
       enhanced += '\n\n📋 Livrables attendus :\n- Documentation complète\n- Code source commenté (si applicable)\n- Formation utilisateur si nécessaire';
     }
-    
+
     // Ajouter des informations sur le budget si non mentionnées
     if (!enhanced.toLowerCase().includes('budget') && !enhanced.toLowerCase().includes('prix')) {
       enhanced += '\n\n💰 Budget flexible selon la qualité de la proposition.';
     }
-    
+
     // Ajouter des informations sur les délais si non mentionnées
     if (!enhanced.toLowerCase().includes('délai') && !enhanced.toLowerCase().includes('échéance')) {
       enhanced += '\n\n⏰ Délais de livraison à discuter selon la complexité du projet.';
     }
-    
+
     // Ajouter des critères de sélection
     if (!enhanced.toLowerCase().includes('expérience') && !enhanced.toLowerCase().includes('portfolio')) {
       enhanced += '\n\n🎯 Merci de joindre votre portfolio et vos références pertinentes.';
@@ -504,7 +494,7 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
 
   private enhanceRequirementsLocal(requirements: string, category?: string): string {
     let enhanced = requirements.trim();
-    
+
     // Structurer les exigences si elles ne le sont pas
     if (!enhanced.includes('-') && !enhanced.includes('•') && !enhanced.includes('\n')) {
       const sentences = enhanced.split('.').filter(s => s.trim().length > 0);
@@ -512,7 +502,7 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
         enhanced = sentences.map(s => `• ${s.trim()}`).join('\n');
       }
     }
-    
+
     // Ajouter des exigences techniques standard selon la catégorie
     const categoryRequirements = {
       'développement': [
@@ -534,7 +524,7 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
 
     const categoryKey = category?.toLowerCase() || '';
     if (categoryRequirements[categoryKey as keyof typeof categoryRequirements]) {
-      enhanced += '\n\nExigences techniques standard :\n' + 
+      enhanced += '\n\nExigences techniques standard :\n' +
         categoryRequirements[categoryKey as keyof typeof categoryRequirements].join('\n');
     }
 
@@ -573,7 +563,7 @@ Score entre 0.0 (très vague) et 1.0 (très détaillé).`;
 
       const vertexResponse = await geminiCall('quality_analysis', { prompt });
       const result = vertexResponse.output;
-      
+
       return {
         score: Math.max(0.0, Math.min(1.0, result.score || 0.5)),
         suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
@@ -583,11 +573,46 @@ Score entre 0.0 (très vague) et 1.0 (très détaillé).`;
     } catch (error) {
       console.error('Erreur analyse qualité:', error);
       return {
-        score: 0.5,
+        score: this.calculateLocalQualityScore(description), // Utilisation du score local comme fallback
         suggestions: ['Ajoutez plus de détails sur vos objectifs'],
         missingElements: ['Budget indicatif', 'Délais souhaités']
       };
     }
+  }
+
+  /**
+   * Get fallback prices for a category
+   */
+  private getFallbackPrices(category: string) {
+    const fallbackPrices = {
+      'développement': { min: 2500, max: 12000, avg: 6000 },
+      'design': { min: 1200, max: 5000, avg: 2800 },
+      'marketing': { min: 1800, max: 8000, avg: 4000 },
+      'rédaction': { min: 800, max: 3000, avg: 1500 },
+      'conseil': { min: 2000, max: 10000, avg: 5000 },
+      'services': { min: 1500, max: 6000, avg: 3000 },
+      'travaux': { min: 2000, max: 8000, avg: 4500 }
+    };
+
+    return fallbackPrices[category as keyof typeof fallbackPrices] || fallbackPrices.conseil;
+  }
+
+  /**
+   * Calculate local quality score based on description length and content
+   */
+  private calculateLocalQualityScore(description: string): number {
+    let score = 0.3; // Base score
+
+    // Length factor
+    if (description.length > 100) score += 0.2;
+    if (description.length > 300) score += 0.2;
+
+    // Content factors
+    if (description.toLowerCase().includes('budget')) score += 0.1;
+    if (description.toLowerCase().includes('délai')) score += 0.1;
+    if (description.toLowerCase().includes('expérience')) score += 0.1;
+
+    return Math.min(1.0, score);
   }
 }
 
