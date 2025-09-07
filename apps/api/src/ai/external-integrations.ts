@@ -61,7 +61,8 @@ class ExternalServiceManager {
       case 'anthropic':
         return !!process.env.ANTHROPIC_API_KEY;
       case 'googleCloudAI':
-        return !!(process.env.GOOGLE_CLOUD_AI_KEY && process.env.GOOGLE_CLOUD_PROJECT_ID);
+        // PRIORISER VERTEX AI - utiliser les mêmes credentials
+        return !!(process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
       default:
         return false;
     }
@@ -271,42 +272,42 @@ class ExternalIntegrationsService {
     };
   }
 
-  // Analyse sémantique avancée avec GPT-4
+  // Analyse sémantique avancée avec VERTEX AI (priorité)
   async performAdvancedSemanticAnalysis(text: string, context: string): Promise<any> {
-    if (!this.serviceManager.isServiceEnabled('openai')) {
+    // PRIORISER VERTEX AI au lieu d'OpenAI
+    if (!this.serviceManager.isServiceEnabled('googleCloudAI')) {
+      console.warn('🔄 Vertex AI non configuré, utilisation analyse basique');
       return this.getBasicSemanticAnalysis(text);
     }
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: `Analysez sémantiquement ce texte dans le contexte : ${context}. Retournez un JSON avec: intention, complexité, compétences_requises, estimation_temps, niveau_expertise`
-            },
-            {
-              role: 'user',
-              content: text
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.3
-        })
-      });
+      console.log('🎯 Analyse sémantique via Vertex AI...');
+      
+      // Importer dynamiquement geminiCall pour utiliser Vertex AI
+      const { geminiCall } = await import('./adapters/geminiAdapter.js');
+      
+      const prompt = {
+        task: 'semantic_analysis',
+        text: text,
+        context: context,
+        instructions: 'Analysez sémantiquement ce texte. Retournez un JSON avec: intention, complexité, compétences_requises, estimation_temps, niveau_expertise',
+        format: 'json'
+      };
 
-      if (!response.ok) throw new Error('OpenAI API error');
-      const data = await response.json();
-
-      return JSON.parse(data.choices[0].message.content);
+      const response = await geminiCall('text_enhance', prompt);
+      
+      if (response.output && typeof response.output === 'object') {
+        console.log('✅ Analyse sémantique Vertex AI réussie');
+        return {
+          ...response.output,
+          source: 'vertex-ai',
+          provider: 'google-cloud'
+        };
+      } else {
+        throw new Error('Format de réponse invalide');
+      }
     } catch (error) {
-      console.error('Erreur analyse sémantique OpenAI:', error);
+      console.error('❌ Erreur analyse sémantique Vertex AI:', error);
       return this.getBasicSemanticAnalysis(text);
     }
   }

@@ -193,36 +193,47 @@ router.post('/enhance-text', async (req, res) => {
 
 /**
  * GET /api/ai/health
- * Vérifie l'état des services IA
+ * Vérifie l'état des services IA - VERTEX AI PRIORITÉ
  */
 router.get('/health', async (req, res) => {
   try {
-    const hasVertexAI = !!(process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_LOCATION);
-    const hasGeminiKey = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
-    const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+    const location = process.env.GOOGLE_CLOUD_LOCATION || 'europe-west1';
+    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    
+    const vertexAIComplete = !!(projectId && credentialsJson);
+    
+    // VERTEX AI est maintenant obligatoire
+    const status = vertexAIComplete ? 'vertex_ai_production_ready' : 'vertex_ai_configuration_incomplete';
 
     res.json({
       success: true,
       data: {
-        vertex_ai_configured: hasVertexAI,
-        vertex_credentials_configured: hasCredentials,
-        gemini_fallback_configured: hasGeminiKey,
-        project_id: process.env.GOOGLE_CLOUD_PROJECT_ID ? 'configured' : 'missing',
-        location: process.env.GOOGLE_CLOUD_LOCATION || 'not_set',
-        services_available: [
-          'price_suggestions',
-          'description_enhancement',
-          'quality_analysis',
-          'text_enhancement'
-        ],
-        status: hasVertexAI ? 'vertex_ai_operational' : hasGeminiKey ? 'gemini_fallback' : 'no_ai_configured'
+        ai_provider: 'vertex-ai-priority',
+        vertex_ai_ready: vertexAIComplete,
+        project_id: projectId ? `✅ ${projectId}` : '❌ MANQUANT',
+        location: `✅ ${location}`,
+        credentials_configured: credentialsJson ? '✅ Configuré' : '❌ MANQUANT',
+        services_available: vertexAIComplete ? [
+          'vertex_ai_text_enhancement',
+          'vertex_ai_price_suggestions',
+          'vertex_ai_description_enhancement',
+          'vertex_ai_quality_analysis',
+          'vertex_ai_semantic_analysis'
+        ] : [],
+        status: status,
+        configuration_required: !vertexAIComplete ? [
+          ...(projectId ? [] : ['GOOGLE_CLOUD_PROJECT_ID']),
+          ...(credentialsJson ? [] : ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
+        ] : [],
+        mode: 'production_vertex_ai'
       }
     });
 
   } catch (error) {
     console.error('Erreur vérification santé IA:', error);
     res.status(500).json({
-      success: false,
+      success: falsee,
       error: 'Erreur lors de la vérification'
     });
   }
