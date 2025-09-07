@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "python-3.11", "web"]
+modules = ["nodejs-20", "python-3.11", "web", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -31,47 +31,11 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "npm run dev"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Start Full App"
-author = 47315380
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && npm install && npm run dev"
-
-[[workflows.workflow]]
-name = "Start API Server"
-author = 47315380
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && node index.ts"
-
-[[workflows.workflow]]
-name = "Start App"
-author = 47315380
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pkill -f \"tsx.*index.ts\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pkill -f \"node.*index\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sleep 1"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && npm install && npm run dev"
 
 [deployment]
 deploymentTarget = "vm"
