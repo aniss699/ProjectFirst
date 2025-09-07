@@ -66,18 +66,18 @@ app.set('trust proxy', true);
 app.use((req, res, next) => {
   // Special handling for Replit environment
   const isReplit = process.env.REPLIT_DB_URL || process.env.REPLIT_DEV_DOMAIN;
-  
+
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   if (isReplit) {
     // Allow iframe embedding in Replit
     res.header('X-Frame-Options', 'ALLOWALL');
   } else {
     res.header('X-Frame-Options', 'SAMEORIGIN');
   }
-  
+
   res.header('X-Content-Type-Options', 'nosniff');
   res.header('Referrer-Policy', 'same-origin');
   next();
@@ -98,6 +98,7 @@ import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';
 import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
+import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js'; // Import AI diagnostic routes
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -118,6 +119,9 @@ app.use('/api/ai', aiRateLimit, aiSuggestionsRoutes);
 app.use('/api/ai/missions', aiRateLimit, aiMissionsRoutes);
 app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe
 app.use('/api', aiRateLimit, aiQuickAnalysisRoutes);  // Analyses IA rapides
+
+// Register AI diagnostic routes
+app.use('/api/ai', aiRateLimit, aiDiagnosticRoutes);
 
 app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
@@ -147,7 +151,7 @@ app.get('/healthz', (req, res) => {
 // Gemini AI diagnostic endpoint
 app.get('/api/ai/gemini-diagnostic', (req, res) => {
   const hasApiKey = !!process.env.GEMINI_API_KEY;
-  
+
   res.json({
     gemini_ai_configured: hasApiKey,
     api_key: hasApiKey ? 'CONFIGURED' : 'MISSING',

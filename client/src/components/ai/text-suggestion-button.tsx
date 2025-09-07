@@ -80,12 +80,23 @@ export function TextSuggestionButton({
 
       if (data.success && data.data?.enhancedText) {
         console.log('✅ Suggestion reçue avec succès');
-        onSuggestion(data.data.enhancedText);
-        setShowFeedback(true); // Afficher le feedback de succès
-        toast({
-          title: 'Texte amélioré !',
-          description: 'L\'IA a optimisé votre texte',
-        });
+        // Vérifier si c'est vraiment une amélioration
+        if (data.data.enhancedText.length > currentText.trim().length * 0.8) {
+          onSuggestion(data.data.enhancedText);
+          setShowFeedback(true); // Afficher le feedback de succès
+          toast({
+            title: 'Texte amélioré !',
+            description: 'L\'IA a optimisé votre texte',
+          });
+        } else {
+          console.warn('⚠️ Suggestion trop courte, conservation du texte original');
+          setError('La suggestion générée semble incomplète');
+          toast({
+            title: 'Suggestion Incomplète',
+            description: 'L\'IA n\'a pas pu améliorer le texte de manière significative.',
+            variant: 'destructive'
+          });
+        }
       } else {
         console.error('❌ Réponse invalide:', data);
         const serverError = data.error || 'Réponse invalide du serveur';
@@ -99,7 +110,7 @@ export function TextSuggestionButton({
         setError(errorMessage);
         toast({
           title: 'Erreur',
-          description: errorMessage,
+          description: `IA temporairement indisponible: ${errorMessage}`,
           variant: 'destructive'
         });
       } finally {
