@@ -226,8 +226,6 @@ model ProjectChangeLog {
   changes   Json
   created_at DateTime @default(now())
 
-  project Project @relation(fields: [project_id], references: [id])
-
   @@map("project_change_logs")
 }
 

@@ -12,8 +12,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
-// Initialize services
+// Initialize services with Cloud SQL support
 const databaseUrl = process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal';
+
+// Cloud SQL connection string format: postgresql://user:password@/database?host=/cloudsql/project:region:instance
+const isCloudSQL = databaseUrl.includes('/cloudsql/');
+if (isCloudSQL) {
+  console.log('🔗 Using Cloud SQL connection');
+} else {
+  console.log('🔗 Using standard PostgreSQL connection');
+}
+
 const missionSyncService = new MissionSyncService(databaseUrl);
 
 // Log database configuration for debugging
