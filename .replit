@@ -51,6 +51,6 @@ task = "shell.exec"
 args = "npm run dev"
 
 [deployment]
-deploymentTarget = "vm"
-run = ["npm", "start"]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
