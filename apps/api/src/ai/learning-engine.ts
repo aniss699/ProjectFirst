@@ -412,17 +412,329 @@ export class AILearningEngine {
   }
 
   /**
+   * Apprentissage universel pour TOUTES les interactions Gemini
+   */
+  async learnFromGeminiInteraction(
+    interactionType: 'prediction' | 'pricing' | 'matching' | 'analysis' | 'enhancement',
+    inputData: any,
+    geminiResponse: any,
+    finalResult: any,
+    userFeedback: 'positive' | 'negative' | 'neutral' = 'positive'
+  ): Promise<void> {
+    try {
+      console.log(`🎓 Apprentissage du pattern ${interactionType} de Gemini...`);
+
+      // Consultation Gemini pour analyser sa propre contribution
+      const geminiMetaAnalysis = await this.consultGeminiForMetaLearning(
+        interactionType,
+        inputData,
+        geminiResponse,
+        finalResult
+      );
+
+      // Créer un pattern d'apprentissage générique
+      const pattern = this.generateUniversalPattern(inputData, interactionType);
+      const patternKey = this.generatePatternKey(pattern, interactionType);
+
+      // Analyser la qualité de la contribution Gemini
+      const qualityScore = this.assessGeminiResponseQuality(geminiResponse, finalResult);
+      const confidenceScore = this.calculateConfidenceForGeminiInteraction(
+        userFeedback, 
+        qualityScore, 
+        geminiMetaAnalysis
+      );
+
+      // Stocker le pattern enrichi
+      this.patterns.set(patternKey, {
+        input_pattern: pattern,
+        successful_output: this.extractSuccessfulOutput(geminiResponse, finalResult),
+        context_category: this.detectCategoryFromInput(inputData),
+        user_feedback: userFeedback,
+        confidence_score: confidenceScore,
+        usage_count: 1,
+        created_at: new Date().toISOString(),
+        last_used: new Date().toISOString(),
+        gemini_analysis: geminiResponse,
+        improvement_factors: this.extractImprovementFactorsUniversal(geminiResponse),
+        semantic_keywords: this.extractSemanticKeywordsUniversal(inputData),
+        interaction_type: interactionType,
+        quality_metrics: {
+          response_quality: qualityScore,
+          relevance_score: geminiMetaAnalysis?.relevance_score || 0.8,
+          innovation_factor: geminiMetaAnalysis?.innovation_factor || 0.7,
+          reusability_potential: geminiMetaAnalysis?.reusability_potential || 0.8
+        },
+        meta_analysis: geminiMetaAnalysis
+      });
+
+      console.log(`✅ Pattern ${interactionType} appris avec métadonnées Gemini: ${patternKey}`);
+
+      // Mise à jour des insights globaux
+      this.updateInsightsFromNewPattern(interactionType, confidenceScore);
+
+    } catch (error) {
+      console.error(`❌ Erreur apprentissage ${interactionType}:`, error);
+    }
+  }
+
+  /**
+   * Génère un pattern universel à partir de n'importe quel input
+   */
+  private generateUniversalPattern(inputData: any, type: string): string {
+    let extractedText = '';
+    
+    // Extraction contextuelle selon le type
+    if (typeof inputData === 'string') {
+      extractedText = inputData;
+    } else if (inputData.description) {
+      extractedText = inputData.description;
+    } else if (inputData.mission?.description) {
+      extractedText = inputData.mission.description;
+    } else if (inputData.title) {
+      extractedText = inputData.title;
+    } else {
+      extractedText = JSON.stringify(inputData).substring(0, 200);
+    }
+
+    // Extraction des mots-clés principaux
+    return this.extractPattern(extractedText);
+  }
+
+  /**
+   * Évalue la qualité de la réponse Gemini
+   */
+  private assessGeminiResponseQuality(geminiResponse: any, finalResult: any): number {
+    let quality = 0.7; // Base
+
+    // Richesse de la réponse
+    if (geminiResponse && typeof geminiResponse === 'object') {
+      const responseFields = Object.keys(geminiResponse).length;
+      quality += Math.min(0.2, responseFields * 0.05);
+    }
+
+    // Cohérence avec le résultat final
+    if (finalResult && geminiResponse) {
+      quality += 0.1; // Bonus pour cohérence
+    }
+
+    return Math.min(0.95, quality);
+  }
+
+  /**
+   * Calcul de confiance pour interactions Gemini
+   */
+  private calculateConfidenceForGeminiInteraction(
+    userFeedback: 'positive' | 'negative' | 'neutral',
+    qualityScore: number,
+    metaAnalysis: any
+  ): number {
+    let confidence = 0.8; // Base élevée pour Gemini
+
+    // Impact du feedback utilisateur
+    if (userFeedback === 'positive') confidence += 0.1;
+    if (userFeedback === 'negative') confidence -= 0.2;
+
+    // Impact de la qualité
+    confidence += (qualityScore - 0.7) * 0.5;
+
+    // Impact de la méta-analyse
+    if (metaAnalysis) {
+      confidence += (metaAnalysis.relevance_score || 0.8) * 0.1;
+      confidence += (metaAnalysis.innovation_factor || 0.7) * 0.05;
+    }
+
+    return Math.max(0.3, Math.min(0.98, confidence));
+  }
+
+  /**
+   * Extrait le résultat réussi pour apprentissage
+   */
+  private extractSuccessfulOutput(geminiResponse: any, finalResult: any): string {
+    if (typeof geminiResponse === 'string') {
+      return geminiResponse.substring(0, 500);
+    }
+    
+    if (geminiResponse && typeof geminiResponse === 'object') {
+      return JSON.stringify(geminiResponse).substring(0, 500);
+    }
+
+    if (finalResult) {
+      return JSON.stringify(finalResult).substring(0, 500);
+    }
+
+    return 'Résultat Gemini traité';
+  }
+
+  /**
+   * Détecte la catégorie depuis n'importe quel input
+   */
+  private detectCategoryFromInput(inputData: any): string {
+    let textToAnalyze = '';
+    
+    if (typeof inputData === 'string') {
+      textToAnalyze = inputData;
+    } else if (inputData.category) {
+      return inputData.category;
+    } else if (inputData.mission?.category) {
+      return inputData.mission.category;
+    } else if (inputData.description) {
+      textToAnalyze = inputData.description;
+    } else {
+      textToAnalyze = JSON.stringify(inputData);
+    }
+
+    return this.detectCategory(textToAnalyze);
+  }
+
+  /**
+   * Extraction universelle de facteurs d'amélioration
+   */
+  private extractImprovementFactorsUniversal(geminiResponse: any): string[] {
+    const factors = [];
+    
+    if (typeof geminiResponse === 'string') {
+      const lines = geminiResponse.split('\n').filter(line =>
+        line.includes('améliorer') || line.includes('optimiser') || line.includes('recommand')
+      );
+      factors.push(...lines.slice(0, 3));
+    } else if (geminiResponse && typeof geminiResponse === 'object') {
+      if (geminiResponse.recommendations) factors.push(...geminiResponse.recommendations);
+      if (geminiResponse.suggestions) factors.push(...geminiResponse.suggestions);
+      if (geminiResponse.improvements) factors.push(...geminiResponse.improvements);
+    }
+
+    return factors.slice(0, 5);
+  }
+
+  /**
+   * Extraction universelle de mots-clés sémantiques
+   */
+  private extractSemanticKeywordsUniversal(inputData: any): string[] {
+    let textToAnalyze = '';
+    
+    if (typeof inputData === 'string') {
+      textToAnalyze = inputData;
+    } else if (inputData.description) {
+      textToAnalyze = inputData.description;
+    } else {
+      textToAnalyze = JSON.stringify(inputData);
+    }
+
+    const words = textToAnalyze.toLowerCase()
+      .split(/\s+/)
+      .filter(word => word.length > 3)
+      .filter(word => !['dans', 'avec', 'pour', 'sans', 'plus', 'cette', 'tous'].includes(word));
+    
+    return [...new Set(words)].slice(0, 10);
+  }
+
+  /**
+   * Met à jour les insights globaux
+   */
+  private updateInsightsFromNewPattern(interactionType: string, confidenceScore: number): void {
+    if (confidenceScore > 0.85) {
+      this.insights.push({
+        pattern_type: 'enhancement',
+        improvement_suggestion: `Nouveau pattern ${interactionType} de haute qualité identifié`,
+        confidence: confidenceScore,
+        based_on_samples: 1
+      });
+    }
+  }
+
+  /**
+   * Consultation Gemini pour méta-apprentissage
+   */
+  private async consultGeminiForMetaLearning(
+    interactionType: string,
+    inputData: any,
+    geminiResponse: any,
+    finalResult: any
+  ): Promise<any> {
+    try {
+      const { geminiCall } = await import('./adapters/geminiAdapter');
+
+      const prompt = {
+        role: 'expert_meta_learning_analyst',
+        task: 'self_analysis_and_improvement',
+        interaction_type: interactionType,
+        original_input: inputData,
+        my_response: geminiResponse,
+        final_outcome: finalResult,
+        request: 'Analyse ta propre contribution et identifie les patterns d\'amélioration pour mes futurs apprentissages'
+      };
+
+      console.log('🔄 Gemini méta-analyse de sa propre contribution...');
+      const response = await geminiCall('meta_learning_analysis', prompt);
+
+      if (response && response.output) {
+        console.log('✅ Méta-analyse Gemini reçue');
+        return {
+          relevance_score: this.extractMetaScore(response.output, 'relevance'),
+          innovation_factor: this.extractMetaScore(response.output, 'innovation'),
+          reusability_potential: this.extractMetaScore(response.output, 'reusability'),
+          improvement_areas: this.extractImprovementAreas(response.output),
+          pattern_insights: this.extractPatternInsights(response.output),
+          raw_meta_analysis: response.output
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Erreur méta-apprentissage Gemini:', error);
+      return null;
+    }
+  }
+
+  private extractMetaScore(output: any, scoreType: string): number {
+    if (typeof output === 'string') {
+      const match = output.match(new RegExp(`${scoreType}.*?(\\d+)`, 'i'));
+      return match ? parseInt(match[1]) / 100 : 0.8;
+    }
+    return output[`${scoreType}_score`] || 0.8;
+  }
+
+  private extractImprovementAreas(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line =>
+        line.includes('améliorer') || line.includes('développer') || line.includes('renforcer')
+      );
+      return lines.slice(0, 3);
+    }
+    return output.improvement_areas || [];
+  }
+
+  private extractPatternInsights(output: any): string[] {
+    if (typeof output === 'string') {
+      const lines = output.split('\n').filter(line =>
+        line.includes('pattern') || line.includes('tendance') || line.includes('récurrent')
+      );
+      return lines.slice(0, 3);
+    }
+    return output.pattern_insights || [];
+  }
+
+  /**
    * API publique pour obtenir les statistiques d'apprentissage
    */
   getLearningStats() {
-    return {
+    const stats = {
       total_patterns: this.patterns.size,
       insights_generated: this.insights.length,
       high_confidence_patterns: Array.from(this.patterns.values())
         .filter(p => p.confidence_score > 0.8).length,
       categories_learned: [...new Set(Array.from(this.patterns.values())
-        .map(p => p.context_category))].length
+        .map(p => p.context_category))].length,
+      interaction_types: [...new Set(Array.from(this.patterns.values())
+        .map(p => (p as any).interaction_type || 'unknown'))],
+      gemini_contributions: Array.from(this.patterns.values())
+        .filter(p => (p as any).gemini_analysis).length,
+      avg_confidence: Array.from(this.patterns.values())
+        .reduce((sum, p) => sum + p.confidence_score, 0) / this.patterns.size || 0
     };
+
+    console.log('📊 Statistiques d\'apprentissage Gemini:', stats);
+    return stats;
   }
 }
 

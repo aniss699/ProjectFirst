@@ -574,6 +574,19 @@ class AIService {
           market_context: marketContext,
           gemini_insights: geminiInsights
         });
+
+        // 🎓 APPRENTISSAGE AUTOMATIQUE : Apprendre de cette prédiction Gemini
+        if (geminiInsights) {
+          const { aiLearningEngine } = await import('./learning-engine');
+          await aiLearningEngine.learnFromGeminiInteraction(
+            'prediction',
+            missionData,
+            geminiInsights,
+            prediction,
+            'positive'
+          );
+          console.log('📚 Pattern de prédiction appris de Gemini');
+        }
         
         return {
           success_probability: prediction.success_probability,
@@ -613,6 +626,19 @@ class AIService {
           ...pricingRequest,
           gemini_insights: geminiPricingInsights
         });
+
+        // 🎓 APPRENTISSAGE AUTOMATIQUE : Apprendre de ce pricing Gemini
+        if (geminiPricingInsights) {
+          const { aiLearningEngine } = await import('./learning-engine');
+          await aiLearningEngine.learnFromGeminiInteraction(
+            'pricing',
+            pricingRequest,
+            geminiPricingInsights,
+            result,
+            'positive'
+          );
+          console.log('📚 Pattern de pricing appris de Gemini');
+        }
         
         console.log('✅ Prix neural calculé avec aide Gemini');
         return result;
@@ -641,6 +667,19 @@ class AIService {
           ...matchingRequest,
           gemini_insights: geminiMatchingInsights
         });
+
+        // 🎓 APPRENTISSAGE AUTOMATIQUE : Apprendre de ce matching Gemini
+        if (geminiMatchingInsights) {
+          const { aiLearningEngine } = await import('./learning-engine');
+          await aiLearningEngine.learnFromGeminiInteraction(
+            'matching',
+            matchingRequest,
+            geminiMatchingInsights,
+            result,
+            'positive'
+          );
+          console.log('📚 Pattern de matching appris de Gemini');
+        }
         
         console.log('✅ Matching sémantique effectué avec aide Gemini');
         return result;
