@@ -36,6 +36,13 @@ COPY --from=builder /app/server/package*.json ./server/ 2>/dev/null || true
 # Install production dependencies
 RUN npm ci --omit=dev --ignore-scripts
 
+# Install Prisma
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+# Copy migration script
+COPY --from=builder /app/prisma/migrate.js ./prisma/
+
 # Environment variables
 ENV NODE_ENV=production
 ENV PORT=8080

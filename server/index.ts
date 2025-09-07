@@ -13,8 +13,15 @@ const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
 // Initialize services
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
+const databaseUrl = process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal';
 const missionSyncService = new MissionSyncService(databaseUrl);
+
+// Log database configuration for debugging
+console.log('🔗 Database configuration:', {
+  DATABASE_URL: !!process.env.DATABASE_URL,
+  CLOUD_SQL_CONNECTION_STRING: !!process.env.CLOUD_SQL_CONNECTION_STRING,
+  NODE_ENV: process.env.NODE_ENV
+});
 
 // Stockage temporaire des missions
 const missions: Mission[] = [
