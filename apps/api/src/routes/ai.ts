@@ -1,9 +1,10 @@
+
 import { Router } from 'express';
 import { getPricingSuggestion, enhanceBrief, logUserFeedback } from '../ai/aiOrchestrator.js';
 
-const r = Router();
+const router = Router();
 
-r.post('/pricing', async (req,res) => {
+router.post('/pricing', async (req, res) => {
   try {
     const result = await getPricingSuggestion(req.body);
     res.json(result);
@@ -13,7 +14,7 @@ r.post('/pricing', async (req,res) => {
   }
 });
 
-r.post('/brief', async (req,res) => {
+router.post('/brief', async (req, res) => {
   try {
     const result = await enhanceBrief(req.body);
     res.json(result);
@@ -23,15 +24,15 @@ r.post('/brief', async (req,res) => {
   }
 });
 
-r.post('/feedback', async (req,res)=>{
+router.post('/feedback', async (req, res) => {
   try {
     const { phase, prompt, feedback } = req.body;
     await logUserFeedback(phase, prompt, feedback);
-    res.json({ ok:true });
+    res.json({ ok: true });
   } catch (error) {
     console.error('AI Feedback error:', error);
     res.status(500).json({ error: 'Erreur lors de l\'enregistrement du feedback' });
   }
 });
 
-export default r;
+export default router;
