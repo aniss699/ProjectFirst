@@ -185,18 +185,21 @@ router.post('/enhance-text', async (req, res) => {
  */
 router.get('/health', async (req, res) => {
   try {
-    const hasApiKey = !!process.env.OPENAI_API_KEY;
+    const hasVertexAI = !!(process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_LOCATION);
+    const hasGeminiKey = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
     
     res.json({
       success: true,
       data: {
-        openai_configured: hasApiKey,
+        vertex_ai_configured: hasVertexAI,
+        gemini_fallback_configured: hasGeminiKey,
         services_available: [
           'price_suggestions',
           'description_enhancement',
-          'quality_analysis'
+          'quality_analysis',
+          'text_enhancement'
         ],
-        status: hasApiKey ? 'operational' : 'missing_api_key'
+        status: hasVertexAI ? 'vertex_ai_operational' : hasGeminiKey ? 'gemini_fallback' : 'no_ai_configured'
       }
     });
     

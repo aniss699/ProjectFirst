@@ -1,10 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
 import { getPricingSuggestion, enhanceBrief } from "../../apps/api/src/ai/aiOrchestrator.js";
-
-// Initialize Gemini AI client with API key (legacy fallback)
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ""
-});
+import { geminiCall } from "../../apps/api/src/ai/adapters/geminiAdapter.js";
 
 export interface PriceSuggestion {
   minPrice: number;
@@ -116,16 +111,8 @@ Répondez au format JSON strict:
 
 La complexity doit être "simple", "medium" ou "complex".`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.4
-        }
-      });
-
-      const result = JSON.parse(response.text || '{}');
+      const vertexResponse = await geminiCall('brief_enhance', { prompt });
+      const result = vertexResponse.output;
       
       return {
         improvedTitle: result.improvedTitle || 'Projet amélioré',
@@ -424,16 +411,8 @@ Répondez avec UNIQUEMENT les exigences améliorées, sans format JSON.`;
           break;
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          maxOutputTokens: 200
-        }
-      });
-
-      return response.text?.trim() || this.enhanceTextLocal(text, fieldType, category);
+      const vertexResponse = await geminiCall('text_enhance', { prompt });
+      return vertexResponse.output?.enhancedText || this.enhanceTextLocal(text, fieldType, category);
 
     } catch (error) {
       console.error('Erreur amélioration texte:', error);
@@ -592,16 +571,8 @@ Répondez au format JSON:
 
 Score entre 0.0 (très vague) et 1.0 (très détaillé).`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-pro",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.3
-        }
-      });
-
-      const result = JSON.parse(response.text || '{}');
+      const vertexResponse = await geminiCall('quality_analysis', { prompt });
+      const result = vertexResponse.output;
       
       return {
         score: Math.max(0.0, Math.min(1.0, result.score || 0.5)),
