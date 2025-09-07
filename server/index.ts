@@ -44,11 +44,9 @@ if (!global.performanceMetrics) {
   global.performanceMetrics = new Map();
 }
 
-// Log Vertex AI configuration for debugging
-console.log('🔍 Vertex AI Environment Variables:', {
-  GOOGLE_CLOUD_PROJECT_ID: !!process.env.GOOGLE_CLOUD_PROJECT_ID,
-  GOOGLE_CLOUD_LOCATION: !!process.env.GOOGLE_CLOUD_LOCATION,
-  GOOGLE_APPLICATION_CREDENTIALS_JSON: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+// Log Gemini AI configuration for debugging
+console.log('🔍 Gemini AI Environment Variables:', {
+  GEMINI_API_KEY: !!process.env.GEMINI_API_KEY
 });
 
 // Middleware anti-cache pour développement
@@ -66,10 +64,22 @@ app.set('trust proxy', true);
 
 // CORS and Replit-specific headers
 app.use((req, res, next) => {
+  // Special handling for Replit environment
+  const isReplit = process.env.REPLIT_DB_URL || process.env.REPLIT_DEV_DOMAIN;
+  
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('X-Frame-Options', 'ALLOWALL');
+  
+  if (isReplit) {
+    // Allow iframe embedding in Replit
+    res.header('X-Frame-Options', 'ALLOWALL');
+  } else {
+    res.header('X-Frame-Options', 'SAMEORIGIN');
+  }
+  
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('Referrer-Policy', 'same-origin');
   next();
 });
 
@@ -134,18 +144,14 @@ app.get('/healthz', (req, res) => {
   });
 });
 
-// Vertex AI diagnostic endpoint
-app.get('/api/ai/vertex-diagnostic', (req, res) => {
-  const hasProjectId = !!process.env.GOOGLE_CLOUD_PROJECT_ID;
-  const hasLocation = !!process.env.GOOGLE_CLOUD_LOCATION;
-  const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+// Gemini AI diagnostic endpoint
+app.get('/api/ai/gemini-diagnostic', (req, res) => {
+  const hasApiKey = !!process.env.GEMINI_API_KEY;
   
   res.json({
-    vertex_ai_configured: hasProjectId && hasLocation && hasCredentials,
-    project_id: hasProjectId ? process.env.GOOGLE_CLOUD_PROJECT_ID : 'MISSING',
-    location: hasLocation ? process.env.GOOGLE_CLOUD_LOCATION : 'MISSING',
-    credentials: hasCredentials ? 'CONFIGURED' : 'MISSING',
-    status: hasProjectId && hasLocation && hasCredentials ? 'ready' : 'incomplete'
+    gemini_ai_configured: hasApiKey,
+    api_key: hasApiKey ? 'CONFIGURED' : 'MISSING',
+    status: hasApiKey ? 'ready' : 'incomplete'
   });
 });
 
@@ -203,15 +209,10 @@ app.get('/api/missions/:id', (req, res) => {
 // Start server
 const server = createServer(app);
 
-// Setup Vite or static serving based on environment
-if (process.env.NODE_ENV === 'development') {
-  setupVite(app, server).then(() => {
-    console.log('✅ Vite middleware configured for development');
-  }).catch(console.error);
-} else {
-  serveStatic(app);
-  console.log('✅ Production mode: serving static files');
-}
+// Force production mode to avoid Vite host blocking issues in Replit
+console.log('🔧 Forcing production mode to bypass Vite host restrictions');
+serveStatic(app);
+console.log('✅ Production mode: serving static files');
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {

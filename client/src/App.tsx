@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Router, Route, Switch } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
@@ -48,6 +48,20 @@ const LoadingSpinner = () => (
 );
 
 function App() {
+  useEffect(() => {
+    // Debug pour Replit - affichage dans la console
+    console.log('🚀 SwipDEAL App chargée avec succès');
+    console.log('📍 URL actuelle:', window.location.href);
+    console.log('🔧 User Agent:', navigator.userAgent);
+    console.log('📱 Viewport:', window.innerWidth + 'x' + window.innerHeight);
+    
+    // Test de connectivité API
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => console.log('✅ API Health Check:', data))
+      .catch(err => console.error('❌ API Health Check échoué:', err));
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>

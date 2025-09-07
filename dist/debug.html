@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipDEAL - Debug Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .status {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 SwipDEAL - Page de Diagnostic</h1>
+    
+    <div class="debug-info">
+        <h3>✅ Statut de l'Application</h3>
+        <p class="status">Cette page s'affiche correctement dans Replit !</p>
+        <p>Si vous voyez cette page, cela signifie que le serveur web fonctionne.</p>
+    </div>
+
+    <div class="debug-info">
+        <h3>🌐 Informations de Connexion</h3>
+        <p><strong>URL actuelle:</strong> <span id="current-url"></span></p>
+        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+        <p><strong>Viewport:</strong> <span id="viewport"></span></p>
+    </div>
+
+    <div class="debug-info">
+        <h3>🔍 Test API</h3>
+        <p><strong>Statut API:</strong> <span id="api-status">Test en cours...</span></p>
+        <pre id="api-response"></pre>
+    </div>
+
+    <div class="debug-info">
+        <h3>🎯 Navigation</h3>
+        <p><a href="/">← Retour à l'application principale</a></p>
+    </div>
+
+    <script>
+        // Affichage des informations de debug
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('viewport').textContent = window.innerWidth + 'x' + window.innerHeight;
+
+        // Test de l'API
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-status').textContent = '✅ API fonctionnelle';
+                document.getElementById('api-status').className = 'status';
+                document.getElementById('api-response').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('api-status').textContent = '❌ Erreur API';
+                document.getElementById('api-status').className = 'error';
+                document.getElementById('api-response').textContent = 'Erreur: ' + error.message;
+            });
+    </script>
+</body>
+</html>

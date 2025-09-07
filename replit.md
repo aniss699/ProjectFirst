@@ -26,7 +26,7 @@ SwipDEAL est une plateforme moderne de mise en relation entre clients et prestat
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **Backend**: Node.js, Express, TypeScript
 - **Database**: PostgreSQL avec Drizzle ORM
-- **AI Integration**: Google Gemini, OpenAI
+- **AI Integration**: Google Gemini API
 - **UI Components**: Radix UI, Lucide React
 
 ### Database Configuration
