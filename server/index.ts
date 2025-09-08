@@ -32,6 +32,39 @@ console.log('🔗 Database configuration:', {
   NODE_ENV: process.env.NODE_ENV
 });
 
+// Vérifier et créer les comptes démo au démarrage
+async function ensureDemoAccounts() {
+  try {
+    const { Pool } = await import('pg');
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const { users } = await import('../shared/schema.js');
+    const { eq } = await import('drizzle-orm');
+
+    const pool = new Pool({ connectionString: databaseUrl });
+    const db = drizzle(pool);
+    
+    // Vérifier si les comptes démo existent
+    const existingAccounts = await db.select().from(users).where(
+      eq(users.email, 'demo@swideal.com')
+    );
+    
+    if (existingAccounts.length === 0) {
+      console.log('🔧 Création des comptes démo...');
+      await import('./seed-demo.js');
+      console.log('✅ Comptes démo créés automatiquement');
+    } else {
+      console.log('✅ Comptes démo déjà présents');
+    }
+    
+    await pool.end();
+  } catch (error) {
+    console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', error.message);
+  }
+}
+
+// Exécuter la vérification au démarrage (non bloquant)
+ensureDemoAccounts();
+
 // Stockage temporaire des missions
 const missions: Mission[] = [
   {
