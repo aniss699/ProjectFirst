@@ -37,16 +37,17 @@ export default function Home() {
           <div className="relative z-10">
             {/* Titre principal professionnel */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-700 to-indigo-700 mb-6 leading-tight tracking-tight">
-              Trouvez le prestataire<br />
+              Ne cherche plus<br />
               <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-                qui vous correspond
+                le meilleur prix
               </span>
             </h1>
 
             {/* Sous-titre élégant */}
             <div className="relative inline-block">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-gray-700 via-blue-600 to-indigo-600">
-                en toute simplicité</h2></div>
+                il vient à toi !</h2>
+            </div>
           </div>
         </div>
 
