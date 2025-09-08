@@ -50,7 +50,8 @@ async function ensureDemoAccounts() {
     
     if (existingAccounts.length === 0) {
       console.log('🔧 Création des comptes démo...');
-      await import('./seed-demo.js');
+      const { execSync } = await import('child_process');
+      execSync('tsx server/seed-demo.ts', { stdio: 'inherit' });
       console.log('✅ Comptes démo créés automatiquement');
     } else {
       console.log('✅ Comptes démo déjà présents');
