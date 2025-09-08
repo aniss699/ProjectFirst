@@ -36,7 +36,7 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
@@ -74,7 +74,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const progress = ((currentStep + 1) / 5) * 100;
+  const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
 
   // Fonction pour créer la mission via l'API
   const createMission = async () => {
@@ -320,6 +320,56 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
       </div>
     );
   };
+
+  // Étape -1 (Niveau 0): Présentation de Swideal
+  const renderStepMinus1 = () => (
+    <div className="text-center space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-left space-y-4 bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-blue-100">
+          <p className="text-lg leading-relaxed text-gray-800 font-medium">
+            <span className="text-blue-600 font-bold">Swideal</span> place le <span className="text-blue-600 font-semibold">client</span> au cœur du modèle.
+          </p>
+          <p className="text-lg leading-relaxed text-gray-800 font-medium">
+            Notre approche repose sur deux leviers puissants :
+          </p>
+          
+          <div className="space-y-4 mt-6">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
+              <h3 className="text-lg font-bold text-blue-800 mb-3">
+                1️⃣ L'enchère inversée
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                Fini les heures perdues à chercher et comparer. Le <span className="text-blue-600 font-semibold">client</span> décrit son besoin et ce sont les <span className="text-green-600 font-semibold">prestataires</span> qui rivalisent pour lui offrir le meilleur deal, en qualité, en prix et en rapidité.
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500">
+              <h3 className="text-lg font-bold text-green-800 mb-3">
+                2️⃣ La mise en relation stratégique
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                Chacun peut tirer parti des connaissances et du réseau des autres pour être connecté directement à la bonne personne, au bon moment. Vous aussi, valorisez votre réseau.
+              </p>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200 mt-6">
+            <p className="text-lg text-gray-800 leading-relaxed font-medium">
+              En combinant ces deux axes, <span className="text-purple-600 font-bold">Swideal</span> transforme la mise en relation en véritable <span className="text-purple-600 font-semibold">art du deal</span> : rapide, ciblée, et toujours au bénéfice du <span className="text-blue-600 font-semibold">client</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <Button 
+        onClick={() => setCurrentStep(0)}
+        className="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 hover:from-blue-700 hover:via-purple-700 hover:to-green-700 text-white text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 font-bold"
+        size="lg"
+      >
+        🚀 Démarrer
+      </Button>
+    </div>
+  );
 
   // Étape 0: Choix du type d'utilisateur
   const renderStep0 = () => (
@@ -897,55 +947,57 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
-  const steps = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {steps[currentStep]()}
+          {steps[currentStep + 1]()}
         </div>
         
-        {/* Bloc de progression compact sous le contenu */}
-        <div className="bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Étape {currentStep + 1} sur 5
-            </span>
-            <span className="text-sm font-semibold text-blue-600">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          
-          {/* Barre de progression avec gradient et animation */}
-          <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-              style={{ width: `${progress}%` }}
-            >
-              {/* Effet de brillance */}
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
+        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
+        {currentStep >= 0 && (
+          <div className="bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Étape {currentStep + 1} sur 5
+              </span>
+              <span className="text-sm font-semibold text-blue-600">
+                {Math.round(((currentStep + 1) / 5) * 100)}%
+              </span>
+            </div>
+            
+            {/* Barre de progression avec gradient et animation */}
+            <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
+                style={{ width: `${((currentStep + 1) / 5) * 100}%` }}
+              >
+                {/* Effet de brillance */}
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
+              </div>
+            </div>
+            
+            {/* Points d'étapes réduits */}
+            <div className="flex justify-between mt-2">
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div key={step} className="flex flex-col items-center">
+                  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    step <= currentStep + 1 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
+                      : 'bg-gray-300'
+                  }`}></div>
+                  <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
+                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
+                  }`}>
+                    {step}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-          
-          {/* Points d'étapes réduits */}
-          <div className="flex justify-between mt-2">
-            {[1, 2, 3, 4, 5].map((step) => (
-              <div key={step} className="flex flex-col items-center">
-                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  step <= currentStep + 1 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
-                    : 'bg-gray-300'
-                }`}></div>
-                <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                  step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
-                }`}>
-                  {step}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
