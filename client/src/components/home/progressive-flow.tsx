@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +68,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     needsLocation: false,
     dynamicFields: {} as Record<string, string | number | boolean>
   });
-  
+
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
@@ -88,7 +87,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     }
 
     setIsCreating(true);
-    
+
     try {
       // Mapper les catégories vers les valeurs acceptées par l'API
       const categoryMapping: Record<string, string> = {
@@ -152,10 +151,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           title: 'Mission créée avec succès !',
           description: 'Votre projet a été publié et est maintenant visible par les prestataires',
         });
-        
+
         // Rediriger vers la page des missions
         setLocation('/missions');
-        
+
         // Appeler le callback s'il existe
         onComplete?.({
           userType,
@@ -200,7 +199,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   // Fonction pour rendre les champs dynamiques
   const renderDynamicFields = (categoryId: string) => {
     const fields = getCategoryDynamicFields(categoryId);
-    
+
     if (fields.length === 0) return null;
 
     const handleFieldChange = (fieldId: string, value: string | number | boolean) => {
@@ -334,10 +333,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               Notre approche repose sur deux leviers puissants :
             </p>
           </div>
-          
+
           <div className="space-y-2">
             <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-blue-500">
-              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
                 <span className="inline-block w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">1</span>
                 L'enchère inversée
               </h3>
@@ -345,18 +344,20 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 Le client décrit son besoin et les prestataires rivalisent pour offrir le meilleur deal.
               </p>
             </div>
-            
-            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-green-500">
-              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center">
+
+            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-green-500 text-center">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
                 <span className="inline-block w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">2</span>
                 La mise en relation stratégique
               </h3>
               <p className="text-xs md:text-sm text-gray-700 leading-snug">
                 Connectez-vous directement à la bonne personne grâce aux réseaux et connaissances partagées.
+                <br />
+                Toi aussi, valorise ton réseau
               </p>
             </div>
           </div>
-          
+
           <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
             <p className="text-xs md:text-sm text-gray-800 leading-snug text-center">
               <strong>Swideal</strong> transforme la mise en relation en véritable <strong>art du deal</strong>.
@@ -364,7 +365,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           </div>
         </div>
       </div>
-      
+
       <Button 
         onClick={() => setCurrentStep(0)}
         className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200"
@@ -386,7 +387,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           Publiez votre projet et recevez des propositions de <span className="text-green-600 font-semibold">prestataires</span> qualifiés
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto progressive-flow-grid">
         <Card 
           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1 group card-shine progressive-flow-card ${
@@ -533,7 +534,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     // Choisir les catégories appropriées selon le type de service
     const categoriesToShow = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const categoryLabel = serviceType === 'mise-en-relation' ? 'expert' : 'projet';
-    
+
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -597,7 +598,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     const categoriesToSearch = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const selectedCat = categoriesToSearch.find(cat => cat.id === selectedCategory);
     const projectLabel = serviceType === 'mise-en-relation' ? 'demande de contact' : 'projet';
-    
+
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -753,7 +754,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 setShowFeedbackButtons(true);
               }}
             />
-            
+
             {/* Boutons feedback IA */}
             {showFeedbackButtons && aiSuggestions && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
@@ -866,7 +867,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               <h3 className="text-lg font-semibold text-gray-900">
                 Où se situe votre projet ?
               </h3>
-              
+
               <InteractiveMap
                 center={projectData.location.lat && projectData.location.lng 
                   ? [projectData.location.lat, projectData.location.lng] 
@@ -887,7 +888,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 showProviders={true}
                 className="h-96"
               />
-              
+
               {projectData.location.address && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm text-blue-800">
@@ -896,7 +897,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                   </p>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Rayon de recherche (km)
@@ -959,10 +960,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
         <div className="px-4 relative progressive-flow-step">
           {steps[currentStep + 1]()}
         </div>
-        
+
         {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
         {currentStep >= 0 && (
-          <div className="bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
                 Étape {currentStep + 1} sur 5
@@ -971,7 +972,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 {Math.round(((currentStep + 1) / 5) * 100)}%
               </span>
             </div>
-            
+
             {/* Barre de progression avec gradient et animation */}
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
@@ -982,7 +983,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
               </div>
             </div>
-            
+
             {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
               {[1, 2, 3, 4, 5].map((step) => (

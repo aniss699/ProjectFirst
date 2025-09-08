@@ -115,13 +115,14 @@ export default function Navbar() {
                 </div>
                 <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </div>
-              <div className="flex flex-col items-start justify-center mobile-brand-text">
+              <div className="flex flex-col items-start justify-center mobile-brand-text ml-1">
                 <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title">
                   SWIDEAL
                 </span>
                 <span className="text-xs sm:text-sm font-semibold tracking-wide leading-none mt-0.5 mobile-brand-subtitle">
-                  <span className="text-gray-900">Le meilleur prix </span>
-                  <span className="text-emerald-600">vient à toi</span>
+                  <span className="text-gray-900">Le meilleur </span>
+                  <span className="text-emerald-600">deal</span>
+                  <span className="text-gray-900"> vient à toi</span>
                 </span>
                 <span className="text-xs text-gray-500 hidden lg:block font-medium leading-none mt-1 mobile-brand-description">
                   IA • Missions • Talents
