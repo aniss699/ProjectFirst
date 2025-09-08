@@ -35,7 +35,7 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
-  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour le niveau 0
+  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
@@ -952,12 +952,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {currentStep === -1 && renderStepMinus1()}
-          {currentStep === 0 && renderStep0()}
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
+          {steps[currentStep + 1]()}
         </div>
 
         {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
