@@ -6,17 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
-import { LogIn, User, Briefcase, Shield, Mail, Lock, Zap, Star, Trophy } from 'lucide-react';
+import { LogIn, User, Briefcase, Shield, Mail, Lock, Zap, Star, Trophy, CheckCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { verifyDemoAccounts } from '@/services/aiService';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const demoAccounts = [
     {
@@ -74,7 +76,7 @@ export default function LoginPage() {
 
       login(data.user);
       setSuccess(data.message);
-      
+
       setTimeout(() => {
         setLocation('/');
       }, 1000);
@@ -90,6 +92,20 @@ export default function LoginPage() {
     setEmail(demoEmail);
     setPassword(demoPassword);
   };
+
+  const handleVerifyDemoAccounts = async () => {
+    setIsVerifying(true);
+    try {
+      const result = await verifyDemoAccounts();
+      setVerificationResult(result);
+      console.log('Résultat vérification:', result);
+    } catch (error) {
+      console.error('Erreur vérification:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
 
   const getColorClasses = (color: string) => {
     const colors = {
@@ -215,7 +231,7 @@ export default function LoginPage() {
             <CardContent className="space-y-4">
               {demoAccounts.map((account, index) => {
                 const colorClasses = getColorClasses(account.color);
-                
+
                 return (
                   <Card 
                     key={index} 
@@ -230,7 +246,7 @@ export default function LoginPage() {
                             {account.icon}
                           </div>
                         </div>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className={`font-semibold ${colorClasses.text}`}>
@@ -240,11 +256,11 @@ export default function LoginPage() {
                               {account.role}
                             </Badge>
                           </div>
-                          
+
                           <p className={`text-sm ${colorClasses.text} mb-2`}>
                             {account.description}
                           </p>
-                          
+
                           <div className="flex flex-wrap gap-2">
                             {account.stats.map((stat, statIndex) => (
                               <div key={statIndex} className={`flex items-center gap-1 text-xs ${colorClasses.text}`}>
@@ -255,7 +271,7 @@ export default function LoginPage() {
                               </div>
                             ))}
                           </div>
-                          
+
                           <div className={`text-xs ${colorClasses.text} mt-2 font-mono`}>
                             📧 {account.email}
                           </div>
@@ -278,6 +294,34 @@ export default function LoginPage() {
                   <li>• Données de marché et métriques avancées</li>
                 </ul>
               </div>
+
+              <Button 
+                onClick={handleVerifyDemoAccounts} 
+                disabled={isVerifying}
+                className="w-full mt-4"
+                data-testid="button-verify-demo"
+              >
+                {isVerifying ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                    Vérification...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Vérifier les comptes démo
+                  </div>
+                )}
+              </Button>
+
+              {verificationResult && (
+                <Alert className="mt-4">
+                  <AlertDescription>
+                    {verificationResult.message}
+                  </AlertDescription>
+                </Alert>
+              )}
+
             </CardContent>
           </Card>
         </div>

@@ -343,4 +343,16 @@ export const aiService = {
   }
 };
 
+// Fonction pour vérifier les comptes démo
+export const verifyDemoAccounts = async () => {
+  try {
+    const response = await fetch('/api/auth/demo-accounts/verify');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erreur vérification comptes démo:', error);
+    return { success: false, error: 'Erreur de connexion' };
+  }
+};
+
 export default aiService;

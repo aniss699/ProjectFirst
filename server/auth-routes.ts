@@ -1,7 +1,7 @@
 import express from 'express';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { users } from '../shared/schema.js';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
@@ -157,6 +157,42 @@ router.get('/demo-users', async (req, res) => {
   } catch (error) {
     console.error('Erreur get demo users:', error);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour vérifier les comptes démo
+router.get('/demo-accounts/verify', async (req, res) => {
+  try {
+    const demoEmails = ['demo@swideal.com', 'prestataire@swideal.com', 'admin@swideal.com'];
+    
+    const demoAccounts = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    })
+    .from(users)
+    .where(sql`${users.email} = ANY(${demoEmails})`);
+
+    const accountsStatus = {
+      client: demoAccounts.find(u => u.email === 'demo@swideal.com'),
+      provider: demoAccounts.find(u => u.email === 'prestataire@swideal.com'),
+      admin: demoAccounts.find(u => u.email === 'admin@swideal.com'),
+      total: demoAccounts.length
+    };
+
+    res.json({
+      success: true,
+      accounts: accountsStatus,
+      allPresent: demoAccounts.length === 3
+    });
+  } catch (error) {
+    console.error('Erreur vérification comptes démo:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erreur lors de la vérification des comptes démo' 
+    });
   }
 });
 
