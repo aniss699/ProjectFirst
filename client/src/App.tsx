@@ -39,6 +39,9 @@ const GroupRequestPage = React.lazy(() => import('@/pages/services/GroupRequestP
 const IaHumanPage = React.lazy(() => import('@/pages/services/IaHumanPage'));
 const OpportunitiesPage = React.lazy(() => import('@/pages/services/OpportunitiesPage'));
 
+// Lazy load the new Favorites page
+const Favorites = React.lazy(() => import('@/pages/favorites'));
+
 
 // Loading component
 const LoadingSpinner = () => (
@@ -54,7 +57,7 @@ function App() {
     console.log('📍 URL actuelle:', window.location.href);
     console.log('🔧 User Agent:', navigator.userAgent);
     console.log('📱 Viewport:', window.innerWidth + 'x' + window.innerHeight);
-    
+
     // Test de connectivité API
     fetch('/api/health')
       .then(res => res.json())
@@ -113,6 +116,8 @@ function App() {
                     <Route path="/admin/feed-metrics" component={AdminFeedMetrics} />
                     <Route path="/test-feedback" component={FeedbackButtonsTest} />
                     <Route path="/login" component={LoginPage} />
+                    {/* Added route for Favorites */}
+                    <Route path="/favorites" component={Favorites} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

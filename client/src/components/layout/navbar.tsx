@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb } from 'lucide-react';
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -225,6 +225,15 @@ export default function Navbar() {
                         Tableau de bord
                       </button>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button
+                        onClick={() => handleNavigation('/favorites')}
+                        className="flex items-center w-full"
+                      >
+                        <Heart className="w-4 h-4 mr-2" />
+                        Mes favoris
+                      </button>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="lg:hidden">
                       <button
                         onClick={() => handleNavigation('/missions')}
@@ -423,6 +432,9 @@ export default function Navbar() {
                         </MobileNavLink>
                         <MobileNavLink href="/messages" icon={MessageSquare}>
                           Messages
+                        </MobileNavLink>
+                        <MobileNavLink href="/favorites" icon={Heart}>
+                          Mes favoris
                         </MobileNavLink>
                       </div>
                     )}
