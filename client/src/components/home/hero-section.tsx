@@ -28,11 +28,11 @@ export function HeroSection() {
           </div>
         </div>
         
-        <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-          Trouvez le <span className="text-green-600 font-bold">prestataire</span> parfait avec l'IA
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
+          Trouvez le prestataire parfait avec l'IA
         </h1>
-        <p className="text-xl text-gray-700 max-w-3xl mx-auto font-medium" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-          Plateforme française d'appels d'offres inversés pour <span className="text-blue-600 font-semibold">clients</span> et <span className="text-green-600 font-semibold">prestataires</span> avec intelligence artificielle avancée.
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
+          Plateforme française d'appels d'offres inversés avec intelligence artificielle.
         </p>
         <div className="flex justify-center gap-3 text-sm">
           <div className="flex items-center text-green-600 font-medium">

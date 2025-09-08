@@ -323,41 +323,43 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
-    <div className="text-center space-y-6 max-w-4xl mx-auto">
-      <div className="space-y-6 animate-fade-in">
-        <div className="bg-white rounded-lg p-6 md:p-8 shadow-sm border border-gray-200">
-          <div className="text-center mb-6">
-            <p className="text-lg md:text-xl text-gray-900 font-semibold mb-2">
+    <div className="text-center space-y-3 max-w-3xl mx-auto">
+      <div className="space-y-3 animate-fade-in">
+        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm border border-gray-200">
+          <div className="text-center mb-3">
+            <p className="text-base md:text-lg text-gray-900 font-semibold mb-1">
               <span className="text-blue-600">Swideal</span> place le client au cœur du modèle.
             </p>
-            <p className="text-gray-600">
+            <p className="text-sm text-gray-600">
               Notre approche repose sur deux leviers puissants :
             </p>
           </div>
           
-          <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4 md:p-5 border-l-4 border-blue-500">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">
-                1️⃣ L'enchère inversée
+          <div className="space-y-2">
+            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-blue-500">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center">
+                <span className="inline-block w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">1</span>
+                L'enchère inversée
               </h3>
-              <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-                Fini les heures perdues à chercher et comparer. Le client décrit son besoin et ce sont les prestataires qui rivalisent pour lui offrir le meilleur deal, en qualité, en prix et en rapidité.
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Le client décrit son besoin et les prestataires rivalisent pour offrir le meilleur deal.
               </p>
             </div>
             
-            <div className="bg-gray-50 rounded-lg p-4 md:p-5 border-l-4 border-green-500">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">
-                2️⃣ La mise en relation stratégique
+            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-green-500">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center">
+                <span className="inline-block w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">2</span>
+                La mise en relation stratégique
               </h3>
-              <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-                Chacun peut tirer parti des connaissances et du réseau des autres pour être connecté directement à la bonne personne, au bon moment. Vous aussi, valorisez votre réseau.
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Connectez-vous directement à la bonne personne grâce aux réseaux et connaissances partagées.
               </p>
             </div>
           </div>
           
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-sm md:text-base text-gray-800 leading-relaxed text-center">
-              En combinant ces deux axes, <strong>Swideal</strong> transforme la mise en relation en véritable <strong>art du deal</strong> : rapide, ciblée, et toujours au bénéfice du client.
+          <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs md:text-sm text-gray-800 leading-snug text-center">
+              <strong>Swideal</strong> transforme la mise en relation en véritable <strong>art du deal</strong>.
             </p>
           </div>
         </div>
