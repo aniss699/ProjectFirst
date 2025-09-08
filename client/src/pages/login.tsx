@@ -12,6 +12,7 @@ import { verifyDemoAccounts } from '@/services/aiService';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
