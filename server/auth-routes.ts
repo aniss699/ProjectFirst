@@ -196,4 +196,158 @@ router.get('/demo-accounts/verify', async (req, res) => {
   }
 });
 
+// Route pour diagnostiquer les comptes démo en production
+router.get('/debug/demo-accounts', async (req, res) => {
+  try {
+    console.log('🔍 Diagnostic des comptes démo...');
+    
+    // Vérifier tous les utilisateurs
+    const allUsers = await db.select({
+      id: users.id,
+      email: users.email, 
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    }).from(users);
+
+    // Vérifier spécifiquement les comptes démo avec mots de passe
+    const demoUsers = await db.select().from(users)
+      .where(sql`${users.email} IN ('demo@swideal.com', 'prestataire@swideal.com', 'admin@swideal.com')`);
+
+    res.json({
+      debug: true,
+      timestamp: new Date().toISOString(),
+      database_url_exists: !!process.env.DATABASE_URL,
+      total_users: allUsers.length,
+      all_users: allUsers,
+      demo_accounts_found: demoUsers.length,
+      demo_accounts: demoUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        password_length: user.password?.length || 0,
+        password_is_demo123: user.password === 'demo123',
+        password_is_admin123: user.password === 'admin123',
+        created_at: user.created_at
+      }))
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur diagnostic:', error);
+    res.status(500).json({ 
+      error: 'Erreur lors du diagnostic', 
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Route pour forcer la création des comptes démo
+router.post('/debug/create-demo-accounts', async (req, res) => {
+  try {
+    console.log('🛠️ Création forcée des comptes démo...');
+    
+    // Données des comptes démo
+    const demoAccounts = [
+      {
+        email: 'demo@swideal.com',
+        password: 'demo123',
+        name: 'Emma Rousseau',
+        role: 'CLIENT',
+        rating_mean: '0',
+        rating_count: 0,
+        profile_data: {
+          company: 'TechStart Innovation',
+          sector: 'SaaS',
+          projects_posted: 0,
+          total_budget_spent: 0,
+          verified: true,
+          phone: '+33 1 45 67 89 12',
+          location: 'Paris, France'
+        }
+      },
+      {
+        email: 'prestataire@swideal.com',
+        password: 'demo123',
+        name: 'Julien Moreau',
+        role: 'PRO',
+        rating_mean: '0',
+        rating_count: 0,
+        profile_data: {
+          specialties: ['React', 'Node.js', 'TypeScript', 'Python'],
+          hourly_rate: 65,
+          availability: 'Disponible',
+          experience_years: 5,
+          completed_projects: 0,
+          success_rate: 0,
+          response_time_hours: 4,
+          certifications: ['React Developer'],
+          portfolio_url: 'https://julienmoreau.dev',
+          linkedin: 'https://linkedin.com/in/julienmoreau',
+          phone: '+33 6 78 90 12 34',
+          location: 'Lyon, France'
+        }
+      },
+      {
+        email: 'admin@swideal.com',
+        password: 'admin123',
+        name: 'Clara Dubois',
+        role: 'ADMIN',
+        profile_data: {
+          department: 'Platform Management',
+          access_level: 'full',
+          phone: '+33 1 56 78 90 12'
+        }
+      }
+    ];
+
+    const results = [];
+    for (const account of demoAccounts) {
+      try {
+        // Vérifier si le compte existe déjà
+        const existingUser = await db.select().from(users).where(eq(users.email, account.email)).limit(1);
+        
+        if (existingUser.length > 0) {
+          results.push({ 
+            email: account.email, 
+            status: 'exists', 
+            message: 'Compte déjà existant' 
+          });
+        } else {
+          // Créer le compte
+          const [newUser] = await db.insert(users).values(account).returning();
+          results.push({ 
+            email: account.email, 
+            status: 'created', 
+            id: newUser.id,
+            message: 'Compte créé avec succès' 
+          });
+        }
+      } catch (error) {
+        results.push({ 
+          email: account.email, 
+          status: 'error', 
+          message: error.message 
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Création des comptes démo terminée',
+      results,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur création comptes démo:', error);
+    res.status(500).json({ 
+      error: 'Erreur lors de la création des comptes démo', 
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default router;
