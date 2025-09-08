@@ -323,38 +323,40 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
-    <div className="text-center space-y-6 max-w-4xl mx-auto">
-      <div className="space-y-6 animate-fade-in">
-        <div className="text-left space-y-4 bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-blue-100">
-          <p className="text-lg leading-relaxed text-gray-800 font-medium">
-            <span className="text-blue-600 font-bold">Swideal</span> place le <span className="text-blue-600 font-semibold">client</span> au cœur du modèle.
-          </p>
-          <p className="text-lg leading-relaxed text-gray-800 font-medium">
-            Notre approche repose sur deux leviers puissants :
-          </p>
+    <div className="text-center space-y-3 max-w-4xl mx-auto">
+      <div className="space-y-3 animate-fade-in">
+        <div className="text-left space-y-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 md:p-6 shadow-lg border border-blue-100">
+          <div className="text-center mb-3">
+            <p className="text-base md:text-lg leading-tight text-gray-800 font-medium">
+              <span className="text-blue-600 font-bold">Swideal</span> place le <span className="text-blue-600 font-semibold">client</span> au cœur du modèle.
+            </p>
+            <p className="text-sm md:text-base text-gray-700 mt-1">
+              Notre approche repose sur deux leviers puissants :
+            </p>
+          </div>
           
-          <div className="space-y-4 mt-6">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
-              <h3 className="text-lg font-bold text-blue-800 mb-3">
+          <div className="space-y-3">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 md:p-4 border-l-3 border-blue-500">
+              <h3 className="text-sm md:text-base font-bold text-blue-800 mb-2">
                 1️⃣ L'enchère inversée
               </h3>
-              <p className="text-gray-700 leading-relaxed">
-                Fini les heures perdues à chercher et comparer. Le <span className="text-blue-600 font-semibold">client</span> décrit son besoin et ce sont les <span className="text-green-600 font-semibold">prestataires</span> qui rivalisent pour lui offrir le meilleur deal, en qualité, en prix et en rapidité.
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Fini les heures perdues à chercher et comparer. Le <span className="text-blue-600 font-semibold">client</span> décrit son besoin et ce sont les <span className="text-green-600 font-semibold">prestataires</span> qui rivalisent pour lui offrir le meilleur deal.
               </p>
             </div>
             
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500">
-              <h3 className="text-lg font-bold text-green-800 mb-3">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 md:p-4 border-l-3 border-green-500">
+              <h3 className="text-sm md:text-base font-bold text-green-800 mb-2">
                 2️⃣ La mise en relation stratégique
               </h3>
-              <p className="text-gray-700 leading-relaxed">
-                Chacun peut tirer parti des connaissances et du réseau des autres pour être connecté directement à la bonne personne, au bon moment. Vous aussi, valorisez votre réseau.
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Chacun peut tirer parti des connaissances et du réseau des autres pour être connecté directement à la bonne personne, au bon moment.
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200 mt-6">
-            <p className="text-lg text-gray-800 leading-relaxed font-medium">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 md:p-4 border border-purple-200 mt-3">
+            <p className="text-xs md:text-sm text-gray-800 leading-snug font-medium text-center">
               En combinant ces deux axes, <span className="text-purple-600 font-bold">Swideal</span> transforme la mise en relation en véritable <span className="text-purple-600 font-semibold">art du deal</span> : rapide, ciblée, et toujours au bénéfice du <span className="text-blue-600 font-semibold">client</span>.
             </p>
           </div>
@@ -363,7 +365,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
       
       <Button 
         onClick={() => setCurrentStep(0)}
-        className="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 hover:from-blue-700 hover:via-purple-700 hover:to-green-700 text-white text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 font-bold"
+        className="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 hover:from-blue-700 hover:via-purple-700 hover:to-green-700 text-white text-sm md:text-base px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 font-bold mt-4"
         size="lg"
       >
         🚀 Démarrer

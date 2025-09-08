@@ -913,6 +913,41 @@ button:focus-visible {
   z-index: 100 !important;
 }
 
+/* Optimisations spécifiques pour le niveau 0 mobile */
+@media (max-width: 768px) {
+  .progressive-flow-container {
+    padding: 0.5rem !important;
+  }
+  
+  /* Réduction des espacements pour le niveau 0 */
+  .progressive-flow-step:has(div:first-child > div > div > div > div:first-child > p:contains("Swideal")) {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Assurer la compacité du contenu */
+  .space-y-3 > * + * {
+    margin-top: 0.5rem !important;
+  }
+  
+  /* Optimisation des bordures pour mobile */
+  .border-l-3 {
+    border-left-width: 2px !important;
+  }
+  
+  /* Ajustement des tailles de texte pour mobile */
+  .leading-snug {
+    line-height: 1.2 !important;
+  }
+  
+  /* Optimisation du bouton démarrer */
+  .progressive-flow-container button[class*="gradient"] {
+    width: 100% !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+  }
+}
+
 .dropdown-menu {
   z-index: 100;
 }
