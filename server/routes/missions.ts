@@ -59,11 +59,10 @@ router.get('/', async (req, res) => {
       mission.status === 'open' || !mission.status
     );
     
-    res.json({ 
-      ok: true, 
-      missions,
-      total: missions.length 
-    });
+    console.log(`📋 Récupération de ${missions.length} missions pour marketplace`);
+    
+    // Retourner directement le tableau pour compatibility avec react-query
+    res.json(missions);
   } catch (error) {
     console.error('Get missions error:', error);
     res.status(500).json({ error: 'Erreur serveur' });

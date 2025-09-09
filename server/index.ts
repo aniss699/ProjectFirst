@@ -251,7 +251,7 @@ app.post('/api/missions', async (req, res) => {
   try {
     // Ajouter à la mémoire locale
     missions.push(newMission);
-    
+
     // Ajouter au stockage global
     if (!global.missions) {
       global.missions = [];
