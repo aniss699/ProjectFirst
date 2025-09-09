@@ -47,6 +47,19 @@ args = "pkill -f \"npm run dev\" || true"
 task = "shell.exec"
 args = "npm run dev"
 
+[[workflows.workflow]]
+name = "Preview Build"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PREVIEW_MODE=true npm run dev"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
