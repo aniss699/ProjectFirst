@@ -44,7 +44,7 @@ __export(schema_exports, {
   reviews: () => reviews,
   users: () => users
 });
-import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real, json } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 var users, projects, bids, insertUserSchema, insertProjectSchema, insertBidSchema, announcements, feedFeedback, feedSeen, favorites, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, aiEvents, locations, reviews, badges, reviewHelpful, reputationMetrics, insertLocationSchema, insertReviewSchema, insertBadgeSchema, insertReviewHelpfulSchema, insertReputationMetricSchema, missions, insertMissionSchema;
 var init_schema = __esm({
@@ -239,19 +239,21 @@ var init_schema = __esm({
       id: serial("id").primaryKey(),
       title: text("title").notNull(),
       description: text("description").notNull(),
-      category: text("category").notNull().default("developpement"),
-      budget: integer("budget"),
+      category: text("category"),
       budget_min: integer("budget_min"),
       budget_max: integer("budget_max"),
       location: text("location"),
-      urgency: text("urgency").default("medium"),
-      requirements: text("requirements"),
-      tags: json("tags").$type().default([]),
-      deadline: timestamp("deadline"),
+      client_id: integer("client_id").references(() => users.id),
+      provider_id: integer("provider_id").references(() => users.id),
       status: text("status").default("published"),
       created_at: timestamp("created_at").defaultNow(),
       updated_at: timestamp("updated_at").defaultNow(),
-      client_id: integer("client_id").notNull()
+      deadline: timestamp("deadline"),
+      skills_required: text("skills_required").array(),
+      is_team_mission: boolean("is_team_mission").default(false),
+      team_size: integer("team_size").default(1),
+      urgency: text("urgency"),
+      remote_allowed: boolean("remote_allowed").default(true)
     });
     insertMissionSchema = createInsertSchema(missions);
   }
@@ -2217,15 +2219,14 @@ router2.post("/", async (req, res) => {
       } catch (syncError) {
         console.warn("\u26A0\uFE0F Erreur synchronisation feed (non-bloquant):", syncError);
       }
-      res.json(insertedMission);
+      const savedMission = await db2.select().from(missions).where(eq2(missions.id, insertedMission.id)).limit(1);
+      console.log("\u{1F50D} Verification - Mission in DB:", savedMission.length > 0 ? "Found" : "NOT FOUND");
+      res.status(201).json(insertedMission);
     } catch (error) {
       console.error("\u274C Database insertion failed:", error);
       console.error("\u274C Data that failed to insert:", JSON.stringify(missionToInsert, null, 2));
       throw new Error(`Database insertion failed: ${error instanceof Error ? error.message : "Unknown database error"}`);
     }
-    const savedMission = await db2.select().from(missions).where(eq2(missions.id, insertedMission.id)).limit(1);
-    console.log("\u{1F50D} Verification - Mission in DB:", savedMission.length > 0 ? "Found" : "NOT FOUND");
-    res.status(201).json(insertedMission);
   } catch (error) {
     console.error("\u274C Error creating mission:", error);
     console.error("\u274C Error stack:", error instanceof Error ? error.stack : "No stack trace");
