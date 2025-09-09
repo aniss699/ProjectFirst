@@ -1,71 +1,70 @@
 import { Router } from 'express';
-import { z } from 'zod';
+import { eq, desc, sql } from 'drizzle-orm';
+import { db } from '../index.js';
+import { missions } from '../../shared/schema.js';
+
 const router = Router();
 
-const missionSchema = z.object({
-  title: z.string().min(3, 'Le titre doit faire au moins 3 caractères'),
-  description: z.string().min(10, 'La description doit faire au moins 10 caractères'),
-  category: z.string().min(1, 'La catégorie est requise'),
-  budget: z.union([z.string(), z.number()]).transform(val => String(val)),
-  location: z.string().optional().default('Non spécifié'),
-  clientId: z.string().min(1, 'ID client requis'),
-  clientName: z.string().min(1, 'Nom client requis')
-});
-
+// POST /api/missions - Create new mission
 router.post('/', async (req, res) => {
-  console.log('Données reçues pour création mission:', req.body);
-  
-  const parsed = missionSchema.safeParse(req.body);
-  if (!parsed.success) {
-    console.error('Erreur de validation:', parsed.error.flatten());
-    return res.status(400).json({ 
-      error: 'Données invalides', 
-      details: parsed.error.flatten(),
-      received: req.body 
+  try {
+    const missionData = req.body;
+    console.log('📝 Mission creation request received:', JSON.stringify(missionData, null, 2));
+
+    // Validate required fields
+    if (!missionData.title) {
+      console.error('❌ Validation failed: Missing title');
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    if (!missionData.description) {
+      console.error('❌ Validation failed: Missing description');
+      return res.status(400).json({ error: 'Description is required' });
+    }
+
+    // Prepare mission data with defaults
+    const missionToInsert = {
+      ...missionData,
+      status: missionData.status || 'published', // Default to published
+      created_at: new Date(),
+      updated_at: new Date(),
+      client_id: missionData.client_id || 1, // Default client for demo
+    };
+
+    console.log('📤 Inserting mission with data:', JSON.stringify(missionToInsert, null, 2));
+
+    // Insert mission into database
+    const [newMission] = await db.insert(missions).values(missionToInsert).returning();
+
+    console.log('✅ Mission created successfully with ID:', newMission.id);
+    console.log('📊 Full mission object:', JSON.stringify(newMission, null, 2));
+
+    // Verify the mission was actually saved
+    const savedMission = await db.select().from(missions).where(eq(missions.id, newMission.id)).limit(1);
+    console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
+
+    res.status(201).json(newMission);
+  } catch (error) {
+    console.error('❌ Error creating mission:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    res.status(500).json({ 
+      error: 'Failed to create mission',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
-  const data = parsed.data;
-  try {
-    const created = { 
-      id: 'mission-' + Date.now(), 
-      ...data,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      bids: []
-    };
-    
-    // Ajouter au stockage global
-    if (!global.missions) {
-      global.missions = [];
-    }
-    global.missions.push(created);
-    
-    console.log(`✅ Mission créée: ${created.id} - ${created.title}`);
-    res.json({ ok: true, mission: created });
-  } catch (e) {
-    console.error('Create mission error:', e);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
 });
 
-// GET /api/missions - Récupérer toutes les missions
+// GET /api/missions - Get all missions
 router.get('/', async (req, res) => {
   try {
-    if (!global.missions) {
-      global.missions = [];
-    }
-    
-    const missions = global.missions.filter(mission => 
-      mission.status === 'open' || !mission.status
-    );
-    
-    console.log(`📋 Récupération de ${missions.length} missions pour marketplace`);
-    
-    // Retourner directement le tableau pour compatibility avec react-query
-    res.json(missions);
+    console.log('📋 Fetching all missions...');
+    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    console.log(`📋 Found ${allMissions.length} missions in database`);
+    console.log('📋 Missions:', allMissions.map(m => ({ id: m.id, title: m.title, status: m.status })));
+    res.json(allMissions);
   } catch (error) {
-    console.error('Get missions error:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('❌ Error fetching missions:', error);
+    res.status(500).json({ error: 'Failed to fetch missions' });
   }
 });
 

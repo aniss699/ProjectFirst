@@ -1,4 +1,3 @@
-
 import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -367,3 +366,32 @@ export interface LegacyBid {
   flagged: boolean;
   created_at: Date;
 }
+
+// Mission table
+export const missions = pgTable('missions', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  category: text('category'),
+  budget_min: integer('budget_min'),
+  budget_max: integer('budget_max'),
+  location: text('location'),
+  client_id: integer('client_id').references(() => users.id),
+  provider_id: integer('provider_id').references(() => users.id),
+  status: text('status').default('published'), // Changed default to published
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
+  deadline: timestamp('deadline'),
+  skills_required: text('skills_required').array(),
+  is_team_mission: boolean('is_team_mission').default(false),
+  team_size: integer('team_size').default(1),
+  urgency: text('urgency'),
+  remote_allowed: boolean('remote_allowed').default(true),
+});
+
+// Types for missions
+export type Mission = typeof missions.$inferSelect;
+export type NewMission = typeof missions.$inferInsert;
+
+// Schemas Zod for missions
+export const insertMissionSchema = createInsertSchema(missions);
