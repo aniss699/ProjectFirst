@@ -324,6 +324,8 @@ router.get('/users/:userId/bids', async (req, res) => {
       .from(bidTable)
       .where(eq(bidTable.provider_id, userIdInt))
       .orderBy(desc(bidTable.created_at));
+    
+    console.log('🔗 Mapping: userId =', userId, '-> provider_id filter:', userIdInt);
 
     console.log(`👤 Found ${userBids.length} bids for user ${userId}`);
     res.json(userBids);

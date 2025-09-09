@@ -34,7 +34,7 @@ export class MissionSyncService {
             city: mission.location || null,
             budget_min: budgetValue.toString(),
             budget_max: budgetValue.toString(),
-            user_id: 1,
+            user_id: parseInt(mission.clientId) || 1, // utiliser mission.clientId qui correspond à user.id
             status: mission.status === 'open' ? 'active' : 'inactive',
             quality_score: '0.8',
             created_at: new Date(mission.createdAt)
@@ -59,7 +59,7 @@ export class MissionSyncService {
         city: mission.location || null,
         budget_min: budgetValue.toString(),
         budget_max: budgetValue.toString(),
-        user_id: 1, // TODO: utiliser le vrai user_id depuis l'auth
+        user_id: parseInt(mission.clientId) || 1, // utiliser mission.clientId qui correspond à user.id
         status: 'active',
         quality_score: '0.8' // Score par défaut
       });

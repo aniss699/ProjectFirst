@@ -6,7 +6,7 @@ export interface Mission {
   category: string;
   budget: string;
   location?: string;
-  clientId: string;
+  clientId: string; // clientId = user.id du client
   clientName: string;
   status: 'open' | 'in_progress' | 'completed' | 'closed';
   createdAt: string;
@@ -59,7 +59,7 @@ export interface ProfessionRequirement {
 export interface Bid {
   id: string;
   missionId: string;
-  providerId: string;
+  providerId: string; // providerId = user.id du prestataire
   amount: number;
   message: string;
   createdAt: string;
