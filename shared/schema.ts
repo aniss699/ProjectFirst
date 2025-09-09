@@ -367,24 +367,26 @@ export interface LegacyBid {
   created_at: Date;
 }
 
-// Mission table
+// Mission table - corrected to match actual database structure
 export const missions = pgTable('missions', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
   description: text('description').notNull(),
-  category: text('category').notNull().default('developpement'),
-  budget: integer('budget'),
+  category: text('category'),
   budget_min: integer('budget_min'),
   budget_max: integer('budget_max'),
   location: text('location'),
-  urgency: text('urgency').default('medium'),
-  requirements: text('requirements'),
-  tags: json('tags').$type<string[]>().default([]),
-  deadline: timestamp('deadline'),
+  client_id: integer('client_id').references(() => users.id),
+  provider_id: integer('provider_id').references(() => users.id),
   status: text('status').default('published'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
-  client_id: integer('client_id').notNull(),
+  deadline: timestamp('deadline'),
+  skills_required: text('skills_required').array(),
+  is_team_mission: boolean('is_team_mission').default(false),
+  team_size: integer('team_size').default(1),
+  urgency: text('urgency'),
+  remote_allowed: boolean('remote_allowed').default(true),
 });
 
 // Types for missions
