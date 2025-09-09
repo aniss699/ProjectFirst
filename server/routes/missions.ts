@@ -93,8 +93,9 @@ router.post('/', async (req, res) => {
     // Synchronisation avec le feed en arrière-plan (non-bloquant)
     setImmediate(async () => {
       try {
-        // Use the imported MissionSyncService
-        await MissionSyncService.addMissionToFeed(insertedMission.id);
+        // Use the imported MissionSyncService as an instance
+        const missionSync = new MissionSyncService(process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal');
+        await missionSync.addMissionToFeed(insertedMission);
         console.log('✅ Mission synchronisée avec le feed');
       } catch (syncError) {
         console.error('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);

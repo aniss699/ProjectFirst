@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { announcements } from '../../shared/schema.js';
 import { Mission } from '../types/mission.js';
