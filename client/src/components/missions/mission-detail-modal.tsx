@@ -39,10 +39,25 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
 
   const { data: mission, isLoading, error } = useQuery<MissionWithBids>({
-    queryKey: [`/api/missions/${missionId}`],
+    queryKey: ['mission', missionId],
+    queryFn: async () => {
+      if (!missionId) throw new Error('Mission ID is required');
+      
+      console.log('🔍 Chargement mission ID:', missionId);
+      const response = await fetch(`/api/missions/${missionId}`);
+      
+      if (!response.ok) {
+        console.error('❌ Erreur API mission:', response.status, response.statusText);
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Mission chargée:', data.title);
+      return data;
+    },
     enabled: !!missionId && isOpen,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
@@ -75,11 +90,25 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <div className="p-8 text-center">
             <div className="text-red-500 mb-4">❌</div>
             <p className="text-gray-500 mb-4">
-              {error ? 'Erreur de chargement des données' : 'Mission non trouvée'}
+              {error 
+                ? `Erreur de chargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}` 
+                : 'Mission non trouvée'}
             </p>
-            <Button onClick={onClose} variant="outline">
-              Fermer
-            </Button>
+            <p className="text-xs text-gray-400 mb-4">
+              Mission ID: {missionId || 'Non défini'}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                size="sm"
+              >
+                Recharger
+              </Button>
+              <Button onClick={onClose} variant="outline" size="sm">
+                Fermer
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

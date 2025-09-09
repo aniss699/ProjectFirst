@@ -152,6 +152,49 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/missions/:id - Get a specific mission with bids
+app.get('/api/missions/:id', async (req, res) => {
+  try {
+    const missionId = req.params.id;
+    console.log('🔍 API: Récupération mission ID:', missionId);
+
+    if (!missionId || missionId === 'undefined' || missionId === 'null') {
+      console.error('❌ API: Mission ID invalide:', missionId);
+      return res.status(400).json({ error: 'Mission ID invalide' });
+    }
+
+    const mission = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.id, missionId))
+      .limit(1);
+
+    if (mission.length === 0) {
+      console.error('❌ API: Mission non trouvée:', missionId);
+      return res.status(404).json({ error: 'Mission non trouvée' });
+    }
+
+    const bids = await db
+      .select()
+      .from(bidTable)
+      .where(eq(bidTable.missionId, missionId));
+
+    const result = {
+      ...mission[0],
+      bids: bids || []
+    };
+
+    console.log('✅ API: Mission trouvée:', result.title, 'avec', result.bids.length, 'offres');
+    res.json(result);
+  } catch (error) {
+    console.error('❌ API: Erreur récupération mission:', error);
+    res.status(500).json({
+      error: 'Erreur interne du serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    });
+  }
+});
+
 // GET /api/missions/debug - Diagnostic endpoint
 router.get('/debug', async (req, res) => {
   try {
