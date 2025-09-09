@@ -49,6 +49,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
+  const [isSubmitting, setIsSubmitting] = useState(false); // State pour le bouton de soumission
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
@@ -104,7 +105,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
         if (response.ok) {
           const analysis = await response.json();
-          
+
           // Créer le projet avec l'équipe analysée
           const createResponse = await fetch('/api/team/create-project', {
             method: 'POST',
@@ -128,10 +129,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               title: 'Projet équipe créé !',
               description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
             });
-            
+
             // Invalider le cache des missions pour forcer le rechargement
             queryClient.invalidateQueries({ queryKey: ['missions'] });
-            
+
             // Rediriger vers les missions
             setLocation('/missions');
             onComplete?.({
@@ -187,10 +188,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             title: 'Mission créée avec succès !',
             description: 'Votre projet a été publié et est maintenant visible par les prestataires.',
           });
-          
+
           // Invalider le cache des missions
           queryClient.invalidateQueries({ queryKey: ['missions'] });
-          
+
           // Rediriger vers les missions
           setLocation('/missions');
           onComplete?.({
@@ -214,6 +215,67 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // --- Nouvelle fonction handleSubmitMission modifiée ---
+  const handleSubmitMission = async (formData: any) => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour créer une mission",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Préparer les données selon le schéma attendu
+      const missionData = {
+        title: formData.title || formData.need?.substring(0, 50) || 'Mission sans titre',
+        description: formData.description || formData.need || '',
+        category: formData.category || 'service',
+        budget: formData.budget || formData.maxBudget || formData.monthlyBudget || formData.pricePerParticipant || '100',
+        location: formData.location || 'Non spécifié',
+        clientId: user.id || 'demo-client',
+        clientName: user.name || user.email || 'Client anonyme'
+      };
+
+      console.log('Données envoyées:', missionData);
+
+      const response = await fetch('/api/missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(missionData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Erreur serveur:', result);
+        throw new Error(result.error || 'Erreur lors de la création de la mission');
+      }
+
+      console.log('Mission créée avec succès:', result);
+
+      toast({
+        title: "Mission créée !",
+        description: "Votre mission a été publiée avec succès",
+      });
+
+      onComplete?.(result);
+    } catch (error) {
+      console.error('Erreur création mission:', error);
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de créer la mission. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

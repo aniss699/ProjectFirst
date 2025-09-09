@@ -3,19 +3,26 @@ import { z } from 'zod';
 const router = Router();
 
 const missionSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().min(10),
-  category: z.string().min(2),
-  budget: z.union([z.string(), z.number()]),
-  location: z.string().optional(),
-  clientId: z.string(),
-  clientName: z.string()
+  title: z.string().min(3, 'Le titre doit faire au moins 3 caractères'),
+  description: z.string().min(10, 'La description doit faire au moins 10 caractères'),
+  category: z.string().min(1, 'La catégorie est requise'),
+  budget: z.union([z.string(), z.number()]).transform(val => String(val)),
+  location: z.string().optional().default('Non spécifié'),
+  clientId: z.string().min(1, 'ID client requis'),
+  clientName: z.string().min(1, 'Nom client requis')
 });
 
 router.post('/', async (req, res) => {
+  console.log('Données reçues pour création mission:', req.body);
+  
   const parsed = missionSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Données invalides', details: parsed.error.flatten() });
+    console.error('Erreur de validation:', parsed.error.flatten());
+    return res.status(400).json({ 
+      error: 'Données invalides', 
+      details: parsed.error.flatten(),
+      received: req.body 
+    });
   }
   const data = parsed.data;
   try {
