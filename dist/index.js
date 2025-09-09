@@ -504,16 +504,16 @@ var init_geminiAdapter = __esm({
 });
 
 // apps/api/src/ai/learning-engine.ts
-import { drizzle as drizzle5 } from "drizzle-orm/node-postgres";
-import { Pool as Pool5 } from "pg";
-import { desc as desc2, eq as eq4, and, gte } from "drizzle-orm";
-var pool4, db4, AILearningEngine, aiLearningEngine;
+import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
+import { Pool as Pool4 } from "pg";
+import { desc as desc2, eq as eq3, and, gte } from "drizzle-orm";
+var pool3, db3, AILearningEngine, aiLearningEngine;
 var init_learning_engine = __esm({
   "apps/api/src/ai/learning-engine.ts"() {
     "use strict";
     init_schema();
-    pool4 = new Pool5({ connectionString: process.env.DATABASE_URL });
-    db4 = drizzle5(pool4);
+    pool3 = new Pool4({ connectionString: process.env.DATABASE_URL });
+    db3 = drizzle4(pool3);
     AILearningEngine = class {
       patterns = /* @__PURE__ */ new Map();
       insights = [];
@@ -523,8 +523,8 @@ var init_learning_engine = __esm({
       async analyzePastInteractions(limit = 1e3) {
         try {
           console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
-          const recentInteractions = await db4.select().from(aiEvents).where(and(
-            eq4(aiEvents.provider, "gemini-api"),
+          const recentInteractions = await db3.select().from(aiEvents).where(and(
+            eq3(aiEvents.provider, "gemini-api"),
             gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
             // 30 jours
           )).orderBy(desc2(aiEvents.created_at)).limit(limit);
@@ -1607,7 +1607,7 @@ Score entre 0.0 (tr\xE8s vague) et 1.0 (tr\xE8s d\xE9taill\xE9).`;
 });
 
 // server/index.ts
-import express7 from "express";
+import express6 from "express";
 import path3 from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
@@ -1822,317 +1822,28 @@ function validateEnvironment() {
 }
 
 // server/index.ts
-import { Pool as Pool6 } from "pg";
+import { Pool as Pool5 } from "pg";
 import cors from "cors";
-
-// server/auth-routes.ts
-init_schema();
-import express2 from "express";
-import { Pool as Pool2 } from "pg";
-import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
-import { eq, sql as sql2 } from "drizzle-orm";
-var pool = new Pool2({ connectionString: process.env.DATABASE_URL });
-var db = drizzle2(pool);
-var router = express2.Router();
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
-    }
-    const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (user.length === 0) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
-    const userData = user[0];
-    if (userData.password !== password) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
-    const userSession = {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name,
-      role: userData.role,
-      rating_mean: userData.rating_mean,
-      rating_count: userData.rating_count,
-      profile_data: userData.profile_data,
-      created_at: userData.created_at
-    };
-    res.json({
-      success: true,
-      user: userSession,
-      message: `Bienvenue ${userData.name || userData.email} !`
-    });
-  } catch (error) {
-    console.error("Erreur login:", error);
-    res.status(500).json({ error: "Erreur serveur lors de la connexion" });
-  }
-});
-router.post("/register", async (req, res) => {
-  try {
-    const { email, password, name, role = "CLIENT" } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
-    }
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (existingUser.length > 0) {
-      return res.status(409).json({ error: "Un compte existe d\xE9j\xE0 avec cet email" });
-    }
-    const [newUser] = await db.insert(users).values({
-      email,
-      password,
-      // En production, hasher avec bcrypt
-      name,
-      role,
-      profile_data: {}
-    }).returning();
-    const userSession = {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.role,
-      rating_mean: newUser.rating_mean,
-      rating_count: newUser.rating_count,
-      profile_data: newUser.profile_data,
-      created_at: newUser.created_at
-    };
-    res.status(201).json({
-      success: true,
-      user: userSession,
-      message: "Compte cr\xE9\xE9 avec succ\xE8s !"
-    });
-  } catch (error) {
-    console.error("Erreur register:", error);
-    res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du compte" });
-  }
-});
-router.get("/profile/:id", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    if (user.length === 0) {
-      return res.status(404).json({ error: "Utilisateur non trouv\xE9" });
-    }
-    const userData = user[0];
-    const userProfile = {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name,
-      role: userData.role,
-      rating_mean: userData.rating_mean,
-      rating_count: userData.rating_count,
-      profile_data: userData.profile_data,
-      created_at: userData.created_at
-    };
-    res.json({ user: userProfile });
-  } catch (error) {
-    console.error("Erreur get profile:", error);
-    res.status(500).json({ error: "Erreur serveur lors de la r\xE9cup\xE9ration du profil" });
-  }
-});
-router.get("/demo-users", async (req, res) => {
-  try {
-    const demoUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      profile_data: users.profile_data
-    }).from(users);
-    res.json({
-      users: demoUsers,
-      message: "Utilisateurs de d\xE9monstration disponibles"
-    });
-  } catch (error) {
-    console.error("Erreur get demo users:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-router.get("/demo-accounts/verify", async (req, res) => {
-  try {
-    const demoEmails = ["demo@swideal.com", "prestataire@swideal.com", "admin@swideal.com"];
-    const demoAccounts = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      created_at: users.created_at
-    }).from(users).where(sql2`${users.email} = ANY(${demoEmails})`);
-    const accountsStatus = {
-      client: demoAccounts.find((u) => u.email === "demo@swideal.com"),
-      provider: demoAccounts.find((u) => u.email === "prestataire@swideal.com"),
-      admin: demoAccounts.find((u) => u.email === "admin@swideal.com"),
-      total: demoAccounts.length
-    };
-    res.json({
-      success: true,
-      accounts: accountsStatus,
-      allPresent: demoAccounts.length === 3
-    });
-  } catch (error) {
-    console.error("Erreur v\xE9rification comptes d\xE9mo:", error);
-    res.status(500).json({
-      success: false,
-      error: "Erreur lors de la v\xE9rification des comptes d\xE9mo"
-    });
-  }
-});
-router.get("/debug/demo-accounts", async (req, res) => {
-  try {
-    console.log("\u{1F50D} Diagnostic des comptes d\xE9mo...");
-    const allUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      created_at: users.created_at
-    }).from(users);
-    const demoUsers = await db.select().from(users).where(sql2`${users.email} IN ('demo@swideal.com', 'prestataire@swideal.com', 'admin@swideal.com')`);
-    res.json({
-      debug: true,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      database_url_exists: !!process.env.DATABASE_URL,
-      total_users: allUsers.length,
-      all_users: allUsers,
-      demo_accounts_found: demoUsers.length,
-      demo_accounts: demoUsers.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        password_length: user.password?.length || 0,
-        password_is_demo123: user.password === "demo123",
-        password_is_admin123: user.password === "admin123",
-        created_at: user.created_at
-      }))
-    });
-  } catch (error) {
-    console.error("\u274C Erreur diagnostic:", error);
-    res.status(500).json({
-      error: "Erreur lors du diagnostic",
-      details: error.message,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  }
-});
-router.post("/debug/create-demo-accounts", async (req, res) => {
-  try {
-    console.log("\u{1F6E0}\uFE0F Cr\xE9ation forc\xE9e des comptes d\xE9mo...");
-    const demoAccounts = [
-      {
-        email: "demo@swideal.com",
-        password: "demo123",
-        name: "Emma Rousseau",
-        role: "CLIENT",
-        rating_mean: "0",
-        rating_count: 0,
-        profile_data: {
-          company: "TechStart Innovation",
-          sector: "SaaS",
-          projects_posted: 0,
-          total_budget_spent: 0,
-          verified: true,
-          phone: "+33 1 45 67 89 12",
-          location: "Paris, France"
-        }
-      },
-      {
-        email: "prestataire@swideal.com",
-        password: "demo123",
-        name: "Julien Moreau",
-        role: "PRO",
-        rating_mean: "0",
-        rating_count: 0,
-        profile_data: {
-          specialties: ["React", "Node.js", "TypeScript", "Python"],
-          hourly_rate: 65,
-          availability: "Disponible",
-          experience_years: 5,
-          completed_projects: 0,
-          success_rate: 0,
-          response_time_hours: 4,
-          certifications: ["React Developer"],
-          portfolio_url: "https://julienmoreau.dev",
-          linkedin: "https://linkedin.com/in/julienmoreau",
-          phone: "+33 6 78 90 12 34",
-          location: "Lyon, France"
-        }
-      },
-      {
-        email: "admin@swideal.com",
-        password: "admin123",
-        name: "Clara Dubois",
-        role: "ADMIN",
-        profile_data: {
-          department: "Platform Management",
-          access_level: "full",
-          phone: "+33 1 56 78 90 12"
-        }
-      }
-    ];
-    const results = [];
-    for (const account of demoAccounts) {
-      try {
-        const existingUser = await db.select().from(users).where(eq(users.email, account.email)).limit(1);
-        if (existingUser.length > 0) {
-          results.push({
-            email: account.email,
-            status: "exists",
-            message: "Compte d\xE9j\xE0 existant"
-          });
-        } else {
-          const [newUser] = await db.insert(users).values(account).returning();
-          results.push({
-            email: account.email,
-            status: "created",
-            id: newUser.id,
-            message: "Compte cr\xE9\xE9 avec succ\xE8s"
-          });
-        }
-      } catch (error) {
-        results.push({
-          email: account.email,
-          status: "error",
-          message: error.message
-        });
-      }
-    }
-    res.json({
-      success: true,
-      message: "Cr\xE9ation des comptes d\xE9mo termin\xE9e",
-      results,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  } catch (error) {
-    console.error("\u274C Erreur cr\xE9ation comptes d\xE9mo:", error);
-    res.status(500).json({
-      error: "Erreur lors de la cr\xE9ation des comptes d\xE9mo",
-      details: error.message,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  }
-});
-var auth_routes_default = router;
 
 // server/routes/missions.ts
 import { Router } from "express";
-import { eq as eq2, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 // server/database.ts
-import { Pool as Pool3 } from "pg";
-import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
+import { Pool as Pool2 } from "pg";
+import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
 var isPreviewMode = process.env.PREVIEW_MODE === "true" || process.env.NODE_ENV === "production";
 var databaseUrl = isPreviewMode ? process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING : process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || "postgresql://localhost:5432/swideal";
-var pool2 = new Pool3({
+var pool = new Pool2({
   connectionString: databaseUrl
 });
-pool2.on("error", (err) => {
+pool.on("error", (err) => {
   console.error("Database pool error:", err);
 });
-pool2.on("connect", () => {
+pool.on("connect", () => {
   console.log("\u2705 Database connection established");
 });
-var db2 = drizzle3(pool2);
+var db = drizzle2(pool);
 console.log("\u{1F517} Database connection established:", {
   databaseUrl: databaseUrl ? "***configured***" : "missing",
   isCloudSQL: databaseUrl?.includes("/cloudsql/") || false
@@ -2140,8 +1851,8 @@ console.log("\u{1F517} Database connection established:", {
 
 // server/routes/missions.ts
 init_schema();
-var router2 = Router();
-router2.post("/", async (req, res) => {
+var router = Router();
+router.post("/", async (req, res) => {
   try {
     const missionData = req.body;
     console.log("\u{1F4DD} Mission creation request received:", JSON.stringify(missionData, null, 2));
@@ -2192,13 +1903,13 @@ router2.post("/", async (req, res) => {
     console.log("\u{1F4E4} Attempting to insert mission with data:", JSON.stringify(missionToInsert, null, 2));
     let insertedMission;
     try {
-      const result = await db2.insert(missions).values(missionToInsert).returning();
+      const result = await db.insert(missions).values(missionToInsert).returning();
       insertedMission = result[0];
       if (!insertedMission) {
         throw new Error("No mission returned from database insert");
       }
       console.log("\u2705 Mission created successfully:", insertedMission);
-      const savedMission = await db2.select().from(missions).where(eq2(missions.id, insertedMission.id)).limit(1);
+      const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
       console.log("\u{1F50D} Verification - Mission in DB:", savedMission.length > 0 ? "Found" : "NOT FOUND");
       res.status(201).json(insertedMission);
     } catch (error) {
@@ -2239,10 +1950,10 @@ router2.post("/", async (req, res) => {
     }
   }
 });
-router2.get("/", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all missions...");
-    const allMissions = await db2.select().from(missions).orderBy(desc(missions.created_at));
+    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mission,
@@ -2259,7 +1970,7 @@ router2.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch missions" });
   }
 });
-router2.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const missionId2 = req.params.id;
     console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId2);
@@ -2267,12 +1978,12 @@ router2.get("/:id", async (req, res) => {
       console.error("\u274C API: Mission ID invalide:", missionId2);
       return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const mission = await db2.select().from(missions).where(eq2(missions.id, missionId2)).limit(1);
+    const mission = await db.select().from(missions).where(eq(missions.id, missionId2)).limit(1);
     if (mission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId2);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    const bids2 = await db2.select().from(bids).where(eq2(bids.missionId, missionId2));
+    const bids2 = await db.select().from(bids).where(eq(bids.missionId, missionId2));
     const result = {
       ...mission[0],
       bids: bids2 || []
@@ -2292,10 +2003,10 @@ router2.get("/:id", async (req, res) => {
     });
   }
 });
-router2.get("/debug", async (req, res) => {
+router.get("/debug", async (req, res) => {
   try {
     console.log("\u{1F50D} Mission debug endpoint called");
-    const testQuery = await db2.select().from(missions).limit(1);
+    const testQuery = await db.select().from(missions).limit(1);
     const dbInfo = {
       status: "connected",
       sampleMissions: testQuery.length,
@@ -2313,12 +2024,58 @@ router2.get("/debug", async (req, res) => {
     });
   }
 });
-router2.get("/verify-sync", async (req, res) => {
+router.get("/users/:userId/missions", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log("\u{1F464} Fetching missions for user:", userId);
+    if (!userId || userId === "undefined" || userId === "null") {
+      console.error("\u274C Invalid user ID:", userId);
+      return res.status(400).json({ error: "User ID invalide" });
+    }
+    const userMissions = await db.select().from(missions).where(eq(missions.client_id, parseInt(userId))).orderBy(desc(missions.created_at));
+    const missionsWithBids = userMissions.map((mission) => ({
+      ...mission,
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      clientName: "Moi",
+      // Since it's the user's own missions
+      bids: []
+      // We'll populate this separately if needed
+    }));
+    console.log(`\u{1F464} Found ${missionsWithBids.length} missions for user ${userId}`);
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error("\u274C Error fetching user missions:", error);
+    res.status(500).json({
+      error: "Failed to fetch user missions",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router.get("/users/:userId/bids", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log("\u{1F464} Fetching bids for user:", userId);
+    if (!userId || userId === "undefined" || userId === "null") {
+      console.error("\u274C Invalid user ID:", userId);
+      return res.status(400).json({ error: "User ID invalide" });
+    }
+    const userBids = await db.select().from(bids).where(eq(bids.providerId, userId)).orderBy(desc(bids.createdAt));
+    console.log(`\u{1F464} Found ${userBids.length} bids for user ${userId}`);
+    res.json(userBids);
+  } catch (error) {
+    console.error("\u274C Error fetching user bids:", error);
+    res.status(500).json({
+      error: "Failed to fetch user bids",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router.get("/verify-sync", async (req, res) => {
   try {
     console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
-    const recentMissions = await db2.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
+    const recentMissions = await db.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
     const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const feedItems = await db2.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const feedItems = await db.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
     const syncStatus = {
       totalMissions: recentMissions.length,
       totalFeedItems: feedItems.length,
@@ -2346,20 +2103,20 @@ router2.get("/verify-sync", async (req, res) => {
     });
   }
 });
-var missions_default = router2;
+var missions_default = router;
 
 // server/api-routes.ts
 init_schema();
-import express3 from "express";
-import { Pool as Pool4 } from "pg";
-import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
-import { eq as eq3 } from "drizzle-orm";
-var pool3 = new Pool4({ connectionString: process.env.DATABASE_URL });
-var db3 = drizzle4(pool3);
-var router3 = express3.Router();
-router3.get("/demo-providers", async (req, res) => {
+import express2 from "express";
+import { Pool as Pool3 } from "pg";
+import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
+import { eq as eq2 } from "drizzle-orm";
+var pool2 = new Pool3({ connectionString: process.env.DATABASE_URL });
+var db2 = drizzle3(pool2);
+var router2 = express2.Router();
+router2.get("/demo-providers", async (req, res) => {
   try {
-    const providers = await db3.select({
+    const providers = await db2.select({
       id: users.id,
       email: users.email,
       name: users.name,
@@ -2368,16 +2125,16 @@ router3.get("/demo-providers", async (req, res) => {
       rating_count: users.rating_count,
       profile_data: users.profile_data,
       created_at: users.created_at
-    }).from(users).where(eq3(users.role, "PRO"));
+    }).from(users).where(eq2(users.role, "PRO"));
     res.json({ providers });
   } catch (error) {
     console.error("Erreur get demo providers:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router3.get("/demo-projects", async (req, res) => {
+router2.get("/demo-projects", async (req, res) => {
   try {
-    const projectsWithClients = await db3.select({
+    const projectsWithClients = await db2.select({
       id: projects.id,
       title: projects.title,
       description: projects.description,
@@ -2388,16 +2145,16 @@ router3.get("/demo-projects", async (req, res) => {
       created_at: projects.created_at,
       client_name: users.name,
       client_email: users.email
-    }).from(projects).leftJoin(users, eq3(projects.client_id, users.id));
+    }).from(projects).leftJoin(users, eq2(projects.client_id, users.id));
     res.json({ projects: projectsWithClients });
   } catch (error) {
     console.error("Erreur get demo projects:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router3.get("/demo-bids", async (req, res) => {
+router2.get("/demo-bids", async (req, res) => {
   try {
-    const bidsWithInfo = await db3.select({
+    const bidsWithInfo = await db2.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -2410,22 +2167,22 @@ router3.get("/demo-bids", async (req, res) => {
       provider_name: users.name,
       provider_email: users.email,
       provider_profile: users.profile_data
-    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).leftJoin(users, eq3(bids.provider_id, users.id));
+    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).leftJoin(users, eq2(bids.provider_id, users.id));
     res.json({ bids: bidsWithInfo });
   } catch (error) {
     console.error("Erreur get demo bids:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router3.get("/provider/:id", async (req, res) => {
+router2.get("/provider/:id", async (req, res) => {
   try {
     const providerId = parseInt(req.params.id);
-    const provider = await db3.select().from(users).where(eq3(users.id, providerId)).limit(1);
+    const provider = await db2.select().from(users).where(eq2(users.id, providerId)).limit(1);
     if (provider.length === 0) {
       return res.status(404).json({ error: "Prestataire non trouv\xE9" });
     }
     const providerData = provider[0];
-    const providerBids = await db3.select({
+    const providerBids = await db2.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -2434,7 +2191,7 @@ router3.get("/provider/:id", async (req, res) => {
       created_at: bids.created_at,
       project_title: projects.title,
       project_budget: projects.budget
-    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).where(eq3(bids.provider_id, providerId));
+    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).where(eq2(bids.provider_id, providerId));
     res.json({
       provider: {
         id: providerData.id,
@@ -2453,9 +2210,9 @@ router3.get("/provider/:id", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router3.get("/ai-analysis-demo", async (req, res) => {
+router2.get("/ai-analysis-demo", async (req, res) => {
   try {
-    const recentProjects = await db3.select({
+    const recentProjects = await db2.select({
       id: projects.id,
       title: projects.title,
       description: projects.description,
@@ -2463,7 +2220,7 @@ router3.get("/ai-analysis-demo", async (req, res) => {
       category: projects.category,
       created_at: projects.created_at
     }).from(projects).limit(3);
-    const recentBids = await db3.select({
+    const recentBids = await db2.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -2492,7 +2249,7 @@ router3.get("/ai-analysis-demo", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-var api_routes_default = router3;
+var api_routes_default = router2;
 
 // server/routes/ai-monitoring-routes.ts
 import { Router as Router2 } from "express";
@@ -2780,8 +2537,8 @@ var EventLogger = class {
 var eventLogger = new EventLogger();
 
 // server/routes/ai-monitoring-routes.ts
-var router4 = Router2();
-router4.get("/health", async (req, res) => {
+var router3 = Router2();
+router3.get("/health", async (req, res) => {
   try {
     const modelMetrics = [
       {
@@ -2871,7 +2628,7 @@ router4.get("/health", async (req, res) => {
     });
   }
 });
-router4.get("/experiments", async (req, res) => {
+router3.get("/experiments", async (req, res) => {
   try {
     const experiments = [
       {
@@ -2926,7 +2683,7 @@ router4.get("/experiments", async (req, res) => {
     });
   }
 });
-router4.post("/events", async (req, res) => {
+router3.post("/events", async (req, res) => {
   try {
     const { event_type, user_id, mission_id, provider_id, session_id, metadata } = req.body;
     if (!event_type || !session_id) {
@@ -2998,7 +2755,7 @@ router4.post("/events", async (req, res) => {
     });
   }
 });
-router4.get("/performance-metrics", async (req, res) => {
+router3.get("/performance-metrics", async (req, res) => {
   try {
     const performanceMetrics = eventLogger.getPerformanceMetrics();
     const aggregated = {
@@ -3037,7 +2794,7 @@ router4.get("/performance-metrics", async (req, res) => {
     });
   }
 });
-router4.post("/clear-cache", async (req, res) => {
+router3.post("/clear-cache", async (req, res) => {
   try {
     const maxAgeMs = req.body.max_age_ms || 36e5;
     eventLogger.cleanupOldMetrics(maxAgeMs);
@@ -3054,7 +2811,7 @@ router4.post("/clear-cache", async (req, res) => {
     });
   }
 });
-router4.get("/business-metrics", async (req, res) => {
+router3.get("/business-metrics", async (req, res) => {
   try {
     const { period = "7d" } = req.query;
     const businessMetrics = {
@@ -3117,7 +2874,7 @@ router4.get("/business-metrics", async (req, res) => {
     });
   }
 });
-router4.get("/alerts", async (req, res) => {
+router3.get("/alerts", async (req, res) => {
   try {
     const alerts = [
       {
@@ -3166,12 +2923,12 @@ router4.get("/alerts", async (req, res) => {
     });
   }
 });
-var ai_monitoring_routes_default = router4;
+var ai_monitoring_routes_default = router3;
 
 // server/routes/ai-routes.ts
 import { Router as Router3 } from "express";
 import { z } from "zod";
-var router5 = Router3();
+var router4 = Router3();
 var priceSuggestionSchema = z.object({
   title: z.string().min(5, "Titre trop court"),
   description: z.string().min(10, "Description trop courte"),
@@ -3190,7 +2947,7 @@ var enhanceTextSchema = z.object({
   fieldType: z.enum(["title", "description", "requirements"]),
   category: z.string().optional()
 });
-router5.post("/suggest-pricing", async (req, res) => {
+router4.post("/suggest-pricing", async (req, res) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3220,7 +2977,7 @@ router5.post("/suggest-pricing", async (req, res) => {
     });
   }
 });
-router5.post("/enhance-description", async (req, res) => {
+router4.post("/enhance-description", async (req, res) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3250,7 +3007,7 @@ router5.post("/enhance-description", async (req, res) => {
     });
   }
 });
-router5.post("/analyze-quality", async (req, res) => {
+router4.post("/analyze-quality", async (req, res) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3276,7 +3033,7 @@ router5.post("/analyze-quality", async (req, res) => {
     });
   }
 });
-router5.post("/enhance-text", async (req, res) => {
+router4.post("/enhance-text", async (req, res) => {
   try {
     const { text: text2, fieldType, category } = req.body;
     if (!text2 || typeof text2 !== "string" || text2.trim().length === 0) {
@@ -3317,7 +3074,7 @@ router5.post("/enhance-text", async (req, res) => {
     });
   }
 });
-router5.get("/health", async (req, res) => {
+router4.get("/health", async (req, res) => {
   try {
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const geminiConfigured = !!geminiApiKey;
@@ -3348,7 +3105,7 @@ router5.get("/health", async (req, res) => {
     });
   }
 });
-router5.get("/test-config", async (req, res) => {
+router4.get("/test-config", async (req, res) => {
   try {
     const geminiAdapter = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
     const geminiCall2 = geminiAdapter.geminiCall;
@@ -3373,7 +3130,7 @@ router5.get("/test-config", async (req, res) => {
     });
   }
 });
-router5.post("/analyze", async (req, res) => {
+router4.post("/analyze", async (req, res) => {
   const { title = "", description = "", category = "autre" } = req.body ?? {};
   if (typeof description !== "string" || description.trim().length < 5) {
     return res.status(400).json({ error: "Description trop courte" });
@@ -3389,12 +3146,12 @@ router5.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur analyse IA" });
   }
 });
-var ai_routes_default = router5;
+var ai_routes_default = router4;
 
 // server/routes/ai-suggestions-routes.ts
 import { Router as Router4 } from "express";
 import { z as z2 } from "zod";
-var router6 = Router4();
+var router5 = Router4();
 var assistantSuggestionsSchema = z2.object({
   page: z2.string(),
   userContext: z2.object({
@@ -3514,7 +3271,7 @@ async function generatePageSuggestions(page, userContext = {}) {
   }
   return suggestions;
 }
-router6.post("/assistant-suggestions", async (req, res) => {
+router5.post("/assistant-suggestions", async (req, res) => {
   try {
     const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
     const suggestions = await generatePageSuggestions(page, userContext);
@@ -3548,12 +3305,12 @@ router6.post("/assistant-suggestions", async (req, res) => {
     });
   }
 });
-var ai_suggestions_routes_default = router6;
+var ai_suggestions_routes_default = router5;
 
 // server/routes/ai-missions-routes.ts
 import { Router as Router5 } from "express";
 import { z as z3 } from "zod";
-var router7 = Router5();
+var router6 = Router5();
 var missionSuggestionSchema = z3.object({
   title: z3.string().min(3, "Titre trop court"),
   description: z3.string().min(10, "Description trop courte"),
@@ -3564,7 +3321,7 @@ var missionSuggestionSchema = z3.object({
   geo_required: z3.boolean().optional(),
   onsite_radius_km: z3.number().optional()
 });
-router7.post("/suggest", async (req, res) => {
+router6.post("/suggest", async (req, res) => {
   try {
     console.log("Requ\xEAte re\xE7ue:", req.body);
     const { title, description, category } = missionSuggestionSchema.parse(req.body);
@@ -3662,13 +3419,13 @@ router7.post("/suggest", async (req, res) => {
     });
   }
 });
-var ai_missions_routes_default = router7;
+var ai_missions_routes_default = router6;
 
 // apps/api/src/routes/ai.ts
 init_aiOrchestrator();
 import { Router as Router6 } from "express";
-var router8 = Router6();
-router8.post("/pricing", async (req, res) => {
+var router7 = Router6();
+router7.post("/pricing", async (req, res) => {
   try {
     const result = await getPricingSuggestion(req.body);
     res.json(result);
@@ -3677,7 +3434,7 @@ router8.post("/pricing", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul de prix" });
   }
 });
-router8.post("/brief", async (req, res) => {
+router7.post("/brief", async (req, res) => {
   try {
     const result = await enhanceBrief(req.body);
     res.json(result);
@@ -3686,7 +3443,7 @@ router8.post("/brief", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
   }
 });
-router8.post("/feedback", async (req, res) => {
+router7.post("/feedback", async (req, res) => {
   try {
     const { phase, prompt, feedback } = req.body;
     await logUserFeedback(phase, prompt, feedback);
@@ -3696,14 +3453,14 @@ router8.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-var ai_default = router8;
+var ai_default = router7;
 
 // server/routes/feed-routes.ts
 init_schema();
-import express4 from "express";
+import express3 from "express";
 import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
-import { desc as desc3, eq as eq5, and as and2, not, inArray, sql as sql4 } from "drizzle-orm";
+import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { desc as desc3, eq as eq4, and as and2, not, inArray, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -3994,37 +3751,37 @@ var FeedRanker = class {
 
 // server/routes/feed-routes.ts
 import { z as z4 } from "zod";
-var router9 = express4.Router();
+var router8 = express3.Router();
 var connection = neon(process.env.DATABASE_URL);
-var db5 = drizzle6(connection);
+var db4 = drizzle5(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
-router9.get("/feed", async (req, res) => {
+router8.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
-    const seenAnnouncements = userId ? await db5.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
+    const seenAnnouncements = userId ? await db4.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
       and2(
-        eq5(feedSeen.user_id, parseInt(userId))
+        eq4(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq5(announcements.status, "active")];
+    let whereConditions = [eq4(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
     if (cursor) {
       const cursorId = parseInt(cursor);
-      whereConditions.push(sql4`${announcements.id} < ${cursorId}`);
+      whereConditions.push(sql3`${announcements.id} < ${cursorId}`);
     }
-    const query = db5.select().from(announcements).where(and2(...whereConditions));
+    const query = db4.select().from(announcements).where(and2(...whereConditions));
     const rawAnnouncements = await query.orderBy(desc3(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    const sponsoredAnnouncements = await db5.select().from(announcements).where(and2(
-      eq5(announcements.sponsored, true),
-      eq5(announcements.status, "active")
+    const sponsoredAnnouncements = await db4.select().from(announcements).where(and2(
+      eq4(announcements.sponsored, true),
+      eq4(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -4042,12 +3799,12 @@ router9.get("/feed", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration du feed" });
   }
 });
-router9.post("/feedback", async (req, res) => {
+router8.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    await db5.insert(feedFeedback).values(feedbackData);
+    await db4.insert(feedFeedback).values(feedbackData);
     if (feedbackData.action !== "view") {
-      await db5.insert(feedSeen).values({
+      await db4.insert(feedSeen).values({
         user_id: feedbackData.user_id,
         announcement_id: feedbackData.announcement_id
       }).onConflictDoNothing();
@@ -4067,7 +3824,7 @@ router9.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-router9.get("/price-benchmark", async (req, res) => {
+router8.get("/price-benchmark", async (req, res) => {
   try {
     const { category } = req.query;
     if (!category) {
@@ -4080,12 +3837,12 @@ router9.get("/price-benchmark", async (req, res) => {
         return res.json(cached.data);
       }
     }
-    const prices = await db5.select({
+    const prices = await db4.select({
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
     }).from(announcements).where(and2(
-      eq5(announcements.category, category),
-      eq5(announcements.status, "active")
+      eq4(announcements.category, category),
+      eq4(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -4110,26 +3867,26 @@ router9.get("/price-benchmark", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul du benchmark" });
   }
 });
-var feed_routes_default = router9;
+var feed_routes_default = router8;
 
 // server/routes/favorites-routes.ts
 init_schema();
 import { Router as Router7 } from "express";
-import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
+import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq6, and as and3 } from "drizzle-orm";
-var sql5 = neon2(process.env.DATABASE_URL);
-var db6 = drizzle7(sql5);
-var router10 = Router7();
-router10.get("/favorites", async (req, res) => {
+import { eq as eq5, and as and3 } from "drizzle-orm";
+var sql4 = neon2(process.env.DATABASE_URL);
+var db5 = drizzle6(sql4);
+var router9 = Router7();
+router9.get("/favorites", async (req, res) => {
   try {
     const { user_id } = req.query;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    const userFavorites = await db6.select({
+    const userFavorites = await db5.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq5(favorites.announcement_id, announcements.id)).where(eq5(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -4140,22 +3897,22 @@ router10.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration des favoris" });
   }
 });
-router10.post("/favorites", async (req, res) => {
+router9.post("/favorites", async (req, res) => {
   try {
     const { user_id, announcement_id } = req.body;
     if (!user_id || !announcement_id) {
       return res.status(400).json({ error: "user_id et announcement_id requis" });
     }
-    const existing = await db6.select().from(favorites).where(
+    const existing = await db5.select().from(favorites).where(
       and3(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, announcement_id)
+        eq5(favorites.user_id, user_id),
+        eq5(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
       return res.status(200).json({ message: "D\xE9j\xE0 en favori" });
     }
-    await db6.insert(favorites).values({
+    await db5.insert(favorites).values({
       user_id,
       announcement_id,
       created_at: /* @__PURE__ */ new Date()
@@ -4166,17 +3923,17 @@ router10.post("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'ajout aux favoris" });
   }
 });
-router10.delete("/favorites/:announcementId", async (req, res) => {
+router9.delete("/favorites/:announcementId", async (req, res) => {
   try {
     const { announcementId } = req.params;
     const { user_id } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    await db6.delete(favorites).where(
+    await db5.delete(favorites).where(
       and3(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, parseInt(announcementId))
+        eq5(favorites.user_id, user_id),
+        eq5(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -4185,11 +3942,11 @@ router10.delete("/favorites/:announcementId", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression des favoris" });
   }
 });
-var favorites_routes_default = router10;
+var favorites_routes_default = router9;
 
 // server/routes/mission-demo.ts
-import express5 from "express";
-var router11 = express5.Router();
+import express4 from "express";
+var router10 = express4.Router();
 var getDemoMissions = () => [
   {
     id: "mission1",
@@ -4270,13 +4027,13 @@ var getDemoMissions = () => [
     bids: []
   }
 ];
-router11.get("/missions-demo", (req, res) => {
+router10.get("/missions-demo", (req, res) => {
   res.json(getDemoMissions());
 });
-var mission_demo_default = router11;
+var mission_demo_default = router10;
 
 // server/routes/ai-quick-analysis.ts
-import express6 from "express";
+import express5 from "express";
 
 // server/services/ai-analysis.ts
 var AIAnalysisService = class {
@@ -4649,8 +4406,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router12 = express6.Router();
-router12.post("/ai/quick-analysis", async (req, res) => {
+var router11 = express5.Router();
+router11.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -4667,7 +4424,7 @@ router12.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router12.post("/ai/price-analysis", async (req, res) => {
+router11.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -4688,12 +4445,12 @@ router12.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router12;
+var ai_quick_analysis_default = router11;
 
 // server/routes/ai-diagnostic-routes.ts
 import { Router as Router8 } from "express";
-var router13 = Router8();
-router13.get("/diagnostic", async (req, res) => {
+var router12 = Router8();
+router12.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -4757,13 +4514,13 @@ router13.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router13;
+var ai_diagnostic_routes_default = router12;
 
 // server/routes/ai-learning-routes.ts
 init_learning_engine();
 import { Router as Router9 } from "express";
-var router14 = Router9();
-router14.post("/analyze-patterns", async (req, res) => {
+var router13 = Router9();
+router13.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -4781,7 +4538,7 @@ router14.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router14.get("/stats", (req, res) => {
+router13.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -4793,12 +4550,12 @@ router14.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router14;
+var ai_learning_routes_default = router13;
 
 // server/routes/team-routes.ts
 import { Router as Router10 } from "express";
 import { z as z5 } from "zod";
-var router15 = Router10();
+var router14 = Router10();
 var teamAnalysisSchema = z5.object({
   description: z5.string().min(10),
   title: z5.string().min(3),
@@ -4825,7 +4582,7 @@ var teamProjectSchema = z5.object({
     importance: z5.enum(["high", "medium", "low"])
   }))
 });
-router15.post("/analyze", async (req, res) => {
+router14.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4870,7 +4627,7 @@ router15.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router15.post("/create-project", async (req, res) => {
+router14.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4925,7 +4682,7 @@ router15.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router15;
+var team_routes_default = router14;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -5027,12 +4784,12 @@ var monitoringRateLimit = rateLimit({
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
 validateEnvironment();
-var app = express7();
+var app = express6();
 var port = parseInt(process.env.PORT || "5000", 10);
 var databaseUrl2 = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
 console.log("\u{1F517} Using Replit PostgreSQL connection");
 var missionSyncService = new MissionSyncService(databaseUrl2);
-var pool5 = new Pool6({
+var pool4 = new Pool5({
   connectionString: databaseUrl2,
   connectionTimeoutMillis: 5e3,
   // 5 second timeout
@@ -5053,7 +4810,7 @@ async function validateDatabaseConnection() {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Database connection timeout")), timeout);
     });
-    const connectionPromise = pool5.query("SELECT 1 as test");
+    const connectionPromise = pool4.query("SELECT 1 as test");
     await Promise.race([connectionPromise, timeoutPromise]);
     console.log("\u2705 Database connection validated successfully");
     return true;
@@ -5100,12 +4857,12 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app.use(express7.json());
+app.use(express6.json());
 console.log("\u{1F4CB} Registering missions routes...");
 app.use("/api/missions", missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
-app.use("/api/auth", auth_routes_default);
 app.use("/api", api_routes_default);
+app.use("/api", missions_default);
 app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
 app.use("/api/ai/suggest-pricing", strictAiRateLimit);
 app.use("/api/ai/enhance-description", strictAiRateLimit);
@@ -5125,7 +4882,7 @@ app.use("/api", mission_demo_default);
 app.use("/api/team", team_routes_default);
 app.get("/api/health", async (req, res) => {
   try {
-    await pool5.query("SELECT 1");
+    await pool4.query("SELECT 1");
     res.status(200).json({
       status: "ok",
       message: "SwipDEAL API is running",
