@@ -15,6 +15,35 @@ var __export = (target, all) => {
 };
 
 // shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  aiEvents: () => aiEvents,
+  announcements: () => announcements,
+  badges: () => badges,
+  bids: () => bids,
+  favorites: () => favorites,
+  feedFeedback: () => feedFeedback,
+  feedSeen: () => feedSeen,
+  insertAnnouncementSchema: () => insertAnnouncementSchema,
+  insertBadgeSchema: () => insertBadgeSchema,
+  insertBidSchema: () => insertBidSchema,
+  insertFeedFeedbackSchema: () => insertFeedFeedbackSchema,
+  insertFeedSeenSchema: () => insertFeedSeenSchema,
+  insertLocationSchema: () => insertLocationSchema,
+  insertMissionSchema: () => insertMissionSchema,
+  insertProjectSchema: () => insertProjectSchema,
+  insertReputationMetricSchema: () => insertReputationMetricSchema,
+  insertReviewHelpfulSchema: () => insertReviewHelpfulSchema,
+  insertReviewSchema: () => insertReviewSchema,
+  insertUserSchema: () => insertUserSchema,
+  locations: () => locations,
+  missions: () => missions,
+  projects: () => projects,
+  reputationMetrics: () => reputationMetrics,
+  reviewHelpful: () => reviewHelpful,
+  reviews: () => reviews,
+  users: () => users
+});
 import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 var users, projects, bids, insertUserSchema, insertProjectSchema, insertBidSchema, announcements, feedFeedback, feedSeen, favorites, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, aiEvents, locations, reviews, badges, reviewHelpful, reputationMetrics, insertLocationSchema, insertReviewSchema, insertBadgeSchema, insertReviewHelpfulSchema, insertReputationMetricSchema, missions, insertMissionSchema;
@@ -2243,6 +2272,39 @@ router2.get("/debug", async (req, res) => {
     console.error("\u274C Debug endpoint error:", error);
     res.status(500).json({
       error: "Debug failed",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router2.get("/verify-sync", async (req, res) => {
+  try {
+    console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
+    const recentMissions = await db2.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
+    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const feedItems = await db2.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map((m) => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map((f) => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
+    };
+    console.log("\u{1F50D} Sync status:", syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error("\u274C Sync verification error:", error);
+    res.status(500).json({
+      error: "Sync verification failed",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
