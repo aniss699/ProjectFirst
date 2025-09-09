@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../database.js';
-import { missions } from '../../shared/schema.js';
+import { missions, bids as bidTable } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js'; // Import MissionSyncService
 
 const router = Router();
@@ -153,7 +153,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/missions/:id - Get a specific mission with bids
-app.get('/api/missions/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const missionId = req.params.id;
     console.log('🔍 API: Récupération mission ID:', missionId);
