@@ -8,7 +8,7 @@ const router = Router();
 const missionSuggestionSchema = z.object({
   title: z.string().min(3, 'Titre trop court'),
   description: z.string().min(10, 'Description trop courte'),
-  category: z.string().min(1, 'Catégorie requise'),
+  category: z.string().optional(), // Catégorie facultative
   budget_min: z.number().optional(),
   budget_max: z.number().optional(),
   deadline_ts: z.string().optional(),
