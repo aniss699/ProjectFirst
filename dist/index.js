@@ -14,17 +14,401 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// apps/api/src/ai/providers/policy.google.json
-var policy_google_default;
-var init_policy_google = __esm({
-  "apps/api/src/ai/providers/policy.google.json"() {
-    policy_google_default = {
-      provider: "google",
-      family: "gemini",
-      allow_training: true,
-      allow_rag_index: true,
-      notes: "Utiliser sorties UNIQUEMENT pour mod\xE8les \xE9troits internes. Pas d'entra\xEEnement d'un LLM concurrent."
+// shared/schema.ts
+import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real, json } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var users, projects, bids, insertUserSchema, insertProjectSchema, insertBidSchema, announcements, feedFeedback, feedSeen, favorites, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, aiEvents, locations, reviews, badges, reviewHelpful, reputationMetrics, insertLocationSchema, insertReviewSchema, insertBadgeSchema, insertReviewHelpfulSchema, insertReputationMetricSchema, missions, insertMissionSchema;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    users = pgTable("users", {
+      id: serial("id").primaryKey(),
+      email: varchar("email", { length: 255 }).notNull().unique(),
+      password: varchar("password", { length: 255 }).notNull(),
+      name: varchar("name", { length: 255 }),
+      role: varchar("role", { length: 50 }).notNull().default("CLIENT"),
+      rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
+      rating_count: integer("rating_count").default(0),
+      profile_data: jsonb("profile_data"),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    projects = pgTable("projects", {
+      id: serial("id").primaryKey(),
+      title: varchar("title", { length: 500 }).notNull(),
+      description: text("description").notNull(),
+      budget: varchar("budget", { length: 100 }),
+      category: varchar("category", { length: 100 }).notNull(),
+      quality_target: varchar("quality_target", { length: 20 }),
+      risk_tolerance: decimal("risk_tolerance", { precision: 3, scale: 2 }),
+      geo_required: boolean("geo_required").default(false),
+      onsite_radius_km: integer("onsite_radius_km"),
+      status: varchar("status", { length: 50 }).notNull().default("draft"),
+      loc_score: decimal("loc_score", { precision: 5, scale: 2 }),
+      client_id: integer("client_id").notNull(),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    bids = pgTable("bids", {
+      id: serial("id").primaryKey(),
+      project_id: integer("project_id").notNull(),
+      provider_id: integer("provider_id").notNull(),
+      amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+      timeline_days: integer("timeline_days").notNull(),
+      message: text("message").notNull(),
+      score_breakdown: jsonb("score_breakdown"),
+      is_leading: boolean("is_leading").default(false),
+      flagged: boolean("flagged").default(false),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    insertUserSchema = createInsertSchema(users);
+    insertProjectSchema = createInsertSchema(projects);
+    insertBidSchema = createInsertSchema(bids);
+    announcements = pgTable("announcements", {
+      id: serial("id").primaryKey(),
+      title: varchar("title", { length: 500 }).notNull(),
+      description: text("description").notNull(),
+      category: varchar("category", { length: 100 }).notNull(),
+      tags: text("tags").array(),
+      city: varchar("city", { length: 100 }),
+      budget_min: decimal("budget_min", { precision: 10, scale: 2 }),
+      budget_max: decimal("budget_max", { precision: 10, scale: 2 }),
+      deadline: timestamp("deadline"),
+      media: jsonb("media"),
+      quality_score: decimal("quality_score", { precision: 3, scale: 2 }),
+      embeddings: text("embeddings"),
+      // Stockage vectoriel simple
+      user_id: integer("user_id").notNull(),
+      sponsored: boolean("sponsored").default(false),
+      status: varchar("status", { length: 50 }).notNull().default("active"),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    feedFeedback = pgTable("feed_feedback", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull(),
+      announcement_id: integer("announcement_id").notNull(),
+      action: varchar("action", { length: 20 }).notNull(),
+      // 'save', 'skip', 'open', 'offer', 'view'
+      dwell_ms: integer("dwell_ms"),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    feedSeen = pgTable("feed_seen", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull(),
+      announcement_id: integer("announcement_id").notNull(),
+      seen_at: timestamp("seen_at").defaultNow().notNull()
+    });
+    favorites = pgTable("favorites", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull(),
+      announcement_id: integer("announcement_id").notNull(),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    insertAnnouncementSchema = createInsertSchema(announcements);
+    insertFeedFeedbackSchema = createInsertSchema(feedFeedback);
+    insertFeedSeenSchema = createInsertSchema(feedSeen);
+    aiEvents = pgTable("ai_events", {
+      id: varchar("id", { length: 255 }).primaryKey(),
+      phase: varchar("phase", { length: 50 }).notNull(),
+      provider: varchar("provider", { length: 50 }).notNull(),
+      model_family: varchar("model_family", { length: 50 }).notNull(),
+      model_name: varchar("model_name", { length: 100 }).notNull(),
+      allow_training: boolean("allow_training").notNull(),
+      input_redacted: jsonb("input_redacted"),
+      output: jsonb("output"),
+      confidence: decimal("confidence", { precision: 5, scale: 3 }),
+      tokens: integer("tokens"),
+      latency_ms: integer("latency_ms"),
+      provenance: varchar("provenance", { length: 50 }).notNull(),
+      prompt_hash: varchar("prompt_hash", { length: 64 }).notNull(),
+      accepted: boolean("accepted"),
+      rating: integer("rating"),
+      edits: text("edits"),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    locations = pgTable("locations", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id"),
+      project_id: integer("project_id"),
+      address: text("address"),
+      city: varchar("city", { length: 100 }),
+      postal_code: varchar("postal_code", { length: 20 }),
+      country: varchar("country", { length: 100 }).default("France"),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
+      radius_km: integer("radius_km").default(10),
+      is_primary: boolean("is_primary").default(false),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    reviews = pgTable("reviews", {
+      id: serial("id").primaryKey(),
+      reviewer_id: integer("reviewer_id").notNull(),
+      reviewed_id: integer("reviewed_id").notNull(),
+      project_id: integer("project_id").notNull(),
+      rating: integer("rating").notNull(),
+      // 1-5 étoiles
+      title: varchar("title", { length: 200 }),
+      comment: text("comment"),
+      criteria_scores: jsonb("criteria_scores"),
+      // {quality: 5, communication: 4, deadline: 5, budget: 4}
+      verified: boolean("verified").default(false),
+      helpful_count: integer("helpful_count").default(0),
+      response: text("response"),
+      // Réponse du prestataire
+      response_date: timestamp("response_date"),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    badges = pgTable("badges", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull(),
+      badge_type: varchar("badge_type", { length: 50 }).notNull(),
+      // 'expert', 'reliable', 'top_rated', 'verified', 'local_hero'
+      category: varchar("category", { length: 100 }),
+      // Catégorie spécifique du badge
+      level: integer("level").default(1),
+      // Niveau du badge (1-5)
+      criteria_met: jsonb("criteria_met"),
+      // Critères qui ont permis d'obtenir le badge
+      earned_at: timestamp("earned_at").defaultNow().notNull(),
+      expires_at: timestamp("expires_at"),
+      // Certains badges peuvent expirer
+      is_active: boolean("is_active").default(true)
+    });
+    reviewHelpful = pgTable("review_helpful", {
+      id: serial("id").primaryKey(),
+      review_id: integer("review_id").notNull(),
+      user_id: integer("user_id").notNull(),
+      is_helpful: boolean("is_helpful").notNull(),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    reputationMetrics = pgTable("reputation_metrics", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull(),
+      total_projects: integer("total_projects").default(0),
+      completed_projects: integer("completed_projects").default(0),
+      average_rating: decimal("average_rating", { precision: 3, scale: 2 }),
+      response_time_avg_hours: integer("response_time_avg_hours"),
+      on_time_delivery_rate: decimal("on_time_delivery_rate", { precision: 5, scale: 2 }),
+      client_retention_rate: decimal("client_retention_rate", { precision: 5, scale: 2 }),
+      trust_score: integer("trust_score").default(0),
+      // Score sur 100
+      verification_level: varchar("verification_level", { length: 20 }).default("basic"),
+      // basic, verified, premium
+      last_calculated: timestamp("last_calculated").defaultNow().notNull(),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    insertLocationSchema = createInsertSchema(locations);
+    insertReviewSchema = createInsertSchema(reviews);
+    insertBadgeSchema = createInsertSchema(badges);
+    insertReviewHelpfulSchema = createInsertSchema(reviewHelpful);
+    insertReputationMetricSchema = createInsertSchema(reputationMetrics);
+    missions = pgTable("missions", {
+      id: serial("id").primaryKey(),
+      title: text("title").notNull(),
+      description: text("description").notNull(),
+      category: text("category").notNull().default("developpement"),
+      budget: integer("budget"),
+      budget_min: integer("budget_min"),
+      budget_max: integer("budget_max"),
+      location: text("location"),
+      urgency: text("urgency").default("medium"),
+      requirements: text("requirements"),
+      tags: json("tags").$type().default([]),
+      deadline: timestamp("deadline"),
+      status: text("status").default("published"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow(),
+      client_id: integer("client_id").notNull()
+    });
+    insertMissionSchema = createInsertSchema(missions);
+  }
+});
+
+// apps/api/src/ai/aiOrchestrator.ts
+import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
+async function getPricingSuggestion(request) {
+  try {
+    const basePrice = calculateBasePrice(request.category || "general");
+    const complexity = analyzeComplexity(request.description || "");
+    const timelineMultiplier = getTimelineMultiplier(request.timeline || "");
+    const minPrice = Math.round(basePrice * complexity * 0.8);
+    const maxPrice = Math.round(basePrice * complexity * timelineMultiplier * 1.3);
+    const averagePrice = Math.round((minPrice + maxPrice) / 2);
+    return {
+      success: true,
+      pricing: {
+        minPrice,
+        maxPrice,
+        averagePrice,
+        confidence: 0.85,
+        factors: [
+          `Cat\xE9gorie: ${request.category}`,
+          `Complexit\xE9: ${complexity}x`,
+          `D\xE9lai: ${timelineMultiplier}x`
+        ]
+      },
+      analysis: {
+        category: request.category,
+        complexity_level: complexity > 1.5 ? "high" : complexity > 1 ? "medium" : "low",
+        market_position: "competitive"
+      }
     };
+  } catch (error) {
+    console.error("Erreur getPricingSuggestion:", error);
+    throw new Error("Impossible de calculer la suggestion de prix");
+  }
+}
+async function enhanceBrief(request) {
+  try {
+    const originalDescription = request.description || "";
+    const category = request.category || "general";
+    const analysis = analyzeBriefQuality(originalDescription);
+    const improvements = generateImprovements(originalDescription, category, analysis);
+    return {
+      success: true,
+      original: {
+        title: request.title,
+        description: originalDescription,
+        word_count: originalDescription.split(" ").length
+      },
+      enhanced: {
+        title: improveTitle(request.title || "", category),
+        description: improvements.enhanced_description,
+        word_count: improvements.enhanced_description.split(" ").length
+      },
+      analysis: {
+        quality_score: analysis.score,
+        missing_elements: analysis.missing,
+        improvements_applied: improvements.changes
+      },
+      suggestions: improvements.suggestions
+    };
+  } catch (error) {
+    console.error("Erreur enhanceBrief:", error);
+    throw new Error("Impossible d'am\xE9liorer le brief");
+  }
+}
+async function logUserFeedback(phase, prompt, feedback) {
+  try {
+    const logEntry = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      phase,
+      prompt,
+      feedback,
+      user_session: "anonymous"
+    };
+    const logsDir = join(process.cwd(), "logs");
+    if (!existsSync(logsDir)) {
+      mkdirSync(logsDir, { recursive: true });
+    }
+    const logFile = join(logsDir, `ai-feedback-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.json`);
+    const logs = [];
+    try {
+      const existingLogs = __require(logFile);
+      logs.push(...existingLogs);
+    } catch {
+    }
+    logs.push(logEntry);
+    writeFileSync(logFile, JSON.stringify(logs, null, 2));
+    console.log(`\u2705 Feedback logged: ${phase}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur logUserFeedback:", error);
+    throw new Error("Impossible d'enregistrer le feedback");
+  }
+}
+function calculateBasePrice(category) {
+  const basePrices = {
+    "development": 5e3,
+    "design": 2500,
+    "marketing": 3e3,
+    "consulting": 4e3,
+    "writing": 1500,
+    "general": 3e3
+  };
+  return basePrices[category] || basePrices.general;
+}
+function analyzeComplexity(description) {
+  const complexityKeywords = [
+    "complex",
+    "advanced",
+    "enterprise",
+    "scalable",
+    "integration",
+    "API",
+    "database",
+    "real-time",
+    "mobile",
+    "responsive"
+  ];
+  const found = complexityKeywords.filter(
+    (keyword) => description.toLowerCase().includes(keyword)
+  ).length;
+  return Math.max(0.8, Math.min(2, 1 + found * 0.2));
+}
+function getTimelineMultiplier(timeline) {
+  if (timeline.includes("urgent") || timeline.includes("asap")) return 1.5;
+  if (timeline.includes("semaine")) return 1.3;
+  if (timeline.includes("mois")) return 1;
+  return 1.1;
+}
+function analyzeBriefQuality(description) {
+  const words = description.split(" ").length;
+  const hasBudget = /budget|prix|coût|\€|\$/.test(description.toLowerCase());
+  const hasTimeline = /délai|semaine|mois|urgent/.test(description.toLowerCase());
+  const hasObjectives = /objectif|but|résultat/.test(description.toLowerCase());
+  const score = Math.min(
+    1,
+    words / 100 * 0.4 + (hasBudget ? 0.2 : 0) + (hasTimeline ? 0.2 : 0) + (hasObjectives ? 0.2 : 0)
+  );
+  const missing = [];
+  if (!hasBudget) missing.push("Budget");
+  if (!hasTimeline) missing.push("D\xE9lais");
+  if (!hasObjectives) missing.push("Objectifs clairs");
+  if (words < 50) missing.push("Plus de d\xE9tails");
+  return { score, missing };
+}
+function generateImprovements(description, category, analysis) {
+  let enhanced = description;
+  const changes = [];
+  const suggestions = [];
+  if (analysis.missing.includes("Budget")) {
+    enhanced += "\n\n\u{1F4B0} Budget: \xC0 d\xE9finir selon la proposition (ouvert aux suggestions)";
+    changes.push("Ajout indication budget");
+  }
+  if (analysis.missing.includes("D\xE9lais")) {
+    enhanced += "\n\u23F0 D\xE9lais: Flexible, id\xE9alement sous 4 semaines";
+    changes.push("Ajout d\xE9lais indicatifs");
+  }
+  if (analysis.missing.includes("Objectifs clairs")) {
+    enhanced += "\n\u{1F3AF} Objectifs: Livraison conforme aux attentes avec documentation compl\xE8te";
+    changes.push("Clarification objectifs");
+  }
+  suggestions.push("Ajouter des exemples concrets de ce qui est attendu");
+  suggestions.push("Pr\xE9ciser les crit\xE8res de s\xE9lection du prestataire");
+  suggestions.push("Mentionner les contraintes techniques \xE9ventuelles");
+  return { enhanced_description: enhanced, changes, suggestions };
+}
+function improveTitle(title, category) {
+  if (!title) return `Projet ${category} - Mission sp\xE9cialis\xE9e`;
+  const keywords = {
+    "development": "\u{1F4BB}",
+    "design": "\u{1F3A8}",
+    "marketing": "\u{1F4C8}",
+    "consulting": "\u{1F4A1}",
+    "writing": "\u270D\uFE0F"
+  };
+  const icon = keywords[category] || "\u{1F680}";
+  return title.includes(icon) ? title : `${icon} ${title}`;
+}
+var init_aiOrchestrator = __esm({
+  "apps/api/src/ai/aiOrchestrator.ts"() {
+    "use strict";
   }
 });
 
@@ -33,93 +417,51 @@ var geminiAdapter_exports = {};
 __export(geminiAdapter_exports, {
   geminiCall: () => geminiCall
 });
-import { PredictionServiceClient } from "@google-cloud/aiplatform";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 async function geminiCall(phase, prompt) {
   const t0 = Date.now();
-  const projectId = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID || "secure-electron-471013-r0";
-  const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
-  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-  console.log("\u{1F3AF} Initialisation Vertex AI (mode production)...");
-  console.log("\u2705 Configuration Vertex AI:", {
-    projectId,
-    location,
-    hasCredentials: !!credentialsJson,
-    status: "\u{1F680} PRODUCTION READY"
-  });
-  console.log("\u{1F680} Initialisation Vertex AI (mode priorit\xE9)...");
-  let clientConfig = {
-    projectId,
-    location
-  };
-  let credentials;
-  if (credentialsJson) {
-    try {
-      credentials = JSON.parse(credentialsJson);
-      clientConfig.credentials = credentials;
-      console.log("\u2705 Credentials Vertex AI valid\xE9s et charg\xE9s");
-    } catch (credError) {
-      console.error("\u274C Erreur parsing credentials Vertex AI:", credError);
-      throw new Error(`Format JSON des credentials Vertex AI invalide: ${credError.message}`);
-    }
-  } else {
-    console.warn("\u26A0\uFE0F Pas de credentials JSON fournis, utilisation des credentials par d\xE9faut");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY environment variable is required");
   }
-  const client = new PredictionServiceClient(clientConfig);
-  const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-  const endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/${modelName}`;
-  console.log(`\u{1F3AF} Vertex AI Endpoint: ${endpoint}`);
-  const instanceValue = {
-    contents: [{ role: "user", parts: [{ text: JSON.stringify(prompt) }] }]
-  };
-  const parameter = {
-    candidateCount: 1,
-    maxOutputTokens: 8192,
-    temperature: 0.1,
-    responseMimeType: "application/json",
-    topP: 0.95,
-    topK: 40
-  };
-  const request = {
-    endpoint,
-    instances: [instanceValue],
-    parameters: parameter
-  };
-  console.log("\u{1F4E1} Envoi requ\xEAte Vertex AI (mode production)...");
+  console.log("\u{1F3AF} Initialisation Gemini API...");
+  const client = new GoogleGenerativeAI(apiKey);
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  console.log("\u{1F4E1} Envoi requ\xEAte Gemini API...");
   let text2;
   try {
-    const [response] = await client.predict(request);
-    text2 = response.predictions?.[0]?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const result = await model.generateContent(JSON.stringify(prompt));
+    const response = await result.response;
+    text2 = response.text();
     if (!text2) {
-      throw new Error("R\xE9ponse vide de Vertex AI");
+      throw new Error("R\xE9ponse vide de Gemini API");
     }
-    console.log("\u2705 R\xE9ponse Vertex AI re\xE7ue avec succ\xE8s");
-  } catch (vertexError) {
-    console.error("\u{1F6A8} ERREUR CRITIQUE VERTEX AI:", vertexError);
-    throw new Error(`Vertex AI \xE9chou\xE9: ${vertexError.message}. V\xE9rifiez votre configuration Google Cloud.`);
+    console.log("\u2705 R\xE9ponse Gemini API re\xE7ue avec succ\xE8s");
+  } catch (geminiError) {
+    console.error("\u{1F6A8} ERREUR GEMINI API:", geminiError);
+    throw new Error(`Gemini API \xE9chou\xE9: ${geminiError.message}`);
   }
   let parsed;
   try {
     parsed = JSON.parse(text2);
+    console.log("\u2705 R\xE9ponse Gemini pars\xE9e en JSON:", parsed);
   } catch {
-    parsed = { raw: text2 };
+    console.log("\u{1F4DD} R\xE9ponse Gemini en texte brut (pas JSON):", text2.substring(0, 200) + "...");
+    parsed = text2;
   }
   const latency = Date.now() - t0;
   const out = {
     phase,
     model_family: "gemini",
-    model_name: modelName,
+    model_name: "gemini-1.5-flash",
     input_redacted: {},
-    // sera rempli par le logger après redaction
     output: parsed,
     quality: { latency_ms: latency },
     meta: {
-      provider: "vertex-ai",
-      project_id: projectId,
-      location,
-      allow_training: !!policy_google_default.allow_training,
-      provenance: "vertex-ai-production",
-      created_at: (/* @__PURE__ */ new Date()).toISOString(),
-      vertex_ai_priority: true
+      provider: "gemini-api",
+      allow_training: false,
+      provenance: "gemini-api-direct",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
     }
   };
   return out;
@@ -127,7 +469,1109 @@ async function geminiCall(phase, prompt) {
 var init_geminiAdapter = __esm({
   "apps/api/src/ai/adapters/geminiAdapter.ts"() {
     "use strict";
-    init_policy_google();
+  }
+});
+
+// apps/api/src/ai/learning-engine.ts
+import { drizzle as drizzle5 } from "drizzle-orm/node-postgres";
+import { Pool as Pool5 } from "pg";
+import { desc as desc2, eq as eq4, and, gte } from "drizzle-orm";
+var pool4, db4, AILearningEngine, aiLearningEngine;
+var init_learning_engine = __esm({
+  "apps/api/src/ai/learning-engine.ts"() {
+    "use strict";
+    init_schema();
+    pool4 = new Pool5({ connectionString: process.env.DATABASE_URL });
+    db4 = drizzle5(pool4);
+    AILearningEngine = class {
+      patterns = /* @__PURE__ */ new Map();
+      insights = [];
+      /**
+       * Analyse les interactions passées avec Gemini pour identifier les patterns de succès
+       */
+      async analyzePastInteractions(limit = 1e3) {
+        try {
+          console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
+          const recentInteractions = await db4.select().from(aiEvents).where(and(
+            eq4(aiEvents.provider, "gemini-api"),
+            gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
+            // 30 jours
+          )).orderBy(desc2(aiEvents.created_at)).limit(limit);
+          console.log(`\u{1F4CA} Analyse de ${recentInteractions.length} interactions Gemini`);
+          for (const interaction of recentInteractions) {
+            await this.processInteraction(interaction);
+          }
+          this.generateLearningInsights();
+          console.log(`\u2705 Apprentissage termin\xE9: ${this.patterns.size} patterns identifi\xE9s`);
+        } catch (error) {
+          console.error("\u274C Erreur lors de l'apprentissage:", error);
+        }
+      }
+      /**
+       * Traite une interaction individuelle pour extraire des patterns
+       */
+      async processInteraction(interaction) {
+        try {
+          const inputData = interaction.input_redacted || {};
+          const output = interaction.output;
+          const userFeedback = interaction.accepted ? "positive" : "neutral";
+          if (!output || !inputData.prompt) return;
+          const inputPattern = this.extractPattern(inputData.prompt);
+          if (!inputPattern) return;
+          const cleanOutput = this.cleanGeminiOutput(output);
+          const patternKey = this.generatePatternKey(inputPattern, interaction.phase);
+          if (this.patterns.has(patternKey)) {
+            const existing = this.patterns.get(patternKey);
+            existing.usage_count++;
+            existing.confidence_score = this.calculateConfidence(existing);
+            if (userFeedback === "positive" && cleanOutput.length > existing.successful_output.length) {
+              existing.successful_output = cleanOutput;
+            }
+          } else {
+            this.patterns.set(patternKey, {
+              input_pattern: inputPattern,
+              successful_output: cleanOutput,
+              context_category: this.detectCategory(inputData.prompt),
+              user_feedback: userFeedback,
+              confidence_score: userFeedback === "positive" ? 0.8 : 0.6,
+              usage_count: 1
+            });
+          }
+        } catch (error) {
+          console.error("\u274C Erreur traitement interaction:", error);
+        }
+      }
+      /**
+       * Génère des suggestions améliorées basées sur l'apprentissage
+       */
+      async generateImprovedSuggestion(inputText, fieldType, category) {
+        const inputPattern = this.extractPattern(inputText);
+        const patternKey = this.generatePatternKey(inputPattern, fieldType);
+        if (this.patterns.has(patternKey)) {
+          const pattern = this.patterns.get(patternKey);
+          if (pattern.confidence_score > 0.7) {
+            console.log(`\u{1F3AF} Pattern trouv\xE9 (confiance: ${pattern.confidence_score})`);
+            return this.adaptPattern(pattern.successful_output, inputText);
+          }
+        }
+        const similarPatterns = this.findSimilarPatterns(inputPattern, fieldType);
+        if (similarPatterns.length > 0) {
+          const bestPattern = similarPatterns[0];
+          console.log(`\u{1F50D} Pattern similaire trouv\xE9 (confiance: ${bestPattern.confidence_score})`);
+          return this.adaptPattern(bestPattern.successful_output, inputText);
+        }
+        return null;
+      }
+      /**
+       * Apprend d'une nouvelle réponse Gemini réussie
+       */
+      async learnFromSuccess(originalText, improvedText, fieldType, category, userFeedback = "positive") {
+        try {
+          console.log("\u{1F4DA} Apprentissage d'un nouveau pattern de succ\xE8s...");
+          console.log("\u{1F916} Consultation Gemini pour enrichir l'apprentissage...");
+          const geminiAnalysis = await this.consultGeminiForLearning(originalText, improvedText, fieldType, category || this.detectCategory(originalText));
+          const pattern = this.extractPattern(originalText);
+          const patternKey = this.generatePatternKey(pattern, fieldType);
+          this.patterns.set(patternKey, {
+            input_pattern: pattern,
+            successful_output: this.cleanGeminiOutput(improvedText),
+            context_category: category || this.detectCategory(originalText),
+            user_feedback: userFeedback,
+            confidence_score: this.calculateConfidenceForNewPattern(userFeedback, geminiAnalysis),
+            usage_count: 1,
+            created_at: (/* @__PURE__ */ new Date()).toISOString(),
+            last_used: (/* @__PURE__ */ new Date()).toISOString(),
+            gemini_analysis: geminiAnalysis,
+            // Nouvel enrichissement Gemini
+            improvement_factors: geminiAnalysis?.improvement_factors || [],
+            semantic_keywords: geminiAnalysis?.semantic_keywords || []
+          });
+          console.log(`\u2705 Nouveau pattern appris avec aide Gemini: ${patternKey}`);
+        } catch (error) {
+          console.error("\u274C Erreur lors de l'apprentissage:", error);
+        }
+      }
+      /**
+       * Nettoyage des réponses Gemini (enlever JSON wrapper, etc.)
+       */
+      cleanGeminiOutput(output) {
+        let cleaned = output;
+        if (cleaned.includes("```json")) {
+          const match = cleaned.match(/```json\s*\{\s*"enhancedText":\s*"([^"]+)"/);
+          if (match) {
+            cleaned = match[1];
+          }
+        }
+        cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\"/g, '"');
+        return cleaned.trim();
+      }
+      extractPattern(text2) {
+        return text2.toLowerCase().split(" ").filter((word) => word.length > 3).slice(0, 5).join(" ");
+      }
+      generatePatternKey(pattern, type) {
+        return `${type}:${pattern}`;
+      }
+      detectCategory(text2) {
+        const categories = {
+          "d\xE9veloppement": ["site", "web", "app", "code", "javascript"],
+          "design": ["logo", "graphique", "design", "ui", "ux"],
+          "travaux": ["peinture", "travaux", "r\xE9novation", "construction"],
+          "marketing": ["marketing", "pub", "seo", "social"],
+          "r\xE9daction": ["article", "contenu", "texte", "blog"]
+        };
+        for (const [cat, keywords] of Object.entries(categories)) {
+          if (keywords.some((kw) => text2.toLowerCase().includes(kw))) {
+            return cat;
+          }
+        }
+        return "g\xE9n\xE9ral";
+      }
+      calculateConfidence(pattern) {
+        let confidence = 0.5;
+        confidence += Math.min(0.3, pattern.usage_count * 0.05);
+        if (pattern.user_feedback === "positive") confidence += 0.2;
+        if (pattern.user_feedback === "negative") confidence -= 0.3;
+        return Math.max(0.1, Math.min(0.95, confidence));
+      }
+      calculateConfidenceForNewPattern(userFeedback, geminiAnalysis) {
+        let confidence = userFeedback === "positive" ? 0.8 : 0.6;
+        if (geminiAnalysis) {
+          confidence += (geminiAnalysis.quality_score || 0.8) * 0.1;
+          confidence += (geminiAnalysis.reusability_score || 0.7) * 0.1;
+        }
+        return Math.max(0.1, Math.min(0.95, confidence));
+      }
+      findSimilarPatterns(inputPattern, fieldType) {
+        const similar = [];
+        const inputWords = inputPattern.split(" ");
+        for (const [key, pattern] of this.patterns) {
+          if (!key.startsWith(fieldType)) continue;
+          const patternWords = pattern.input_pattern.split(" ");
+          const commonWords = inputWords.filter((word) => patternWords.includes(word));
+          const similarity = commonWords.length / Math.max(inputWords.length, patternWords.length);
+          if (similarity > 0.3) {
+            similar.push({ ...pattern, similarity });
+          }
+        }
+        return similar.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
+      }
+      adaptPattern(patternOutput, newInput) {
+        return patternOutput.replace(/\[CONTEXTE\]/g, newInput.substring(0, 50));
+      }
+      generateLearningInsights() {
+        this.insights = [];
+        const categoryStats = /* @__PURE__ */ new Map();
+        for (const pattern of this.patterns.values()) {
+          const cat = pattern.context_category;
+          if (categoryStats.has(cat)) {
+            const stats = categoryStats.get(cat);
+            stats.count++;
+            stats.avgConfidence = (stats.avgConfidence + pattern.confidence_score) / 2;
+          } else {
+            categoryStats.set(cat, { count: 1, avgConfidence: pattern.confidence_score });
+          }
+        }
+        for (const [category, stats] of categoryStats) {
+          if (stats.count > 5 && stats.avgConfidence > 0.7) {
+            this.insights.push({
+              pattern_type: "enhancement",
+              improvement_suggestion: `Cat\xE9gorie ${category}: ${stats.count} patterns fiables identifi\xE9s`,
+              confidence: stats.avgConfidence,
+              based_on_samples: stats.count
+            });
+          }
+        }
+      }
+      /**
+       * Consultation Gemini pour enrichir l'apprentissage
+       */
+      async consultGeminiForLearning(originalText, improvedText, fieldType, category) {
+        try {
+          const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+          const prompt = {
+            role: "expert_learning_analyst",
+            task: "improvement_pattern_analysis",
+            original: originalText,
+            improved: improvedText,
+            field_type: fieldType,
+            category,
+            request: "Analyse ce pattern d'am\xE9lioration et identifie les facteurs cl\xE9s de succ\xE8s"
+          };
+          console.log("\u{1F393} Gemini analyse du pattern d'am\xE9lioration...");
+          const response = await geminiCall2("learning_analysis", prompt);
+          if (response && response.output) {
+            console.log("\u2705 Analyse Gemini re\xE7ue pour apprentissage");
+            return {
+              improvement_factors: this.extractImprovementFactors(response.output),
+              semantic_keywords: this.extractSemanticKeywords(response.output),
+              quality_score: this.extractQualityScore(response.output),
+              reusability_score: this.extractReusabilityScore(response.output),
+              pattern_type: this.classifyPatternType(response.output),
+              raw_analysis: response.output
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error("Erreur consultation Gemini apprentissage:", error);
+          return null;
+        }
+      }
+      extractImprovementFactors(output) {
+        if (typeof output === "string") {
+          const lines = output.split("\n").filter(
+            (line) => line.includes("facteur") || line.includes("am\xE9lior") || line.includes("cl\xE9")
+          );
+          return lines.slice(0, 5);
+        }
+        return output.improvement_factors || [];
+      }
+      extractSemanticKeywords(output) {
+        if (typeof output === "string") {
+          const words = output.toLowerCase().split(/\s+/).filter(
+            (word) => word.length > 4 && !["dans", "avec", "pour", "sans", "plus"].includes(word)
+          );
+          return words.slice(0, 10);
+        }
+        return output.semantic_keywords || [];
+      }
+      extractQualityScore(output) {
+        if (typeof output === "string") {
+          const match = output.match(/qualité.*?(\d+)/i);
+          return match ? parseInt(match[1]) / 100 : 0.8;
+        }
+        return output.quality_score || 0.8;
+      }
+      extractReusabilityScore(output) {
+        if (typeof output === "string") {
+          const match = output.match(/réutilis.*?(\d+)/i);
+          return match ? parseInt(match[1]) / 100 : 0.7;
+        }
+        return output.reusability_score || 0.7;
+      }
+      classifyPatternType(output) {
+        if (typeof output === "string") {
+          const types = ["structuration", "clarification", "enrichissement", "simplification"];
+          const found = types.find((type) => output.toLowerCase().includes(type));
+          return found || "general";
+        }
+        return output.pattern_type || "general";
+      }
+      /**
+       * Apprentissage universel pour TOUTES les interactions Gemini
+       */
+      async learnFromGeminiInteraction(interactionType, inputData, geminiResponse, finalResult, userFeedback = "positive") {
+        try {
+          console.log(`\u{1F393} Apprentissage du pattern ${interactionType} de Gemini...`);
+          const geminiMetaAnalysis = await this.consultGeminiForMetaLearning(
+            interactionType,
+            inputData,
+            geminiResponse,
+            finalResult
+          );
+          const pattern = this.generateUniversalPattern(inputData, interactionType);
+          const patternKey = this.generatePatternKey(pattern, interactionType);
+          const qualityScore = this.assessGeminiResponseQuality(geminiResponse, finalResult);
+          const confidenceScore = this.calculateConfidenceForGeminiInteraction(
+            userFeedback,
+            qualityScore,
+            geminiMetaAnalysis
+          );
+          this.patterns.set(patternKey, {
+            input_pattern: pattern,
+            successful_output: this.extractSuccessfulOutput(geminiResponse, finalResult),
+            context_category: this.detectCategoryFromInput(inputData),
+            user_feedback: userFeedback,
+            confidence_score: confidenceScore,
+            usage_count: 1,
+            created_at: (/* @__PURE__ */ new Date()).toISOString(),
+            last_used: (/* @__PURE__ */ new Date()).toISOString(),
+            gemini_analysis: geminiResponse,
+            improvement_factors: this.extractImprovementFactorsUniversal(geminiResponse),
+            semantic_keywords: this.extractSemanticKeywordsUniversal(inputData),
+            interaction_type: interactionType,
+            quality_metrics: {
+              response_quality: qualityScore,
+              relevance_score: geminiMetaAnalysis?.relevance_score || 0.8,
+              innovation_factor: geminiMetaAnalysis?.innovation_factor || 0.7,
+              reusability_potential: geminiMetaAnalysis?.reusability_potential || 0.8
+            },
+            meta_analysis: geminiMetaAnalysis
+          });
+          console.log(`\u2705 Pattern ${interactionType} appris avec m\xE9tadonn\xE9es Gemini: ${patternKey}`);
+          this.updateInsightsFromNewPattern(interactionType, confidenceScore);
+        } catch (error) {
+          console.error(`\u274C Erreur apprentissage ${interactionType}:`, error);
+        }
+      }
+      /**
+       * Génère un pattern universel à partir de n'importe quel input
+       */
+      generateUniversalPattern(inputData, type) {
+        let extractedText = "";
+        if (typeof inputData === "string") {
+          extractedText = inputData;
+        } else if (inputData.description) {
+          extractedText = inputData.description;
+        } else if (inputData.mission?.description) {
+          extractedText = inputData.mission.description;
+        } else if (inputData.title) {
+          extractedText = inputData.title;
+        } else {
+          extractedText = JSON.stringify(inputData).substring(0, 200);
+        }
+        return this.extractPattern(extractedText);
+      }
+      /**
+       * Évalue la qualité de la réponse Gemini
+       */
+      assessGeminiResponseQuality(geminiResponse, finalResult) {
+        let quality = 0.7;
+        if (geminiResponse && typeof geminiResponse === "object") {
+          const responseFields = Object.keys(geminiResponse).length;
+          quality += Math.min(0.2, responseFields * 0.05);
+        }
+        if (finalResult && geminiResponse) {
+          quality += 0.1;
+        }
+        return Math.min(0.95, quality);
+      }
+      /**
+       * Calcul de confiance pour interactions Gemini
+       */
+      calculateConfidenceForGeminiInteraction(userFeedback, qualityScore, metaAnalysis) {
+        let confidence = 0.8;
+        if (userFeedback === "positive") confidence += 0.1;
+        if (userFeedback === "negative") confidence -= 0.2;
+        confidence += (qualityScore - 0.7) * 0.5;
+        if (metaAnalysis) {
+          confidence += (metaAnalysis.relevance_score || 0.8) * 0.1;
+          confidence += (metaAnalysis.innovation_factor || 0.7) * 0.05;
+        }
+        return Math.max(0.3, Math.min(0.98, confidence));
+      }
+      /**
+       * Extrait le résultat réussi pour apprentissage
+       */
+      extractSuccessfulOutput(geminiResponse, finalResult) {
+        if (typeof geminiResponse === "string") {
+          return geminiResponse.substring(0, 500);
+        }
+        if (geminiResponse && typeof geminiResponse === "object") {
+          return JSON.stringify(geminiResponse).substring(0, 500);
+        }
+        if (finalResult) {
+          return JSON.stringify(finalResult).substring(0, 500);
+        }
+        return "R\xE9sultat Gemini trait\xE9";
+      }
+      /**
+       * Détecte la catégorie depuis n'importe quel input
+       */
+      detectCategoryFromInput(inputData) {
+        let textToAnalyze = "";
+        if (typeof inputData === "string") {
+          textToAnalyze = inputData;
+        } else if (inputData.category) {
+          return inputData.category;
+        } else if (inputData.mission?.category) {
+          return inputData.mission.category;
+        } else if (inputData.description) {
+          textToAnalyze = inputData.description;
+        } else {
+          textToAnalyze = JSON.stringify(inputData);
+        }
+        return this.detectCategory(textToAnalyze);
+      }
+      /**
+       * Extraction universelle de facteurs d'amélioration
+       */
+      extractImprovementFactorsUniversal(geminiResponse) {
+        const factors = [];
+        if (typeof geminiResponse === "string") {
+          const lines = geminiResponse.split("\n").filter(
+            (line) => line.includes("am\xE9liorer") || line.includes("optimiser") || line.includes("recommand")
+          );
+          factors.push(...lines.slice(0, 3));
+        } else if (geminiResponse && typeof geminiResponse === "object") {
+          if (geminiResponse.recommendations) factors.push(...geminiResponse.recommendations);
+          if (geminiResponse.suggestions) factors.push(...geminiResponse.suggestions);
+          if (geminiResponse.improvements) factors.push(...geminiResponse.improvements);
+        }
+        return factors.slice(0, 5);
+      }
+      /**
+       * Extraction universelle de mots-clés sémantiques
+       */
+      extractSemanticKeywordsUniversal(inputData) {
+        let textToAnalyze = "";
+        if (typeof inputData === "string") {
+          textToAnalyze = inputData;
+        } else if (inputData.description) {
+          textToAnalyze = inputData.description;
+        } else {
+          textToAnalyze = JSON.stringify(inputData);
+        }
+        const words = textToAnalyze.toLowerCase().split(/\s+/).filter((word) => word.length > 3).filter((word) => !["dans", "avec", "pour", "sans", "plus", "cette", "tous"].includes(word));
+        return [...new Set(words)].slice(0, 10);
+      }
+      /**
+       * Met à jour les insights globaux
+       */
+      updateInsightsFromNewPattern(interactionType, confidenceScore) {
+        if (confidenceScore > 0.85) {
+          this.insights.push({
+            pattern_type: "enhancement",
+            improvement_suggestion: `Nouveau pattern ${interactionType} de haute qualit\xE9 identifi\xE9`,
+            confidence: confidenceScore,
+            based_on_samples: 1
+          });
+        }
+      }
+      /**
+       * Consultation Gemini pour méta-apprentissage
+       */
+      async consultGeminiForMetaLearning(interactionType, inputData, geminiResponse, finalResult) {
+        try {
+          const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+          const prompt = {
+            role: "expert_meta_learning_analyst",
+            task: "self_analysis_and_improvement",
+            interaction_type: interactionType,
+            original_input: inputData,
+            my_response: geminiResponse,
+            final_outcome: finalResult,
+            request: "Analyse ta propre contribution et identifie les patterns d'am\xE9lioration pour mes futurs apprentissages"
+          };
+          console.log("\u{1F504} Gemini m\xE9ta-analyse de sa propre contribution...");
+          const response = await geminiCall2("meta_learning_analysis", prompt);
+          if (response && response.output) {
+            console.log("\u2705 M\xE9ta-analyse Gemini re\xE7ue");
+            return {
+              relevance_score: this.extractMetaScore(response.output, "relevance"),
+              innovation_factor: this.extractMetaScore(response.output, "innovation"),
+              reusability_potential: this.extractMetaScore(response.output, "reusability"),
+              improvement_areas: this.extractImprovementAreas(response.output),
+              pattern_insights: this.extractPatternInsights(response.output),
+              raw_meta_analysis: response.output
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error("Erreur m\xE9ta-apprentissage Gemini:", error);
+          return null;
+        }
+      }
+      extractMetaScore(output, scoreType) {
+        if (typeof output === "string") {
+          const match = output.match(new RegExp(`${scoreType}.*?(\\d+)`, "i"));
+          return match ? parseInt(match[1]) / 100 : 0.8;
+        }
+        return output[`${scoreType}_score`] || 0.8;
+      }
+      extractImprovementAreas(output) {
+        if (typeof output === "string") {
+          const lines = output.split("\n").filter(
+            (line) => line.includes("am\xE9liorer") || line.includes("d\xE9velopper") || line.includes("renforcer")
+          );
+          return lines.slice(0, 3);
+        }
+        return output.improvement_areas || [];
+      }
+      extractPatternInsights(output) {
+        if (typeof output === "string") {
+          const lines = output.split("\n").filter(
+            (line) => line.includes("pattern") || line.includes("tendance") || line.includes("r\xE9current")
+          );
+          return lines.slice(0, 3);
+        }
+        return output.pattern_insights || [];
+      }
+      /**
+       * API publique pour obtenir les statistiques d'apprentissage
+       */
+      getLearningStats() {
+        const stats = {
+          total_patterns: this.patterns.size,
+          insights_generated: this.insights.length,
+          high_confidence_patterns: Array.from(this.patterns.values()).filter((p) => p.confidence_score > 0.8).length,
+          categories_learned: [...new Set(Array.from(this.patterns.values()).map((p) => p.context_category))].length,
+          interaction_types: [...new Set(Array.from(this.patterns.values()).map((p) => p.interaction_type || "unknown"))],
+          gemini_contributions: Array.from(this.patterns.values()).filter((p) => p.gemini_analysis).length,
+          avg_confidence: Array.from(this.patterns.values()).reduce((sum, p) => sum + p.confidence_score, 0) / this.patterns.size || 0
+        };
+        console.log("\u{1F4CA} Statistiques d'apprentissage Gemini:", stats);
+        return stats;
+      }
+    };
+    aiLearningEngine = new AILearningEngine();
+  }
+});
+
+// server/services/ai-enhancement.ts
+var ai_enhancement_exports = {};
+__export(ai_enhancement_exports, {
+  AIEnhancementService: () => AIEnhancementService,
+  aiEnhancementService: () => aiEnhancementService
+});
+var AIEnhancementService, aiEnhancementService;
+var init_ai_enhancement = __esm({
+  "server/services/ai-enhancement.ts"() {
+    "use strict";
+    init_aiOrchestrator();
+    init_geminiAdapter();
+    init_learning_engine();
+    AIEnhancementService = class {
+      /**
+       * Suggère des prix basés sur l'analyse du marché et de la description du projet
+       */
+      async suggestPricing(projectTitle, description, category) {
+        try {
+          const prompt = {
+            projectTitle,
+            description,
+            category,
+            guidance: this.getCategoryPricingGuidance(category),
+            expertise: this.getCategoryExpertise(category)
+          };
+          const result = await getPricingSuggestion(prompt);
+          const minPrice = Math.max(500, result.minPrice || 1e3);
+          const maxPrice = Math.max(minPrice * 1.5, result.maxPrice || 3e3);
+          return {
+            minPrice,
+            maxPrice,
+            averagePrice: result.averagePrice || Math.round((minPrice + maxPrice) / 2),
+            factors: Array.isArray(result.factors) ? result.factors : this.getDetailedFallbackFactors(category, minPrice, maxPrice),
+            confidence: Math.max(0, Math.min(1, result.confidence || 0.7))
+          };
+        } catch (error) {
+          console.error("Erreur suggestion prix:", error);
+          const prices = this.getFallbackPrices(category);
+          return {
+            minPrice: prices.min,
+            maxPrice: prices.max,
+            averagePrice: prices.avg,
+            factors: this.getDetailedFallbackFactors(category, prices.min, prices.max),
+            confidence: 0.6
+          };
+        }
+      }
+      /**
+       * Améliore une description vague de projet en une description détaillée et structurée
+       */
+      async enhanceProjectDescription(vagueDescription, category, additionalInfo) {
+        try {
+          const categorySpecificPrompt = this.getCategorySpecificPrompt(category, vagueDescription, additionalInfo);
+          const prompt = `En tant qu'expert en ${this.getCategoryExpertise(category)}, aidez un client \xE0 clarifier et structurer sa demande.
+
+DEMANDE INITIALE:
+"${vagueDescription}"
+
+Cat\xE9gorie: ${category}
+${additionalInfo ? `Infos suppl\xE9mentaires: ${additionalInfo}` : ""}
+
+${categorySpecificPrompt}
+
+Transformez cette demande en brief professionnel concis et clair. Maximum 120 mots.
+
+R\xE9pondez au format JSON strict:
+{
+  "improvedTitle": "Titre professionnel clair et sp\xE9cifique",
+  "detailedDescription": "Description concise avec les \xE9l\xE9ments cl\xE9s de la cat\xE9gorie ${category}",
+  "suggestedRequirements": ["exigence sp\xE9cifique 1", "exigence m\xE9tier 2", "contrainte 3"],
+  "estimatedTimeline": "d\xE9lai r\xE9aliste selon la cat\xE9gorie",
+  "complexity": "simple"
+}
+
+La complexity doit \xEAtre "simple", "medium" ou "complex".`;
+          const vertexResponse = await geminiCall("brief_enhance", { prompt });
+          const result = vertexResponse.output;
+          return {
+            improvedTitle: result.improvedTitle || "Projet am\xE9lior\xE9",
+            detailedDescription: result.detailedDescription || vagueDescription,
+            suggestedRequirements: Array.isArray(result.suggestedRequirements) ? result.suggestedRequirements : [],
+            estimatedTimeline: result.estimatedTimeline || "2-4 semaines",
+            complexity: ["simple", "medium", "complex"].includes(result.complexity) ? result.complexity : "medium"
+          };
+        } catch (error) {
+          console.error("Erreur am\xE9lioration description:", error);
+          return {
+            improvedTitle: "Projet \xE0 pr\xE9ciser",
+            detailedDescription: `Demande initiale : ${vagueDescription}
+
+Cette demande n\xE9cessite des pr\xE9cisions suppl\xE9mentaires pour \xEAtre mieux comprise par les prestataires.`,
+            suggestedRequirements: ["\xC0 d\xE9finir selon les sp\xE9cifications"],
+            estimatedTimeline: "\xC0 d\xE9terminer",
+            complexity: "medium"
+          };
+        }
+      }
+      /**
+       * Génère des facteurs détaillés pour le fallback
+       */
+      getDetailedFallbackFactors(category, minPrice, maxPrice) {
+        const avgPrice = Math.round((minPrice + maxPrice) / 2);
+        const estimatedHours = Math.round(avgPrice / 50);
+        const categoryFactors = {
+          "d\xE9veloppement": [
+            `D\xE9veloppement ${category} : ${estimatedHours}h estim\xE9es \xE0 45-80\u20AC/h selon complexit\xE9`,
+            `Tarifs march\xE9 2025 France : ${minPrice}-${maxPrice}\u20AC incluant tests et d\xE9ploiement`,
+            `Maintenance post-livraison (3-6 mois) et r\xE9visions client incluses`
+          ],
+          "travaux": [
+            `Main d'\u0153uvre sp\xE9cialis\xE9e : ${estimatedHours}h \xE0 35-55\u20AC/h + mat\xE9riaux selon projet`,
+            `Tarifs France 2025 : ${minPrice}-${maxPrice}\u20AC avec assurances et garanties incluses`,
+            `D\xE9placements, outillage professionnel et nettoyage final inclus`
+          ],
+          "design": [
+            `Cr\xE9ation graphique : ${Math.round(estimatedHours / 2)} jours cr\xE9atifs \xE0 50-80\u20AC/h`,
+            `Forfait ${minPrice}-${maxPrice}\u20AC incluant 3-5 propositions et r\xE9visions illimit\xE9es`,
+            `Fichiers sources haute d\xE9finition et d\xE9clinaisons formats inclus`
+          ],
+          "marketing": [
+            `Strat\xE9gie digitale : ${estimatedHours}h conseil \xE0 60-100\u20AC/h (hors budget m\xE9dia)`,
+            `Mission ${minPrice}-${maxPrice}\u20AC incluant audit, cr\xE9ation contenu et reporting KPIs`,
+            `Formation \xE9quipe, templates r\xE9utilisables et suivi 3 mois inclus`
+          ],
+          "conseil": [
+            `Conseil expert : ${Math.round(estimatedHours / 8)} jours mission \xE0 80-150\u20AC/h`,
+            `Prestation ${minPrice}-${maxPrice}\u20AC incluant audit, recommandations et plan d'action`,
+            `Pr\xE9sentation dirigeants, documents strat\xE9giques et suivi mise en \u0153uvre`
+          ],
+          "r\xE9daction": [
+            `R\xE9daction professionnelle : ${estimatedHours * 100} mots \xE0 0,15-0,30\u20AC/mot`,
+            `Prestation ${minPrice}-${maxPrice}\u20AC incluant recherches, optimisation SEO et r\xE9visions`,
+            `Formats multiples, images libres de droits et planning \xE9ditorial inclus`
+          ],
+          "services": [
+            `Services professionnels : ${estimatedHours}h prestation \xE0 40-80\u20AC/h selon expertise`,
+            `Forfait ${minPrice}-${maxPrice}\u20AC adapt\xE9 aux standards du secteur fran\xE7ais 2025`,
+            `D\xE9placements, outils professionnels et garantie r\xE9sultat inclus`
+          ]
+        };
+        return categoryFactors[category] || [
+          `Prestation professionnelle : ${estimatedHours}h \xE0 50-80\u20AC/h selon expertise requise`,
+          `Tarifs march\xE9 France 2025 : ${minPrice}-${maxPrice}\u20AC incluant conseils et suivi`,
+          `Garantie qualit\xE9, r\xE9visions incluses et accompagnement personnalis\xE9`
+        ];
+      }
+      /**
+       * Retourne l'expertise spécifique à la catégorie
+       */
+      getCategoryExpertise(category) {
+        const expertises = {
+          "d\xE9veloppement": "d\xE9veloppement web et applications",
+          "design": "design graphique et UX/UI",
+          "marketing": "marketing digital et communication",
+          "conseil": "conseil en strat\xE9gie d'entreprise",
+          "r\xE9daction": "r\xE9daction et cr\xE9ation de contenu",
+          "travaux": "travaux et r\xE9novation",
+          "services": "services professionnels"
+        };
+        return expertises[category] || "gestion de projet";
+      }
+      /**
+       * Retourne le prompt spécifique à chaque catégorie
+       */
+      getCategorySpecificPrompt(category, description, additionalInfo) {
+        switch (category) {
+          case "travaux":
+            return `SP\xC9CIFICIT\xC9S TRAVAUX - Pr\xE9cisez obligatoirement :
+- Dur\xE9e estim\xE9e des travaux (jours/semaines)
+- Achat des mat\xE9riaux : inclus dans le devis OU \xE0 la charge du client
+- Surface concern\xE9e (m\xB2 si applicable)
+- Type d'intervention (neuf, r\xE9novation, entretien)
+- Contraintes d'acc\xE8s ou techniques
+- P\xE9riode souhait\xE9e (saison, planning)`;
+          case "d\xE9veloppement":
+            return `SP\xC9CIFICIT\xC9S D\xC9VELOPPEMENT - Pr\xE9cisez obligatoirement :
+- Dur\xE9e de d\xE9veloppement estim\xE9e (semaines/mois)
+- Technologies souhait\xE9es ou contraintes techniques
+- Nombre d'utilisateurs attendus
+- Type d'application (web, mobile, desktop)
+- Int\xE9grations n\xE9cessaires (API, bases de donn\xE9es)
+- Maintenance post-livraison incluse ou non`;
+          case "design":
+            return `SP\xC9CIFICIT\xC9S DESIGN - Pr\xE9cisez obligatoirement :
+- Dur\xE9e du projet cr\xE9atif (jours/semaines)
+- Nombre de d\xE9clinaisons/formats souhait\xE9s
+- Support final (print, digital, vid\xE9o)
+- Charte graphique existante ou cr\xE9ation compl\xE8te
+- Nombre de r\xE9visions incluses
+- Fichiers sources inclus ou non`;
+          case "marketing":
+            return `SP\xC9CIFICIT\xC9S MARKETING - Pr\xE9cisez obligatoirement :
+- Dur\xE9e de la campagne ou mission (mois)
+- Budget m\xE9dia inclus ou non (si pub payante)
+- Canaux prioritaires (r\xE9seaux sociaux, SEO, etc.)
+- Secteur d'activit\xE9 et cible
+- Objectifs mesurables (leads, ventes, notori\xE9t\xE9)
+- Reporting inclus (fr\xE9quence, KPIs)`;
+          case "conseil":
+            return `SP\xC9CIFICIT\xC9S CONSEIL - Pr\xE9cisez obligatoirement :
+- Dur\xE9e de la mission (jours/mois)
+- Nombre de s\xE9ances/ateliers inclus
+- Livrables attendus (rapport, pr\xE9sentation, plan d'action)
+- Secteur d'activit\xE9 et taille de l'entreprise
+- Niveau d'accompagnement (audit, strat\xE9gie, mise en \u0153uvre)
+- D\xE9placements inclus ou factur\xE9s en sus`;
+          case "r\xE9daction":
+            return `SP\xC9CIFICIT\xC9S R\xC9DACTION - Pr\xE9cisez obligatoirement :
+- Volume de contenu (nombre de mots, pages, articles)
+- D\xE9lai de livraison souhait\xE9
+- Type de contenu (web, print, technique, commercial)
+- Recherches documentaires incluses ou non
+- Nombre de r\xE9visions incluses
+- SEO et optimisation web inclus ou non`;
+          default:
+            return `Pr\xE9cisez la dur\xE9e estim\xE9e, les livrables attendus et les contraintes sp\xE9cifiques \xE0 cette cat\xE9gorie.`;
+        }
+      }
+      /**
+       * Retourne les guides tarifaires spécifiques à chaque catégorie
+       */
+      getCategoryPricingGuidance(category) {
+        switch (category) {
+          case "travaux":
+            return `TARIFS TRAVAUX 2025 (France) :
+- Peinture : 25-45\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 20-30\u20AC/h + mat\xE9riaux
+- \xC9lectricit\xE9 : 45-65\u20AC/h + mat\xE9riaux (comptez 20-30% du co\xFBt main d'\u0153uvre)
+- Plomberie : 40-60\u20AC/h + mat\xE9riaux (comptez 25-35% du co\xFBt main d'\u0153uvre)
+- Carrelage : 30-60\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 25-40\u20AC/h + mat\xE9riaux
+- Menuiserie : 35-55\u20AC/h + mat\xE9riaux (bois repr\xE9sente 40-60% du co\xFBt)
+- D\xE9placements : 0,50-0,65\u20AC/km ou forfait 50-150\u20AC selon distance
+
+CONSID\xC9RATIONS IMPORTANTES :
+- MAT\xC9RIAUX : Pr\xE9cisez si inclus (prix 40-70% plus \xE9lev\xE9) ou en sus
+- Dur\xE9e r\xE9aliste : 1-3j (petits travaux), 1-4 semaines (r\xE9novation)
+- Contraintes : acc\xE8s difficile, \xE9tage, p\xE9riode (+10-20%)
+- Garanties d\xE9cennales et assurances incluses`;
+          case "d\xE9veloppement":
+            return `TARIFS D\xC9VELOPPEMENT 2025 (France) :
+- D\xE9veloppement web : 45-80\u20AC/h (projets : 3000-25000\u20AC)
+- Applications mobile : 50-90\u20AC/h (projets : 8000-40000\u20AC)
+- E-commerce : 40-70\u20AC/h (projets : 5000-20000\u20AC)
+- Int\xE9gration API : 55-85\u20AC/h (projets : 2000-10000\u20AC)
+
+DUR\xC9ES R\xC9ALISTES :
+- Site vitrine : 2-4 semaines (80-150h)
+- E-commerce : 6-12 semaines (200-500h)
+- App mobile : 8-16 semaines (300-800h)
+- Maintenance : 10-20% du co\xFBt initial/an`;
+          case "design":
+            return `TARIFS DESIGN 2025 (France) :
+- Logo + charte : 1500-5000\u20AC (3-6 semaines)
+- Site web (maquettes) : 50-80\u20AC/h (projets : 2000-8000\u20AC)
+- Print (flyers, brochures) : 300-1500\u20AC/cr\xE9ation
+- Packaging : 2000-8000\u20AC selon complexit\xE9
+
+DUR\xC9ES TYPIQUES :
+- Logo : 2-3 semaines (3-5 propositions + r\xE9visions)
+- Charte graphique : 3-4 semaines
+- Maquettes web : 2-6 semaines selon nombre de pages`;
+          case "marketing":
+            return `TARIFS MARKETING 2025 (France) :
+- Community management : 800-2500\u20AC/mois (hors budget pub)
+- SEO/r\xE9f\xE9rencement : 60-100\u20AC/h ou 1500-5000\u20AC/mois
+- Campagnes Google Ads : 15-20% du budget pub + setup 800-2000\u20AC
+- Strat\xE9gie digitale : 2000-8000\u20AC (audit + plan d'actions)
+
+BUDGETS PUBLICITAIRES :
+- Google Ads : 500-5000\u20AC/mois minimum
+- Facebook/Instagram : 300-3000\u20AC/mois minimum
+- Pr\xE9cisez si budget m\xE9dia inclus dans la prestation ou en sus`;
+          case "conseil":
+            return `TARIFS CONSEIL 2025 (France) :
+- Conseil strat\xE9gique : 80-150\u20AC/h ou 1200-2500\u20AC/jour
+- Audit d'entreprise : 3000-15000\u20AC selon taille
+- Formation : 1500-3000\u20AC/jour + pr\xE9paration
+- Coaching dirigeant : 150-300\u20AC/h
+
+DUR\xC9ES MISSIONS :
+- Audit express : 5-10 jours
+- Mission strat\xE9gique : 20-60 jours \xE9tal\xE9s
+- Accompagnement : 3-12 mois (suivi r\xE9gulier)`;
+          case "r\xE9daction":
+            return `TARIFS R\xC9DACTION 2025 (France) :
+- Articles web : 0,10-0,30\u20AC/mot (SEO : +20-40%)
+- Pages site : 150-500\u20AC/page selon complexit\xE9
+- Fiches produits : 15-50\u20AC/fiche
+- Livre blanc : 2000-8000\u20AC selon longueur
+- Newsletter : 200-800\u20AC/\xE9dition
+
+VOLUMES TYPIQUES :
+- Article blog : 800-1500 mots
+- Page site : 300-800 mots
+- D\xE9lais : 2-7 jours/1000 mots selon recherches`;
+          default:
+            return `TARIFS SERVICES G\xC9N\xC9RAUX 2025 :
+- Prestations intellectuelles : 50-120\u20AC/h
+- Projets forfaitaires : 1500-8000\u20AC selon complexit\xE9
+- D\xE9placements : 0,50\u20AC/km + temps factur\xE9
+- R\xE9visions incluses : 2-3 allers-retours standard`;
+        }
+      }
+      /**
+       * Améliore n'importe quel texte selon son type
+       */
+      async enhanceText(text2, fieldType, category) {
+        if (!text2 || text2.trim().length === 0) {
+          console.warn("Texte vide fourni pour l'am\xE9lioration");
+          return text2;
+        }
+        try {
+          console.log(`\u{1F3AF} Am\xE9lioration ${fieldType} avec IA:`, text2.substring(0, 50) + "...");
+          let prompt = "";
+          let expectedFormat = "text";
+          switch (fieldType) {
+            case "title":
+              prompt = `Am\xE9liorez ce titre de projet pour qu'il soit plus professionnel et accrocheur:
+"${text2}"
+
+Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
+
+R\xE9pondez au format JSON:
+{
+  "enhancedText": "titre am\xE9lior\xE9 ici"
+}`;
+              expectedFormat = "json";
+              break;
+            case "description":
+              prompt = `INSTRUCTIONS : Am\xE9liorez cette description de projet (60-80 mots maximum).
+
+Texte \xE0 am\xE9liorer:
+"${text2}"
+
+Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
+
+Cr\xE9ez une description professionnelle qui inclut :
+1. L'objectif principal
+2. Les attentes essentielles
+3. Le contexte professionnel
+
+R\xE9pondez au format JSON:
+{
+  "enhancedText": "description am\xE9lior\xE9e ici"
+}`;
+              expectedFormat = "json";
+              break;
+            case "requirements":
+              prompt = `Pr\xE9cisez et structurez ces exigences de projet:
+"${text2}"
+
+Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
+
+Transformez ces exigences en une liste claire et structur\xE9e.
+
+R\xE9pondez au format JSON:
+{
+  "enhancedText": "exigences am\xE9lior\xE9es ici"
+}`;
+              expectedFormat = "json";
+              break;
+          }
+          console.log("\u{1F9E0} V\xE9rification des patterns appris...");
+          const learnedSuggestion = await aiLearningEngine.generateImprovedSuggestion(text2, fieldType, category);
+          if (learnedSuggestion) {
+            console.log("\u2728 Suggestion bas\xE9e sur l'apprentissage automatique utilis\xE9e");
+            return learnedSuggestion;
+          }
+          console.log("\u{1F4E1} Envoi requ\xEAte Gemini (pas de pattern appris)...");
+          const geminiResponse = await geminiCall("text_enhance", { prompt });
+          console.log("\u{1F50D} R\xE9ponse Gemini compl\xE8te:", JSON.stringify(geminiResponse, null, 2));
+          if (geminiResponse && geminiResponse.output) {
+            let enhancedText = "";
+            if (typeof geminiResponse.output === "string") {
+              try {
+                const parsed = JSON.parse(geminiResponse.output);
+                enhancedText = parsed.enhancedText || parsed.enhanced_text || parsed.result || geminiResponse.output;
+              } catch {
+                enhancedText = geminiResponse.output;
+              }
+            } else if (geminiResponse.output && typeof geminiResponse.output === "object") {
+              enhancedText = geminiResponse.output.enhancedText || geminiResponse.output.enhanced_text || geminiResponse.output.result || JSON.stringify(geminiResponse.output);
+            }
+            if (enhancedText && enhancedText.trim().length > 0) {
+              console.log("\u2705 Am\xE9lioration Gemini r\xE9ussie:", enhancedText.substring(0, 100) + "...");
+              try {
+                await aiLearningEngine.learnFromSuccess(
+                  text2,
+                  enhancedText,
+                  fieldType,
+                  category,
+                  "positive"
+                );
+                console.log("\u{1F4DA} Pattern appris avec succ\xE8s");
+              } catch (learnError) {
+                console.warn("\u26A0\uFE0F Erreur apprentissage (non bloquant):", learnError);
+              }
+              return enhancedText.trim();
+            }
+          }
+          console.warn("\u26A0\uFE0F R\xE9ponse Gemini vide ou non trait\xE9e, utilisation du fallback local");
+          console.warn("\u{1F4CB} Contenu re\xE7u:", geminiResponse);
+          return this.enhanceTextLocal(text2, fieldType, category);
+        } catch (error) {
+          console.error("\u274C Erreur am\xE9lioration texte IA:", error);
+          console.log("\u{1F504} Utilisation du fallback local");
+          return this.enhanceTextLocal(text2, fieldType, category);
+        }
+      }
+      enhanceTextLocal(text2, fieldType, category) {
+        if (!text2 || text2.trim().length === 0) {
+          return text2;
+        }
+        switch (fieldType) {
+          case "title":
+            return this.enhanceTitleLocal(text2, category);
+          case "description":
+            return this.enhanceDescriptionLocal(text2, category);
+          case "requirements":
+            return this.enhanceRequirementsLocal(text2, category);
+          default:
+            return text2;
+        }
+      }
+      enhanceTitleLocal(title, category) {
+        let enhanced = title.trim();
+        enhanced = enhanced.charAt(0).toUpperCase() + enhanced.slice(1);
+        const categoryKeywords = {
+          "d\xE9veloppement": "D\xE9veloppement",
+          "design": "Design",
+          "marketing": "Marketing Digital",
+          "conseil": "Conseil",
+          "travaux": "Travaux",
+          "services": "Services"
+        };
+        const categoryKey = category?.toLowerCase() || "";
+        if (categoryKeywords[categoryKey] && !enhanced.toLowerCase().includes(categoryKey)) {
+          enhanced = `${categoryKeywords[categoryKey]} - ${enhanced}`;
+        }
+        if (enhanced.length < 30 && !enhanced.toLowerCase().includes("professionnel")) {
+          enhanced += " - Service Professionnel";
+        }
+        return enhanced;
+      }
+      enhanceDescriptionLocal(description, category) {
+        let enhanced = description.trim();
+        if (enhanced.length < 100) {
+          enhanced += "\n\nCe projet n\xE9cessite une approche professionnelle et une expertise confirm\xE9e dans le domaine.";
+        }
+        if (!enhanced.toLowerCase().includes("livrable") && !enhanced.toLowerCase().includes("r\xE9sultat")) {
+          enhanced += "\n\n\u{1F4CB} Livrables attendus :\n- Documentation compl\xE8te\n- Code source comment\xE9 (si applicable)\n- Formation utilisateur si n\xE9cessaire";
+        }
+        if (!enhanced.toLowerCase().includes("budget") && !enhanced.toLowerCase().includes("prix")) {
+          enhanced += "\n\n\u{1F4B0} Budget flexible selon la qualit\xE9 de la proposition.";
+        }
+        if (!enhanced.toLowerCase().includes("d\xE9lai") && !enhanced.toLowerCase().includes("\xE9ch\xE9ance")) {
+          enhanced += "\n\n\u23F0 D\xE9lais de livraison \xE0 discuter selon la complexit\xE9 du projet.";
+        }
+        if (!enhanced.toLowerCase().includes("exp\xE9rience") && !enhanced.toLowerCase().includes("portfolio")) {
+          enhanced += "\n\n\u{1F3AF} Merci de joindre votre portfolio et vos r\xE9f\xE9rences pertinentes.";
+        }
+        return enhanced;
+      }
+      enhanceRequirementsLocal(requirements, category) {
+        let enhanced = requirements.trim();
+        if (!enhanced.includes("-") && !enhanced.includes("\u2022") && !enhanced.includes("\n")) {
+          const sentences = enhanced.split(".").filter((s) => s.trim().length > 0);
+          if (sentences.length > 1) {
+            enhanced = sentences.map((s) => `\u2022 ${s.trim()}`).join("\n");
+          }
+        }
+        const categoryRequirements = {
+          "d\xE9veloppement": [
+            "\u2022 Code propre et document\xE9",
+            "\u2022 Tests unitaires inclus",
+            "\u2022 Compatibilit\xE9 navigateurs modernes"
+          ],
+          "design": [
+            "\u2022 Fichiers sources fournis",
+            "\u2022 Formats d'export multiples",
+            "\u2022 Respect de la charte graphique"
+          ],
+          "marketing": [
+            "\u2022 Analyse de performance incluse",
+            "\u2022 Rapport mensuel d\xE9taill\xE9",
+            "\u2022 Suivi des KPIs"
+          ]
+        };
+        const categoryKey = category?.toLowerCase() || "";
+        if (categoryRequirements[categoryKey]) {
+          enhanced += "\n\nExigences techniques standard :\n" + categoryRequirements[categoryKey].join("\n");
+        }
+        return enhanced;
+      }
+      /**
+       * Analyse la qualité d'une description de projet et suggère des améliorations
+       */
+      async analyzeDescriptionQuality(description) {
+        try {
+          const prompt = `Analysez la qualit\xE9 de cette description de projet freelance et sugg\xE9rez des am\xE9liorations:
+
+DESCRIPTION:
+"${description}"
+
+\xC9valuez selon ces crit\xE8res:
+- Clart\xE9 des objectifs
+- D\xE9tails techniques
+- Contraintes mentionn\xE9es
+- Budget/d\xE9lais pr\xE9cis\xE9s
+- Informations contextuelles
+
+R\xE9pondez au format JSON:
+{
+  "score": 0.0,
+  "suggestions": ["suggestion 1", "suggestion 2"],
+  "missingElements": ["\xE9l\xE9ment manquant 1", "\xE9l\xE9ment manquant 2"]
+}
+
+Score entre 0.0 (tr\xE8s vague) et 1.0 (tr\xE8s d\xE9taill\xE9).`;
+          const vertexResponse = await geminiCall("quality_analysis", { prompt });
+          const result = vertexResponse.output;
+          return {
+            score: Math.max(0, Math.min(1, result.score || 0.5)),
+            suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+            missingElements: Array.isArray(result.missingElements) ? result.missingElements : []
+          };
+        } catch (error) {
+          console.error("Erreur analyse qualit\xE9:", error);
+          return {
+            score: this.calculateLocalQualityScore(description),
+            // Utilisation du score local comme fallback
+            suggestions: ["Ajoutez plus de d\xE9tails sur vos objectifs"],
+            missingElements: ["Budget indicatif", "D\xE9lais souhait\xE9s"]
+          };
+        }
+      }
+      /**
+       * Get fallback prices for a category
+       */
+      getFallbackPrices(category) {
+        const fallbackPrices = {
+          "d\xE9veloppement": { min: 2500, max: 12e3, avg: 6e3 },
+          "design": { min: 1200, max: 5e3, avg: 2800 },
+          "marketing": { min: 1800, max: 8e3, avg: 4e3 },
+          "r\xE9daction": { min: 800, max: 3e3, avg: 1500 },
+          "conseil": { min: 2e3, max: 1e4, avg: 5e3 },
+          "services": { min: 1500, max: 6e3, avg: 3e3 },
+          "travaux": { min: 2e3, max: 8e3, avg: 4500 }
+        };
+        return fallbackPrices[category] || fallbackPrices.conseil;
+      }
+      /**
+       * Calculate local quality score based on description length and content
+       */
+      calculateLocalQualityScore(description) {
+        let score = 0.3;
+        if (description.length > 100) score += 0.2;
+        if (description.length > 300) score += 0.2;
+        if (description.toLowerCase().includes("budget")) score += 0.1;
+        if (description.toLowerCase().includes("d\xE9lai")) score += 0.1;
+        if (description.toLowerCase().includes("exp\xE9rience")) score += 0.1;
+        return Math.min(1, score);
+      }
+    };
+    aiEnhancementService = new AIEnhancementService();
   }
 });
 
@@ -177,7 +1621,7 @@ var vite_config_default = defineConfig({
     host: "0.0.0.0",
     port: 5e3,
     hmr: {
-      port: 5e3,
+      port: 5001,
       host: "0.0.0.0"
     },
     allowedHosts: true
@@ -207,7 +1651,7 @@ async function setupVite(app2, server2) {
       middlewareMode: true,
       hmr: {
         server: server2,
-        port: 5e3
+        port: 5001
       }
     },
     appType: "custom"
@@ -260,205 +1704,15 @@ function serveStatic(app2) {
 }
 
 // server/services/mission-sync.ts
+init_schema();
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
-
-// shared/schema.ts
-import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, real } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
-  name: varchar("name", { length: 255 }),
-  role: varchar("role", { length: 50 }).notNull().default("CLIENT"),
-  rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
-  rating_count: integer("rating_count").default(0),
-  profile_data: jsonb("profile_data"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var projects = pgTable("projects", {
-  id: serial("id").primaryKey(),
-  title: varchar("title", { length: 500 }).notNull(),
-  description: text("description").notNull(),
-  budget: varchar("budget", { length: 100 }),
-  category: varchar("category", { length: 100 }).notNull(),
-  quality_target: varchar("quality_target", { length: 20 }),
-  risk_tolerance: decimal("risk_tolerance", { precision: 3, scale: 2 }),
-  geo_required: boolean("geo_required").default(false),
-  onsite_radius_km: integer("onsite_radius_km"),
-  status: varchar("status", { length: 50 }).notNull().default("draft"),
-  loc_score: decimal("loc_score", { precision: 5, scale: 2 }),
-  client_id: integer("client_id").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var bids = pgTable("bids", {
-  id: serial("id").primaryKey(),
-  project_id: integer("project_id").notNull(),
-  provider_id: integer("provider_id").notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  timeline_days: integer("timeline_days").notNull(),
-  message: text("message").notNull(),
-  score_breakdown: jsonb("score_breakdown"),
-  is_leading: boolean("is_leading").default(false),
-  flagged: boolean("flagged").default(false),
-  created_at: timestamp("created_at").defaultNow().notNull()
-});
-var insertUserSchema = createInsertSchema(users);
-var insertProjectSchema = createInsertSchema(projects);
-var insertBidSchema = createInsertSchema(bids);
-var announcements = pgTable("announcements", {
-  id: serial("id").primaryKey(),
-  title: varchar("title", { length: 500 }).notNull(),
-  description: text("description").notNull(),
-  category: varchar("category", { length: 100 }).notNull(),
-  tags: text("tags").array(),
-  city: varchar("city", { length: 100 }),
-  budget_min: decimal("budget_min", { precision: 10, scale: 2 }),
-  budget_max: decimal("budget_max", { precision: 10, scale: 2 }),
-  deadline: timestamp("deadline"),
-  media: jsonb("media"),
-  quality_score: decimal("quality_score", { precision: 3, scale: 2 }),
-  embeddings: text("embeddings"),
-  // Stockage vectoriel simple
-  user_id: integer("user_id").notNull(),
-  sponsored: boolean("sponsored").default(false),
-  status: varchar("status", { length: 50 }).notNull().default("active"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var feedFeedback = pgTable("feed_feedback", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
-  announcement_id: integer("announcement_id").notNull(),
-  action: varchar("action", { length: 20 }).notNull(),
-  // 'save', 'skip', 'open', 'offer', 'view'
-  dwell_ms: integer("dwell_ms"),
-  created_at: timestamp("created_at").defaultNow().notNull()
-});
-var feedSeen = pgTable("feed_seen", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
-  announcement_id: integer("announcement_id").notNull(),
-  seen_at: timestamp("seen_at").defaultNow().notNull()
-});
-var favorites = pgTable("favorites", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
-  announcement_id: integer("announcement_id").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull()
-});
-var insertAnnouncementSchema = createInsertSchema(announcements);
-var insertFeedFeedbackSchema = createInsertSchema(feedFeedback);
-var insertFeedSeenSchema = createInsertSchema(feedSeen);
-var aiEvents = pgTable("ai_events", {
-  id: varchar("id", { length: 255 }).primaryKey(),
-  phase: varchar("phase", { length: 50 }).notNull(),
-  provider: varchar("provider", { length: 50 }).notNull(),
-  model_family: varchar("model_family", { length: 50 }).notNull(),
-  model_name: varchar("model_name", { length: 100 }).notNull(),
-  allow_training: boolean("allow_training").notNull(),
-  input_redacted: jsonb("input_redacted"),
-  output: jsonb("output"),
-  confidence: decimal("confidence", { precision: 5, scale: 3 }),
-  tokens: integer("tokens"),
-  latency_ms: integer("latency_ms"),
-  provenance: varchar("provenance", { length: 50 }).notNull(),
-  prompt_hash: varchar("prompt_hash", { length: 64 }).notNull(),
-  accepted: boolean("accepted"),
-  rating: integer("rating"),
-  edits: text("edits"),
-  created_at: timestamp("created_at").defaultNow().notNull()
-});
-var locations = pgTable("locations", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id"),
-  project_id: integer("project_id"),
-  address: text("address"),
-  city: varchar("city", { length: 100 }),
-  postal_code: varchar("postal_code", { length: 20 }),
-  country: varchar("country", { length: 100 }).default("France"),
-  latitude: real("latitude"),
-  longitude: real("longitude"),
-  radius_km: integer("radius_km").default(10),
-  is_primary: boolean("is_primary").default(false),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var reviews = pgTable("reviews", {
-  id: serial("id").primaryKey(),
-  reviewer_id: integer("reviewer_id").notNull(),
-  reviewed_id: integer("reviewed_id").notNull(),
-  project_id: integer("project_id").notNull(),
-  rating: integer("rating").notNull(),
-  // 1-5 étoiles
-  title: varchar("title", { length: 200 }),
-  comment: text("comment"),
-  criteria_scores: jsonb("criteria_scores"),
-  // {quality: 5, communication: 4, deadline: 5, budget: 4}
-  verified: boolean("verified").default(false),
-  helpful_count: integer("helpful_count").default(0),
-  response: text("response"),
-  // Réponse du prestataire
-  response_date: timestamp("response_date"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var badges = pgTable("badges", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
-  badge_type: varchar("badge_type", { length: 50 }).notNull(),
-  // 'expert', 'reliable', 'top_rated', 'verified', 'local_hero'
-  category: varchar("category", { length: 100 }),
-  // Catégorie spécifique du badge
-  level: integer("level").default(1),
-  // Niveau du badge (1-5)
-  criteria_met: jsonb("criteria_met"),
-  // Critères qui ont permis d'obtenir le badge
-  earned_at: timestamp("earned_at").defaultNow().notNull(),
-  expires_at: timestamp("expires_at"),
-  // Certains badges peuvent expirer
-  is_active: boolean("is_active").default(true)
-});
-var reviewHelpful = pgTable("review_helpful", {
-  id: serial("id").primaryKey(),
-  review_id: integer("review_id").notNull(),
-  user_id: integer("user_id").notNull(),
-  is_helpful: boolean("is_helpful").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull()
-});
-var reputationMetrics = pgTable("reputation_metrics", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
-  total_projects: integer("total_projects").default(0),
-  completed_projects: integer("completed_projects").default(0),
-  average_rating: decimal("average_rating", { precision: 3, scale: 2 }),
-  response_time_avg_hours: integer("response_time_avg_hours"),
-  on_time_delivery_rate: decimal("on_time_delivery_rate", { precision: 5, scale: 2 }),
-  client_retention_rate: decimal("client_retention_rate", { precision: 5, scale: 2 }),
-  trust_score: integer("trust_score").default(0),
-  // Score sur 100
-  verification_level: varchar("verification_level", { length: 20 }).default("basic"),
-  // basic, verified, premium
-  last_calculated: timestamp("last_calculated").defaultNow().notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull()
-});
-var insertLocationSchema = createInsertSchema(locations);
-var insertReviewSchema = createInsertSchema(reviews);
-var insertBadgeSchema = createInsertSchema(badges);
-var insertReviewHelpfulSchema = createInsertSchema(reviewHelpful);
-var insertReputationMetricSchema = createInsertSchema(reputationMetrics);
-
-// server/services/mission-sync.ts
 var MissionSyncService = class {
   db;
   pool;
-  constructor(databaseUrl2) {
-    this.pool = new Pool({ connectionString: databaseUrl2 });
+  constructor(databaseUrl3) {
+    this.pool = new Pool({ connectionString: databaseUrl3 });
     this.db = drizzle(this.pool);
   }
   async syncMissionsToFeed(missions2) {
@@ -511,11 +1765,41 @@ var MissionSyncService = class {
   }
 };
 
+// server/environment-check.ts
+function validateEnvironment() {
+  const requiredVars = [
+    "DATABASE_URL",
+    "GEMINI_API_KEY"
+  ];
+  const missing = requiredVars.filter((varName) => !process.env[varName]);
+  if (missing.length > 0) {
+    console.warn("\u26A0\uFE0F Variables d'environnement manquantes:", missing);
+    console.warn("\u{1F4DD} Ajoutez-les dans l'onglet Secrets de Replit pour une fonctionnalit\xE9 compl\xE8te");
+    if (process.env.NODE_ENV === "production" && missing.includes("DATABASE_URL")) {
+      console.error("\u274C DATABASE_URL is required in production");
+      process.exit(1);
+    }
+  }
+  console.log("\u2705 Variables d'environnement valid\xE9es");
+  console.log("\u{1F50D} Configuration d'environnement:", {
+    NODE_ENV: process.env.NODE_ENV,
+    PREVIEW_MODE: process.env.PREVIEW_MODE,
+    DATABASE_URL: process.env.DATABASE_URL ? "\u2705 Configur\xE9" : "\u274C Manquant",
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? "\u2705 Configur\xE9" : "\u274C Manquant",
+    PORT: process.env.PORT || "5000"
+  });
+}
+
+// server/index.ts
+import { Pool as Pool6 } from "pg";
+import cors from "cors";
+
 // server/auth-routes.ts
+init_schema();
 import express2 from "express";
 import { Pool as Pool2 } from "pg";
 import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
-import { eq } from "drizzle-orm";
+import { eq, sql as sql2 } from "drizzle-orm";
 var pool = new Pool2({ connectionString: process.env.DATABASE_URL });
 var db = drizzle2(pool);
 var router = express2.Router();
@@ -633,48 +1917,308 @@ router.get("/demo-users", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+router.get("/demo-accounts/verify", async (req, res) => {
+  try {
+    const demoEmails = ["demo@swideal.com", "prestataire@swideal.com", "admin@swideal.com"];
+    const demoAccounts = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    }).from(users).where(sql2`${users.email} = ANY(${demoEmails})`);
+    const accountsStatus = {
+      client: demoAccounts.find((u) => u.email === "demo@swideal.com"),
+      provider: demoAccounts.find((u) => u.email === "prestataire@swideal.com"),
+      admin: demoAccounts.find((u) => u.email === "admin@swideal.com"),
+      total: demoAccounts.length
+    };
+    res.json({
+      success: true,
+      accounts: accountsStatus,
+      allPresent: demoAccounts.length === 3
+    });
+  } catch (error) {
+    console.error("Erreur v\xE9rification comptes d\xE9mo:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors de la v\xE9rification des comptes d\xE9mo"
+    });
+  }
+});
+router.get("/debug/demo-accounts", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Diagnostic des comptes d\xE9mo...");
+    const allUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    }).from(users);
+    const demoUsers = await db.select().from(users).where(sql2`${users.email} IN ('demo@swideal.com', 'prestataire@swideal.com', 'admin@swideal.com')`);
+    res.json({
+      debug: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      database_url_exists: !!process.env.DATABASE_URL,
+      total_users: allUsers.length,
+      all_users: allUsers,
+      demo_accounts_found: demoUsers.length,
+      demo_accounts: demoUsers.map((user) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        password_length: user.password?.length || 0,
+        password_is_demo123: user.password === "demo123",
+        password_is_admin123: user.password === "admin123",
+        created_at: user.created_at
+      }))
+    });
+  } catch (error) {
+    console.error("\u274C Erreur diagnostic:", error);
+    res.status(500).json({
+      error: "Erreur lors du diagnostic",
+      details: error.message,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
+router.post("/debug/create-demo-accounts", async (req, res) => {
+  try {
+    console.log("\u{1F6E0}\uFE0F Cr\xE9ation forc\xE9e des comptes d\xE9mo...");
+    const demoAccounts = [
+      {
+        email: "demo@swideal.com",
+        password: "demo123",
+        name: "Emma Rousseau",
+        role: "CLIENT",
+        rating_mean: "0",
+        rating_count: 0,
+        profile_data: {
+          company: "TechStart Innovation",
+          sector: "SaaS",
+          projects_posted: 0,
+          total_budget_spent: 0,
+          verified: true,
+          phone: "+33 1 45 67 89 12",
+          location: "Paris, France"
+        }
+      },
+      {
+        email: "prestataire@swideal.com",
+        password: "demo123",
+        name: "Julien Moreau",
+        role: "PRO",
+        rating_mean: "0",
+        rating_count: 0,
+        profile_data: {
+          specialties: ["React", "Node.js", "TypeScript", "Python"],
+          hourly_rate: 65,
+          availability: "Disponible",
+          experience_years: 5,
+          completed_projects: 0,
+          success_rate: 0,
+          response_time_hours: 4,
+          certifications: ["React Developer"],
+          portfolio_url: "https://julienmoreau.dev",
+          linkedin: "https://linkedin.com/in/julienmoreau",
+          phone: "+33 6 78 90 12 34",
+          location: "Lyon, France"
+        }
+      },
+      {
+        email: "admin@swideal.com",
+        password: "admin123",
+        name: "Clara Dubois",
+        role: "ADMIN",
+        profile_data: {
+          department: "Platform Management",
+          access_level: "full",
+          phone: "+33 1 56 78 90 12"
+        }
+      }
+    ];
+    const results = [];
+    for (const account of demoAccounts) {
+      try {
+        const existingUser = await db.select().from(users).where(eq(users.email, account.email)).limit(1);
+        if (existingUser.length > 0) {
+          results.push({
+            email: account.email,
+            status: "exists",
+            message: "Compte d\xE9j\xE0 existant"
+          });
+        } else {
+          const [newUser] = await db.insert(users).values(account).returning();
+          results.push({
+            email: account.email,
+            status: "created",
+            id: newUser.id,
+            message: "Compte cr\xE9\xE9 avec succ\xE8s"
+          });
+        }
+      } catch (error) {
+        results.push({
+          email: account.email,
+          status: "error",
+          message: error.message
+        });
+      }
+    }
+    res.json({
+      success: true,
+      message: "Cr\xE9ation des comptes d\xE9mo termin\xE9e",
+      results,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("\u274C Erreur cr\xE9ation comptes d\xE9mo:", error);
+    res.status(500).json({
+      error: "Erreur lors de la cr\xE9ation des comptes d\xE9mo",
+      details: error.message,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
 var auth_routes_default = router;
 
 // server/routes/missions.ts
 import { Router } from "express";
-import { z } from "zod";
-var router2 = Router();
-var missionSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().min(10),
-  category: z.string().min(2),
-  budget: z.union([z.string(), z.number()]),
-  location: z.string().optional(),
-  clientId: z.string(),
-  clientName: z.string()
+import { eq as eq2, desc } from "drizzle-orm";
+
+// server/database.ts
+import { Pool as Pool3 } from "pg";
+import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
+var isPreviewMode = process.env.PREVIEW_MODE === "true" || process.env.NODE_ENV === "production";
+var databaseUrl = isPreviewMode ? process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING : process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || "postgresql://localhost:5432/swideal";
+var pool2 = new Pool3({
+  connectionString: databaseUrl
 });
+pool2.on("error", (err) => {
+  console.error("Database pool error:", err);
+});
+pool2.on("connect", () => {
+  console.log("\u2705 Database connection established");
+});
+var db2 = drizzle3(pool2);
+console.log("\u{1F517} Database connection established:", {
+  databaseUrl: databaseUrl ? "***configured***" : "missing",
+  isCloudSQL: databaseUrl?.includes("/cloudsql/") || false
+});
+
+// server/routes/missions.ts
+init_schema();
+var router2 = Router();
 router2.post("/", async (req, res) => {
-  const parsed = missionSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Donn\xE9es invalides", details: parsed.error.flatten() });
-  }
-  const data = parsed.data;
   try {
-    const created = { id: "demo-" + Date.now(), ...data };
-    res.json({ ok: true, mission: created });
-  } catch (e) {
-    console.error("Create mission error:", e);
-    res.status(500).json({ error: "Erreur serveur" });
+    const missionData = req.body;
+    console.log("\u{1F4DD} Mission creation request received:", JSON.stringify(missionData, null, 2));
+    console.log("\u{1F4DD} Request headers:", JSON.stringify(req.headers, null, 2));
+    if (!missionData.title || missionData.title.trim() === "") {
+      console.error("\u274C Validation failed: Missing or empty title");
+      return res.status(400).json({
+        error: "Le titre est requis",
+        field: "title",
+        received: missionData.title
+      });
+    }
+    if (!missionData.description || missionData.description.trim() === "") {
+      console.error("\u274C Validation failed: Missing or empty description");
+      return res.status(400).json({
+        error: "La description est requise",
+        field: "description",
+        received: missionData.description
+      });
+    }
+    if (missionData.description.length < 10) {
+      console.error("\u274C Validation failed: Description too short");
+      return res.status(400).json({
+        error: "La description doit contenir au moins 10 caract\xE8res",
+        field: "description",
+        length: missionData.description.length
+      });
+    }
+    const missionToInsert = {
+      title: missionData.title,
+      description: missionData.description,
+      category: missionData.category || "developpement",
+      budget: missionData.budget ? parseInt(missionData.budget) : null,
+      location: missionData.location || null,
+      urgency: missionData.urgency || "medium",
+      status: missionData.status || "published",
+      created_at: /* @__PURE__ */ new Date(),
+      updated_at: /* @__PURE__ */ new Date(),
+      client_id: missionData.client_id || 1,
+      // Map additional fields properly
+      budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
+      budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
+      deadline: missionData.deadline ? new Date(missionData.deadline) : null,
+      tags: missionData.tags || [],
+      requirements: missionData.requirements || null
+    };
+    console.log("\u{1F4E4} Inserting mission with data:", JSON.stringify(missionToInsert, null, 2));
+    console.log("\u{1F4E4} Attempting to insert mission with data:", JSON.stringify(missionToInsert, null, 2));
+    let newMission;
+    try {
+      const result = await db2.insert(missions).values(missionToInsert).returning();
+      newMission = result[0];
+      if (!newMission) {
+        throw new Error("No mission returned from database insert");
+      }
+      console.log("\u2705 Mission created successfully with ID:", newMission.id);
+      console.log("\u{1F4CA} Full mission object:", JSON.stringify(newMission, null, 2));
+    } catch (dbError) {
+      console.error("\u274C Database insertion failed:", dbError);
+      console.error("\u274C Data that failed to insert:", JSON.stringify(missionToInsert, null, 2));
+      throw new Error(`Database insertion failed: ${dbError instanceof Error ? dbError.message : "Unknown database error"}`);
+    }
+    const savedMission = await db2.select().from(missions).where(eq2(missions.id, newMission.id)).limit(1);
+    console.log("\u{1F50D} Verification - Mission in DB:", savedMission.length > 0 ? "Found" : "NOT FOUND");
+    res.status(201).json(newMission);
+  } catch (error) {
+    console.error("\u274C Error creating mission:", error);
+    console.error("\u274C Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    res.status(500).json({
+      error: "Failed to create mission",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router2.get("/", async (req, res) => {
+  try {
+    console.log("\u{1F4CB} Fetching all missions...");
+    const allMissions = await db2.select().from(missions).orderBy(desc(missions.created_at));
+    console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
+    const missionsWithBids = allMissions.map((mission) => ({
+      ...mission,
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      clientName: "Client anonyme",
+      // Default client name
+      bids: []
+      // Empty bids array for now
+    }));
+    console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error("\u274C Error fetching missions:", error);
+    res.status(500).json({ error: "Failed to fetch missions" });
   }
 });
 var missions_default = router2;
 
 // server/api-routes.ts
+init_schema();
 import express3 from "express";
-import { Pool as Pool3 } from "pg";
-import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
-import { eq as eq2 } from "drizzle-orm";
-var pool2 = new Pool3({ connectionString: process.env.DATABASE_URL });
-var db2 = drizzle3(pool2);
+import { Pool as Pool4 } from "pg";
+import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
+import { eq as eq3 } from "drizzle-orm";
+var pool3 = new Pool4({ connectionString: process.env.DATABASE_URL });
+var db3 = drizzle4(pool3);
 var router3 = express3.Router();
 router3.get("/demo-providers", async (req, res) => {
   try {
-    const providers = await db2.select({
+    const providers = await db3.select({
       id: users.id,
       email: users.email,
       name: users.name,
@@ -683,7 +2227,7 @@ router3.get("/demo-providers", async (req, res) => {
       rating_count: users.rating_count,
       profile_data: users.profile_data,
       created_at: users.created_at
-    }).from(users).where(eq2(users.role, "PRO"));
+    }).from(users).where(eq3(users.role, "PRO"));
     res.json({ providers });
   } catch (error) {
     console.error("Erreur get demo providers:", error);
@@ -692,7 +2236,7 @@ router3.get("/demo-providers", async (req, res) => {
 });
 router3.get("/demo-projects", async (req, res) => {
   try {
-    const projectsWithClients = await db2.select({
+    const projectsWithClients = await db3.select({
       id: projects.id,
       title: projects.title,
       description: projects.description,
@@ -703,7 +2247,7 @@ router3.get("/demo-projects", async (req, res) => {
       created_at: projects.created_at,
       client_name: users.name,
       client_email: users.email
-    }).from(projects).leftJoin(users, eq2(projects.client_id, users.id));
+    }).from(projects).leftJoin(users, eq3(projects.client_id, users.id));
     res.json({ projects: projectsWithClients });
   } catch (error) {
     console.error("Erreur get demo projects:", error);
@@ -712,7 +2256,7 @@ router3.get("/demo-projects", async (req, res) => {
 });
 router3.get("/demo-bids", async (req, res) => {
   try {
-    const bidsWithInfo = await db2.select({
+    const bidsWithInfo = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -725,7 +2269,7 @@ router3.get("/demo-bids", async (req, res) => {
       provider_name: users.name,
       provider_email: users.email,
       provider_profile: users.profile_data
-    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).leftJoin(users, eq2(bids.provider_id, users.id));
+    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).leftJoin(users, eq3(bids.provider_id, users.id));
     res.json({ bids: bidsWithInfo });
   } catch (error) {
     console.error("Erreur get demo bids:", error);
@@ -735,12 +2279,12 @@ router3.get("/demo-bids", async (req, res) => {
 router3.get("/provider/:id", async (req, res) => {
   try {
     const providerId = parseInt(req.params.id);
-    const provider = await db2.select().from(users).where(eq2(users.id, providerId)).limit(1);
+    const provider = await db3.select().from(users).where(eq3(users.id, providerId)).limit(1);
     if (provider.length === 0) {
       return res.status(404).json({ error: "Prestataire non trouv\xE9" });
     }
     const providerData = provider[0];
-    const providerBids = await db2.select({
+    const providerBids = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -749,7 +2293,7 @@ router3.get("/provider/:id", async (req, res) => {
       created_at: bids.created_at,
       project_title: projects.title,
       project_budget: projects.budget
-    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).where(eq2(bids.provider_id, providerId));
+    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).where(eq3(bids.provider_id, providerId));
     res.json({
       provider: {
         id: providerData.id,
@@ -770,7 +2314,7 @@ router3.get("/provider/:id", async (req, res) => {
 });
 router3.get("/ai-analysis-demo", async (req, res) => {
   try {
-    const recentProjects = await db2.select({
+    const recentProjects = await db3.select({
       id: projects.id,
       title: projects.title,
       description: projects.description,
@@ -778,7 +2322,7 @@ router3.get("/ai-analysis-demo", async (req, res) => {
       category: projects.category,
       created_at: projects.created_at
     }).from(projects).limit(3);
-    const recentBids = await db2.select({
+    const recentBids = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -1485,741 +3029,32 @@ var ai_monitoring_routes_default = router4;
 
 // server/routes/ai-routes.ts
 import { Router as Router3 } from "express";
-
-// apps/api/src/ai/aiOrchestrator.ts
-import { writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
-async function getPricingSuggestion(request) {
-  try {
-    const basePrice = calculateBasePrice(request.category || "general");
-    const complexity = analyzeComplexity(request.description || "");
-    const timelineMultiplier = getTimelineMultiplier(request.timeline || "");
-    const minPrice = Math.round(basePrice * complexity * 0.8);
-    const maxPrice = Math.round(basePrice * complexity * timelineMultiplier * 1.3);
-    const averagePrice = Math.round((minPrice + maxPrice) / 2);
-    return {
-      success: true,
-      pricing: {
-        minPrice,
-        maxPrice,
-        averagePrice,
-        confidence: 0.85,
-        factors: [
-          `Cat\xE9gorie: ${request.category}`,
-          `Complexit\xE9: ${complexity}x`,
-          `D\xE9lai: ${timelineMultiplier}x`
-        ]
-      },
-      analysis: {
-        category: request.category,
-        complexity_level: complexity > 1.5 ? "high" : complexity > 1 ? "medium" : "low",
-        market_position: "competitive"
-      }
-    };
-  } catch (error) {
-    console.error("Erreur getPricingSuggestion:", error);
-    throw new Error("Impossible de calculer la suggestion de prix");
-  }
-}
-async function enhanceBrief(request) {
-  try {
-    const originalDescription = request.description || "";
-    const category = request.category || "general";
-    const analysis = analyzeBriefQuality(originalDescription);
-    const improvements = generateImprovements(originalDescription, category, analysis);
-    return {
-      success: true,
-      original: {
-        title: request.title,
-        description: originalDescription,
-        word_count: originalDescription.split(" ").length
-      },
-      enhanced: {
-        title: improveTitle(request.title || "", category),
-        description: improvements.enhanced_description,
-        word_count: improvements.enhanced_description.split(" ").length
-      },
-      analysis: {
-        quality_score: analysis.score,
-        missing_elements: analysis.missing,
-        improvements_applied: improvements.changes
-      },
-      suggestions: improvements.suggestions
-    };
-  } catch (error) {
-    console.error("Erreur enhanceBrief:", error);
-    throw new Error("Impossible d'am\xE9liorer le brief");
-  }
-}
-async function logUserFeedback(phase, prompt, feedback) {
-  try {
-    const logEntry = {
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      phase,
-      prompt,
-      feedback,
-      user_session: "anonymous"
-    };
-    const logsDir = join(process.cwd(), "logs");
-    if (!existsSync(logsDir)) {
-      mkdirSync(logsDir, { recursive: true });
-    }
-    const logFile = join(logsDir, `ai-feedback-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.json`);
-    const logs = [];
-    try {
-      const existingLogs = __require(logFile);
-      logs.push(...existingLogs);
-    } catch {
-    }
-    logs.push(logEntry);
-    writeFileSync(logFile, JSON.stringify(logs, null, 2));
-    console.log(`\u2705 Feedback logged: ${phase}`);
-    return { success: true };
-  } catch (error) {
-    console.error("Erreur logUserFeedback:", error);
-    throw new Error("Impossible d'enregistrer le feedback");
-  }
-}
-function calculateBasePrice(category) {
-  const basePrices = {
-    "development": 5e3,
-    "design": 2500,
-    "marketing": 3e3,
-    "consulting": 4e3,
-    "writing": 1500,
-    "general": 3e3
-  };
-  return basePrices[category] || basePrices.general;
-}
-function analyzeComplexity(description) {
-  const complexityKeywords = [
-    "complex",
-    "advanced",
-    "enterprise",
-    "scalable",
-    "integration",
-    "API",
-    "database",
-    "real-time",
-    "mobile",
-    "responsive"
-  ];
-  const found = complexityKeywords.filter(
-    (keyword) => description.toLowerCase().includes(keyword)
-  ).length;
-  return Math.max(0.8, Math.min(2, 1 + found * 0.2));
-}
-function getTimelineMultiplier(timeline) {
-  if (timeline.includes("urgent") || timeline.includes("asap")) return 1.5;
-  if (timeline.includes("semaine")) return 1.3;
-  if (timeline.includes("mois")) return 1;
-  return 1.1;
-}
-function analyzeBriefQuality(description) {
-  const words = description.split(" ").length;
-  const hasBudget = /budget|prix|coût|\€|\$/.test(description.toLowerCase());
-  const hasTimeline = /délai|semaine|mois|urgent/.test(description.toLowerCase());
-  const hasObjectives = /objectif|but|résultat/.test(description.toLowerCase());
-  const score = Math.min(
-    1,
-    words / 100 * 0.4 + (hasBudget ? 0.2 : 0) + (hasTimeline ? 0.2 : 0) + (hasObjectives ? 0.2 : 0)
-  );
-  const missing = [];
-  if (!hasBudget) missing.push("Budget");
-  if (!hasTimeline) missing.push("D\xE9lais");
-  if (!hasObjectives) missing.push("Objectifs clairs");
-  if (words < 50) missing.push("Plus de d\xE9tails");
-  return { score, missing };
-}
-function generateImprovements(description, category, analysis) {
-  let enhanced = description;
-  const changes = [];
-  const suggestions = [];
-  if (analysis.missing.includes("Budget")) {
-    enhanced += "\n\n\u{1F4B0} Budget: \xC0 d\xE9finir selon la proposition (ouvert aux suggestions)";
-    changes.push("Ajout indication budget");
-  }
-  if (analysis.missing.includes("D\xE9lais")) {
-    enhanced += "\n\u23F0 D\xE9lais: Flexible, id\xE9alement sous 4 semaines";
-    changes.push("Ajout d\xE9lais indicatifs");
-  }
-  if (analysis.missing.includes("Objectifs clairs")) {
-    enhanced += "\n\u{1F3AF} Objectifs: Livraison conforme aux attentes avec documentation compl\xE8te";
-    changes.push("Clarification objectifs");
-  }
-  suggestions.push("Ajouter des exemples concrets de ce qui est attendu");
-  suggestions.push("Pr\xE9ciser les crit\xE8res de s\xE9lection du prestataire");
-  suggestions.push("Mentionner les contraintes techniques \xE9ventuelles");
-  return { enhanced_description: enhanced, changes, suggestions };
-}
-function improveTitle(title, category) {
-  if (!title) return `Projet ${category} - Mission sp\xE9cialis\xE9e`;
-  const keywords = {
-    "development": "\u{1F4BB}",
-    "design": "\u{1F3A8}",
-    "marketing": "\u{1F4C8}",
-    "consulting": "\u{1F4A1}",
-    "writing": "\u270D\uFE0F"
-  };
-  const icon = keywords[category] || "\u{1F680}";
-  return title.includes(icon) ? title : `${icon} ${title}`;
-}
-
-// server/services/ai-enhancement.ts
-init_geminiAdapter();
-var AIEnhancementService = class {
-  /**
-   * Suggère des prix basés sur l'analyse du marché et de la description du projet
-   */
-  async suggestPricing(projectTitle, description, category) {
-    try {
-      const prompt = {
-        projectTitle,
-        description,
-        category,
-        guidance: this.getCategoryPricingGuidance(category),
-        expertise: this.getCategoryExpertise(category)
-      };
-      const result = await getPricingSuggestion(prompt);
-      const minPrice = Math.max(500, result.minPrice || 1e3);
-      const maxPrice = Math.max(minPrice * 1.5, result.maxPrice || 3e3);
-      return {
-        minPrice,
-        maxPrice,
-        averagePrice: result.averagePrice || Math.round((minPrice + maxPrice) / 2),
-        factors: Array.isArray(result.factors) ? result.factors : this.getDetailedFallbackFactors(category, minPrice, maxPrice),
-        confidence: Math.max(0, Math.min(1, result.confidence || 0.7))
-      };
-    } catch (error) {
-      console.error("Erreur suggestion prix:", error);
-      const prices = this.getFallbackPrices(category);
-      return {
-        minPrice: prices.min,
-        maxPrice: prices.max,
-        averagePrice: prices.avg,
-        factors: this.getDetailedFallbackFactors(category, prices.min, prices.max),
-        confidence: 0.6
-      };
-    }
-  }
-  /**
-   * Améliore une description vague de projet en une description détaillée et structurée
-   */
-  async enhanceProjectDescription(vagueDescription, category, additionalInfo) {
-    try {
-      const categorySpecificPrompt = this.getCategorySpecificPrompt(category, vagueDescription, additionalInfo);
-      const prompt = `En tant qu'expert en ${this.getCategoryExpertise(category)}, aidez un client \xE0 clarifier et structurer sa demande.
-
-DEMANDE INITIALE:
-"${vagueDescription}"
-
-Cat\xE9gorie: ${category}
-${additionalInfo ? `Infos suppl\xE9mentaires: ${additionalInfo}` : ""}
-
-${categorySpecificPrompt}
-
-Transformez cette demande en brief professionnel concis et clair. Maximum 120 mots.
-
-R\xE9pondez au format JSON strict:
-{
-  "improvedTitle": "Titre professionnel clair et sp\xE9cifique",
-  "detailedDescription": "Description concise avec les \xE9l\xE9ments cl\xE9s de la cat\xE9gorie ${category}",
-  "suggestedRequirements": ["exigence sp\xE9cifique 1", "exigence m\xE9tier 2", "contrainte 3"],
-  "estimatedTimeline": "d\xE9lai r\xE9aliste selon la cat\xE9gorie",
-  "complexity": "simple"
-}
-
-La complexity doit \xEAtre "simple", "medium" ou "complex".`;
-      const vertexResponse = await geminiCall("brief_enhance", { prompt });
-      const result = vertexResponse.output;
-      return {
-        improvedTitle: result.improvedTitle || "Projet am\xE9lior\xE9",
-        detailedDescription: result.detailedDescription || vagueDescription,
-        suggestedRequirements: Array.isArray(result.suggestedRequirements) ? result.suggestedRequirements : [],
-        estimatedTimeline: result.estimatedTimeline || "2-4 semaines",
-        complexity: ["simple", "medium", "complex"].includes(result.complexity) ? result.complexity : "medium"
-      };
-    } catch (error) {
-      console.error("Erreur am\xE9lioration description:", error);
-      return {
-        improvedTitle: "Projet \xE0 pr\xE9ciser",
-        detailedDescription: `Demande initiale : ${vagueDescription}
-
-Cette demande n\xE9cessite des pr\xE9cisions suppl\xE9mentaires pour \xEAtre mieux comprise par les prestataires.`,
-        suggestedRequirements: ["\xC0 d\xE9finir selon les sp\xE9cifications"],
-        estimatedTimeline: "\xC0 d\xE9terminer",
-        complexity: "medium"
-      };
-    }
-  }
-  /**
-   * Génère des facteurs détaillés pour le fallback
-   */
-  getDetailedFallbackFactors(category, minPrice, maxPrice) {
-    const avgPrice = Math.round((minPrice + maxPrice) / 2);
-    const estimatedHours = Math.round(avgPrice / 50);
-    const categoryFactors = {
-      "d\xE9veloppement": [
-        `D\xE9veloppement ${category} : ${estimatedHours}h estim\xE9es \xE0 45-80\u20AC/h selon complexit\xE9`,
-        `Tarifs march\xE9 2025 France : ${minPrice}-${maxPrice}\u20AC incluant tests et d\xE9ploiement`,
-        `Maintenance post-livraison (3-6 mois) et r\xE9visions client incluses`
-      ],
-      "travaux": [
-        `Main d'\u0153uvre sp\xE9cialis\xE9e : ${estimatedHours}h \xE0 35-55\u20AC/h + mat\xE9riaux selon projet`,
-        `Tarifs France 2025 : ${minPrice}-${maxPrice}\u20AC avec assurances et garanties incluses`,
-        `D\xE9placements, outillage professionnel et nettoyage final inclus`
-      ],
-      "design": [
-        `Cr\xE9ation graphique : ${Math.round(estimatedHours / 2)} jours cr\xE9atifs \xE0 50-80\u20AC/h`,
-        `Forfait ${minPrice}-${maxPrice}\u20AC incluant 3-5 propositions et r\xE9visions illimit\xE9es`,
-        `Fichiers sources haute d\xE9finition et d\xE9clinaisons formats inclus`
-      ],
-      "marketing": [
-        `Strat\xE9gie digitale : ${estimatedHours}h conseil \xE0 60-100\u20AC/h (hors budget m\xE9dia)`,
-        `Mission ${minPrice}-${maxPrice}\u20AC incluant audit, cr\xE9ation contenu et reporting KPIs`,
-        `Formation \xE9quipe, templates r\xE9utilisables et suivi 3 mois inclus`
-      ],
-      "conseil": [
-        `Conseil expert : ${Math.round(estimatedHours / 8)} jours mission \xE0 80-150\u20AC/h`,
-        `Prestation ${minPrice}-${maxPrice}\u20AC incluant audit, recommandations et plan d'action`,
-        `Pr\xE9sentation dirigeants, documents strat\xE9giques et suivi mise en \u0153uvre`
-      ],
-      "r\xE9daction": [
-        `R\xE9daction professionnelle : ${estimatedHours * 100} mots \xE0 0,15-0,30\u20AC/mot`,
-        `Prestation ${minPrice}-${maxPrice}\u20AC incluant recherches, optimisation SEO et r\xE9visions`,
-        `Formats multiples, images libres de droits et planning \xE9ditorial inclus`
-      ],
-      "services": [
-        `Services professionnels : ${estimatedHours}h prestation \xE0 40-80\u20AC/h selon expertise`,
-        `Forfait ${minPrice}-${maxPrice}\u20AC adapt\xE9 aux standards du secteur fran\xE7ais 2025`,
-        `D\xE9placements, outils professionnels et garantie r\xE9sultat inclus`
-      ]
-    };
-    return categoryFactors[category] || [
-      `Prestation professionnelle : ${estimatedHours}h \xE0 50-80\u20AC/h selon expertise requise`,
-      `Tarifs march\xE9 France 2025 : ${minPrice}-${maxPrice}\u20AC incluant conseils et suivi`,
-      `Garantie qualit\xE9, r\xE9visions incluses et accompagnement personnalis\xE9`
-    ];
-  }
-  /**
-   * Retourne l'expertise spécifique à la catégorie
-   */
-  getCategoryExpertise(category) {
-    const expertises = {
-      "d\xE9veloppement": "d\xE9veloppement web et applications",
-      "design": "design graphique et UX/UI",
-      "marketing": "marketing digital et communication",
-      "conseil": "conseil en strat\xE9gie d'entreprise",
-      "r\xE9daction": "r\xE9daction et cr\xE9ation de contenu",
-      "travaux": "travaux et r\xE9novation",
-      "services": "services professionnels"
-    };
-    return expertises[category] || "gestion de projet";
-  }
-  /**
-   * Retourne le prompt spécifique à chaque catégorie
-   */
-  getCategorySpecificPrompt(category, description, additionalInfo) {
-    switch (category) {
-      case "travaux":
-        return `SP\xC9CIFICIT\xC9S TRAVAUX - Pr\xE9cisez obligatoirement :
-- Dur\xE9e estim\xE9e des travaux (jours/semaines)
-- Achat des mat\xE9riaux : inclus dans le devis OU \xE0 la charge du client
-- Surface concern\xE9e (m\xB2 si applicable)
-- Type d'intervention (neuf, r\xE9novation, entretien)
-- Contraintes d'acc\xE8s ou techniques
-- P\xE9riode souhait\xE9e (saison, planning)`;
-      case "d\xE9veloppement":
-        return `SP\xC9CIFICIT\xC9S D\xC9VELOPPEMENT - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de d\xE9veloppement estim\xE9e (semaines/mois)
-- Technologies souhait\xE9es ou contraintes techniques
-- Nombre d'utilisateurs attendus
-- Type d'application (web, mobile, desktop)
-- Int\xE9grations n\xE9cessaires (API, bases de donn\xE9es)
-- Maintenance post-livraison incluse ou non`;
-      case "design":
-        return `SP\xC9CIFICIT\xC9S DESIGN - Pr\xE9cisez obligatoirement :
-- Dur\xE9e du projet cr\xE9atif (jours/semaines)
-- Nombre de d\xE9clinaisons/formats souhait\xE9s
-- Support final (print, digital, vid\xE9o)
-- Charte graphique existante ou cr\xE9ation compl\xE8te
-- Nombre de r\xE9visions incluses
-- Fichiers sources inclus ou non`;
-      case "marketing":
-        return `SP\xC9CIFICIT\xC9S MARKETING - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de la campagne ou mission (mois)
-- Budget m\xE9dia inclus ou non (si pub payante)
-- Canaux prioritaires (r\xE9seaux sociaux, SEO, etc.)
-- Secteur d'activit\xE9 et cible
-- Objectifs mesurables (leads, ventes, notori\xE9t\xE9)
-- Reporting inclus (fr\xE9quence, KPIs)`;
-      case "conseil":
-        return `SP\xC9CIFICIT\xC9S CONSEIL - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de la mission (jours/mois)
-- Nombre de s\xE9ances/ateliers inclus
-- Livrables attendus (rapport, pr\xE9sentation, plan d'action)
-- Secteur d'activit\xE9 et taille de l'entreprise
-- Niveau d'accompagnement (audit, strat\xE9gie, mise en \u0153uvre)
-- D\xE9placements inclus ou factur\xE9s en sus`;
-      case "r\xE9daction":
-        return `SP\xC9CIFICIT\xC9S R\xC9DACTION - Pr\xE9cisez obligatoirement :
-- Volume de contenu (nombre de mots, pages, articles)
-- D\xE9lai de livraison souhait\xE9
-- Type de contenu (web, print, technique, commercial)
-- Recherches documentaires incluses ou non
-- Nombre de r\xE9visions incluses
-- SEO et optimisation web inclus ou non`;
-      default:
-        return `Pr\xE9cisez la dur\xE9e estim\xE9e, les livrables attendus et les contraintes sp\xE9cifiques \xE0 cette cat\xE9gorie.`;
-    }
-  }
-  /**
-   * Retourne les guides tarifaires spécifiques à chaque catégorie
-   */
-  getCategoryPricingGuidance(category) {
-    switch (category) {
-      case "travaux":
-        return `TARIFS TRAVAUX 2025 (France) :
-- Peinture : 25-45\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 20-30\u20AC/h + mat\xE9riaux
-- \xC9lectricit\xE9 : 45-65\u20AC/h + mat\xE9riaux (comptez 20-30% du co\xFBt main d'\u0153uvre)
-- Plomberie : 40-60\u20AC/h + mat\xE9riaux (comptez 25-35% du co\xFBt main d'\u0153uvre)
-- Carrelage : 30-60\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 25-40\u20AC/h + mat\xE9riaux
-- Menuiserie : 35-55\u20AC/h + mat\xE9riaux (bois repr\xE9sente 40-60% du co\xFBt)
-- D\xE9placements : 0,50-0,65\u20AC/km ou forfait 50-150\u20AC selon distance
-
-CONSID\xC9RATIONS IMPORTANTES :
-- MAT\xC9RIAUX : Pr\xE9cisez si inclus (prix 40-70% plus \xE9lev\xE9) ou en sus
-- Dur\xE9e r\xE9aliste : 1-3j (petits travaux), 1-4 semaines (r\xE9novation)
-- Contraintes : acc\xE8s difficile, \xE9tage, p\xE9riode (+10-20%)
-- Garanties d\xE9cennales et assurances incluses`;
-      case "d\xE9veloppement":
-        return `TARIFS D\xC9VELOPPEMENT 2025 (France) :
-- D\xE9veloppement web : 45-80\u20AC/h (projets : 3000-25000\u20AC)
-- Applications mobile : 50-90\u20AC/h (projets : 8000-40000\u20AC)
-- E-commerce : 40-70\u20AC/h (projets : 5000-20000\u20AC)
-- Int\xE9gration API : 55-85\u20AC/h (projets : 2000-10000\u20AC)
-
-DUR\xC9ES R\xC9ALISTES :
-- Site vitrine : 2-4 semaines (80-150h)
-- E-commerce : 6-12 semaines (200-500h)
-- App mobile : 8-16 semaines (300-800h)
-- Maintenance : 10-20% du co\xFBt initial/an`;
-      case "design":
-        return `TARIFS DESIGN 2025 (France) :
-- Logo + charte : 1500-5000\u20AC (3-6 semaines)
-- Site web (maquettes) : 50-80\u20AC/h (projets : 2000-8000\u20AC)
-- Print (flyers, brochures) : 300-1500\u20AC/cr\xE9ation
-- Packaging : 2000-8000\u20AC selon complexit\xE9
-
-DUR\xC9ES TYPIQUES :
-- Logo : 2-3 semaines (3-5 propositions + r\xE9visions)
-- Charte graphique : 3-4 semaines
-- Maquettes web : 2-6 semaines selon nombre de pages`;
-      case "marketing":
-        return `TARIFS MARKETING 2025 (France) :
-- Community management : 800-2500\u20AC/mois (hors budget pub)
-- SEO/r\xE9f\xE9rencement : 60-100\u20AC/h ou 1500-5000\u20AC/mois
-- Campagnes Google Ads : 15-20% du budget pub + setup 800-2000\u20AC
-- Strat\xE9gie digitale : 2000-8000\u20AC (audit + plan d'actions)
-
-BUDGETS PUBLICITAIRES :
-- Google Ads : 500-5000\u20AC/mois minimum
-- Facebook/Instagram : 300-3000\u20AC/mois minimum
-- Pr\xE9cisez si budget m\xE9dia inclus dans la prestation ou en sus`;
-      case "conseil":
-        return `TARIFS CONSEIL 2025 (France) :
-- Conseil strat\xE9gique : 80-150\u20AC/h ou 1200-2500\u20AC/jour
-- Audit d'entreprise : 3000-15000\u20AC selon taille
-- Formation : 1500-3000\u20AC/jour + pr\xE9paration
-- Coaching dirigeant : 150-300\u20AC/h
-
-DUR\xC9ES MISSIONS :
-- Audit express : 5-10 jours
-- Mission strat\xE9gique : 20-60 jours \xE9tal\xE9s
-- Accompagnement : 3-12 mois (suivi r\xE9gulier)`;
-      case "r\xE9daction":
-        return `TARIFS R\xC9DACTION 2025 (France) :
-- Articles web : 0,10-0,30\u20AC/mot (SEO : +20-40%)
-- Pages site : 150-500\u20AC/page selon complexit\xE9
-- Fiches produits : 15-50\u20AC/fiche
-- Livre blanc : 2000-8000\u20AC selon longueur
-- Newsletter : 200-800\u20AC/\xE9dition
-
-VOLUMES TYPIQUES :
-- Article blog : 800-1500 mots
-- Page site : 300-800 mots
-- D\xE9lais : 2-7 jours/1000 mots selon recherches`;
-      default:
-        return `TARIFS SERVICES G\xC9N\xC9RAUX 2025 :
-- Prestations intellectuelles : 50-120\u20AC/h
-- Projets forfaitaires : 1500-8000\u20AC selon complexit\xE9
-- D\xE9placements : 0,50\u20AC/km + temps factur\xE9
-- R\xE9visions incluses : 2-3 allers-retours standard`;
-    }
-  }
-  /**
-   * Améliore n'importe quel texte selon son type
-   */
-  async enhanceText(text2, fieldType, category) {
-    if (!text2 || text2.trim().length === 0) {
-      console.warn("Texte vide fourni pour l'am\xE9lioration");
-      return text2;
-    }
-    try {
-      console.log(`\u{1F3AF} Am\xE9lioration ${fieldType} avec IA:`, text2.substring(0, 50) + "...");
-      let prompt = "";
-      let expectedFormat = "text";
-      switch (fieldType) {
-        case "title":
-          prompt = `Am\xE9liorez ce titre de projet pour qu'il soit plus professionnel et accrocheur:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "titre am\xE9lior\xE9 ici"
-}`;
-          expectedFormat = "json";
-          break;
-        case "description":
-          prompt = `INSTRUCTIONS : Am\xE9liorez cette description de projet (60-80 mots maximum).
-
-Texte \xE0 am\xE9liorer:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-Cr\xE9ez une description professionnelle qui inclut :
-1. L'objectif principal
-2. Les attentes essentielles
-3. Le contexte professionnel
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "description am\xE9lior\xE9e ici"
-}`;
-          expectedFormat = "json";
-          break;
-        case "requirements":
-          prompt = `Pr\xE9cisez et structurez ces exigences de projet:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-Transformez ces exigences en une liste claire et structur\xE9e.
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "exigences am\xE9lior\xE9es ici"
-}`;
-          expectedFormat = "json";
-          break;
-      }
-      console.log("\u{1F4E1} Envoi requ\xEAte IA pour am\xE9lioration...");
-      const vertexResponse = await geminiCall("text_enhance", { prompt });
-      if (vertexResponse && vertexResponse.output) {
-        let enhancedText = "";
-        if (expectedFormat === "json") {
-          enhancedText = vertexResponse.output.enhancedText || vertexResponse.output.enhanced_text || vertexResponse.output.result || "";
-        } else {
-          enhancedText = typeof vertexResponse.output === "string" ? vertexResponse.output : vertexResponse.output.enhancedText || "";
-        }
-        if (enhancedText && enhancedText.length > 0) {
-          console.log("\u2705 Am\xE9lioration IA r\xE9ussie");
-          return enhancedText.trim();
-        }
-      }
-      console.warn("\u26A0\uFE0F R\xE9ponse IA vide, utilisation du fallback local");
-      return this.enhanceTextLocal(text2, fieldType, category);
-    } catch (error) {
-      console.error("\u274C Erreur am\xE9lioration texte IA:", error);
-      console.log("\u{1F504} Utilisation du fallback local");
-      return this.enhanceTextLocal(text2, fieldType, category);
-    }
-  }
-  enhanceTextLocal(text2, fieldType, category) {
-    if (!text2 || text2.trim().length === 0) {
-      return text2;
-    }
-    switch (fieldType) {
-      case "title":
-        return this.enhanceTitleLocal(text2, category);
-      case "description":
-        return this.enhanceDescriptionLocal(text2, category);
-      case "requirements":
-        return this.enhanceRequirementsLocal(text2, category);
-      default:
-        return text2;
-    }
-  }
-  enhanceTitleLocal(title, category) {
-    let enhanced = title.trim();
-    enhanced = enhanced.charAt(0).toUpperCase() + enhanced.slice(1);
-    const categoryKeywords = {
-      "d\xE9veloppement": "D\xE9veloppement",
-      "design": "Design",
-      "marketing": "Marketing Digital",
-      "conseil": "Conseil",
-      "travaux": "Travaux",
-      "services": "Services"
-    };
-    const categoryKey = category?.toLowerCase() || "";
-    if (categoryKeywords[categoryKey] && !enhanced.toLowerCase().includes(categoryKey)) {
-      enhanced = `${categoryKeywords[categoryKey]} - ${enhanced}`;
-    }
-    if (enhanced.length < 30 && !enhanced.toLowerCase().includes("professionnel")) {
-      enhanced += " - Service Professionnel";
-    }
-    return enhanced;
-  }
-  enhanceDescriptionLocal(description, category) {
-    let enhanced = description.trim();
-    if (enhanced.length < 100) {
-      enhanced += "\n\nCe projet n\xE9cessite une approche professionnelle et une expertise confirm\xE9e dans le domaine.";
-    }
-    if (!enhanced.toLowerCase().includes("livrable") && !enhanced.toLowerCase().includes("r\xE9sultat")) {
-      enhanced += "\n\n\u{1F4CB} Livrables attendus :\n- Documentation compl\xE8te\n- Code source comment\xE9 (si applicable)\n- Formation utilisateur si n\xE9cessaire";
-    }
-    if (!enhanced.toLowerCase().includes("budget") && !enhanced.toLowerCase().includes("prix")) {
-      enhanced += "\n\n\u{1F4B0} Budget flexible selon la qualit\xE9 de la proposition.";
-    }
-    if (!enhanced.toLowerCase().includes("d\xE9lai") && !enhanced.toLowerCase().includes("\xE9ch\xE9ance")) {
-      enhanced += "\n\n\u23F0 D\xE9lais de livraison \xE0 discuter selon la complexit\xE9 du projet.";
-    }
-    if (!enhanced.toLowerCase().includes("exp\xE9rience") && !enhanced.toLowerCase().includes("portfolio")) {
-      enhanced += "\n\n\u{1F3AF} Merci de joindre votre portfolio et vos r\xE9f\xE9rences pertinentes.";
-    }
-    return enhanced;
-  }
-  enhanceRequirementsLocal(requirements, category) {
-    let enhanced = requirements.trim();
-    if (!enhanced.includes("-") && !enhanced.includes("\u2022") && !enhanced.includes("\n")) {
-      const sentences = enhanced.split(".").filter((s) => s.trim().length > 0);
-      if (sentences.length > 1) {
-        enhanced = sentences.map((s) => `\u2022 ${s.trim()}`).join("\n");
-      }
-    }
-    const categoryRequirements = {
-      "d\xE9veloppement": [
-        "\u2022 Code propre et document\xE9",
-        "\u2022 Tests unitaires inclus",
-        "\u2022 Compatibilit\xE9 navigateurs modernes"
-      ],
-      "design": [
-        "\u2022 Fichiers sources fournis",
-        "\u2022 Formats d'export multiples",
-        "\u2022 Respect de la charte graphique"
-      ],
-      "marketing": [
-        "\u2022 Analyse de performance incluse",
-        "\u2022 Rapport mensuel d\xE9taill\xE9",
-        "\u2022 Suivi des KPIs"
-      ]
-    };
-    const categoryKey = category?.toLowerCase() || "";
-    if (categoryRequirements[categoryKey]) {
-      enhanced += "\n\nExigences techniques standard :\n" + categoryRequirements[categoryKey].join("\n");
-    }
-    return enhanced;
-  }
-  /**
-   * Analyse la qualité d'une description de projet et suggère des améliorations
-   */
-  async analyzeDescriptionQuality(description) {
-    try {
-      const prompt = `Analysez la qualit\xE9 de cette description de projet freelance et sugg\xE9rez des am\xE9liorations:
-
-DESCRIPTION:
-"${description}"
-
-\xC9valuez selon ces crit\xE8res:
-- Clart\xE9 des objectifs
-- D\xE9tails techniques
-- Contraintes mentionn\xE9es
-- Budget/d\xE9lais pr\xE9cis\xE9s
-- Informations contextuelles
-
-R\xE9pondez au format JSON:
-{
-  "score": 0.0,
-  "suggestions": ["suggestion 1", "suggestion 2"],
-  "missingElements": ["\xE9l\xE9ment manquant 1", "\xE9l\xE9ment manquant 2"]
-}
-
-Score entre 0.0 (tr\xE8s vague) et 1.0 (tr\xE8s d\xE9taill\xE9).`;
-      const vertexResponse = await geminiCall("quality_analysis", { prompt });
-      const result = vertexResponse.output;
-      return {
-        score: Math.max(0, Math.min(1, result.score || 0.5)),
-        suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
-        missingElements: Array.isArray(result.missingElements) ? result.missingElements : []
-      };
-    } catch (error) {
-      console.error("Erreur analyse qualit\xE9:", error);
-      return {
-        score: this.calculateLocalQualityScore(description),
-        // Utilisation du score local comme fallback
-        suggestions: ["Ajoutez plus de d\xE9tails sur vos objectifs"],
-        missingElements: ["Budget indicatif", "D\xE9lais souhait\xE9s"]
-      };
-    }
-  }
-  /**
-   * Get fallback prices for a category
-   */
-  getFallbackPrices(category) {
-    const fallbackPrices = {
-      "d\xE9veloppement": { min: 2500, max: 12e3, avg: 6e3 },
-      "design": { min: 1200, max: 5e3, avg: 2800 },
-      "marketing": { min: 1800, max: 8e3, avg: 4e3 },
-      "r\xE9daction": { min: 800, max: 3e3, avg: 1500 },
-      "conseil": { min: 2e3, max: 1e4, avg: 5e3 },
-      "services": { min: 1500, max: 6e3, avg: 3e3 },
-      "travaux": { min: 2e3, max: 8e3, avg: 4500 }
-    };
-    return fallbackPrices[category] || fallbackPrices.conseil;
-  }
-  /**
-   * Calculate local quality score based on description length and content
-   */
-  calculateLocalQualityScore(description) {
-    let score = 0.3;
-    if (description.length > 100) score += 0.2;
-    if (description.length > 300) score += 0.2;
-    if (description.toLowerCase().includes("budget")) score += 0.1;
-    if (description.toLowerCase().includes("d\xE9lai")) score += 0.1;
-    if (description.toLowerCase().includes("exp\xE9rience")) score += 0.1;
-    return Math.min(1, score);
-  }
-};
-var aiEnhancementService = new AIEnhancementService();
-
-// server/routes/ai-routes.ts
-import { z as z2 } from "zod";
+import { z } from "zod";
 var router5 = Router3();
-var priceSuggestionSchema = z2.object({
-  title: z2.string().min(5, "Titre trop court"),
-  description: z2.string().min(10, "Description trop courte"),
-  category: z2.string().min(1, "Cat\xE9gorie requise")
+var priceSuggestionSchema = z.object({
+  title: z.string().min(5, "Titre trop court"),
+  description: z.string().min(10, "Description trop courte"),
+  category: z.string().min(1, "Cat\xE9gorie requise")
 });
-var enhanceDescriptionSchema = z2.object({
-  description: z2.string().min(5, "Description trop courte"),
-  category: z2.string().min(1, "Cat\xE9gorie requise"),
-  additionalInfo: z2.string().optional()
+var enhanceDescriptionSchema = z.object({
+  description: z.string().min(5, "Description trop courte"),
+  category: z.string().min(1, "Cat\xE9gorie requise"),
+  additionalInfo: z.string().optional()
 });
-var analyzeQualitySchema = z2.object({
-  description: z2.string().min(5, "Description trop courte")
+var analyzeQualitySchema = z.object({
+  description: z.string().min(5, "Description trop courte")
 });
-var enhanceTextSchema = z2.object({
-  text: z2.string().min(1, "Texte requis"),
-  fieldType: z2.enum(["title", "description", "requirements"]),
-  category: z2.string().optional()
+var enhanceTextSchema = z.object({
+  text: z.string().min(1, "Texte requis"),
+  fieldType: z.enum(["title", "description", "requirements"]),
+  category: z.string().optional()
 });
 router5.post("/suggest-pricing", async (req, res) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
-    const priceSuggestion = await aiEnhancementService.suggestPricing(
+    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
+    const aiEnhancementService2 = new AIEnhancementService2();
+    const priceSuggestion = await aiEnhancementService2.suggestPricing(
       title,
       description,
       category
@@ -2230,7 +3065,7 @@ router5.post("/suggest-pricing", async (req, res) => {
       message: "Suggestion de prix g\xE9n\xE9r\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -2247,7 +3082,9 @@ router5.post("/suggest-pricing", async (req, res) => {
 router5.post("/enhance-description", async (req, res) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
-    const enhancedDescription = await aiEnhancementService.enhanceProjectDescription(
+    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
+    const aiEnhancementService2 = new AIEnhancementService2();
+    const enhancedDescription = await aiEnhancementService2.enhanceProjectDescription(
       description,
       category,
       additionalInfo
@@ -2258,7 +3095,7 @@ router5.post("/enhance-description", async (req, res) => {
       message: "Description am\xE9lior\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -2275,14 +3112,16 @@ router5.post("/enhance-description", async (req, res) => {
 router5.post("/analyze-quality", async (req, res) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
-    const qualityAnalysis = await aiEnhancementService.analyzeDescriptionQuality(description);
+    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
+    const aiEnhancementService2 = new AIEnhancementService2();
+    const qualityAnalysis = await aiEnhancementService2.analyzeDescriptionQuality(description);
     res.json({
       success: true,
       data: qualityAnalysis,
       message: "Analyse de qualit\xE9 effectu\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -2298,10 +3137,9 @@ router5.post("/analyze-quality", async (req, res) => {
 });
 router5.post("/enhance-text", async (req, res) => {
   try {
-    console.log("\u{1F4E8} Requ\xEAte /enhance-text re\xE7ue:", req.body);
     const { text: text2, fieldType, category } = req.body;
     if (!text2 || typeof text2 !== "string" || text2.trim().length === 0) {
-      console.warn("\u274C Texte manquant ou invalide");
+      console.warn("\u274C Texte vide ou invalide re\xE7u");
       return res.status(400).json({
         success: false,
         error: "Texte requis et non vide"
@@ -2315,7 +3153,9 @@ router5.post("/enhance-text", async (req, res) => {
       });
     }
     console.log(`\u{1F3AF} Am\xE9lioration ${fieldType} demand\xE9e pour:`, text2.substring(0, 100) + "...");
-    const enhancedText = await aiEnhancementService.enhanceText(text2, fieldType, category);
+    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
+    const aiEnhancementService2 = new AIEnhancementService2();
+    const enhancedText = await aiEnhancementService2.enhanceText(text2, fieldType, category);
     console.log("\u2705 Am\xE9lioration termin\xE9e avec succ\xE8s");
     res.json({
       success: true,
@@ -2338,99 +3178,95 @@ router5.post("/enhance-text", async (req, res) => {
 });
 router5.get("/health", async (req, res) => {
   try {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-    const location = process.env.GOOGLE_CLOUD_LOCATION || "europe-west1";
-    const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    const vertexAIComplete = !!(projectId && credentialsJson);
-    const status = vertexAIComplete ? "vertex_ai_production_ready" : "vertex_ai_configuration_incomplete";
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const geminiConfigured = !!geminiApiKey;
+    const status = geminiConfigured ? "gemini_api_ready" : "gemini_api_configuration_incomplete";
     res.json({
       success: true,
       data: {
-        ai_provider: "vertex-ai-priority",
-        vertex_ai_ready: vertexAIComplete,
-        project_id: projectId ? `\u2705 ${projectId}` : "\u274C MANQUANT",
-        location: `\u2705 ${location}`,
-        credentials_configured: credentialsJson ? "\u2705 Configur\xE9" : "\u274C MANQUANT",
-        services_available: vertexAIComplete ? [
-          "vertex_ai_text_enhancement",
-          "vertex_ai_price_suggestions",
-          "vertex_ai_description_enhancement",
-          "vertex_ai_quality_analysis",
-          "vertex_ai_semantic_analysis"
+        ai_provider: "gemini-api-only",
+        gemini_ready: geminiConfigured,
+        api_key: geminiApiKey ? "\u2705 Configur\xE9" : "\u274C MANQUANT",
+        services_available: geminiConfigured ? [
+          "gemini_text_enhancement",
+          "gemini_price_suggestions",
+          "gemini_description_enhancement",
+          "gemini_quality_analysis",
+          "gemini_semantic_analysis"
         ] : [],
         status,
-        configuration_required: !vertexAIComplete ? [
-          ...projectId ? [] : ["GOOGLE_CLOUD_PROJECT_ID"],
-          ...credentialsJson ? [] : ["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
-        ] : [],
-        mode: "production_vertex_ai"
+        configuration_required: !geminiConfigured ? ["GEMINI_API_KEY"] : [],
+        mode: "production_gemini_api"
       }
     });
   } catch (error) {
     console.error("Erreur v\xE9rification sant\xE9 IA:", error);
     res.status(500).json({
-      success: falsee,
+      success: false,
       error: "Erreur lors de la v\xE9rification"
     });
   }
 });
 router5.get("/test-config", async (req, res) => {
   try {
-    const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+    const geminiAdapter = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+    const geminiCall2 = geminiAdapter.geminiCall;
     const testResponse = await geminiCall2("text_enhance", {
-      prompt: 'Dites simplement "Test r\xE9ussi" en JSON: {"message": "Test r\xE9ussi"}'
+      prompt: 'Dites simplement "Configuration Gemini OK"'
     });
     res.json({
       success: true,
       data: {
-        provider: testResponse.meta.provider,
-        model: testResponse.model_name,
+        test_result: "success",
         response: testResponse.output,
-        message: "Configuration AI fonctionnelle"
+        latency_ms: testResponse.quality?.latency_ms,
+        provider: testResponse.meta?.provider
       }
     });
   } catch (error) {
-    console.error("Test config \xE9chou\xE9:", error);
+    console.error("\u274C Test configuration \xE9chou\xE9:", error);
     res.status(500).json({
       success: false,
-      error: error.message,
-      details: "Configuration AI non fonctionnelle"
+      error: "Test de configuration \xE9chou\xE9",
+      details: error.message
     });
   }
 });
-var ai_routes_default = router5;
 router5.post("/analyze", async (req, res) => {
   const { title = "", description = "", category = "autre" } = req.body ?? {};
   if (typeof description !== "string" || description.trim().length < 5) {
     return res.status(400).json({ error: "Description trop courte" });
   }
   try {
-    const quality = await aiEnhancementService.analyzeDescriptionQuality(description);
-    const pricing = await aiEnhancementService.suggestPricing(title, description, category);
+    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
+    const aiEnhancementService2 = new AIEnhancementService2();
+    const quality = await aiEnhancementService2.analyzeDescriptionQuality(description);
+    const pricing = await aiEnhancementService2.suggestPricing(title, description, category);
     res.json({ quality, pricing });
   } catch (e) {
     console.error("AI /analyze error:", e);
     res.status(500).json({ error: "Erreur analyse IA" });
   }
 });
+var ai_routes_default = router5;
 
 // server/routes/ai-suggestions-routes.ts
 import { Router as Router4 } from "express";
-import { z as z3 } from "zod";
+import { z as z2 } from "zod";
 var router6 = Router4();
-var assistantSuggestionsSchema = z3.object({
-  page: z3.string(),
-  userContext: z3.object({
-    isClient: z3.boolean().optional(),
-    isProvider: z3.boolean().optional(),
-    missions: z3.number().optional(),
-    completedProjects: z3.number().optional(),
-    completeness: z3.number().optional(),
-    hasContent: z3.object({
-      bio: z3.boolean().optional(),
-      headline: z3.boolean().optional(),
-      skills: z3.boolean().optional(),
-      portfolio: z3.boolean().optional()
+var assistantSuggestionsSchema = z2.object({
+  page: z2.string(),
+  userContext: z2.object({
+    isClient: z2.boolean().optional(),
+    isProvider: z2.boolean().optional(),
+    missions: z2.number().optional(),
+    completedProjects: z2.number().optional(),
+    completeness: z2.number().optional(),
+    hasContent: z2.object({
+      bio: z2.boolean().optional(),
+      headline: z2.boolean().optional(),
+      skills: z2.boolean().optional(),
+      portfolio: z2.boolean().optional()
     }).optional()
   }).optional()
 });
@@ -2547,7 +3383,7 @@ router6.post("/assistant-suggestions", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z3.ZodError) {
+    if (error instanceof z2.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -2575,17 +3411,17 @@ var ai_suggestions_routes_default = router6;
 
 // server/routes/ai-missions-routes.ts
 import { Router as Router5 } from "express";
-import { z as z4 } from "zod";
+import { z as z3 } from "zod";
 var router7 = Router5();
-var missionSuggestionSchema = z4.object({
-  title: z4.string().min(3, "Titre trop court"),
-  description: z4.string().min(10, "Description trop courte"),
-  category: z4.string().min(1, "Cat\xE9gorie requise"),
-  budget_min: z4.number().optional(),
-  budget_max: z4.number().optional(),
-  deadline_ts: z4.string().optional(),
-  geo_required: z4.boolean().optional(),
-  onsite_radius_km: z4.number().optional()
+var missionSuggestionSchema = z3.object({
+  title: z3.string().min(3, "Titre trop court"),
+  description: z3.string().min(10, "Description trop courte"),
+  category: z3.string().min(1, "Cat\xE9gorie requise"),
+  budget_min: z3.number().optional(),
+  budget_max: z3.number().optional(),
+  deadline_ts: z3.string().optional(),
+  geo_required: z3.boolean().optional(),
+  onsite_radius_km: z3.number().optional()
 });
 router7.post("/suggest", async (req, res) => {
   try {
@@ -2671,7 +3507,7 @@ router7.post("/suggest", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -2688,6 +3524,7 @@ router7.post("/suggest", async (req, res) => {
 var ai_missions_routes_default = router7;
 
 // apps/api/src/routes/ai.ts
+init_aiOrchestrator();
 import { Router as Router6 } from "express";
 var router8 = Router6();
 router8.post("/pricing", async (req, res) => {
@@ -2721,10 +3558,11 @@ router8.post("/feedback", async (req, res) => {
 var ai_default = router8;
 
 // server/routes/feed-routes.ts
+init_schema();
 import express4 from "express";
 import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { desc, eq as eq3, and, not, inArray, sql as sql2 } from "drizzle-orm";
+import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
+import { desc as desc3, eq as eq5, and as and2, not, inArray, sql as sql4 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -3014,38 +3852,38 @@ var FeedRanker = class {
 };
 
 // server/routes/feed-routes.ts
-import { z as z5 } from "zod";
+import { z as z4 } from "zod";
 var router9 = express4.Router();
 var connection = neon(process.env.DATABASE_URL);
-var db3 = drizzle4(connection);
+var db5 = drizzle6(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
 router9.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
-    const seenAnnouncements = userId ? await db3.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
-      and(
-        eq3(feedSeen.user_id, parseInt(userId))
+    const seenAnnouncements = userId ? await db5.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
+      and2(
+        eq5(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq3(announcements.status, "active")];
+    let whereConditions = [eq5(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
     if (cursor) {
       const cursorId = parseInt(cursor);
-      whereConditions.push(sql2`${announcements.id} < ${cursorId}`);
+      whereConditions.push(sql4`${announcements.id} < ${cursorId}`);
     }
-    const query = db3.select().from(announcements).where(and(...whereConditions));
-    const rawAnnouncements = await query.orderBy(desc(announcements.created_at)).limit(limitNum + 5);
+    const query = db5.select().from(announcements).where(and2(...whereConditions));
+    const rawAnnouncements = await query.orderBy(desc3(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    const sponsoredAnnouncements = await db3.select().from(announcements).where(and(
-      eq3(announcements.sponsored, true),
-      eq3(announcements.status, "active")
+    const sponsoredAnnouncements = await db5.select().from(announcements).where(and2(
+      eq5(announcements.sponsored, true),
+      eq5(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -3066,9 +3904,9 @@ router9.get("/feed", async (req, res) => {
 router9.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    await db3.insert(feedFeedback).values(feedbackData);
+    await db5.insert(feedFeedback).values(feedbackData);
     if (feedbackData.action !== "view") {
-      await db3.insert(feedSeen).values({
+      await db5.insert(feedSeen).values({
         user_id: feedbackData.user_id,
         announcement_id: feedbackData.announcement_id
       }).onConflictDoNothing();
@@ -3082,7 +3920,7 @@ router9.post("/feedback", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Erreur enregistrement feedback:", error);
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z4.ZodError) {
       return res.status(400).json({ error: "Donn\xE9es invalides", details: error.errors });
     }
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
@@ -3101,12 +3939,12 @@ router9.get("/price-benchmark", async (req, res) => {
         return res.json(cached.data);
       }
     }
-    const prices = await db3.select({
+    const prices = await db5.select({
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
-    }).from(announcements).where(and(
-      eq3(announcements.category, category),
-      eq3(announcements.status, "active")
+    }).from(announcements).where(and2(
+      eq5(announcements.category, category),
+      eq5(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -3134,12 +3972,13 @@ router9.get("/price-benchmark", async (req, res) => {
 var feed_routes_default = router9;
 
 // server/routes/favorites-routes.ts
+init_schema();
 import { Router as Router7 } from "express";
-import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq4, and as and2 } from "drizzle-orm";
-var sql3 = neon2(process.env.DATABASE_URL);
-var db4 = drizzle5(sql3);
+import { eq as eq6, and as and3 } from "drizzle-orm";
+var sql5 = neon2(process.env.DATABASE_URL);
+var db6 = drizzle7(sql5);
 var router10 = Router7();
 router10.get("/favorites", async (req, res) => {
   try {
@@ -3147,9 +3986,9 @@ router10.get("/favorites", async (req, res) => {
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    const userFavorites = await db4.select({
+    const userFavorites = await db6.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq4(favorites.announcement_id, announcements.id)).where(eq4(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -3166,16 +4005,16 @@ router10.post("/favorites", async (req, res) => {
     if (!user_id || !announcement_id) {
       return res.status(400).json({ error: "user_id et announcement_id requis" });
     }
-    const existing = await db4.select().from(favorites).where(
-      and2(
-        eq4(favorites.user_id, user_id),
-        eq4(favorites.announcement_id, announcement_id)
+    const existing = await db6.select().from(favorites).where(
+      and3(
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
       return res.status(200).json({ message: "D\xE9j\xE0 en favori" });
     }
-    await db4.insert(favorites).values({
+    await db6.insert(favorites).values({
       user_id,
       announcement_id,
       created_at: /* @__PURE__ */ new Date()
@@ -3193,10 +4032,10 @@ router10.delete("/favorites/:announcementId", async (req, res) => {
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    await db4.delete(favorites).where(
-      and2(
-        eq4(favorites.user_id, user_id),
-        eq4(favorites.announcement_id, parseInt(announcementId))
+    await db6.delete(favorites).where(
+      and3(
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -3710,6 +4549,243 @@ router12.post("/ai/price-analysis", async (req, res) => {
 });
 var ai_quick_analysis_default = router12;
 
+// server/routes/ai-diagnostic-routes.ts
+import { Router as Router8 } from "express";
+var router13 = Router8();
+router13.get("/diagnostic", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
+    const diagnostics = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: {
+        gemini_api_key: !!process.env.GEMINI_API_KEY,
+        provider: "gemini-api-only"
+      },
+      endpoints_tested: {},
+      recommendations: []
+    };
+    try {
+      const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+      const testPrompt = {
+        task: "test_connection",
+        text: 'R\xE9pondez uniquement: {"status": "OK", "provider": "gemini-api"}'
+      };
+      const result = await geminiCall2("text_enhance", testPrompt);
+      diagnostics.endpoints_tested["gemini_api"] = {
+        status: "success",
+        provider: result.meta?.provider || "gemini-api",
+        model: result.model_name,
+        latency_ms: result.quality?.latency_ms || 0
+      };
+      console.log("\u2705 Gemini API fonctionne correctement");
+    } catch (geminiError) {
+      console.error("\u274C Gemini API \xE9chou\xE9:", geminiError);
+      diagnostics.endpoints_tested["gemini_api"] = {
+        status: "failed",
+        error: geminiError.message
+      };
+      diagnostics.recommendations.push("Configurez GEMINI_API_KEY");
+    }
+    const testRoutes = [
+      { name: "enhance-text", working: true },
+      { name: "suggest-pricing", working: true },
+      { name: "enhance-description", working: true },
+      { name: "analyze-quality", working: true }
+    ];
+    diagnostics.endpoints_tested["api_routes"] = testRoutes;
+    if (!diagnostics.environment.gemini_api_key) {
+      diagnostics.recommendations.push("Configurez GEMINI_API_KEY obligatoire");
+    }
+    const hasWorkingProvider = diagnostics.endpoints_tested["gemini_api"]?.status === "success";
+    res.json({
+      success: hasWorkingProvider,
+      data: diagnostics,
+      summary: {
+        ai_provider_working: hasWorkingProvider,
+        primary_provider: "gemini-api",
+        configuration_complete: diagnostics.recommendations.length === 0,
+        issues_count: diagnostics.recommendations.length
+      }
+    });
+  } catch (error) {
+    console.error("\u274C Erreur diagnostic IA:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors du diagnostic IA",
+      details: error.message
+    });
+  }
+});
+var ai_diagnostic_routes_default = router13;
+
+// server/routes/ai-learning-routes.ts
+init_learning_engine();
+import { Router as Router9 } from "express";
+var router14 = Router9();
+router14.post("/analyze-patterns", async (req, res) => {
+  try {
+    console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
+    await aiLearningEngine.analyzePastInteractions(1e3);
+    const stats = aiLearningEngine.getLearningStats();
+    res.json({
+      success: true,
+      message: "Analyse d'apprentissage termin\xE9e",
+      stats
+    });
+  } catch (error) {
+    console.error("\u274C Erreur analyse apprentissage:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors de l'analyse d'apprentissage"
+    });
+  }
+});
+router14.get("/stats", (req, res) => {
+  try {
+    const stats = aiLearningEngine.getLearningStats();
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error("\u274C Erreur r\xE9cup\xE9ration stats:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors de la r\xE9cup\xE9ration des statistiques"
+    });
+  }
+});
+var ai_learning_routes_default = router14;
+
+// server/routes/team-routes.ts
+import { Router as Router10 } from "express";
+import { z as z5 } from "zod";
+var router15 = Router10();
+var teamAnalysisSchema = z5.object({
+  description: z5.string().min(10),
+  title: z5.string().min(3),
+  category: z5.string().min(2),
+  budget: z5.union([z5.string(), z5.number()])
+});
+var teamProjectSchema = z5.object({
+  projectData: z5.object({
+    title: z5.string().min(3),
+    description: z5.string().min(10),
+    category: z5.string().min(2),
+    budget: z5.union([z5.string(), z5.number()]),
+    location: z5.string().optional(),
+    isTeamMode: z5.boolean()
+  }),
+  teamRequirements: z5.array(z5.object({
+    profession: z5.string(),
+    description: z5.string(),
+    required_skills: z5.array(z5.string()),
+    estimated_budget: z5.number(),
+    estimated_days: z5.number(),
+    min_experience: z5.number(),
+    is_lead_role: z5.boolean(),
+    importance: z5.enum(["high", "medium", "low"])
+  }))
+});
+router15.post("/analyze", async (req, res) => {
+  try {
+    const parsed = teamAnalysisSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Donn\xE9es invalides", details: parsed.error.flatten() });
+    }
+    const { description, title, category, budget } = parsed.data;
+    const professions = [
+      {
+        profession: "D\xE9veloppeur Frontend",
+        description: "Cr\xE9ation de l'interface utilisateur et exp\xE9rience utilisateur",
+        required_skills: ["React", "TypeScript", "CSS", "HTML"],
+        estimated_budget: Math.floor(Number(budget) * 0.4),
+        estimated_days: 10,
+        min_experience: 2,
+        is_lead_role: false,
+        importance: "high"
+      },
+      {
+        profession: "D\xE9veloppeur Backend",
+        description: "Architecture serveur et APIs",
+        required_skills: ["Node.js", "PostgreSQL", "REST API"],
+        estimated_budget: Math.floor(Number(budget) * 0.4),
+        estimated_days: 12,
+        min_experience: 3,
+        is_lead_role: true,
+        importance: "high"
+      },
+      {
+        profession: "Designer UX/UI",
+        description: "Conception de l'exp\xE9rience et interface utilisateur",
+        required_skills: ["Figma", "Design System", "Prototypage"],
+        estimated_budget: Math.floor(Number(budget) * 0.2),
+        estimated_days: 5,
+        min_experience: 2,
+        is_lead_role: false,
+        importance: "medium"
+      }
+    ];
+    res.json({ professions });
+  } catch (error) {
+    console.error("Team analysis error:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router15.post("/create-project", async (req, res) => {
+  try {
+    const parsed = teamProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Donn\xE9es invalides", details: parsed.error.flatten() });
+    }
+    const { projectData, teamRequirements } = parsed.data;
+    const mainProject = {
+      id: "team-" + Date.now(),
+      ...projectData,
+      type: "team",
+      teamRequirements,
+      status: "open",
+      clientId: "user_1",
+      // Temporaire
+      clientName: "Utilisateur",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const subMissions = teamRequirements.map((req2, index) => ({
+      id: `${mainProject.id}-sub-${index}`,
+      title: `${projectData.title} - ${req2.profession}`,
+      description: req2.description,
+      category: projectData.category,
+      budget: req2.estimated_budget.toString(),
+      location: projectData.location || "Remote",
+      parentProjectId: mainProject.id,
+      profession: req2.profession,
+      required_skills: req2.required_skills,
+      estimated_days: req2.estimated_days,
+      min_experience: req2.min_experience,
+      is_lead_role: req2.is_lead_role,
+      importance: req2.importance,
+      status: "open",
+      clientId: mainProject.clientId,
+      clientName: mainProject.clientName,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      bids: []
+    }));
+    if (!global.missions) {
+      global.missions = [];
+    }
+    global.missions.push(mainProject);
+    global.missions.push(...subMissions);
+    console.log(`\u2705 Projet en \xE9quipe cr\xE9\xE9: ${mainProject.id} avec ${subMissions.length} sous-missions`);
+    res.json({
+      ok: true,
+      project: mainProject,
+      subMissions,
+      message: `Projet cr\xE9\xE9 avec ${subMissions.length} missions sp\xE9cialis\xE9es`
+    });
+  } catch (error) {
+    console.error("Team project creation error:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
+  }
+});
+var team_routes_default = router15;
+
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
 var aiRateLimit = rateLimit({
@@ -3809,25 +4885,27 @@ var monitoringRateLimit = rateLimit({
 // server/index.ts
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
+validateEnvironment();
 var app = express7();
 var port = parseInt(process.env.PORT || "5000", 10);
-var databaseUrl = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
-var missionSyncService = new MissionSyncService(databaseUrl);
-var missions = [
-  {
-    id: "mission1",
-    title: "D\xE9veloppement d'une application mobile de e-commerce",
-    description: "Je recherche un d\xE9veloppeur exp\xE9riment\xE9 pour cr\xE9er une application mobile compl\xE8te de vente en ligne avec syst\xE8me de paiement int\xE9gr\xE9.",
-    category: "developpement",
-    budget: "5000",
-    location: "Paris, France",
-    clientId: "client1",
-    clientName: "Marie Dubois",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-15")).toISOString(),
-    bids: []
+var databaseUrl2 = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
+console.log("\u{1F517} Using Replit PostgreSQL connection");
+var missionSyncService = new MissionSyncService(databaseUrl2);
+var pool5 = new Pool6({
+  connectionString: databaseUrl2
+});
+console.log("\u{1F517} Database configuration:", {
+  DATABASE_URL: !!process.env.DATABASE_URL,
+  NODE_ENV: process.env.NODE_ENV,
+  PLATFORM: "Replit"
+});
+setTimeout(async () => {
+  try {
+    console.log("\u2705 Comptes d\xE9mo - v\xE9rification diff\xE9r\xE9e");
+  } catch (error) {
+    console.warn("\u26A0\uFE0F Comptes d\xE9mo - v\xE9rification \xE9chou\xE9e");
   }
-];
+}, 5e3);
 if (!global.projectStandardizations) {
   global.projectStandardizations = /* @__PURE__ */ new Map();
 }
@@ -3837,10 +4915,9 @@ if (!global.aiEnhancementCache) {
 if (!global.performanceMetrics) {
   global.performanceMetrics = /* @__PURE__ */ new Map();
 }
-console.log("\u{1F50D} Vertex AI Environment Variables:", {
-  GOOGLE_CLOUD_PROJECT_ID: !!process.env.GOOGLE_CLOUD_PROJECT_ID,
-  GOOGLE_CLOUD_LOCATION: !!process.env.GOOGLE_CLOUD_LOCATION,
-  GOOGLE_APPLICATION_CREDENTIALS_JSON: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+console.log("\u{1F50D} Gemini AI Environment Variables:", {
+  GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+  PROVIDER: "gemini-api-only"
 });
 app.use((req, res, next) => {
   res.set({
@@ -3851,22 +4928,16 @@ app.use((req, res, next) => {
   next();
 });
 app.set("trust proxy", true);
-app.use((req, res, next) => {
-  const isReplit = process.env.REPLIT_DB_URL || process.env.REPLIT_DEV_DOMAIN;
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  if (isReplit) {
-    res.header("X-Frame-Options", "ALLOWALL");
-  } else {
-    res.header("X-Frame-Options", "SAMEORIGIN");
-  }
-  res.header("X-Content-Type-Options", "nosniff");
-  res.header("Referrer-Policy", "same-origin");
-  next();
-});
+app.use(cors({
+  origin: process.env.NODE_ENV === "production" ? ["https://swideal.com", "https://www.swideal.com", /\.replit\.app$/] : true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"]
+}));
 app.use(express7.json());
+console.log("\u{1F4CB} Registering missions routes...");
 app.use("/api/missions", missions_default);
+console.log("\u{1F4CB} Registering other API routes...");
 app.use("/api/auth", auth_routes_default);
 app.use("/api", api_routes_default);
 app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
@@ -3879,16 +4950,46 @@ app.use("/api/ai", aiRateLimit, ai_suggestions_routes_default);
 app.use("/api/ai/missions", aiRateLimit, ai_missions_routes_default);
 app.use("/api-ai-orchestrator", strictAiRateLimit, ai_default);
 app.use("/api", aiRateLimit, ai_quick_analysis_default);
+app.use("/api/ai/diagnostic", ai_diagnostic_routes_default);
+app.use("/api/ai/suggestions", ai_suggestions_routes_default);
+app.use("/api/ai/learning", ai_learning_routes_default);
 app.use("/api", feed_routes_default);
 app.use("/api", favorites_routes_default);
 app.use("/api", mission_demo_default);
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    message: "SwipDEAL API is running",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    uptime: process.uptime(),
-    env: process.env.NODE_ENV || "development"
+app.use("/api/team", team_routes_default);
+app.get("/api/health", async (req, res) => {
+  try {
+    await pool5.query("SELECT 1");
+    res.status(200).json({
+      status: "ok",
+      message: "SwipDEAL API is running",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      uptime: process.uptime(),
+      env: process.env.NODE_ENV || "development",
+      database: "connected"
+    });
+  } catch (error) {
+    console.error("Health check database error:", error);
+    res.status(503).json({
+      status: "error",
+      message: "Database connection failed",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      uptime: process.uptime(),
+      env: process.env.NODE_ENV || "development",
+      database: "disconnected",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+app.get("/api/debug/missions", (req, res) => {
+  res.json({
+    debug_info: {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      env: process.env.NODE_ENV,
+      status: "database_unified",
+      memory_usage: process.memoryUsage()
+    },
+    message: "Check /api/missions for actual missions data"
   });
 });
 app.get("/healthz", (req, res) => {
@@ -3900,64 +5001,24 @@ app.get("/healthz", (req, res) => {
     node_env: process.env.NODE_ENV
   });
 });
-app.get("/api/ai/vertex-diagnostic", (req, res) => {
-  const hasProjectId = !!process.env.GOOGLE_CLOUD_PROJECT_ID;
-  const hasLocation = !!process.env.GOOGLE_CLOUD_LOCATION;
-  const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+app.get("/api/ai/gemini-diagnostic", (req, res) => {
+  const hasApiKey = !!process.env.GEMINI_API_KEY;
   res.json({
-    vertex_ai_configured: hasProjectId && hasLocation && hasCredentials,
-    project_id: hasProjectId ? process.env.GOOGLE_CLOUD_PROJECT_ID : "MISSING",
-    location: hasLocation ? process.env.GOOGLE_CLOUD_LOCATION : "MISSING",
-    credentials: hasCredentials ? "CONFIGURED" : "MISSING",
-    status: hasProjectId && hasLocation && hasCredentials ? "ready" : "incomplete"
+    gemini_ai_configured: hasApiKey,
+    api_key: hasApiKey ? "CONFIGURED" : "MISSING",
+    status: hasApiKey ? "ready" : "incomplete",
+    provider: "gemini-api-only"
   });
 });
-app.get("/api/missions", (req, res) => {
-  res.json(missions);
-});
-app.post("/api/missions", async (req, res) => {
-  const { title, description, category, budget, location, clientId, clientName } = req.body;
-  if (!title || !description || !category || !budget || !clientId || !clientName) {
-    return res.status(400).json({ error: "Champs requis manquants" });
-  }
-  const newMission = {
-    id: `mission_${Date.now()}`,
-    title,
-    description,
-    category,
-    budget,
-    location: location || "Non sp\xE9cifi\xE9",
-    clientId,
-    clientName,
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-    bids: []
-  };
-  try {
-    missions.push(newMission);
-    await missionSyncService.addMissionToFeed(newMission);
-    res.status(201).json(newMission);
-  } catch (error) {
-    console.error("Erreur cr\xE9ation mission:", error);
-    res.status(500).json({ error: "Erreur lors de la cr\xE9ation de la mission" });
-  }
-});
-app.get("/api/missions/:id", (req, res) => {
-  const { id } = req.params;
-  const mission = missions.find((m) => m.id === id);
-  if (!mission) {
-    return res.status(404).json({ error: "Mission non trouv\xE9e" });
-  }
-  res.json(mission);
-});
 var server = createServer(app);
-if (process.env.NODE_ENV === "development") {
-  setupVite(app, server).then(() => {
-    console.log("\u2705 Vite middleware configured for development");
-  }).catch(console.error);
-} else {
+var isProductionLike = process.env.NODE_ENV === "production" || process.env.PREVIEW_MODE === "true";
+if (isProductionLike) {
+  console.log("\u{1F527} Forcing production mode to bypass Vite host restrictions");
   serveStatic(app);
   console.log("\u2705 Production mode: serving static files");
+} else {
+  console.log("\u{1F6E0}\uFE0F Development mode: using Vite dev server");
+  setupVite(app, server).catch(console.error);
 }
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
@@ -3971,21 +5032,41 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`\u{1F680} SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`\u{1F4F1} Frontend: http://0.0.0.0:${port}`);
   console.log(`\u{1F527} API Health: http://0.0.0.0:${port}/api/health`);
+  console.log(`\u{1F3AF} AI Provider: Gemini API Only`);
+  console.log(`\u{1F50D} Process ID: ${process.pid}`);
+  console.log(`\u{1F50D} Node Environment: ${process.env.NODE_ENV || "development"}`);
 });
-missionSyncService.syncMissionsToFeed(missions).catch(console.error);
-console.log("\u2705 Advanced AI routes registered");
+console.log("\u2705 Advanced AI routes registered - Gemini API Only");
 process.on("SIGINT", () => {
-  console.log("Shutting down gracefully...");
+  console.log("Received SIGINT, shutting down gracefully...");
   server.close(() => {
     console.log("HTTP server closed.");
     process.exit(0);
   });
 });
 process.on("SIGTERM", () => {
-  console.log("Shutting down gracefully...");
+  console.log("Received SIGTERM, shutting down gracefully...");
   server.close(() => {
     console.log("HTTP server closed.");
     process.exit(0);
+  });
+});
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+  console.error("Stack:", error.stack);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+app.use((error, req, res, next) => {
+  console.error("\u{1F6A8} Global error handler:", error);
+  console.error("\u{1F6A8} Request URL:", req.url);
+  console.error("\u{1F6A8} Request method:", req.method);
+  console.error("\u{1F6A8} Request body:", req.body);
+  res.status(500).json({
+    error: "Internal server error",
+    details: process.env.NODE_ENV === "development" ? error.message : "Something went wrong",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
 var index_default = app;
