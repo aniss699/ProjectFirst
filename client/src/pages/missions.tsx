@@ -32,7 +32,7 @@ export default function Missions() {
         throw new Error('User ID manquant');
       }
 
-      console.log('🔍 Récupération des missions pour utilisateur:', user.id);
+      console.log('🔍 Récupération des missions pour user.id:', user.id);
       
       const response = await fetch(`/api/missions/users/${user.id}/missions`);
       if (!response.ok) {

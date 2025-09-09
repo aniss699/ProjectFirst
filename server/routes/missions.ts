@@ -42,13 +42,13 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate client_id (user must be authenticated)
-    if (!missionData.clientId) {
-      console.error('❌ Validation failed: Missing clientId');
+    // Validate user_id (user must be authenticated)
+    if (!missionData.userId) {
+      console.error('❌ Validation failed: Missing userId');
       return res.status(401).json({
         error: 'Utilisateur non authentifié',
-        field: 'clientId',
-        received: missionData.clientId
+        field: 'userId',
+        received: missionData.userId
       });
     }
 
@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
       status: missionData.status || 'published',
       created_at: new Date(),
       updated_at: new Date(),
-      client_id: missionData.clientId ? parseInt(missionData.clientId) : null,
+      client_id: missionData.userId ? parseInt(missionData.userId) : null,
       // Map additional fields properly
       budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
       budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
           budget: insertedMission.budget_min?.toString() || '0',
           location: insertedMission.location || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
-          clientId: insertedMission.client_id?.toString() || '1',
+          userId: insertedMission.client_id?.toString() || '1',
           clientName: 'Client',
           createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
           bids: []
@@ -290,8 +290,8 @@ router.get('/users/:userId/missions', async (req, res) => {
       location: mission.location,
       status: mission.status,
       urgency: mission.urgency,
-      clientId: mission.client_id?.toString(),
-      clientName: 'Moi', // Since it's the user's own missions
+      userId: mission.client_id?.toString(),
+      userName: 'Moi', // Since it's the user's own missions
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       updatedAt: mission.updated_at?.toISOString(),
       deadline: mission.deadline?.toISOString(),

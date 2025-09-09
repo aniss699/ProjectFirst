@@ -409,7 +409,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                           <p className="text-gray-700 whitespace-pre-line leading-relaxed">{bid.proposal}</p>
                         </div>
 
-                        {user && mission.clientName === user.name && (
+                        {user && mission.userName === user.name && (
                           <div className="flex gap-3">
                             <Button 
                               onClick={() => {

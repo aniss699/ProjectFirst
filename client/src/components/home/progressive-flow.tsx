@@ -170,7 +170,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           category: selectedCategory,
           budget: budgetFormatted,
           location: projectData.needsLocation ? projectData.location.address : 'Remote',
-          clientId: user?.id?.toString() || null,
+          userId: user?.id?.toString() || null,
           clientName: user?.name || 'Utilisateur'
         };
 
