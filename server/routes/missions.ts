@@ -42,6 +42,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validate client_id (user must be authenticated)
+    if (!missionData.clientId) {
+      console.error('❌ Validation failed: Missing clientId');
+      return res.status(401).json({
+        error: 'Utilisateur non authentifié',
+        field: 'clientId',
+        received: missionData.clientId
+      });
+    }
+
     // Prepare mission data with proper field mapping
     const missionToInsert = {
       title: missionData.title,
@@ -53,7 +63,7 @@ router.post('/', async (req, res) => {
       status: missionData.status || 'published',
       created_at: new Date(),
       updated_at: new Date(),
-      client_id: missionData.client_id || 1,
+      client_id: missionData.clientId ? parseInt(missionData.clientId) : null,
       // Map additional fields properly
       budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
       budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
