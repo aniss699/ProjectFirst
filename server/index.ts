@@ -213,7 +213,7 @@ if (isProductionLike) {
   console.log('✅ Production mode: serving static files');
 } else {
   console.log('🛠️ Development mode: using Vite dev server');
-  setupVite(app).catch(console.error);
+  setupVite(app, server).catch(console.error);
 }
 
 server.on('error', (err: any) => {
