@@ -129,8 +129,9 @@ export default function Missions() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  // Debug: Log user info
+  // Debug: Log user info  
   console.log('👤 User actuel:', { id: user?.id, type: user?.type, name: user?.name });
+  console.log('🔗 Mapping: user.id =', user?.id, '| client_id attendu:', user?.id);
 
   if (!user) {
     return (

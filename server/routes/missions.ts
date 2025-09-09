@@ -244,6 +244,7 @@ router.get('/users/:userId/missions', async (req, res) => {
   try {
     const userId = req.params.userId;
     console.log('👤 Fetching missions for user:', userId);
+    console.log('🔗 Mapping: userId =', userId, '-> client_id filter:', userId);
 
     if (!userId || userId === 'undefined' || userId === 'null') {
       console.error('❌ Invalid user ID:', userId);
@@ -256,11 +257,18 @@ router.get('/users/:userId/missions', async (req, res) => {
       return res.status(400).json({ error: 'User ID doit être un nombre' });
     }
 
+    console.log('🔍 Querying database: SELECT * FROM missions WHERE client_id =', userIdInt);
+    
     const userMissions = await db
       .select()
       .from(missions)
       .where(eq(missions.client_id, userIdInt))
       .orderBy(desc(missions.created_at));
+    
+    console.log('📊 Query result: Found', userMissions.length, 'missions with client_id =', userIdInt);
+    userMissions.forEach(mission => {
+      console.log('   📋 Mission:', mission.id, '| client_id:', mission.client_id, '| title:', mission.title);
+    });
 
     // Transform missions to match frontend interface
     const missionsWithBids = userMissions.map(mission => ({
