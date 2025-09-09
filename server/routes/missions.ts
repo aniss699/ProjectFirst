@@ -160,4 +160,49 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// GET /api/missions/verify-sync - Vérifier la synchronisation missions/feed
+router.get('/verify-sync', async (req, res) => {
+  try {
+    console.log('🔍 Vérification de la synchronisation missions/feed');
+    
+    // Récupérer les dernières missions
+    const recentMissions = await db.select().from(missions)
+      .orderBy(desc(missions.created_at))
+      .limit(5);
+    
+    // Vérifier la présence dans le feed (table announcements)
+    const { announcements } = await import('../../shared/schema.js');
+    const feedItems = await db.select().from(announcements)
+      .orderBy(desc(announcements.created_at))
+      .limit(10);
+    
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map(m => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map(f => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
+    };
+    
+    console.log('🔍 Sync status:', syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error('❌ Sync verification error:', error);
+    res.status(500).json({
+      error: 'Sync verification failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
