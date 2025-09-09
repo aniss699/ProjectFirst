@@ -38,12 +38,16 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [currentBid, setCurrentBid] = useState<Partial<Bid>>({}); // State to hold the current bid proposal
 
 
-  const { data: mission, isLoading } = useQuery<MissionWithBids>({
+  const { data: mission, isLoading, error } = useQuery<MissionWithBids>({
     queryKey: [`/api/missions/${missionId}`],
     enabled: !!missionId && isOpen,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
-  if (!mission || isLoading) {
+  if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-0 shadow-2xl">
@@ -54,6 +58,28 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-gray-500">Chargement des détails de la mission...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error || !mission) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-0 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>Erreur</DialogTitle>
+            <DialogDescription>Impossible de charger les détails de la mission</DialogDescription>
+          </DialogHeader>
+          <div className="p-8 text-center">
+            <div className="text-red-500 mb-4">❌</div>
+            <p className="text-gray-500 mb-4">
+              {error ? 'Erreur de chargement des données' : 'Mission non trouvée'}
+            </p>
+            <Button onClick={onClose} variant="outline">
+              Fermer
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

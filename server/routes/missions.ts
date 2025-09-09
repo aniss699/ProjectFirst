@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../database.js';
 import { missions } from '../../shared/schema.js';
+import { MissionSyncService } from '../services/mission-sync.js'; // Import MissionSyncService
 
 const router = Router();
 
@@ -77,16 +78,6 @@ router.post('/', async (req, res) => {
 
       console.log('✅ Mission created successfully:', insertedMission);
 
-      // 🔄 Synchroniser automatiquement avec le feed
-      try {
-        const { MissionSyncService } = await import('../services/mission-sync.js');
-        const syncService = new MissionSyncService();
-        await syncService.addMissionToFeed(insertedMission);
-        console.log('🔄 Mission synchronisée avec le feed');
-      } catch (syncError) {
-        console.warn('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
-      }
-
       // Verify the mission was actually saved
       const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
       console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
@@ -95,15 +86,31 @@ router.post('/', async (req, res) => {
     } catch (error) {
       console.error('❌ Database insertion failed:', error);
       console.error('❌ Data that failed to insert:', JSON.stringify(missionToInsert, null, 2));
-      throw new Error(`Database insertion failed: ${error instanceof Error ? error.message : 'Unknown database error'}`);
+      // Throw error to be caught by the outer catch block
+      throw error;
     }
+
+    // Synchronisation avec le feed en arrière-plan (non-bloquant)
+    setImmediate(async () => {
+      try {
+        // Use the imported MissionSyncService
+        await MissionSyncService.addMissionToFeed(insertedMission.id);
+        console.log('✅ Mission synchronisée avec le feed');
+      } catch (syncError) {
+        console.error('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
+      }
+    });
+
   } catch (error) {
     console.error('❌ Error creating mission:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    res.status(500).json({
-      error: 'Failed to create mission',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+    // Check if headers have already been sent to prevent double response
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Failed to create mission',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 });
 
@@ -162,18 +169,18 @@ router.get('/debug', async (req, res) => {
 router.get('/verify-sync', async (req, res) => {
   try {
     console.log('🔍 Vérification de la synchronisation missions/feed');
-    
+
     // Récupérer les dernières missions
     const recentMissions = await db.select().from(missions)
       .orderBy(desc(missions.created_at))
       .limit(5);
-    
+
     // Vérifier la présence dans le feed (table announcements)
     const { announcements } = await import('../../shared/schema.js');
     const feedItems = await db.select().from(announcements)
       .orderBy(desc(announcements.created_at))
       .limit(10);
-    
+
     const syncStatus = {
       totalMissions: recentMissions.length,
       totalFeedItems: feedItems.length,
@@ -191,7 +198,7 @@ router.get('/verify-sync', async (req, res) => {
       })),
       syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
     };
-    
+
     console.log('🔍 Sync status:', syncStatus);
     res.json(syncStatus);
   } catch (error) {
