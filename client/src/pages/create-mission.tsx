@@ -5,11 +5,11 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { z } from 'zod';
 
-// Complete mission form schema - seuls titre et description obligatoires
+// Complete mission form schema
 const missionFormSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
-  category: z.string().optional(),
+  category: z.string().min(1, "La catégorie est requise"),
   budget: z.union([z.string(), z.number()]).optional(),
   location: z.string().optional(),
   urgency: z.enum(['low', 'medium', 'high']).default('medium'),

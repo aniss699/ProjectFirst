@@ -394,13 +394,4 @@ export type Mission = typeof missions.$inferSelect;
 export type NewMission = typeof missions.$inferInsert;
 
 // Schemas Zod for missions
-export const insertMissionSchema = createInsertSchema(missions, {
-  title: z.string().min(1, "Le titre est requis"),
-  description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
-  category: z.string().nullable().optional(), // Catégorie facultative
-  budget_min: z.number().nullable().optional(),
-  budget_max: z.number().nullable().optional(),
-  location: z.string().nullable().optional(),
-  urgency: z.string().optional(),
-  deadline: z.date().nullable().optional(),
-});rtSchema(missions);
+export const insertMissionSchema = createInsertSchema(missions);

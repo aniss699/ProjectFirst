@@ -88,36 +88,6 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   // Function to create the mission via API
   const createMission = async () => {
     setIsCreating(true);
-    
-    try {
-      // Validation minimale - seuls titre et description requis
-      if (!projectData.title.trim()) {
-        throw new Error('Le titre est requis');
-      }
-      
-      if (!projectData.description.trim() || projectData.description.length < 10) {
-        throw new Error('La description doit contenir au moins 10 caractères');
-      }
-
-      const missionData = {
-        title: projectData.title,
-        description: projectData.description,
-        category: selectedCategory || 'general', // Catégorie par défaut si non sélectionnée
-        budget: projectData.budget || null,
-        location: projectData.location?.address || null,
-        urgency: 'medium',
-        requirements: projectData.requirements || null,
-        tags: [],
-        deadline: null
-      };
-
-      await onSubmit(missionData);
-    } catch (error) {
-      console.error('Erreur création mission:', error);
-      setError(error instanceof Error ? error.message : 'Erreur lors de la création');
-    } finally {
-      setIsCreating(false);
-    }e);
 
     try {
       if (isTeamMode) {

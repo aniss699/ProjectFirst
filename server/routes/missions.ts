@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
     console.log('📝 Mission creation request received:', JSON.stringify(missionData, null, 2));
     console.log('📝 Request headers:', JSON.stringify(req.headers, null, 2));
 
-    // Validate required fields - seuls titre et description obligatoires
+    // Validate required fields with better error messages
     if (!missionData.title || missionData.title.trim() === '') {
       console.error('❌ Validation failed: Missing or empty title');
       return res.status(400).json({
@@ -42,11 +42,11 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Prepare mission data with proper field mapping - valeurs par défaut pour champs facultatifs
+    // Prepare mission data with proper field mapping
     const missionToInsert = {
       title: missionData.title,
       description: missionData.description,
-      category: missionData.category || 'general', // Catégorie par défaut
+      category: missionData.category || 'developpement',
       budget: missionData.budget ? parseInt(missionData.budget) : null,
       location: missionData.location || null,
       urgency: missionData.urgency || 'medium',
