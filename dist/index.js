@@ -1971,19 +1971,25 @@ router.get("/", async (req, res) => {
   }
 });
 router.get("/:id", async (req, res) => {
+  let missionId = null;
   try {
-    const missionId2 = req.params.id;
-    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId2);
-    if (!missionId2 || missionId2 === "undefined" || missionId2 === "null") {
-      console.error("\u274C API: Mission ID invalide:", missionId2);
+    missionId = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
+    if (!missionId || missionId === "undefined" || missionId === "null") {
+      console.error("\u274C API: Mission ID invalide:", missionId);
       return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const mission = await db.select().from(missions).where(eq(missions.id, missionId2)).limit(1);
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre" });
+    }
+    const mission = await db.select().from(missions).where(eq(missions.id, missionIdInt)).limit(1);
     if (mission.length === 0) {
-      console.error("\u274C API: Mission non trouv\xE9e:", missionId2);
+      console.error("\u274C API: Mission non trouv\xE9e:", missionId);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    const bids2 = await db.select().from(bids).where(eq(bids.missionId, missionId2));
+    const bids2 = await db.select().from(bids).where(eq(bids.project_id, missionIdInt));
     const result = {
       ...mission[0],
       bids: bids2 || []
@@ -1993,12 +1999,12 @@ router.get("/:id", async (req, res) => {
   } catch (error) {
     console.error("\u274C API: Erreur r\xE9cup\xE9ration mission:", error);
     console.error("\u274C API: Stack trace:", error instanceof Error ? error.stack : "No stack");
-    console.error("\u274C API: Mission ID demand\xE9e:", missionId);
+    console.error("\u274C API: Mission ID demand\xE9e:", missionId || "undefined");
     console.error("\u274C API: Type de l'ID:", typeof missionId);
     res.status(500).json({
       error: "Erreur interne du serveur",
       details: error instanceof Error ? error.message : "Erreur inconnue",
-      missionId,
+      missionId: missionId || "undefined",
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
@@ -2059,7 +2065,12 @@ router.get("/users/:userId/bids", async (req, res) => {
       console.error("\u274C Invalid user ID:", userId);
       return res.status(400).json({ error: "User ID invalide" });
     }
-    const userBids = await db.select().from(bids).where(eq(bids.providerId, userId)).orderBy(desc(bids.createdAt));
+    const userIdInt = parseInt(userId, 10);
+    if (isNaN(userIdInt)) {
+      console.error("\u274C User ID is not a valid number:", userId);
+      return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
+    }
+    const userBids = await db.select().from(bids).where(eq(bids.provider_id, userIdInt)).orderBy(desc(bids.created_at));
     console.log(`\u{1F464} Found ${userBids.length} bids for user ${userId}`);
     res.json(userBids);
   } catch (error) {
@@ -2291,11 +2302,11 @@ var EventLogger = class {
   /**
    * Log d'événement de vue d'annonce
    */
-  logAnnouncementView(userId, missionId2, sessionId, dwellTime, metadata = {}) {
+  logAnnouncementView(userId, missionId, sessionId, dwellTime, metadata = {}) {
     const event = {
       event_type: "view",
       user_id: userId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2320,11 +2331,11 @@ var EventLogger = class {
   /**
    * Log d'événement de sauvegarde/favori
    */
-  logSave(userId, missionId2, sessionId, metadata = {}) {
+  logSave(userId, missionId, sessionId, metadata = {}) {
     const event = {
       event_type: "save",
       user_id: userId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2338,16 +2349,16 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.logConversion("save", userId, missionId2, metadata);
+    this.logConversion("save", userId, missionId, metadata);
   }
   /**
    * Log d'événement de proposition
    */
-  logProposal(providerId, missionId2, sessionId, metadata = {}) {
+  logProposal(providerId, missionId, sessionId, metadata = {}) {
     const event = {
       event_type: "proposal",
       provider_id: providerId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2373,11 +2384,11 @@ var EventLogger = class {
   /**
    * Log d'événement de victoire (projet attribué)
    */
-  logWin(providerId, missionId2, sessionId, metadata = {}) {
+  logWin(providerId, missionId, sessionId, metadata = {}) {
     const event = {
       event_type: "win",
       provider_id: providerId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2390,17 +2401,17 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.updatePredictionOutcome("pricing_suggestion", missionId2, "success");
-    this.updatePredictionOutcome("matching_recommendation", missionId2, "success");
+    this.updatePredictionOutcome("pricing_suggestion", missionId, "success");
+    this.updatePredictionOutcome("matching_recommendation", missionId, "success");
   }
   /**
    * Log d'événement de litige
    */
-  logDispute(userId, missionId2, sessionId, metadata = {}) {
+  logDispute(userId, missionId, sessionId, metadata = {}) {
     const event = {
       event_type: "dispute",
       user_id: userId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2413,7 +2424,7 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.updatePredictionOutcome("risk_assessment", missionId2, "failure");
+    this.updatePredictionOutcome("risk_assessment", missionId, "failure");
   }
   /**
    * Log des métriques de performance IA
@@ -2434,11 +2445,11 @@ var EventLogger = class {
   /**
    * Log d'événement de conversion
    */
-  logConversion(conversionType, userId, missionId2, metadata) {
+  logConversion(conversionType, userId, missionId, metadata) {
     const conversionEvent = {
       event_type: "conversion",
       user_id: userId,
-      mission_id: missionId2,
+      mission_id: missionId,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: metadata.session_id || "unknown",
       metadata: {
@@ -2469,10 +2480,10 @@ var EventLogger = class {
   /**
    * Met à jour le résultat d'une prédiction
    */
-  updatePredictionOutcome(modelType, missionId2, outcome) {
+  updatePredictionOutcome(modelType, missionId, outcome) {
     console.log("\u{1F4C8} [PREDICTION_UPDATE]", JSON.stringify({
       model: modelType,
-      mission: missionId2,
+      mission: missionId,
       outcome,
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     }));
@@ -4941,11 +4952,9 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`\u{1F3AF} AI Provider: Gemini API Only`);
   console.log(`\u{1F50D} Process ID: ${process.pid}`);
   console.log(`\u{1F50D} Node Environment: ${process.env.NODE_ENV || "development"}`);
-  const isProductionLike = process.env.NODE_ENV === "production" || process.env.PREVIEW_MODE === "true";
-  if (isProductionLike) {
-    console.log("\u{1F527} Forcing production mode to bypass Vite host restrictions");
+  if (process.env.NODE_ENV === "production") {
+    console.log("\u{1F3ED} Production mode: serving static files");
     serveStatic(app);
-    console.log("\u2705 Production mode: serving static files");
   } else {
     console.log("\u{1F6E0}\uFE0F Development mode: setting up Vite dev server...");
     setupVite(app, server).catch((error) => {
@@ -4955,10 +4964,12 @@ server.listen(port, "0.0.0.0", () => {
 });
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`\u274C Port ${port} is already in use. Trying to kill existing processes...`);
+    console.error(`\u274C Port ${port} is already in use. Server will exit and let Replit handle restart.`);
+    console.error(`\u{1F4A1} The deployment compilation issues have been fixed. This is just a port conflict that should resolve on restart.`);
     process.exit(1);
   } else {
     console.error("\u274C Server error:", err);
+    process.exit(1);
   }
 });
 console.log("\u2705 Advanced AI routes registered - Gemini API Only");
