@@ -1760,7 +1760,8 @@ var MissionSyncService = class {
             city: mission.location || null,
             budget_min: budgetValue.toString(),
             budget_max: budgetValue.toString(),
-            user_id: 1,
+            user_id: parseInt(mission.clientId) || 1,
+            // utiliser mission.clientId qui correspond à user.id
             status: mission.status === "open" ? "active" : "inactive",
             quality_score: "0.8",
             created_at: new Date(mission.createdAt)
@@ -1783,8 +1784,8 @@ var MissionSyncService = class {
         city: mission.location || null,
         budget_min: budgetValue.toString(),
         budget_max: budgetValue.toString(),
-        user_id: 1,
-        // TODO: utiliser le vrai user_id depuis l'auth
+        user_id: parseInt(mission.clientId) || 1,
+        // utiliser mission.clientId qui correspond à user.id
         status: "active",
         quality_score: "0.8"
         // Score par défaut
@@ -2034,6 +2035,7 @@ router.get("/users/:userId/missions", async (req, res) => {
   try {
     const userId = req.params.userId;
     console.log("\u{1F464} Fetching missions for user:", userId);
+    console.log("\u{1F517} Mapping: userId =", userId, "-> client_id filter:", userId);
     if (!userId || userId === "undefined" || userId === "null") {
       console.error("\u274C Invalid user ID:", userId);
       return res.status(400).json({ error: "User ID invalide" });
@@ -2043,7 +2045,12 @@ router.get("/users/:userId/missions", async (req, res) => {
       console.error("\u274C User ID is not a valid number:", userId);
       return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
     }
+    console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE client_id =", userIdInt);
     const userMissions = await db.select().from(missions).where(eq(missions.client_id, userIdInt)).orderBy(desc(missions.created_at));
+    console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with client_id =", userIdInt);
+    userMissions.forEach((mission) => {
+      console.log("   \u{1F4CB} Mission:", mission.id, "| client_id:", mission.client_id, "| title:", mission.title);
+    });
     const missionsWithBids = userMissions.map((mission) => ({
       id: mission.id,
       title: mission.title,
@@ -2088,6 +2095,7 @@ router.get("/users/:userId/bids", async (req, res) => {
       return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
     }
     const userBids = await db.select().from(bids).where(eq(bids.provider_id, userIdInt)).orderBy(desc(bids.created_at));
+    console.log("\u{1F517} Mapping: userId =", userId, "-> provider_id filter:", userIdInt);
     console.log(`\u{1F464} Found ${userBids.length} bids for user ${userId}`);
     res.json(userBids);
   } catch (error) {
