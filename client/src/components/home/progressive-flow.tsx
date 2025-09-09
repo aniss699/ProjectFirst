@@ -27,6 +27,8 @@ import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
@@ -41,6 +43,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
@@ -90,87 +93,141 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     setIsCreating(true);
 
     try {
-      // Mapper les catégories vers les valeurs acceptées par l'API
-      const categoryMapping: Record<string, string> = {
-        'web-dev': 'developpement',
-        'mobile-dev': 'mobile', 
-        'design': 'design',
-        'marketing': 'marketing',
-        'consulting': 'conseil',
-        'lawyer': 'conseil',
-        'doctor': 'services',
-        'coach': 'services',
-        'celebrity': 'services',
-        'ai-ml': 'ai',
-        'writing': 'redaction',
-        'video': 'multimedia',
-        'data': 'data',
-        'photography': 'photo',
-        'translation': 'traduction'
-      };
+      if (isTeamMode) {
+        // Analyser les besoins d'équipe
+        const response = await fetch('/api/team/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: projectData.description,
+            title: projectData.title,
+            category: selectedCategory, // Assurez-vous d'utiliser la catégorie sélectionnée
+            budget: projectData.budget
+          })
+        });
 
-      // Formater le budget
-      const budgetText = projectData.budget || '2000';
-      const budgetFormatted = budgetText.includes('-') ? budgetText : `${budgetText}`;
+        if (response.ok) {
+          const analysis = await response.json();
 
-      // Formater les champs dynamiques pour la description
-      const dynamicFieldsText = Object.keys(projectData.dynamicFields).length > 0 
-        ? Object.entries(projectData.dynamicFields)
-            .filter(([key, value]) => value !== '' && value !== null && value !== undefined)
-            .map(([key, value]) => {
-              const field = getCategoryDynamicFields(selectedCategory).find(f => f.id === key);
-              return field ? `${field.label}: ${value}` : null;
+          // Créer le projet en mode équipe
+          const createResponse = await fetch('/api/team/create-project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectData: { ...projectData, category: selectedCategory, isTeamMode }, // Inclure la catégorie et isTeamMode
+              teamRequirements: analysis.professions
             })
-            .filter(Boolean)
-            .join('\n')
-        : '';
+          });
 
-      const missionData = {
-        title: projectData.title,
-        description: projectData.description + 
-          (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
-          (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
-        category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
-        budget: budgetFormatted,
-        location: 'Remote',
-        clientId: 'user_1', // ID utilisateur temporaire
-        clientName: 'Utilisateur',
-        dynamicFields: projectData.dynamicFields
-      };
-
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(missionData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: 'Mission créée avec succès !',
-          description: 'Votre projet a été publié et est maintenant visible par les prestataires',
-        });
-
-        // Rediriger vers la page des missions
-        setLocation('/missions');
-
-        // Appeler le callback s'il existe
-        onComplete?.({
-          userType,
-          serviceType,
-          selectedCategory,
-          projectData,
-          missionId: result.id
-        });
+          if (createResponse.ok) {
+            toast({
+              title: "Projet équipe créé !",
+              description: `Mission créée avec ${analysis.professions.length} spécialités identifiées.`
+            });
+          } else {
+            const error = await createResponse.json();
+            toast({
+              title: 'Erreur lors de la création du projet équipe',
+              description: error.message || 'Une erreur est survenue lors de la création du projet équipe',
+              variant: 'destructive',
+            });
+            setIsCreating(false); // Arrêter le processus en cas d'erreur
+            return; // Sortir de la fonction
+          }
+        } else {
+          const error = await response.json();
+          toast({
+            title: 'Erreur lors de l\'analyse de l\'équipe',
+            description: error.message || 'Une erreur est survenue lors de l\'analyse des besoins de l\'équipe',
+            variant: 'destructive',
+          });
+          setIsCreating(false); // Arrêter le processus en cas d'erreur
+          return; // Sortir de la fonction
+        }
       } else {
-        const error = await response.json();
-        toast({
-          title: 'Erreur lors de la création',
-          description: error.message || 'Une erreur est survenue lors de la création de la mission',
-          variant: 'destructive',
+        // Création classique
+        // Mapper les catégories vers les valeurs acceptées par l'API
+        const categoryMapping: Record<string, string> = {
+          'web-dev': 'developpement',
+          'mobile-dev': 'mobile', 
+          'design': 'design',
+          'marketing': 'marketing',
+          'consulting': 'conseil',
+          'lawyer': 'conseil',
+          'doctor': 'services',
+          'coach': 'services',
+          'celebrity': 'services',
+          'ai-ml': 'ai',
+          'writing': 'redaction',
+          'video': 'multimedia',
+          'data': 'data',
+          'photography': 'photo',
+          'translation': 'traduction'
+        };
+
+        // Formater le budget
+        const budgetText = projectData.budget || '2000';
+        const budgetFormatted = budgetText.includes('-') ? budgetText : `${budgetText}`;
+
+        // Formater les champs dynamiques pour la description
+        const dynamicFieldsText = Object.keys(projectData.dynamicFields).length > 0 
+          ? Object.entries(projectData.dynamicFields)
+              .filter(([key, value]) => value !== '' && value !== null && value !== undefined)
+              .map(([key, value]) => {
+                const field = getCategoryDynamicFields(selectedCategory).find(f => f.id === key);
+                return field ? `${field.label}: ${value}` : null;
+              })
+              .filter(Boolean)
+              .join('\n')
+          : '';
+
+        const missionData = {
+          title: projectData.title,
+          description: projectData.description + 
+            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
+            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
+          category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
+          budget: budgetFormatted,
+          location: 'Remote', // Gérer la localisation différemment si needsLocation est true
+          clientId: 'user_1', // ID utilisateur temporaire
+          clientName: 'Utilisateur',
+          dynamicFields: projectData.dynamicFields
+        };
+
+        const response = await fetch('/api/missions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(missionData)
         });
+
+        if (response.ok) {
+          const result = await response.json();
+          toast({
+            title: 'Mission créée avec succès !',
+            description: 'Votre projet a été publié et est maintenant visible par les prestataires',
+          });
+
+          // Rediriger vers la page des missions
+          setLocation('/missions');
+
+          // Appeler le callback s'il existe
+          onComplete?.({
+            userType,
+            serviceType,
+            selectedCategory,
+            projectData,
+            missionId: result.id
+          });
+        } else {
+          const error = await response.json();
+          toast({
+            title: 'Erreur lors de la création',
+            description: error.message || 'Une erreur est survenue lors de la création de la mission',
+            variant: 'destructive',
+          });
+        }
       }
     } catch (error) {
       console.error('Erreur création mission:', error);
@@ -612,6 +669,18 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
         </div>
 
         <div className="space-y-6 max-w-2xl mx-auto progressive-flow-form">
+          {/* Switch Mode Équipe */}
+          <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <Switch
+              id="team-mode"
+              checked={isTeamMode}
+              onCheckedChange={setIsTeamMode}
+            />
+            <Label htmlFor="team-mode" className="text-blue-900 font-medium">
+              🤝 Mode équipe - Diviser le projet en plusieurs spécialités
+            </Label>
+          </div>
+
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
