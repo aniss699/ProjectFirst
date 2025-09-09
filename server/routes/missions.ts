@@ -87,18 +87,16 @@ router.post('/', async (req, res) => {
         console.warn('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
       }
 
-      res.json(insertedMission);
+      // Verify the mission was actually saved
+      const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
+      console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
+
+      res.status(201).json(insertedMission);
     } catch (error) {
       console.error('❌ Database insertion failed:', error);
       console.error('❌ Data that failed to insert:', JSON.stringify(missionToInsert, null, 2));
       throw new Error(`Database insertion failed: ${error instanceof Error ? error.message : 'Unknown database error'}`);
     }
-
-    // Verify the mission was actually saved
-    const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
-    console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
-
-    res.status(201).json(insertedMission);
   } catch (error) {
     console.error('❌ Error creating mission:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');

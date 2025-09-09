@@ -16,7 +16,7 @@ export class MissionSyncService {
   async syncMissionsToFeed(missions: Mission[]): Promise<void> {
     try {
       console.log('🔄 Synchronisation des missions vers le feed...');
-      
+
       for (const mission of missions) {
         // Vérifier si la mission existe déjà dans announcements
         const existing = await this.db
@@ -24,7 +24,7 @@ export class MissionSyncService {
           .from(announcements)
           .where(sql`title = ${mission.title} AND description = ${mission.description}`)
           .limit(1);
-        
+
         if (existing.length === 0) {
           const budgetValue = parseFloat(mission.budget.toString().replace(/[^0-9.-]/g, '')) || 0;
           await this.db.insert(announcements).values({
@@ -42,7 +42,7 @@ export class MissionSyncService {
           console.log(`✅ Mission "${mission.title}" ajoutée au feed`);
         }
       }
-      
+
       console.log('✅ Synchronisation terminée');
     } catch (error) {
       console.error('❌ Erreur lors de la synchronisation:', error);
