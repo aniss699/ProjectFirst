@@ -1,0 +1,40 @@
+Contexte :
+- Projet déployé sur Replit : https://www.swideal.com
+- Problème global : la création de mission (mode simple et mode équipe) échoue.
+   • Soit je n’arrive pas à terminer le processus (erreur affichée ou bloquante).
+   • Soit la mission semble créée mais n’apparaît pas dans la marketplace ni dans "Mes missions".
+- Backend et frontend sont hébergés sur Replit, avec base de données branchée (vérifier si connexion DB OK).
+
+Objectif :
+Identifier la cause racine du problème de création de mission, corriger en profondeur, et livrer un patch testé.
+
+Étapes que je veux que tu fasses :
+1. Reproduis le bug en utilisant le projet sur Replit (Preview ou débogage local).
+   - Vérifie la console navigateur (erreurs JS / réseau).
+   - Vérifie les requêtes envoyées au backend (URL, méthode, body, headers).
+   - Capture la réponse HTTP (status code, body).
+   - Vérifie si la mission est écrite en DB (SELECT ou log DB).
+2. Trace côté serveur :
+   - Ajoute des logs dans le handler de création de mission (payload reçu, validation, insert DB, retour).
+   - Vérifie si l’insertion DB réussit ou si elle plante silencieusement.
+   - Vérifie si la mission est marquée `draft`/`private` au lieu de `published`.
+   - Vérifie si l’indexation / publication vers la marketplace s’exécute (ou échoue).
+3. Corrige :
+   - Si problème de validation → corriger schéma ou payload côté front.
+   - Si problème d’insertion DB → corriger modèle / champs obligatoires.
+   - Si problème d’indexation / visibilité → corriger la logique de publication (statut par défaut = published).
+   - Supprimer tout `catch` silencieux et logger correctement les erreurs.
+4. Teste la correction :
+   - Créer une mission simple → doit apparaître dans “Mes missions” et la marketplace.
+   - Créer une mission équipe → doit créer la mission + les entrées équipe requises + apparaître visible.
+5. Livrer :
+   - PR / commit avec explication du bug et du correctif.
+   - Logs avant/après montrant que ça marche.
+   - Ajout de tests (au minimum un test backend d’intégration pour la création de mission).
+
+Important :
+- Ne pas faire de contournement temporaire, je veux une correction robuste et testée.
+- Fournis-moi le diff de code exact appliqué + instructions de vérification.
+
+Résultat attendu :
+- Bug reproduit → cause identifiée → patch appliqué → tests passés → mission visible après création.

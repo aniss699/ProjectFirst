@@ -63,4 +63,4 @@ args = "PREVIEW_MODE=true npm run dev"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["sh", "-c", "npm run build && npm run start"]
