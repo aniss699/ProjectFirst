@@ -25,9 +25,12 @@ console.log('🔗 Using Replit PostgreSQL connection');
 
 const missionSyncService = new MissionSyncService(databaseUrl);
 
-// Create a pool instance for health checks
+// Create a pool instance for health checks with timeout
 const pool = new Pool({ 
-  connectionString: databaseUrl 
+  connectionString: databaseUrl,
+  connectionTimeoutMillis: 5000,  // 5 second timeout
+  idleTimeoutMillis: 10000,       // 10 second idle timeout
+  max: 20                         // maximum number of connections
 });
 
 // Log database configuration for debugging
@@ -35,6 +38,32 @@ console.log('🔗 Database configuration:', {
   DATABASE_URL: !!process.env.DATABASE_URL,
   NODE_ENV: process.env.NODE_ENV,
   PLATFORM: 'Replit'
+});
+
+// Validate database connection with timeout
+async function validateDatabaseConnection() {
+  const timeout = 8000; // 8 second timeout
+  try {
+    console.log('🔍 Validating database connection...');
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database connection timeout')), timeout);
+    });
+    
+    const connectionPromise = pool.query('SELECT 1 as test');
+    
+    await Promise.race([connectionPromise, timeoutPromise]);
+    console.log('✅ Database connection validated successfully');
+    return true;
+  } catch (error) {
+    console.warn('⚠️ Database connection validation failed (non-blocking):', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
+
+// Validate database connection on startup (non-blocking)
+setImmediate(async () => {
+  await validateDatabaseConnection();
 });
 
 // Création des comptes démo simplifiée (non bloquant) - moved to after server start
