@@ -188,9 +188,15 @@ router.get('/:id', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('❌ API: Erreur récupération mission:', error);
+    console.error('❌ API: Stack trace:', error instanceof Error ? error.stack : 'No stack');
+    console.error('❌ API: Mission ID demandée:', missionId);
+    console.error('❌ API: Type de l\'ID:', typeof missionId);
+    
     res.status(500).json({
       error: 'Erreur interne du serveur',
-      details: error instanceof Error ? error.message : 'Erreur inconnue'
+      details: error instanceof Error ? error.message : 'Erreur inconnue',
+      missionId: missionId,
+      timestamp: new Date().toISOString()
     });
   }
 });

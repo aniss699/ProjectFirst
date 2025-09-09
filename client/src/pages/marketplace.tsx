@@ -30,9 +30,12 @@ export default function Marketplace() {
 
   const { data: missions = [], isLoading, error } = useQuery<MissionWithBids[]>({
     queryKey: ['/api/missions'],
-    refetchInterval: 30000, // Actualiser toutes les 30 secondes
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchInterval: 60000, // Réduire à 1 minute pour moins de charge serveur
+    retry: 2, // Réduire les tentatives
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000),
+    staleTime: 30000, // Cache valide 30 secondes
+    gcTime: 300000, // Garder en cache 5 minutes
+    refetchOnWindowFocus: false, // Éviter les requêtes inutiles
     onError: (err) => {
       console.error('❌ Erreur chargement missions:', err);
     },
