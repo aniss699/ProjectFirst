@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { ProgressiveFlow } from '@/components/home/progressive-flow';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import * as z from 'zod'; // Assuming z is imported for schema validation
+import { z } from 'zod';
 
 // Complete mission form schema
 const missionFormSchema = z.object({
@@ -14,7 +14,7 @@ const missionFormSchema = z.object({
   location: z.string().optional(),
   urgency: z.enum(['low', 'medium', 'high']).default('medium'),
   requirements: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).default([]),
   deadline: z.union([z.string(), z.date()]).optional(),
 });
 
@@ -31,14 +31,26 @@ export default function CreateMission() {
       setIsLoading(true);
       setError(null);
 
-      console.log('🚀 Frontend: Submitting mission data:', JSON.stringify(values, null, 2));
+      // Validate data before sending
+      const validatedData = missionFormSchema.parse(values);
+      console.log('🚀 Frontend: Submitting validated mission data:', JSON.stringify(validatedData, null, 2));
+
+      // Test API connectivity first
+      try {
+        const healthCheck = await fetch('/api/health');
+        if (!healthCheck.ok) {
+          throw new Error('Service temporairement indisponible');
+        }
+      } catch (e) {
+        throw new Error('Impossible de contacter le serveur');
+      }
 
       const response = await fetch('/api/missions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(validatedData),
       });
 
       console.log('📡 Frontend: Response status:', response.status);
@@ -48,7 +60,7 @@ export default function CreateMission() {
       console.log('📡 Frontend: Raw response:', responseText);
 
       if (!response.ok) {
-        let errorMessage = 'Failed to create mission';
+        let errorMessage = 'Échec de la création de mission';
         try {
           const errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.details || errorMessage;
@@ -65,7 +77,7 @@ export default function CreateMission() {
       navigate('/missions');
     } catch (error) {
       console.error('❌ Frontend: Error creating mission:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create mission. Please try again.');
+      setError(error instanceof Error ? error.message : 'Échec de la création de mission. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }

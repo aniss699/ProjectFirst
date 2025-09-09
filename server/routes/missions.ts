@@ -121,4 +121,32 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/missions/debug - Diagnostic endpoint
+router.get('/debug', async (req, res) => {
+  try {
+    console.log('🔍 Mission debug endpoint called');
+    
+    // Test database connection
+    const testQuery = await db.select().from(missions).limit(1);
+    
+    // Check database structure
+    const dbInfo = {
+      status: 'connected',
+      sampleMissions: testQuery.length,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
+    };
+    
+    console.log('🔍 Database info:', dbInfo);
+    res.json(dbInfo);
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Debug failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
