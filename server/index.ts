@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from './vite.js';
 import { Mission } from './types/mission.js';
 import { MissionSyncService } from './services/mission-sync.js';
 import { validateEnvironment } from './environment-check.js';
+import { Pool } from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,11 @@ if (isCloudSQL) {
 }
 
 const missionSyncService = new MissionSyncService(databaseUrl);
+
+// Create a pool instance for health checks
+const pool = new Pool({ 
+  connectionString: databaseUrl 
+});
 
 // Log database configuration for debugging
 console.log('🔗 Database configuration:', {
@@ -151,14 +157,31 @@ app.use('/api', missionDemoRoutes);
 app.use('/api/team', teamRoutes);
 
 // Health check endpoints
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    message: 'SwipDEAL API is running',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    env: process.env.NODE_ENV || 'development'
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await pool.query('SELECT 1');
+    
+    res.status(200).json({ 
+      status: 'ok', 
+      message: 'SwipDEAL API is running',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      env: process.env.NODE_ENV || 'development',
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('Health check database error:', error);
+    res.status(503).json({ 
+      status: 'error', 
+      message: 'Database connection failed',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      env: process.env.NODE_ENV || 'development',
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Debug endpoint pour diagnostique - simplified
@@ -230,6 +253,8 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`📱 Frontend: http://0.0.0.0:${port}`);
   console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
   console.log(`🎯 AI Provider: Gemini API Only`);
+  console.log(`🔍 Process ID: ${process.pid}`);
+  console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Mission sync now handled by database routes
@@ -238,7 +263,7 @@ console.log('✅ Advanced AI routes registered - Gemini API Only');
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('Shutting down gracefully...');
+  console.log('Received SIGINT, shutting down gracefully...');
   server.close(() => {
     console.log('HTTP server closed.');
     process.exit(0);
@@ -246,11 +271,21 @@ process.on('SIGINT', () => {
 });
 
 process.on('SIGTERM', () => {
-  console.log('Shutting down gracefully...');
+  console.log('Received SIGTERM, shutting down gracefully...');
   server.close(() => {
     console.log('HTTP server closed.');
     process.exit(0);
   });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  console.error('Stack:', error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 export default app;

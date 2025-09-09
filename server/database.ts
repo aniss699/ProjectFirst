@@ -7,9 +7,18 @@ const databaseUrl = isPreviewMode
   ? (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING)
   : (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal');
 
-// Create connection pool
+// Create connection pool with error handling
 const pool = new Pool({ 
   connectionString: databaseUrl 
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Database pool error:', err);
+});
+
+pool.on('connect', () => {
+  console.log('✅ Database connection established');
 });
 
 // Create drizzle database instance
