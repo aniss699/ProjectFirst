@@ -2261,18 +2261,18 @@ router2.get("/", async (req, res) => {
 });
 router2.get("/:id", async (req, res) => {
   try {
-    const missionId = req.params.id;
-    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
-    if (!missionId || missionId === "undefined" || missionId === "null") {
-      console.error("\u274C API: Mission ID invalide:", missionId);
+    const missionId2 = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId2);
+    if (!missionId2 || missionId2 === "undefined" || missionId2 === "null") {
+      console.error("\u274C API: Mission ID invalide:", missionId2);
       return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const mission = await db2.select().from(missions).where(eq2(missions.id, missionId)).limit(1);
+    const mission = await db2.select().from(missions).where(eq2(missions.id, missionId2)).limit(1);
     if (mission.length === 0) {
-      console.error("\u274C API: Mission non trouv\xE9e:", missionId);
+      console.error("\u274C API: Mission non trouv\xE9e:", missionId2);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    const bids2 = await db2.select().from(bids).where(eq2(bids.missionId, missionId));
+    const bids2 = await db2.select().from(bids).where(eq2(bids.missionId, missionId2));
     const result = {
       ...mission[0],
       bids: bids2 || []
@@ -2281,9 +2281,14 @@ router2.get("/:id", async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error("\u274C API: Erreur r\xE9cup\xE9ration mission:", error);
+    console.error("\u274C API: Stack trace:", error instanceof Error ? error.stack : "No stack");
+    console.error("\u274C API: Mission ID demand\xE9e:", missionId);
+    console.error("\u274C API: Type de l'ID:", typeof missionId);
     res.status(500).json({
       error: "Erreur interne du serveur",
-      details: error instanceof Error ? error.message : "Erreur inconnue"
+      details: error instanceof Error ? error.message : "Erreur inconnue",
+      missionId,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
 });
@@ -2529,11 +2534,11 @@ var EventLogger = class {
   /**
    * Log d'événement de vue d'annonce
    */
-  logAnnouncementView(userId, missionId, sessionId, dwellTime, metadata = {}) {
+  logAnnouncementView(userId, missionId2, sessionId, dwellTime, metadata = {}) {
     const event = {
       event_type: "view",
       user_id: userId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2558,11 +2563,11 @@ var EventLogger = class {
   /**
    * Log d'événement de sauvegarde/favori
    */
-  logSave(userId, missionId, sessionId, metadata = {}) {
+  logSave(userId, missionId2, sessionId, metadata = {}) {
     const event = {
       event_type: "save",
       user_id: userId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2576,16 +2581,16 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.logConversion("save", userId, missionId, metadata);
+    this.logConversion("save", userId, missionId2, metadata);
   }
   /**
    * Log d'événement de proposition
    */
-  logProposal(providerId, missionId, sessionId, metadata = {}) {
+  logProposal(providerId, missionId2, sessionId, metadata = {}) {
     const event = {
       event_type: "proposal",
       provider_id: providerId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2611,11 +2616,11 @@ var EventLogger = class {
   /**
    * Log d'événement de victoire (projet attribué)
    */
-  logWin(providerId, missionId, sessionId, metadata = {}) {
+  logWin(providerId, missionId2, sessionId, metadata = {}) {
     const event = {
       event_type: "win",
       provider_id: providerId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2628,17 +2633,17 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.updatePredictionOutcome("pricing_suggestion", missionId, "success");
-    this.updatePredictionOutcome("matching_recommendation", missionId, "success");
+    this.updatePredictionOutcome("pricing_suggestion", missionId2, "success");
+    this.updatePredictionOutcome("matching_recommendation", missionId2, "success");
   }
   /**
    * Log d'événement de litige
    */
-  logDispute(userId, missionId, sessionId, metadata = {}) {
+  logDispute(userId, missionId2, sessionId, metadata = {}) {
     const event = {
       event_type: "dispute",
       user_id: userId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: sessionId,
       metadata: {
@@ -2651,7 +2656,7 @@ var EventLogger = class {
       }
     };
     this.addToBuffer(event);
-    this.updatePredictionOutcome("risk_assessment", missionId, "failure");
+    this.updatePredictionOutcome("risk_assessment", missionId2, "failure");
   }
   /**
    * Log des métriques de performance IA
@@ -2672,11 +2677,11 @@ var EventLogger = class {
   /**
    * Log d'événement de conversion
    */
-  logConversion(conversionType, userId, missionId, metadata) {
+  logConversion(conversionType, userId, missionId2, metadata) {
     const conversionEvent = {
       event_type: "conversion",
       user_id: userId,
-      mission_id: missionId,
+      mission_id: missionId2,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       session_id: metadata.session_id || "unknown",
       metadata: {
@@ -2707,10 +2712,10 @@ var EventLogger = class {
   /**
    * Met à jour le résultat d'une prédiction
    */
-  updatePredictionOutcome(modelType, missionId, outcome) {
+  updatePredictionOutcome(modelType, missionId2, outcome) {
     console.log("\u{1F4C8} [PREDICTION_UPDATE]", JSON.stringify({
       model: modelType,
-      mission: missionId,
+      mission: missionId2,
       outcome,
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     }));
