@@ -27,9 +27,9 @@ import {
   UserCheck,
   Clock,
   Target,
-  Award
+  Award,
+  AlertCircle
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { ProviderProfileModal } from './provider-profile-modal';
 import { BidResponseModal } from './bid-response-modal';
 import SmartBidAnalyzer from '@/components/ai/smart-bid-analyzer';
@@ -49,43 +49,48 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [selectedBidderName, setSelectedBidderName] = useState<string>('');
   const [showBidForm, setShowBidForm] = useState(false);
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
-  const [currentBid, setCurrentBid] = useState<Partial<Bid>>({});
 
-  // Fetch mission data
+  // Fetch mission data avec gestion d'erreur améliorée
   const { data: mission, isLoading, error } = useQuery<MissionWithBids>({
-    queryKey: ['mission', missionId],
+    queryKey: ['mission-detail', missionId],
     queryFn: async () => {
-      if (!missionId) throw new Error('Mission ID is required');
-      
-      console.log('🔍 Chargement mission ID:', missionId);
-      const response = await fetch(`/api/missions/${missionId}`);
-      
-      if (!response.ok) {
-        console.error('❌ Erreur API mission:', response.status, response.statusText);
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      if (!missionId) {
+        throw new Error('ID de mission manquant');
       }
       
-      const data = await response.json();
-      console.log('✅ Mission chargée:', data.title);
-      return data;
+      console.log('🔍 Chargement mission ID:', missionId);
+      
+      try {
+        const response = await fetch(`/api/missions/${missionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Erreur API mission:', response.status, errorText);
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Mission chargée:', data?.title || 'Sans titre');
+        return data;
+      } catch (fetchError) {
+        console.error('❌ Erreur réseau mission:', fetchError);
+        throw fetchError;
+      }
     },
     enabled: !!missionId && isOpen,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 1, // Réduire les tentatives
+    retryDelay: 2000,
+    staleTime: 30000, // Cache plus long
   });
 
-  // Helper functions
-  const getIcon = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[
-      iconName.split('-').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join('')
-    ];
-    return IconComponent || LucideIcons.Briefcase;
-  };
-
-  const renderStars = (rating: string) => {
-    const numRating = parseFloat(rating);
+  // Fonction de rendu des étoiles
+  const renderStars = (rating: string | number) => {
+    const numRating = typeof rating === 'string' ? parseFloat(rating) : rating;
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
@@ -102,11 +107,13 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Chargement...</DialogTitle>
-            <DialogDescription>Chargement des détails de la mission...</DialogDescription>
+            <DialogTitle>Chargement de la mission...</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex items-center justify-center p-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Chargement des détails...</p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -119,19 +126,27 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Erreur</DialogTitle>
-            <DialogDescription>Impossible de charger les détails de la mission</DialogDescription>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-5 h-5" />
+              Erreur de chargement
+            </DialogTitle>
           </DialogHeader>
           <div className="text-center p-8">
-            <div className="text-red-500 mb-4 text-4xl">❌</div>
-            <p className="text-gray-500 mb-4">
-              {error instanceof Error ? error.message : 'Mission non trouvée'}
+            <div className="text-red-500 mb-4 text-6xl">⚠️</div>
+            <h3 className="text-lg font-semibold mb-2">Impossible de charger la mission</h3>
+            <p className="text-gray-500 mb-6">
+              {error instanceof Error ? error.message : 'Mission introuvable ou serveur indisponible'}
             </p>
-            <div className="flex gap-2 justify-center">
-              <Button onClick={() => window.location.reload()} variant="outline">
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Clock className="w-4 h-4" />
                 Recharger
               </Button>
-              <Button onClick={onClose} variant="outline">
+              <Button onClick={onClose}>
                 Fermer
               </Button>
             </div>
@@ -142,32 +157,32 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   }
 
   const category = getCategoryById(mission.category);
-  const IconComponent = category ? getIcon(category.icon) : LucideIcons.Briefcase;
-  const sortedBids = [...mission.bids].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.price) - parseFloat(b.price)) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[96vw] max-w-6xl max-h-[92vh] overflow-y-auto p-0">
+        {/* Header */}
         <DialogHeader className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
           <DialogTitle className="text-2xl font-bold pr-6">
             {mission.title}
           </DialogTitle>
           <DialogDescription className="text-blue-100 mt-2">
-            Par {mission.clientName} • {formatBudget(mission.budget || '0')} • {mission.bids.length} candidature{mission.bids.length !== 1 ? 's' : ''}
+            Par {mission.clientName} • {formatBudget(mission.budget || '0')} • {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${isTeamMission ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 Aperçu
               </TabsTrigger>
               <TabsTrigger value="bids" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Candidatures ({mission.bids.length})
+                Candidatures ({sortedBids.length})
               </TabsTrigger>
               {isTeamMission && (
                 <TabsTrigger value="team" className="flex items-center gap-2">
@@ -184,14 +199,14 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center">
-                      <IconComponent className={`w-8 h-8 ${category?.color || 'text-blue-600'}`} />
+                      <Briefcase className="w-8 h-8 text-blue-600" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="text-xl font-semibold">{mission.title}</h3>
                           <p className="text-gray-500">
-                            Par <span className="font-medium text-blue-600">{mission.clientName}</span> • {formatDate(mission.createdAt!)}
+                            Par <span className="font-medium text-blue-600">{mission.clientName}</span> • {formatDate(mission.createdAt || new Date().toISOString())}
                           </p>
                         </div>
                         <Badge className="bg-green-100 text-green-700">
@@ -234,7 +249,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                         <span className="font-medium">Publié</span>
                       </div>
                       <div className="text-purple-600 font-medium">
-                        {formatDate(mission.createdAt!)}
+                        {formatDate(mission.createdAt || new Date().toISOString())}
                       </div>
                     </div>
                   </div>
@@ -282,16 +297,15 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                           missionDescription={mission.description}
                           missionBudget={parseFloat(mission.budget || '0')}
                           missionCategory={mission.category}
-                          currentBid={currentBid}
+                          currentBid={{}}
                           providerProfile={{
                             rating: 4.5,
                             completedProjects: 25,
                             skills: ['React', 'Node.js', 'TypeScript'],
                             portfolio: []
                           }}
-                          competitorBids={mission.bids}
+                          competitorBids={sortedBids}
                           onOptimizedBidGenerated={(optimizedBid) => {
-                            setCurrentBid(optimizedBid);
                             setShowBidForm(true);
                           }}
                         />
@@ -307,7 +321,6 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                             setShowBidForm(false);
                             setShowAIAnalyzer(false);
                           }}
-                          initialValues={currentBid.proposal ? currentBid : undefined}
                         />
                       </div>
                     )}
@@ -333,7 +346,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             {/* Bids Tab */}
             <TabsContent value="bids" className="space-y-6 mt-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">Offres reçues ({mission.bids.length})</h3>
+                <h3 className="text-xl font-semibold">Offres reçues ({sortedBids.length})</h3>
                 {sortedBids.length > 0 && (
                   <Badge variant="outline">Triées par prix croissant</Badge>
                 )}
