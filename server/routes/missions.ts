@@ -162,6 +162,79 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/missions/debug - Diagnostic endpoint (must be before /:id route)
+router.get('/debug', async (req, res) => {
+  try {
+    console.log('🔍 Mission debug endpoint called');
+
+    // Test database connection
+    const testQuery = await db.select().from(missions).limit(1);
+
+    // Check database structure
+    const dbInfo = {
+      status: 'connected',
+      sampleMissions: testQuery.length,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
+    };
+
+    console.log('🔍 Database info:', dbInfo);
+    res.json(dbInfo);
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({
+      error: 'Debug failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// GET /api/missions/verify-sync - Vérifier la synchronisation missions/feed
+router.get('/verify-sync', async (req, res) => {
+  try {
+    console.log('🔍 Vérification de la synchronisation missions/feed');
+
+    // Récupérer les dernières missions
+    const recentMissions = await db.select().from(missions)
+      .orderBy(desc(missions.created_at))
+      .limit(5);
+
+    // Vérifier la présence dans le feed (table announcements)
+    const { announcements } = await import('../../shared/schema.js');
+    const feedItems = await db.select().from(announcements)
+      .orderBy(desc(announcements.created_at))
+      .limit(10);
+
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map(m => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map(f => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
+    };
+
+    console.log('🔍 Sync status:', syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error('❌ Sync verification error:', error);
+    res.status(500).json({
+      error: 'Sync verification failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // GET /api/missions/:id - Get a specific mission with bids
 router.get('/:id', async (req, res) => {
   let missionId: string | null = null;
@@ -217,34 +290,6 @@ router.get('/:id', async (req, res) => {
       details: error instanceof Error ? error.message : 'Erreur inconnue',
       missionId: missionId || 'undefined',
       timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// GET /api/missions/debug - Diagnostic endpoint
-router.get('/debug', async (req, res) => {
-  try {
-    console.log('🔍 Mission debug endpoint called');
-
-    // Test database connection
-    const testQuery = await db.select().from(missions).limit(1);
-
-    // Check database structure
-    const dbInfo = {
-      status: 'connected',
-      sampleMissions: testQuery.length,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
-    };
-
-    console.log('🔍 Database info:', dbInfo);
-    res.json(dbInfo);
-  } catch (error) {
-    console.error('❌ Debug endpoint error:', error);
-    res.status(500).json({
-      error: 'Debug failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -488,51 +533,6 @@ router.delete('/:id', async (req, res) => {
       error: 'Erreur interne du serveur',
       details: error instanceof Error ? error.message : 'Erreur inconnue',
       timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// GET /api/missions/verify-sync - Vérifier la synchronisation missions/feed
-router.get('/verify-sync', async (req, res) => {
-  try {
-    console.log('🔍 Vérification de la synchronisation missions/feed');
-
-    // Récupérer les dernières missions
-    const recentMissions = await db.select().from(missions)
-      .orderBy(desc(missions.created_at))
-      .limit(5);
-
-    // Vérifier la présence dans le feed (table announcements)
-    const { announcements } = await import('../../shared/schema.js');
-    const feedItems = await db.select().from(announcements)
-      .orderBy(desc(announcements.created_at))
-      .limit(10);
-
-    const syncStatus = {
-      totalMissions: recentMissions.length,
-      totalFeedItems: feedItems.length,
-      recentMissions: recentMissions.map(m => ({
-        id: m.id,
-        title: m.title,
-        status: m.status,
-        created_at: m.created_at
-      })),
-      feedItems: feedItems.map(f => ({
-        id: f.id,
-        title: f.title,
-        status: f.status,
-        created_at: f.created_at
-      })),
-      syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
-    };
-
-    console.log('🔍 Sync status:', syncStatus);
-    res.json(syncStatus);
-  } catch (error) {
-    console.error('❌ Sync verification error:', error);
-    res.status(500).json({
-      error: 'Sync verification failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
