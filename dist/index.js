@@ -1667,7 +1667,7 @@ var vite_config_default = defineConfig({
 // server/vite.ts
 import { nanoid } from "nanoid";
 var viteLogger = createLogger();
-async function setupVite(app3, server2) {
+async function setupVite(app2, server2) {
   const vite = await createViteServer({
     ...vite_config_default,
     configFile: false,
@@ -1687,8 +1687,8 @@ async function setupVite(app3, server2) {
     },
     appType: "custom"
   });
-  app3.use(vite.middlewares);
-  app3.use("*", async (req, res, next) => {
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     if (url.startsWith("/api/")) {
       return next();
@@ -1721,15 +1721,15 @@ async function setupVite(app3, server2) {
     }
   });
 }
-function serveStatic(app3) {
+function serveStatic(app2) {
   const distPath = path2.resolve(import.meta.dirname, "..", "dist");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app3.use(express.static(distPath));
-  app3.use("*", (_req, res) => {
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
     res.sendFile(path2.resolve(distPath, "index.html"));
   });
 }
@@ -2259,7 +2259,7 @@ router2.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch missions" });
   }
 });
-app.get("/api/missions/:id", async (req, res) => {
+router2.get("/:id", async (req, res) => {
   try {
     const missionId = req.params.id;
     console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
@@ -2272,7 +2272,7 @@ app.get("/api/missions/:id", async (req, res) => {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    const bids2 = await db2.select().from(bidTable).where(eq2(bidTable.missionId, missionId));
+    const bids2 = await db2.select().from(bids).where(eq2(bids.missionId, missionId));
     const result = {
       ...mission[0],
       bids: bids2 || []
@@ -5022,18 +5022,43 @@ var monitoringRateLimit = rateLimit({
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
 validateEnvironment();
-var app2 = express7();
+var app = express7();
 var port = parseInt(process.env.PORT || "5000", 10);
 var databaseUrl2 = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
 console.log("\u{1F517} Using Replit PostgreSQL connection");
 var missionSyncService = new MissionSyncService(databaseUrl2);
 var pool5 = new Pool6({
-  connectionString: databaseUrl2
+  connectionString: databaseUrl2,
+  connectionTimeoutMillis: 5e3,
+  // 5 second timeout
+  idleTimeoutMillis: 1e4,
+  // 10 second idle timeout
+  max: 20
+  // maximum number of connections
 });
 console.log("\u{1F517} Database configuration:", {
   DATABASE_URL: !!process.env.DATABASE_URL,
   NODE_ENV: process.env.NODE_ENV,
   PLATFORM: "Replit"
+});
+async function validateDatabaseConnection() {
+  const timeout = 8e3;
+  try {
+    console.log("\u{1F50D} Validating database connection...");
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Database connection timeout")), timeout);
+    });
+    const connectionPromise = pool5.query("SELECT 1 as test");
+    await Promise.race([connectionPromise, timeoutPromise]);
+    console.log("\u2705 Database connection validated successfully");
+    return true;
+  } catch (error) {
+    console.warn("\u26A0\uFE0F Database connection validation failed (non-blocking):", error instanceof Error ? error.message : "Unknown error");
+    return false;
+  }
+}
+setImmediate(async () => {
+  await validateDatabaseConnection();
 });
 setImmediate(async () => {
   try {
@@ -5055,7 +5080,7 @@ console.log("\u{1F50D} Gemini AI Environment Variables:", {
   GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
   PROVIDER: "gemini-api-only"
 });
-app2.use((req, res, next) => {
+app.use((req, res, next) => {
   res.set({
     "Cache-Control": "no-cache, no-store, must-revalidate",
     "Pragma": "no-cache",
@@ -5063,37 +5088,37 @@ app2.use((req, res, next) => {
   });
   next();
 });
-app2.set("trust proxy", true);
-app2.use(cors({
+app.set("trust proxy", true);
+app.use(cors({
   origin: process.env.NODE_ENV === "production" ? ["https://swideal.com", "https://www.swideal.com", /\.replit\.app$/] : true,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app2.use(express7.json());
+app.use(express7.json());
 console.log("\u{1F4CB} Registering missions routes...");
-app2.use("/api/missions", missions_default);
+app.use("/api/missions", missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
-app2.use("/api/auth", auth_routes_default);
-app2.use("/api", api_routes_default);
-app2.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
-app2.use("/api/ai/suggest-pricing", strictAiRateLimit);
-app2.use("/api/ai/enhance-description", strictAiRateLimit);
-app2.use("/api/ai/analyze-quality", strictAiRateLimit);
-app2.use("/api/ai/enhance-text", strictAiRateLimit);
-app2.use("/api/ai", aiRateLimit, ai_routes_default);
-app2.use("/api/ai", aiRateLimit, ai_suggestions_routes_default);
-app2.use("/api/ai/missions", aiRateLimit, ai_missions_routes_default);
-app2.use("/api-ai-orchestrator", strictAiRateLimit, ai_default);
-app2.use("/api", aiRateLimit, ai_quick_analysis_default);
-app2.use("/api/ai/diagnostic", ai_diagnostic_routes_default);
-app2.use("/api/ai/suggestions", ai_suggestions_routes_default);
-app2.use("/api/ai/learning", ai_learning_routes_default);
-app2.use("/api", feed_routes_default);
-app2.use("/api", favorites_routes_default);
-app2.use("/api", mission_demo_default);
-app2.use("/api/team", team_routes_default);
-app2.get("/api/health", async (req, res) => {
+app.use("/api/auth", auth_routes_default);
+app.use("/api", api_routes_default);
+app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
+app.use("/api/ai/suggest-pricing", strictAiRateLimit);
+app.use("/api/ai/enhance-description", strictAiRateLimit);
+app.use("/api/ai/analyze-quality", strictAiRateLimit);
+app.use("/api/ai/enhance-text", strictAiRateLimit);
+app.use("/api/ai", aiRateLimit, ai_routes_default);
+app.use("/api/ai", aiRateLimit, ai_suggestions_routes_default);
+app.use("/api/ai/missions", aiRateLimit, ai_missions_routes_default);
+app.use("/api-ai-orchestrator", strictAiRateLimit, ai_default);
+app.use("/api", aiRateLimit, ai_quick_analysis_default);
+app.use("/api/ai/diagnostic", ai_diagnostic_routes_default);
+app.use("/api/ai/suggestions", ai_suggestions_routes_default);
+app.use("/api/ai/learning", ai_learning_routes_default);
+app.use("/api", feed_routes_default);
+app.use("/api", favorites_routes_default);
+app.use("/api", mission_demo_default);
+app.use("/api/team", team_routes_default);
+app.get("/api/health", async (req, res) => {
   try {
     await pool5.query("SELECT 1");
     res.status(200).json({
@@ -5117,7 +5142,7 @@ app2.get("/api/health", async (req, res) => {
     });
   }
 });
-app2.get("/api/debug/missions", (req, res) => {
+app.get("/api/debug/missions", (req, res) => {
   res.json({
     debug_info: {
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -5128,7 +5153,7 @@ app2.get("/api/debug/missions", (req, res) => {
     message: "Check /api/missions for actual missions data"
   });
 });
-app2.get("/healthz", (req, res) => {
+app.get("/healthz", (req, res) => {
   res.status(200).json({
     status: "healthy",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -5137,7 +5162,7 @@ app2.get("/healthz", (req, res) => {
     node_env: process.env.NODE_ENV
   });
 });
-app2.get("/api/ai/gemini-diagnostic", (req, res) => {
+app.get("/api/ai/gemini-diagnostic", (req, res) => {
   const hasApiKey = !!process.env.GEMINI_API_KEY;
   res.json({
     gemini_ai_configured: hasApiKey,
@@ -5146,7 +5171,7 @@ app2.get("/api/ai/gemini-diagnostic", (req, res) => {
     provider: "gemini-api-only"
   });
 });
-var server = createServer(app2);
+var server = createServer(app);
 server.listen(port, "0.0.0.0", () => {
   console.log(`\u{1F680} SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`\u{1F4F1} Frontend: http://0.0.0.0:${port}`);
@@ -5157,11 +5182,11 @@ server.listen(port, "0.0.0.0", () => {
   const isProductionLike = process.env.NODE_ENV === "production" || process.env.PREVIEW_MODE === "true";
   if (isProductionLike) {
     console.log("\u{1F527} Forcing production mode to bypass Vite host restrictions");
-    serveStatic(app2);
+    serveStatic(app);
     console.log("\u2705 Production mode: serving static files");
   } else {
     console.log("\u{1F6E0}\uFE0F Development mode: setting up Vite dev server...");
-    setupVite(app2, server).catch((error) => {
+    setupVite(app, server).catch((error) => {
       console.error("\u26A0\uFE0F Vite setup failed (non-critical):", error);
     });
   }
@@ -5196,7 +5221,7 @@ process.on("uncaughtException", (error) => {
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
-app2.use((error, req, res, next) => {
+app.use((error, req, res, next) => {
   console.error("\u{1F6A8} Global error handler:", error);
   console.error("\u{1F6A8} Request URL:", req.url);
   console.error("\u{1F6A8} Request method:", req.method);
@@ -5207,7 +5232,7 @@ app2.use((error, req, res, next) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
-var index_default = app2;
+var index_default = app;
 export {
   index_default as default
 };
