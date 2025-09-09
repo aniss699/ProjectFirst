@@ -5,15 +5,22 @@ import { createServer } from 'http';
 import { setupVite, serveStatic, log } from './vite.js';
 import { Mission } from './types/mission.js';
 import { MissionSyncService } from './services/mission-sync.js';
+import { validateEnvironment } from './environment-check.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Validation des variables d'environnement au démarrage
+validateEnvironment();
+
 const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
-// Initialize services with Cloud SQL support
-const databaseUrl = process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal';
+// Initialize services with Cloud SQL support - Force production DB for preview
+const isPreviewMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'production';
+const databaseUrl = isPreviewMode 
+  ? (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING)
+  : (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal');
 
 // Cloud SQL connection string format: postgresql://user:password@/database?host=/cloudsql/project:region:instance
 const isCloudSQL = databaseUrl.includes('/cloudsql/');
@@ -331,9 +338,15 @@ app.get('/api/missions/:id', (req, res) => {
 const server = createServer(app);
 
 // Force production mode to avoid Vite host blocking issues in Replit
-console.log('🔧 Forcing production mode to bypass Vite host restrictions');
-serveStatic(app);
-console.log('✅ Production mode: serving static files');
+const isProductionLike = process.env.NODE_ENV === 'production' || process.env.PREVIEW_MODE === 'true';
+if (isProductionLike) {
+  console.log('🔧 Forcing production mode to bypass Vite host restrictions');
+  serveStatic(app);
+  console.log('✅ Production mode: serving static files');
+} else {
+  console.log('🛠️ Development mode: using Vite dev server');
+  await setupVite(app);
+}
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {

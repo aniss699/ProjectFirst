@@ -58,7 +58,7 @@ args = "npm run build"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PREVIEW_MODE=true npm run dev"
+args = "NODE_ENV=production npm run start"
 
 [deployment]
 deploymentTarget = "autoscale"
