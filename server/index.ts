@@ -252,12 +252,10 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🔍 Process ID: ${process.pid}`);
   console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Setup Vite after server is listening (non-blocking)
-  const isProductionLike = process.env.NODE_ENV === 'production' || process.env.PREVIEW_MODE === 'true';
-  if (isProductionLike) {
-    console.log('🔧 Forcing production mode to bypass Vite host restrictions');
+  // Setup environment based on NODE_ENV only
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🏭 Production mode: serving static files');
     serveStatic(app);
-    console.log('✅ Production mode: serving static files');
   } else {
     console.log('🛠️ Development mode: setting up Vite dev server...');
     setupVite(app, server).catch(error => {
