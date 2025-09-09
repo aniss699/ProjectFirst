@@ -28,11 +28,21 @@ export default function Missions() {
   const { data: userMissions = [], isLoading: missionsLoading, error: missionsError } = useQuery<MissionWithBids[]>({
     queryKey: ['userMissions', user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/missions/users/${user?.id}/missions`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch user missions');
+      if (!user?.id) {
+        throw new Error('User ID manquant');
       }
+
+      console.log('🔍 Récupération des missions pour utilisateur:', user.id);
+      
+      const response = await fetch(`/api/missions/users/${user.id}/missions`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur API missions:', response.status, errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
+      }
+      
       const missions = await response.json();
+      console.log('✅ Missions récupérées:', missions.length);
       
       // Pour chaque mission, récupérer les offres associées
       const missionsWithBids = await Promise.all(
@@ -54,9 +64,12 @@ export default function Missions() {
         })
       );
       
+      console.log('✅ Missions avec offres:', missionsWithBids.length);
       return missionsWithBids;
     },
-    enabled: !!user,
+    enabled: !!user?.id,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const { data: userBids = [], isLoading: bidsLoading } = useQuery<Bid[]>({
@@ -115,6 +128,9 @@ export default function Missions() {
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.published;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  // Debug: Log user info
+  console.log('👤 User actuel:', { id: user?.id, type: user?.type, name: user?.name });
 
   if (!user) {
     return (
