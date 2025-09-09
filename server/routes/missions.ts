@@ -98,14 +98,23 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/missions - Get all missions
+// GET /api/missions - Get all missions with bids
 router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
     const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
     console.log(`📋 Found ${allMissions.length} missions in database`);
-    console.log('📋 Missions:', allMissions.map(m => ({ id: m.id, title: m.title, status: m.status })));
-    res.json(allMissions);
+    
+    // Transform missions to include required fields for MissionWithBids type
+    const missionsWithBids = allMissions.map(mission => ({
+      ...mission,
+      createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
+      clientName: 'Client anonyme', // Default client name
+      bids: [] // Empty bids array for now
+    }));
+    
+    console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
+    res.json(missionsWithBids);
   } catch (error) {
     console.error('❌ Error fetching missions:', error);
     res.status(500).json({ error: 'Failed to fetch missions' });
