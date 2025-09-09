@@ -106,6 +106,93 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
         if (response.ok) {
           const analysis = await response.json();
+          
+          // Créer le projet avec l'équipe analysée
+          const createResponse = await fetch('/api/team/create-project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectData: {
+                title: projectData.title,
+                description: projectData.description,
+                category: selectedCategory,
+                budget: projectData.budget,
+                location: projectData.needsLocation ? projectData.location.address : 'Remote',
+                isTeamMode: true
+              },
+              teamRequirements: analysis.professions
+            })
+          });
+
+          if (createResponse.ok) {
+            const result = await createResponse.json();
+            toast({
+              title: 'Projet équipe créé !',
+              description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
+            });
+            
+            // Invalider le cache des missions pour forcer le rechargement
+            queryClient.invalidateQueries({ queryKey: ['missions'] });
+            
+            // Rediriger vers les missions
+            setLocation('/missions');
+            onClose?.();
+          } else {
+            throw new Error('Erreur lors de la création du projet');
+          }
+        } else {
+          throw new Error('Erreur lors de l\'analyse d\'équipe');
+        }
+      } else {
+        // Mode mission simple
+        const budgetFormatted = typeof projectData.budget === 'string' 
+          ? projectData.budget 
+          : projectData.budget?.toString() || '';
+
+        const dynamicFieldsText = projectData.dynamicFields && Object.keys(projectData.dynamicFields).length > 0
+          ? Object.entries(projectData.dynamicFields)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join('\n')
+          : '';
+
+        const missionData = {
+          title: projectData.title,
+          description: projectData.description + 
+            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
+            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
+          category: selectedCategory,
+          budget: budgetFormatted,
+          location: projectData.needsLocation ? projectData.location.address : 'Remote',
+          clientId: user?.id || 'user_1',
+          clientName: user?.name || 'Utilisateur',
+          dynamicFields: projectData.dynamicFields
+        };
+
+        const response = await fetch('/api/missions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(missionData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          toast({
+            title: 'Mission créée avec succès !',
+            description: 'Votre projet a été publié et est maintenant visible par les prestataires.',
+          });
+          
+          // Invalider le cache des missions
+          queryClient.invalidateQueries({ queryKey: ['missions'] });
+          
+          // Rediriger vers les missions
+          setLocation('/missions');
+          onClose?.();
+        } else {
+          throw new Error('Erreur lors de la création de la mission');
+        }
+      }json();
 
           // Créer le projet en mode équipe
           const createResponse = await fetch('/api/team/create-project', {

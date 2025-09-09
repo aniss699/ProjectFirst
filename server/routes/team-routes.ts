@@ -96,6 +96,9 @@ router.post('/create-project', async (req, res) => {
       ...projectData,
       type: 'team',
       teamRequirements,
+      status: 'open',
+      clientId: 'user_1', // Temporaire
+      clientName: 'Utilisateur',
       createdAt: new Date().toISOString()
     };
 
@@ -106,7 +109,7 @@ router.post('/create-project', async (req, res) => {
       description: req.description,
       category: projectData.category,
       budget: req.estimated_budget.toString(),
-      location: projectData.location,
+      location: projectData.location || 'Remote',
       parentProjectId: mainProject.id,
       profession: req.profession,
       required_skills: req.required_skills,
@@ -114,17 +117,35 @@ router.post('/create-project', async (req, res) => {
       min_experience: req.min_experience,
       is_lead_role: req.is_lead_role,
       importance: req.importance,
-      createdAt: new Date().toISOString()
+      status: 'open',
+      clientId: mainProject.clientId,
+      clientName: mainProject.clientName,
+      createdAt: new Date().toISOString(),
+      bids: []
     }));
+
+    // Persistance temporaire en mémoire (comme les autres missions)
+    if (!global.missions) {
+      global.missions = [];
+    }
+    
+    // Ajouter le projet principal
+    global.missions.push(mainProject);
+    
+    // Ajouter les sous-missions
+    global.missions.push(...subMissions);
+
+    console.log(`✅ Projet en équipe créé: ${mainProject.id} avec ${subMissions.length} sous-missions`);
 
     res.json({ 
       ok: true, 
       project: mainProject,
-      subMissions 
+      subMissions,
+      message: `Projet créé avec ${subMissions.length} missions spécialisées`
     });
   } catch (error) {
     console.error('Team project creation error:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur lors de la création du projet' });
   }
 });
 

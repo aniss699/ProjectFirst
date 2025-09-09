@@ -27,4 +27,26 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/missions - Récupérer toutes les missions
+router.get('/', async (req, res) => {
+  try {
+    if (!global.missions) {
+      global.missions = [];
+    }
+    
+    const missions = global.missions.filter(mission => 
+      mission.status === 'open' || !mission.status
+    );
+    
+    res.json({ 
+      ok: true, 
+      missions,
+      total: missions.length 
+    });
+  } catch (error) {
+    console.error('Get missions error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 export default router;

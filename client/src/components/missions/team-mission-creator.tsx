@@ -110,12 +110,25 @@ export function TeamMissionCreator({ onComplete, onCancel }: TeamMissionCreatorP
   };
 
   const handleCreateProject = async () => {
+    if (teamRequirements.length === 0) {
+      toast({
+        title: "Équipe vide",
+        description: "Veuillez ajouter au moins une profession à votre équipe.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const response = await fetch('/api/team/create-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectData: { ...formData, isTeamMode },
+          projectData: { 
+            ...formData, 
+            isTeamMode: true,
+            location: formData.location || 'Remote'
+          },
           teamRequirements
         })
       });
@@ -123,17 +136,25 @@ export function TeamMissionCreator({ onComplete, onCancel }: TeamMissionCreatorP
       if (response.ok) {
         const result = await response.json();
         toast({
-          title: "Projet créé",
-          description: "Votre projet en mode équipe a été créé avec succès."
+          title: "Projet créé avec succès !",
+          description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`
         });
-        onComplete({ ...formData, isTeamMode, teamRequirements });
+        onComplete({ 
+          ...formData, 
+          isTeamMode: true, 
+          teamRequirements,
+          projectId: result.project.id,
+          subMissions: result.subMissions
+        });
       } else {
-        throw new Error('Erreur création');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur création');
       }
     } catch (error) {
+      console.error('Erreur création projet équipe:', error);
       toast({
         title: "Erreur de création",
-        description: "Impossible de créer le projet.",
+        description: error.message || "Impossible de créer le projet.",
         variant: "destructive"
       });
     }
