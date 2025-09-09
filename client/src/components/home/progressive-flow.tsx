@@ -29,6 +29,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
+import { GeoSearch } from '@/components/location/geo-search';
+import { useQueryClient } from '@tanstack/react-query';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
@@ -38,6 +41,8 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
@@ -79,16 +84,9 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
   const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
 
-  // Fonction pour créer la mission via l'API
+  // Function to create the mission via API
   const createMission = async () => {
-    if (!projectData.title || !projectData.description) {
-      toast({
-        title: 'Champs requis',
-        description: 'Veuillez remplir au moins le titre et la description',
-        variant: 'destructive',
-      });
-      return;
-    }
+    // if (!user) return; // The user is not checked in the original code provided, keeping it commented out
 
     setIsCreating(true);
 
@@ -124,6 +122,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               title: "Projet équipe créé !",
               description: `Mission créée avec ${analysis.professions.length} spécialités identifiées.`
             });
+            // Invalider le cache pour forcer le rechargement des missions
+            queryClient.invalidateQueries({ queryKey: ['/api/missions'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'missions'] });
+
           } else {
             const error = await createResponse.json();
             toast({
@@ -188,9 +190,9 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
           category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
           budget: budgetFormatted,
-          location: 'Remote', // Gérer la localisation différemment si needsLocation est true
-          clientId: 'user_1', // ID utilisateur temporaire
-          clientName: 'Utilisateur',
+          location: projectData.needsLocation ? projectData.location.address : 'Remote', // Gérer la localisation différemment si needsLocation est true
+          clientId: user?.id || 'user_1', // ID utilisateur temporaire si non connecté
+          clientName: user?.name || 'Utilisateur', // Nom utilisateur temporaire
           dynamicFields: projectData.dynamicFields
         };
 
@@ -208,6 +210,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             title: 'Mission créée avec succès !',
             description: 'Votre projet a été publié et est maintenant visible par les prestataires',
           });
+
+          // Invalider le cache pour forcer le rechargement des missions
+          queryClient.invalidateQueries({ queryKey: ['/api/missions'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'missions'] });
 
           // Rediriger vers la page des missions
           setLocation('/missions');

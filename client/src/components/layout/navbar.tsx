@@ -190,6 +190,15 @@ export default function Navbar() {
                   >
                     Messages
                   </button>
+                  <Button variant="ghost" onClick={() => setLocation('/marketplace')}>
+                    Marketplace
+                  </Button>
+                  <Button variant="ghost" onClick={() => setLocation('/missions')}>
+                    Mes Missions
+                  </Button>
+                  <Button variant="ghost" onClick={() => setLocation('/create-mission')}>
+                    Créer Mission
+                  </Button>
                 </div>
 
                 {/* User Dropdown */}
@@ -379,7 +388,7 @@ export default function Navbar() {
                         <Briefcase className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Services</span>
                       </button>
-                      
+
                       <button
                         onClick={() => {
                           handleNavigation('/notre-concept');
@@ -410,8 +419,8 @@ export default function Navbar() {
                         <Brain className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Hub IA</span>
                       </button>
-                      
-                      
+
+
                     </div>
                   </div>
 
