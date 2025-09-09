@@ -286,11 +286,18 @@ router.get('/users/:userId/bids', async (req, res) => {
       return res.status(400).json({ error: 'User ID invalide' });
     }
 
+    // Convert userId to integer for database query
+    const userIdInt = parseInt(userId, 10);
+    if (isNaN(userIdInt)) {
+      console.error('❌ User ID is not a valid number:', userId);
+      return res.status(400).json({ error: 'User ID doit être un nombre' });
+    }
+
     const userBids = await db
       .select()
       .from(bidTable)
-      .where(eq(bidTable.providerId, userId))
-      .orderBy(desc(bidTable.createdAt));
+      .where(eq(bidTable.provider_id, userIdInt))
+      .orderBy(desc(bidTable.created_at));
 
     console.log(`👤 Found ${userBids.length} bids for user ${userId}`);
     res.json(userBids);
