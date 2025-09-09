@@ -229,6 +229,70 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// GET /api/users/:userId/missions - Get missions for a specific user
+router.get('/users/:userId/missions', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log('👤 Fetching missions for user:', userId);
+
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      console.error('❌ Invalid user ID:', userId);
+      return res.status(400).json({ error: 'User ID invalide' });
+    }
+
+    const userMissions = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.client_id, parseInt(userId)))
+      .orderBy(desc(missions.created_at));
+
+    // Transform missions to include required fields
+    const missionsWithBids = userMissions.map(mission => ({
+      ...mission,
+      createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
+      clientName: 'Moi', // Since it's the user's own missions
+      bids: [] // We'll populate this separately if needed
+    }));
+
+    console.log(`👤 Found ${missionsWithBids.length} missions for user ${userId}`);
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error('❌ Error fetching user missions:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user missions',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// GET /api/users/:userId/bids - Get bids for a specific user
+router.get('/users/:userId/bids', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log('👤 Fetching bids for user:', userId);
+
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      console.error('❌ Invalid user ID:', userId);
+      return res.status(400).json({ error: 'User ID invalide' });
+    }
+
+    const userBids = await db
+      .select()
+      .from(bidTable)
+      .where(eq(bidTable.providerId, userId))
+      .orderBy(desc(bidTable.createdAt));
+
+    console.log(`👤 Found ${userBids.length} bids for user ${userId}`);
+    res.json(userBids);
+  } catch (error) {
+    console.error('❌ Error fetching user bids:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user bids',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // GET /api/missions/verify-sync - Vérifier la synchronisation missions/feed
 router.get('/verify-sync', async (req, res) => {
   try {

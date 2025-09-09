@@ -45,13 +45,13 @@ async function validateDatabaseConnection() {
   const timeout = 8000; // 8 second timeout
   try {
     console.log('🔍 Validating database connection...');
-    
+
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Database connection timeout')), timeout);
     });
-    
+
     const connectionPromise = pool.query('SELECT 1 as test');
-    
+
     await Promise.race([connectionPromise, timeoutPromise]);
     console.log('✅ Database connection validated successfully');
     return true;
@@ -146,8 +146,8 @@ console.log('📋 Registering missions routes...');
 app.use('/api/missions', missionsRoutes);
 
 console.log('📋 Registering other API routes...');
-app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
+app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
 
 // Apply rate limiting to AI routes
 app.use('/api/ai/monitoring', monitoringRateLimit, aiMonitoringRoutes);
@@ -251,7 +251,7 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🎯 AI Provider: Gemini API Only`);
   console.log(`🔍 Process ID: ${process.pid}`);
   console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
-  
+
   // Setup Vite after server is listening (non-blocking)
   const isProductionLike = process.env.NODE_ENV === 'production' || process.env.PREVIEW_MODE === 'true';
   if (isProductionLike) {

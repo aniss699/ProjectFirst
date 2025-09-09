@@ -16,12 +16,26 @@ export default function Missions() {
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
 
   const { data: userMissions = [] } = useQuery<Mission[]>({
-    queryKey: ['/api/users', user?.id, 'missions'],
+    queryKey: ['userMissions', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/missions/users/${user?.id}/missions`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user missions');
+      }
+      return response.json();
+    },
     enabled: !!user,
   });
 
   const { data: userBids = [] } = useQuery<Bid[]>({
-    queryKey: ['/api/users', user?.id, 'bids'],
+    queryKey: ['userBids', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/missions/users/${user?.id}/bids`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user bids');
+      }
+      return response.json();
+    },
     enabled: !!user && user.type === 'provider',
   });
 
