@@ -42,6 +42,9 @@ const OpportunitiesPage = React.lazy(() => import('@/pages/services/Opportunitie
 // Lazy load the new Favorites page
 const Favorites = React.lazy(() => import('@/pages/favorites'));
 
+// Lazy load the edit mission page
+const EditMission = React.lazy(() => import('@/pages/edit-mission'));
+
 
 // Loading component
 const LoadingSpinner = () => (
@@ -79,6 +82,8 @@ function App() {
                     <Route path="/marketplace" component={Marketplace} />
                     <Route path="/missions" component={Missions} />
                     <Route path="/create-mission" component={CreateMission} />
+                    {/* Route for editing missions */}
+                    <Route path="/missions/edit/:missionId" component={EditMission} />
                     <Route path="/profile" component={Profile} />
                     <Route path="/dashboard" component={Dashboard} />
                     <Route path="/messages" component={Messages} />

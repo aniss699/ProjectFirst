@@ -310,6 +310,150 @@ router.get('/users/:userId/bids', async (req, res) => {
   }
 });
 
+// PUT /api/missions/:id - Update a specific mission
+router.put('/:id', async (req, res) => {
+  try {
+    const missionId = req.params.id;
+    const updateData = req.body;
+    console.log('✏️ API: Modification mission ID:', missionId);
+    console.log('✏️ API: Données reçues:', JSON.stringify(updateData, null, 2));
+
+    if (!missionId || missionId === 'undefined' || missionId === 'null') {
+      console.error('❌ API: Mission ID invalide:', missionId);
+      return res.status(400).json({ error: 'Mission ID invalide' });
+    }
+
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
+      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+    }
+
+    // Validate required fields
+    if (!updateData.title || updateData.title.trim() === '') {
+      return res.status(400).json({
+        error: 'Le titre est requis',
+        field: 'title'
+      });
+    }
+
+    if (!updateData.description || updateData.description.trim() === '') {
+      return res.status(400).json({
+        error: 'La description est requise',
+        field: 'description'
+      });
+    }
+
+    // Check if mission exists
+    const existingMission = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.id, missionIdInt))
+      .limit(1);
+
+    if (existingMission.length === 0) {
+      console.error('❌ API: Mission non trouvée pour modification:', missionId);
+      return res.status(404).json({ error: 'Mission non trouvée' });
+    }
+
+    // Prepare update data
+    const missionToUpdate = {
+      title: updateData.title,
+      description: updateData.description,
+      category: updateData.category || existingMission[0].category,
+      budget: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget,
+      location: updateData.location || existingMission[0].location,
+      urgency: updateData.urgency || existingMission[0].urgency,
+      status: updateData.status || existingMission[0].status,
+      updated_at: new Date(),
+      budget_min: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min,
+      budget_max: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max,
+      deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
+      tags: updateData.tags || existingMission[0].tags,
+      requirements: updateData.requirements || existingMission[0].requirements,
+    };
+
+    console.log('✏️ API: Données de mise à jour:', JSON.stringify(missionToUpdate, null, 2));
+
+    // Update the mission
+    const updatedMission = await db
+      .update(missions)
+      .set(missionToUpdate)
+      .where(eq(missions.id, missionIdInt))
+      .returning();
+
+    if (updatedMission.length === 0) {
+      throw new Error('Échec de la mise à jour de la mission');
+    }
+
+    console.log('✅ API: Mission modifiée avec succès:', missionId);
+    res.json(updatedMission[0]);
+  } catch (error) {
+    console.error('❌ API: Erreur modification mission:', error);
+    res.status(500).json({
+      error: 'Erreur interne du serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// DELETE /api/missions/:id - Delete a specific mission
+router.delete('/:id', async (req, res) => {
+  try {
+    const missionId = req.params.id;
+    console.log('🗑️ API: Suppression mission ID:', missionId);
+
+    if (!missionId || missionId === 'undefined' || missionId === 'null') {
+      console.error('❌ API: Mission ID invalide:', missionId);
+      return res.status(400).json({ error: 'Mission ID invalide' });
+    }
+
+    // Convert missionId to integer for database query
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
+      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+    }
+
+    // Check if mission exists
+    const existingMission = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.id, missionIdInt))
+      .limit(1);
+
+    if (existingMission.length === 0) {
+      console.error('❌ API: Mission non trouvée pour suppression:', missionId);
+      return res.status(404).json({ error: 'Mission non trouvée' });
+    }
+
+    // Delete associated bids first
+    await db.delete(bidTable).where(eq(bidTable.project_id, missionIdInt));
+    console.log('✅ API: Offres supprimées pour mission:', missionId);
+
+    // Delete the mission
+    const deletedMission = await db
+      .delete(missions)
+      .where(eq(missions.id, missionIdInt))
+      .returning();
+
+    if (deletedMission.length === 0) {
+      throw new Error('Échec de la suppression de la mission');
+    }
+
+    console.log('✅ API: Mission supprimée avec succès:', missionId);
+    res.json({ message: 'Mission supprimée avec succès', mission: deletedMission[0] });
+  } catch (error) {
+    console.error('❌ API: Erreur suppression mission:', error);
+    res.status(500).json({
+      error: 'Erreur interne du serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // GET /api/missions/verify-sync - Vérifier la synchronisation missions/feed
 router.get('/verify-sync', async (req, res) => {
   try {

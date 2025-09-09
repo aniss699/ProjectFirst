@@ -135,6 +135,7 @@ export const paths = {
   home: '/',
   marketplace: '/marketplace',
   missions: '/missions',
+  editMission: (id: string) => `/missions/${id}/edit`,
   createMission: '/create-mission',
   profile: '/profile',
   login: '/login',
