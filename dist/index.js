@@ -259,78 +259,6 @@ var init_schema = __esm({
   }
 });
 
-// server/services/mission-sync.ts
-var mission_sync_exports = {};
-__export(mission_sync_exports, {
-  MissionSyncService: () => MissionSyncService
-});
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
-var MissionSyncService;
-var init_mission_sync = __esm({
-  "server/services/mission-sync.ts"() {
-    "use strict";
-    init_schema();
-    MissionSyncService = class {
-      db;
-      pool;
-      constructor(databaseUrl3) {
-        this.pool = new Pool({ connectionString: databaseUrl3 });
-        this.db = drizzle(this.pool);
-      }
-      async syncMissionsToFeed(missions2) {
-        try {
-          console.log("\u{1F504} Synchronisation des missions vers le feed...");
-          for (const mission of missions2) {
-            const existing = await this.db.select().from(announcements).where(sql`title = ${mission.title} AND description = ${mission.description}`).limit(1);
-            if (existing.length === 0) {
-              const budgetValue = parseFloat(mission.budget.toString().replace(/[^0-9.-]/g, "")) || 0;
-              await this.db.insert(announcements).values({
-                title: mission.title,
-                description: mission.description,
-                category: mission.category.toLowerCase(),
-                city: mission.location || null,
-                budget_min: budgetValue.toString(),
-                budget_max: budgetValue.toString(),
-                user_id: 1,
-                status: mission.status === "open" ? "active" : "inactive",
-                quality_score: "0.8",
-                created_at: new Date(mission.createdAt)
-              });
-              console.log(`\u2705 Mission "${mission.title}" ajout\xE9e au feed`);
-            }
-          }
-          console.log("\u2705 Synchronisation termin\xE9e");
-        } catch (error) {
-          console.error("\u274C Erreur lors de la synchronisation:", error);
-        }
-      }
-      async addMissionToFeed(mission) {
-        try {
-          const budgetValue = parseFloat(mission.budget.toString().replace(/[^0-9.-]/g, "")) || 0;
-          await this.db.insert(announcements).values({
-            title: mission.title,
-            description: mission.description,
-            category: mission.category.toLowerCase(),
-            city: mission.location || null,
-            budget_min: budgetValue.toString(),
-            budget_max: budgetValue.toString(),
-            user_id: 1,
-            // TODO: utiliser le vrai user_id depuis l'auth
-            status: "active",
-            quality_score: "0.8"
-            // Score par défaut
-          });
-        } catch (error) {
-          console.error("Erreur ajout mission au feed:", error);
-          throw error;
-        }
-      }
-    };
-  }
-});
-
 // apps/api/src/ai/aiOrchestrator.ts
 import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -1806,8 +1734,67 @@ function serveStatic(app2) {
   });
 }
 
-// server/index.ts
-init_mission_sync();
+// server/services/mission-sync.ts
+init_schema();
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+var MissionSyncService = class {
+  db;
+  pool;
+  constructor(databaseUrl3) {
+    this.pool = new Pool({ connectionString: databaseUrl3 });
+    this.db = drizzle(this.pool);
+  }
+  async syncMissionsToFeed(missions2) {
+    try {
+      console.log("\u{1F504} Synchronisation des missions vers le feed...");
+      for (const mission of missions2) {
+        const existing = await this.db.select().from(announcements).where(sql`title = ${mission.title} AND description = ${mission.description}`).limit(1);
+        if (existing.length === 0) {
+          const budgetValue = parseFloat(mission.budget.toString().replace(/[^0-9.-]/g, "")) || 0;
+          await this.db.insert(announcements).values({
+            title: mission.title,
+            description: mission.description,
+            category: mission.category.toLowerCase(),
+            city: mission.location || null,
+            budget_min: budgetValue.toString(),
+            budget_max: budgetValue.toString(),
+            user_id: 1,
+            status: mission.status === "open" ? "active" : "inactive",
+            quality_score: "0.8",
+            created_at: new Date(mission.createdAt)
+          });
+          console.log(`\u2705 Mission "${mission.title}" ajout\xE9e au feed`);
+        }
+      }
+      console.log("\u2705 Synchronisation termin\xE9e");
+    } catch (error) {
+      console.error("\u274C Erreur lors de la synchronisation:", error);
+    }
+  }
+  async addMissionToFeed(mission) {
+    try {
+      const budgetValue = parseFloat(mission.budget.toString().replace(/[^0-9.-]/g, "")) || 0;
+      await this.db.insert(announcements).values({
+        title: mission.title,
+        description: mission.description,
+        category: mission.category.toLowerCase(),
+        city: mission.location || null,
+        budget_min: budgetValue.toString(),
+        budget_max: budgetValue.toString(),
+        user_id: 1,
+        // TODO: utiliser le vrai user_id depuis l'auth
+        status: "active",
+        quality_score: "0.8"
+        // Score par défaut
+      });
+    } catch (error) {
+      console.error("Erreur ajout mission au feed:", error);
+      throw error;
+    }
+  }
+};
 
 // server/environment-check.ts
 function validateEnvironment() {
@@ -2211,29 +2198,31 @@ router2.post("/", async (req, res) => {
         throw new Error("No mission returned from database insert");
       }
       console.log("\u2705 Mission created successfully:", insertedMission);
-      try {
-        const { MissionSyncService: MissionSyncService2 } = await Promise.resolve().then(() => (init_mission_sync(), mission_sync_exports));
-        const syncService = new MissionSyncService2();
-        await syncService.addMissionToFeed(insertedMission);
-        console.log("\u{1F504} Mission synchronis\xE9e avec le feed");
-      } catch (syncError) {
-        console.warn("\u26A0\uFE0F Erreur synchronisation feed (non-bloquant):", syncError);
-      }
       const savedMission = await db2.select().from(missions).where(eq2(missions.id, insertedMission.id)).limit(1);
       console.log("\u{1F50D} Verification - Mission in DB:", savedMission.length > 0 ? "Found" : "NOT FOUND");
       res.status(201).json(insertedMission);
     } catch (error) {
       console.error("\u274C Database insertion failed:", error);
       console.error("\u274C Data that failed to insert:", JSON.stringify(missionToInsert, null, 2));
-      throw new Error(`Database insertion failed: ${error instanceof Error ? error.message : "Unknown database error"}`);
+      throw error;
     }
+    setImmediate(async () => {
+      try {
+        await MissionSyncService.addMissionToFeed(insertedMission.id);
+        console.log("\u2705 Mission synchronis\xE9e avec le feed");
+      } catch (syncError) {
+        console.error("\u26A0\uFE0F Erreur synchronisation feed (non-bloquant):", syncError);
+      }
+    });
   } catch (error) {
     console.error("\u274C Error creating mission:", error);
     console.error("\u274C Error stack:", error instanceof Error ? error.stack : "No stack trace");
-    res.status(500).json({
-      error: "Failed to create mission",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Failed to create mission",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
   }
 });
 router2.get("/", async (req, res) => {
