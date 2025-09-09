@@ -37,14 +37,14 @@ console.log('🔗 Database configuration:', {
   PLATFORM: 'Replit'
 });
 
-// Création des comptes démo simplifiée (non bloquant)
-setTimeout(async () => {
+// Création des comptes démo simplifiée (non bloquant) - moved to after server start
+setImmediate(async () => {
   try {
     console.log('✅ Comptes démo - vérification différée');
   } catch (error) {
     console.warn('⚠️ Comptes démo - vérification échouée');
   }
-}, 5000);
+});
 
 // Remove in-memory missions storage - using database only
 
@@ -214,16 +214,28 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
 // Start server
 const server = createServer(app);
 
-// Force production mode to avoid Vite host blocking issues in Replit
-const isProductionLike = process.env.NODE_ENV === 'production' || process.env.PREVIEW_MODE === 'true';
-if (isProductionLike) {
-  console.log('🔧 Forcing production mode to bypass Vite host restrictions');
-  serveStatic(app);
-  console.log('✅ Production mode: serving static files');
-} else {
-  console.log('🛠️ Development mode: using Vite dev server');
-  setupVite(app, server).catch(console.error);
-}
+// Start listening immediately for faster deployment
+server.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);
+  console.log(`📱 Frontend: http://0.0.0.0:${port}`);
+  console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
+  console.log(`🎯 AI Provider: Gemini API Only`);
+  console.log(`🔍 Process ID: ${process.pid}`);
+  console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Setup Vite after server is listening (non-blocking)
+  const isProductionLike = process.env.NODE_ENV === 'production' || process.env.PREVIEW_MODE === 'true';
+  if (isProductionLike) {
+    console.log('🔧 Forcing production mode to bypass Vite host restrictions');
+    serveStatic(app);
+    console.log('✅ Production mode: serving static files');
+  } else {
+    console.log('🛠️ Development mode: setting up Vite dev server...');
+    setupVite(app, server).catch(error => {
+      console.error('⚠️ Vite setup failed (non-critical):', error);
+    });
+  }
+});
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
@@ -234,14 +246,6 @@ server.on('error', (err: any) => {
   }
 });
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);
-  console.log(`📱 Frontend: http://0.0.0.0:${port}`);
-  console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
-  console.log(`🎯 AI Provider: Gemini API Only`);
-  console.log(`🔍 Process ID: ${process.pid}`);
-  console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
-});
 
 // Mission sync now handled by database routes
 
