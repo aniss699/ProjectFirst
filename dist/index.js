@@ -2038,12 +2038,29 @@ router.get("/users/:userId/missions", async (req, res) => {
       console.error("\u274C Invalid user ID:", userId);
       return res.status(400).json({ error: "User ID invalide" });
     }
-    const userMissions = await db.select().from(missions).where(eq(missions.client_id, parseInt(userId))).orderBy(desc(missions.created_at));
+    const userIdInt = parseInt(userId, 10);
+    if (isNaN(userIdInt)) {
+      console.error("\u274C User ID is not a valid number:", userId);
+      return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
+    }
+    const userMissions = await db.select().from(missions).where(eq(missions.client_id, userIdInt)).orderBy(desc(missions.created_at));
     const missionsWithBids = userMissions.map((mission) => ({
-      ...mission,
-      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      id: mission.id,
+      title: mission.title,
+      description: mission.description,
+      category: mission.category,
+      budget: mission.budget?.toString() || mission.budget_min?.toString() || "0",
+      location: mission.location,
+      status: mission.status,
+      urgency: mission.urgency,
+      clientId: mission.client_id?.toString(),
       clientName: "Moi",
       // Since it's the user's own missions
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      deadline: mission.deadline?.toISOString(),
+      tags: mission.tags || [],
+      requirements: mission.requirements,
       bids: []
       // We'll populate this separately if needed
     }));
