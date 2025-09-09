@@ -154,8 +154,10 @@ router.get('/', async (req, res) => {
 
 // GET /api/missions/:id - Get a specific mission with bids
 router.get('/:id', async (req, res) => {
+  let missionId: string | null = null;
+  
   try {
-    const missionId = req.params.id;
+    missionId = req.params.id;
     console.log('🔍 API: Récupération mission ID:', missionId);
 
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
@@ -163,10 +165,17 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Mission ID invalide' });
     }
 
+    // Convert missionId to integer for database query
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
+      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+    }
+
     const mission = await db
       .select()
       .from(missions)
-      .where(eq(missions.id, missionId))
+      .where(eq(missions.id, missionIdInt))
       .limit(1);
 
     if (mission.length === 0) {
@@ -174,10 +183,11 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Mission non trouvée' });
     }
 
+    // Fix: bids table uses project_id, not missionId
     const bids = await db
       .select()
       .from(bidTable)
-      .where(eq(bidTable.missionId, missionId));
+      .where(eq(bidTable.project_id, missionIdInt));
 
     const result = {
       ...mission[0],
@@ -189,13 +199,13 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('❌ API: Erreur récupération mission:', error);
     console.error('❌ API: Stack trace:', error instanceof Error ? error.stack : 'No stack');
-    console.error('❌ API: Mission ID demandée:', missionId);
+    console.error('❌ API: Mission ID demandée:', missionId || 'undefined');
     console.error('❌ API: Type de l\'ID:', typeof missionId);
     
     res.status(500).json({
       error: 'Erreur interne du serveur',
       details: error instanceof Error ? error.message : 'Erreur inconnue',
-      missionId: missionId,
+      missionId: missionId || 'undefined',
       timestamp: new Date().toISOString()
     });
   }
