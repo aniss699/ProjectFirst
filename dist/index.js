@@ -2205,6 +2205,27 @@ router2.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch missions" });
   }
 });
+router2.get("/debug", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Mission debug endpoint called");
+    const testQuery = await db2.select().from(missions).limit(1);
+    const dbInfo = {
+      status: "connected",
+      sampleMissions: testQuery.length,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
+    };
+    console.log("\u{1F50D} Database info:", dbInfo);
+    res.json(dbInfo);
+  } catch (error) {
+    console.error("\u274C Debug endpoint error:", error);
+    res.status(500).json({
+      error: "Debug failed",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
 var missions_default = router2;
 
 // server/api-routes.ts
