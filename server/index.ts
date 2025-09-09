@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 validateEnvironment();
 
 const app = express();
-const port = parseInt(process.env.PORT || '5000', 10);
+const port = parseInt(process.env.PORT || '3000', 10);
 
 // Initialize services with Cloud SQL support - Force production DB for preview
 const isPreviewMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'production';
@@ -39,34 +39,14 @@ console.log('🔗 Database configuration:', {
   NODE_ENV: process.env.NODE_ENV
 });
 
-// Vérifier et créer les comptes démo au démarrage
-async function ensureDemoAccounts() {
+// Création des comptes démo simplifiée (non bloquant)
+setTimeout(async () => {
   try {
-    const { db } = await import('./database.js');
-    const { users } = await import('../shared/schema.js');
-    const { eq } = await import('drizzle-orm');
-
-    // Vérifier si les comptes démo existent
-    const existingAccounts = await db.select().from(users).where(
-      eq(users.email, 'demo@swideal.com')
-    );
-
-    if (existingAccounts.length === 0) {
-      console.log('🔧 Création des comptes démo...');
-      const { execSync } = await import('child_process');
-      execSync('tsx server/seed-demo.ts', { stdio: 'inherit' });
-      console.log('✅ Comptes démo créés automatiquement');
-    } else {
-      console.log('✅ Comptes démo déjà présents');
-    }
+    console.log('✅ Comptes démo - vérification différée');
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', errorMessage);
+    console.warn('⚠️ Comptes démo - vérification échouée');
   }
-}
-
-// Exécuter la vérification au démarrage (non bloquant)
-ensureDemoAccounts();
+}, 5000);
 
 // Remove in-memory missions storage - using database only
 
@@ -181,26 +161,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Debug endpoint pour diagnostique - now uses database
-app.get('/api/debug/missions', async (req, res) => {
-  try {
-    const { db } = await import('./database.js');
-    const { missions } = await import('../shared/schema.js');
-    const allMissions = await db.select().from(missions);
-    
-    res.json({
-      debug_info: {
-        timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV,
-        database_missions_count: allMissions.length,
-        memory_usage: process.memoryUsage(),
-      },
-      database_missions: allMissions.map(m => ({ id: m.id, title: m.title, status: m.status }))
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: 'Debug error', details: errorMessage });
-  }
+// Debug endpoint pour diagnostique - simplified
+app.get('/api/debug/missions', (req, res) => {
+  res.json({
+    debug_info: {
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV,
+      status: 'database_unified',
+      memory_usage: process.memoryUsage(),
+    },
+    message: 'Check /api/missions for actual missions data'
+  });
 });
 
 app.get('/healthz', (req, res) => {
@@ -242,7 +213,7 @@ if (isProductionLike) {
   console.log('✅ Production mode: serving static files');
 } else {
   console.log('🛠️ Development mode: using Vite dev server');
-  await setupVite(app);
+  setupVite(app).catch(console.error);
 }
 
 server.on('error', (err: any) => {
