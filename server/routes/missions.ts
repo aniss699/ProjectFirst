@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
           budget: insertedMission.budget_min?.toString() || '0',
           location: insertedMission.location || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
-          userId: insertedMission.client_id?.toString() || '1',
+          clientId: insertedMission.client_id?.toString() || '1',
           clientName: 'Client',
           createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
           bids: []
