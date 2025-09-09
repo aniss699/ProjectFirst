@@ -219,7 +219,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   };
 
   // --- Nouvelle fonction handleSubmitMission modifiée ---
-  const handleSubmitMission = async (formData: any) => {
+  const handleSubmitMission = async (values: any) => {
     if (!user) {
       toast({
         title: "Connexion requise",
@@ -231,25 +231,27 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
     setIsSubmitting(true);
     try {
-      // Préparer les données selon le schéma attendu
-      const missionData = {
-        title: formData.title || formData.need?.substring(0, 50) || 'Mission sans titre',
-        description: formData.description || formData.need || '',
-        category: formData.category || 'service',
-        budget: formData.budget || formData.maxBudget || formData.monthlyBudget || formData.pricePerParticipant || '100',
-        location: formData.location || 'Non spécifié',
-        clientId: user.id || 'demo-client',
-        clientName: user.name || user.email || 'Client anonyme'
+      // Ensure proper data formatting before sending
+      const formattedData = {
+        title: values.title,
+        description: values.description,
+        category: values.category || 'developpement',
+        budget: values.budget ? parseInt(values.budget.toString()) : null,
+        location: values.location || null,
+        urgency: values.urgency || 'medium',
+        requirements: values.requirements || null,
+        tags: values.tags || [],
+        deadline: values.deadline ? new Date(values.deadline).toISOString() : null,
       };
 
-      console.log('Données envoyées:', missionData);
+      console.log('🚀 Sending formatted data:', formattedData);
 
       const response = await fetch('/api/missions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(missionData),
+        body: JSON.stringify(formattedData),
       });
 
       const result = await response.json();

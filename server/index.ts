@@ -7,6 +7,7 @@ import { Mission } from './types/mission.js';
 import { MissionSyncService } from './services/mission-sync.js';
 import { validateEnvironment } from './environment-check.js';
 import { Pool } from 'pg';
+import cors from 'cors'; // Import cors
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,31 +87,21 @@ app.use((req, res, next) => {
 // Trust proxy for Replit environment
 app.set('trust proxy', true);
 
-// CORS and Replit-specific headers
-app.use((req, res, next) => {
-  // Special handling for Replit environment
-  const isReplit = process.env.REPLIT_DB_URL || process.env.REPLIT_DEV_DOMAIN;
-
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-
-  if (isReplit) {
-    // Allow iframe embedding in Replit
-    res.header('X-Frame-Options', 'ALLOWALL');
-  } else {
-    res.header('X-Frame-Options', 'SAMEORIGIN');
-  }
-
-  res.header('X-Content-Type-Options', 'nosniff');
-  res.header('Referrer-Policy', 'same-origin');
-  next();
-});
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://swideal.com', 'https://www.swideal.com', 'https://swidealom.swideal.com']
+    : true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 
 app.use(express.json());
 
 // Import auth routes
 import authRoutes from './auth-routes.js';
+// Import missions routes here
 import missionsRoutes from './routes/missions.js';
 import apiRoutes from './api-routes.js';
 import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
@@ -130,7 +121,11 @@ import teamRoutes from './routes/team-routes.js';
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
 
 // Mount routes
+// Register missions routes first
+console.log('📋 Registering missions routes...');
 app.use('/api/missions', missionsRoutes);
+
+console.log('📋 Registering other API routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
@@ -156,12 +151,12 @@ app.use('/api', favoritesRoutes);
 app.use('/api', missionDemoRoutes);
 app.use('/api/team', teamRoutes);
 
-// Health check endpoints
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     // Test database connection
     await pool.query('SELECT 1');
-    
+
     res.status(200).json({ 
       status: 'ok', 
       message: 'SwipDEAL API is running',
@@ -286,6 +281,20 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Global error handler
+app.use((error: any, req: any, res: any, next: any) => {
+  console.error('🚨 Global error handler:', error);
+  console.error('🚨 Request URL:', req.url);
+  console.error('🚨 Request method:', req.method);
+  console.error('🚨 Request body:', req.body);
+
+  res.status(500).json({
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    timestamp: new Date().toISOString()
+  });
 });
 
 export default app;
