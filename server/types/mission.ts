@@ -12,6 +12,48 @@ export interface Mission {
   createdAt: string;
   bids: Bid[];
   updatedAt?: string;
+  isTeamMode?: boolean;
+  teamRequirements?: TeamRequirement[];
+}
+
+export interface TeamRequirement {
+  id: string;
+  projectId: string;
+  profession: string;
+  description: string;
+  requiredSkills: string[];
+  estimatedBudget?: number;
+  estimatedDays?: number;
+  minExperience?: number;
+  isLeadRole: boolean;
+  bids: Bid[];
+  createdAt: string;
+}
+
+export interface TeamAnalysisRequest {
+  description: string;
+  title?: string;
+  category?: string;
+  budget?: string;
+}
+
+export interface TeamAnalysisResponse {
+  professions: ProfessionRequirement[];
+  totalEstimatedBudget: number;
+  totalEstimatedDays: number;
+  complexity: number;
+  coordination_needs: string[];
+}
+
+export interface ProfessionRequirement {
+  profession: string;
+  description: string;
+  required_skills: string[];
+  estimated_budget: number;
+  estimated_days: number;
+  min_experience: number;
+  is_lead_role: boolean;
+  importance: 'high' | 'medium' | 'low';
 }
 
 export interface Bid {

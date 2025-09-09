@@ -42,12 +42,12 @@ async function ensureDemoAccounts() {
 
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzle(pool);
-    
+
     // Vérifier si les comptes démo existent
     const existingAccounts = await db.select().from(users).where(
       eq(users.email, 'demo@swideal.com')
     );
-    
+
     if (existingAccounts.length === 0) {
       console.log('🔧 Création des comptes démo...');
       const { execSync } = await import('child_process');
@@ -56,7 +56,7 @@ async function ensureDemoAccounts() {
     } else {
       console.log('✅ Comptes démo déjà présents');
     }
-    
+
     await pool.end();
   } catch (error) {
     console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', error.message);
@@ -151,6 +151,7 @@ import missionDemoRoutes from './routes/mission-demo.js';
 import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
 import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js';
 import aiLearningRoutes from './routes/ai-learning-routes.js';
+import teamRoutes from './routes/team-routes.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -180,6 +181,7 @@ app.use('/api/ai/learning', aiLearningRoutes);
 app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
 app.use('/api', missionDemoRoutes);
+app.use('/api/team', teamRoutes);
 
 // Health check endpoints
 app.get('/api/health', (req, res) => {

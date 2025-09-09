@@ -26,6 +26,7 @@ import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
