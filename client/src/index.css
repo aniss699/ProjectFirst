@@ -59,7 +59,7 @@
   }
 }
 
-/* Navbar specific styles */
+/*Navbar specific styles */
 .navbar-sticky {
   position: sticky;
   top: 0;
@@ -75,29 +75,29 @@
     scrollbar-width: thin;
     scrollbar-color: rgb(156 163 175) rgb(243 244 246);
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background: rgb(243 244 246);
     border-radius: 3px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: rgb(156 163 175);
     border-radius: 3px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgb(107 114 128);
   }
-  
+
   .scrollbar-thumb-gray-300 {
     scrollbar-color: rgb(209 213 219) rgb(243 244 246);
   }
-  
+
   .scrollbar-track-gray-100 {
     scrollbar-color: rgb(156 163 175) rgb(229 231 235);
   }
@@ -213,7 +213,8 @@
   }
   50% {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.3);
-
+  }
+}
 
 /* Styles pour les onglets sur mobile */
 @media (max-width: 768px) {
@@ -225,11 +226,11 @@
     gap: 0.25rem;
     padding: 0.25rem;
   }
-  
+
   .tabs-list-mobile::-webkit-scrollbar {
     display: none;
   }
-  
+
   .tabs-trigger-mobile {
     min-width: max-content;
     padding: 0.5rem 0.75rem;
@@ -237,7 +238,7 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  
+
   /* Indicateur de scroll pour les onglets */
   .tabs-container::after {
     content: '';
@@ -638,15 +639,15 @@
     .mobile-logo-container {
       gap: 0.5rem;
     }
-    
+
     .mobile-brand-title {
       font-size: 1.125rem;
     }
-    
+
     .mobile-brand-subtitle {
       font-size: 0.625rem;
     }
-    
+
     .mobile-brand-description {
       font-size: 0.625rem;
     }
@@ -833,6 +834,8 @@
   /* Optimisation formulaire étape 3 */
   .progressive-flow-form textarea {
     min-height: 2.5rem !important;
+    height: auto !important;
+    resize: vertical;
   }
 
   .progressive-flow-form input {
@@ -878,12 +881,12 @@
     min-height: auto;
     height: auto;
   }
-  
+
   .progressive-flow-step {
     min-height: auto;
     height: auto;
   }
-  
+
   .progressive-flow-form {
     min-height: auto;
   }
@@ -918,28 +921,28 @@ button:focus-visible {
   .progressive-flow-container {
     padding: 0.5rem !important;
   }
-  
+
   /* Réduction des espacements pour le niveau 0 */
   .progressive-flow-step:has(div:first-child > div > div > div > div:first-child > p:contains("Swideal")) {
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
   }
-  
+
   /* Assurer la compacité du contenu */
   .space-y-3 > * + * {
     margin-top: 0.5rem !important;
   }
-  
+
   /* Optimisation des bordures pour mobile */
   .border-l-3 {
     border-left-width: 2px !important;
   }
-  
+
   /* Ajustement des tailles de texte pour mobile */
   .leading-snug {
     line-height: 1.2 !important;
   }
-  
+
   /* Optimisation du bouton démarrer */
   .progressive-flow-container button[class*="gradient"] {
     width: 100% !important;

@@ -60,6 +60,23 @@ args = "npm run build"
 task = "shell.exec"
 args = "PREVIEW_MODE=true npm run dev"
 
+[[workflows.workflow]]
+name = "Clean Build"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "rm -rf client/dist dist"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=production tsx server/index.ts"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
