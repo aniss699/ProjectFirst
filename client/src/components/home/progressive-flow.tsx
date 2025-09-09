@@ -184,12 +184,14 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
         if (response.ok) {
           const result = await response.json();
-          toast({
-            title: 'Mission créée avec succès !',
-            description: 'Votre projet a été publié et est maintenant visible par les prestataires.',
+          console.log('✅ Mission créée avec succès:', result);
+
+          toast({ 
+            title: 'Mission créée !', 
+            description: 'Votre mission a été publiée avec succès.' 
           });
 
-          // Invalider le cache des missions
+          // Invalider le cache des missions pour forcer le rechargement
           queryClient.invalidateQueries({ queryKey: ['missions'] });
 
           // Rediriger vers les missions
@@ -199,7 +201,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             serviceType,
             selectedCategory,
             projectData,
-            missionId: result.mission.id
+            missionId: result.id
           });
         } else {
           const error = await response.json();
