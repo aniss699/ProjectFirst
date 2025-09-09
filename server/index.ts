@@ -18,17 +18,10 @@ validateEnvironment();
 const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
-// Initialize services with Cloud SQL support - Force production DB for preview
-// Use Replit PostgreSQL in all environments
+// Initialize services with Replit PostgreSQL
 const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
 
-// Cloud SQL connection string format: postgresql://user:password@/database?host=/cloudsql/project:region:instance
-const isCloudSQL = databaseUrl.includes('/cloudsql/');
-if (isCloudSQL) {
-  console.log('🔗 Using Cloud SQL connection');
-} else {
-  console.log('🔗 Using standard PostgreSQL connection');
-}
+console.log('🔗 Using Replit PostgreSQL connection');
 
 const missionSyncService = new MissionSyncService(databaseUrl);
 
@@ -40,8 +33,8 @@ const pool = new Pool({
 // Log database configuration for debugging
 console.log('🔗 Database configuration:', {
   DATABASE_URL: !!process.env.DATABASE_URL,
-  CLOUD_SQL_CONNECTION_STRING: !!process.env.CLOUD_SQL_CONNECTION_STRING,
-  NODE_ENV: process.env.NODE_ENV
+  NODE_ENV: process.env.NODE_ENV,
+  PLATFORM: 'Replit'
 });
 
 // Création des comptes démo simplifiée (non bloquant)
@@ -85,10 +78,10 @@ app.use((req, res, next) => {
 // Trust proxy for Replit environment
 app.set('trust proxy', true);
 
-// CORS configuration
+// CORS configuration - optimized for Replit
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://swideal.com', 'https://www.swideal.com', 'https://swidealom.swideal.com']
+    ? ['https://swideal.com', 'https://www.swideal.com', /\.replit\.app$/]
     : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
