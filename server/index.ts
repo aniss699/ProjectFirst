@@ -19,10 +19,8 @@ const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
 
 // Initialize services with Cloud SQL support - Force production DB for preview
-const isPreviewMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'production';
-const databaseUrl = isPreviewMode 
-  ? (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || '')
-  : (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal');
+// Use Replit PostgreSQL in all environments
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
 
 // Cloud SQL connection string format: postgresql://user:password@/database?host=/cloudsql/project:region:instance
 const isCloudSQL = databaseUrl.includes('/cloudsql/');
