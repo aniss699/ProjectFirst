@@ -86,8 +86,6 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
   // Function to create the mission via API
   const createMission = async () => {
-    // if (!user) return; // The user is not checked in the original code provided, keeping it commented out
-
     setIsCreating(true);
 
     try {
@@ -99,7 +97,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           body: JSON.stringify({
             description: projectData.description,
             title: projectData.title,
-            category: selectedCategory, // Assurez-vous d'utiliser la catégorie sélectionnée
+            category: selectedCategory,
             budget: projectData.budget
           })
         });
@@ -136,12 +134,20 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             
             // Rediriger vers les missions
             setLocation('/missions');
-            onClose?.();
+            onComplete?.({
+              userType,
+              serviceType,
+              selectedCategory,
+              projectData,
+              projectId: result.project.id
+            });
           } else {
-            throw new Error('Erreur lors de la création du projet');
+            const error = await createResponse.json();
+            throw new Error(error.error || 'Erreur lors de la création du projet');
           }
         } else {
-          throw new Error('Erreur lors de l\'analyse d\'équipe');
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de l\'analyse d\'équipe');
         }
       } else {
         // Mode mission simple
@@ -164,8 +170,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           budget: budgetFormatted,
           location: projectData.needsLocation ? projectData.location.address : 'Remote',
           clientId: user?.id || 'user_1',
-          clientName: user?.name || 'Utilisateur',
-          dynamicFields: projectData.dynamicFields
+          clientName: user?.name || 'Utilisateur'
         };
 
         const response = await fetch('/api/missions', {
@@ -188,145 +193,23 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           
           // Rediriger vers les missions
           setLocation('/missions');
-          onClose?.();
-        } else {
-          throw new Error('Erreur lors de la création de la mission');
-        }
-      }json();
-
-          // Créer le projet en mode équipe
-          const createResponse = await fetch('/api/team/create-project', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectData: { ...projectData, category: selectedCategory, isTeamMode }, // Inclure la catégorie et isTeamMode
-              teamRequirements: analysis.professions
-            })
-          });
-
-          if (createResponse.ok) {
-            toast({
-              title: "Projet équipe créé !",
-              description: `Mission créée avec ${analysis.professions.length} spécialités identifiées.`
-            });
-            // Invalider le cache pour forcer le rechargement des missions
-            queryClient.invalidateQueries({ queryKey: ['/api/missions'] });
-            queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'missions'] });
-
-          } else {
-            const error = await createResponse.json();
-            toast({
-              title: 'Erreur lors de la création du projet équipe',
-              description: error.message || 'Une erreur est survenue lors de la création du projet équipe',
-              variant: 'destructive',
-            });
-            setIsCreating(false); // Arrêter le processus en cas d'erreur
-            return; // Sortir de la fonction
-          }
-        } else {
-          const error = await response.json();
-          toast({
-            title: 'Erreur lors de l\'analyse de l\'équipe',
-            description: error.message || 'Une erreur est survenue lors de l\'analyse des besoins de l\'équipe',
-            variant: 'destructive',
-          });
-          setIsCreating(false); // Arrêter le processus en cas d'erreur
-          return; // Sortir de la fonction
-        }
-      } else {
-        // Création classique
-        // Mapper les catégories vers les valeurs acceptées par l'API
-        const categoryMapping: Record<string, string> = {
-          'web-dev': 'developpement',
-          'mobile-dev': 'mobile', 
-          'design': 'design',
-          'marketing': 'marketing',
-          'consulting': 'conseil',
-          'lawyer': 'conseil',
-          'doctor': 'services',
-          'coach': 'services',
-          'celebrity': 'services',
-          'ai-ml': 'ai',
-          'writing': 'redaction',
-          'video': 'multimedia',
-          'data': 'data',
-          'photography': 'photo',
-          'translation': 'traduction'
-        };
-
-        // Formater le budget
-        const budgetText = projectData.budget || '2000';
-        const budgetFormatted = budgetText.includes('-') ? budgetText : `${budgetText}`;
-
-        // Formater les champs dynamiques pour la description
-        const dynamicFieldsText = Object.keys(projectData.dynamicFields).length > 0 
-          ? Object.entries(projectData.dynamicFields)
-              .filter(([key, value]) => value !== '' && value !== null && value !== undefined)
-              .map(([key, value]) => {
-                const field = getCategoryDynamicFields(selectedCategory).find(f => f.id === key);
-                return field ? `${field.label}: ${value}` : null;
-              })
-              .filter(Boolean)
-              .join('\n')
-          : '';
-
-        const missionData = {
-          title: projectData.title,
-          description: projectData.description + 
-            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
-            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
-          category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
-          budget: budgetFormatted,
-          location: projectData.needsLocation ? projectData.location.address : 'Remote', // Gérer la localisation différemment si needsLocation est true
-          clientId: user?.id || 'user_1', // ID utilisateur temporaire si non connecté
-          clientName: user?.name || 'Utilisateur', // Nom utilisateur temporaire
-          dynamicFields: projectData.dynamicFields
-        };
-
-        const response = await fetch('/api/missions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(missionData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          toast({
-            title: 'Mission créée avec succès !',
-            description: 'Votre projet a été publié et est maintenant visible par les prestataires',
-          });
-
-          // Invalider le cache pour forcer le rechargement des missions
-          queryClient.invalidateQueries({ queryKey: ['/api/missions'] });
-          queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'missions'] });
-
-          // Rediriger vers la page des missions
-          setLocation('/missions');
-
-          // Appeler le callback s'il existe
           onComplete?.({
             userType,
             serviceType,
             selectedCategory,
             projectData,
-            missionId: result.id
+            missionId: result.mission.id
           });
         } else {
           const error = await response.json();
-          toast({
-            title: 'Erreur lors de la création',
-            description: error.message || 'Une erreur est survenue lors de la création de la mission',
-            variant: 'destructive',
-          });
+          throw new Error(error.error || 'Erreur lors de la création de la mission');
         }
       }
     } catch (error) {
       console.error('Erreur création mission:', error);
       toast({
-        title: 'Erreur de connexion',
-        description: 'Impossible de créer la mission. Vérifiez votre connexion.',
+        title: 'Erreur de création',
+        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
         variant: 'destructive',
       });
     } finally {

@@ -19,7 +19,21 @@ router.post('/', async (req, res) => {
   }
   const data = parsed.data;
   try {
-    const created = { id: 'demo-' + Date.now(), ...data };
+    const created = { 
+      id: 'mission-' + Date.now(), 
+      ...data,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      bids: []
+    };
+    
+    // Ajouter au stockage global
+    if (!global.missions) {
+      global.missions = [];
+    }
+    global.missions.push(created);
+    
+    console.log(`✅ Mission créée: ${created.id} - ${created.title}`);
     res.json({ ok: true, mission: created });
   } catch (e) {
     console.error('Create mission error:', e);

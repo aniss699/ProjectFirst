@@ -83,6 +83,11 @@ const missions: Mission[] = [
   }
 ];
 
+// Initialiser le stockage global
+if (!global.missions) {
+  global.missions = [...missions];
+}
+
 // Initialize global variables safely
 if (!global.projectStandardizations) {
   global.projectStandardizations = new Map();
@@ -218,7 +223,8 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
 
 // Mission endpoints
 app.get('/api/missions', (req, res) => {
-  res.json(missions);
+  const allMissions = global.missions || missions;
+  res.json(allMissions);
 });
 
 app.post('/api/missions', async (req, res) => {
@@ -243,12 +249,19 @@ app.post('/api/missions', async (req, res) => {
   };
 
   try {
-    // Ajouter à la mémoire
+    // Ajouter à la mémoire locale
     missions.push(newMission);
+    
+    // Ajouter au stockage global
+    if (!global.missions) {
+      global.missions = [];
+    }
+    global.missions.push(newMission);
 
     // Ajouter à la base de données pour le feed
     await missionSyncService.addMissionToFeed(newMission);
 
+    console.log(`✅ Mission créée: ${newMission.id} - ${newMission.title}`);
     res.status(201).json(newMission);
   } catch (error) {
     console.error('Erreur création mission:', error);
