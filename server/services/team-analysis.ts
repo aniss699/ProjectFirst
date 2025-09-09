@@ -63,6 +63,24 @@ export class TeamAnalysisService {
         skills: ['Tests automatisés', 'Selenium', 'Jest'],
         base_days: 8,
         base_budget_ratio: 0.2
+      },
+      'peintre_batiment': {
+        keywords: ['peinture', 'peindre', 'murs', 'plafond', 'sous-couche', 'rebouchage', 'ponçage'],
+        skills: ['Peinture intérieure', 'Préparation des supports', 'Finitions', 'Matériel professionnel'],
+        base_days: 8,
+        base_budget_ratio: 0.45
+      },
+      'carreleur': {
+        keywords: ['carrelage', 'carreler', 'carreaux', 'faïence', 'pose carrelage', 'joints', 'étanchéité'],
+        skills: ['Pose carrelage', 'Étanchéité', 'Joints', 'Dépose ancien revêtement'],
+        base_days: 10,
+        base_budget_ratio: 0.4
+      },
+      'coordinateur_travaux': {
+        keywords: ['coordination', 'planning travaux', 'phases', 'organisation', 'artisans'],
+        skills: ['Coordination chantier', 'Planning', 'Gestion équipes'],
+        base_days: 3,
+        base_budget_ratio: 0.15
       }
     };
 
@@ -119,6 +137,9 @@ export class TeamAnalysisService {
       'CHEF DE PROJET': 0.15,
       'DÉVELOPPEUR BACKEND': 0.35,
       'TESTEUR QA': 0.2,
+      'PEINTRE BATIMENT': 0.45,
+      'CARRELEUR': 0.4,
+      'COORDINATEUR TRAVAUX': 0.15,
       'Développeur général': 0.5
     };
     return ratios[profession] || 0.3;
