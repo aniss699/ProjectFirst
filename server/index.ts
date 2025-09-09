@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 validateEnvironment();
 
 const app = express();
-const port = parseInt(process.env.PORT || '3000', 10);
+const port = parseInt(process.env.PORT || '5000', 10);
 
 // Initialize services with Cloud SQL support - Force production DB for preview
 const isPreviewMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'production';
