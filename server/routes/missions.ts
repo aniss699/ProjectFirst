@@ -95,7 +95,21 @@ router.post('/', async (req, res) => {
       try {
         // Use the imported MissionSyncService as an instance
         const missionSync = new MissionSyncService(process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal');
-        await missionSync.addMissionToFeed(insertedMission);
+        // Convert database mission to Mission type
+        const missionForFeed = {
+          id: insertedMission.id.toString(),
+          title: insertedMission.title,
+          description: insertedMission.description,
+          category: insertedMission.category || 'general',
+          budget: insertedMission.budget_min?.toString() || '0',
+          location: insertedMission.location || 'Remote',
+          status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
+          clientId: insertedMission.client_id?.toString() || '1',
+          clientName: 'Client',
+          createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
+          bids: []
+        };
+        await missionSync.addMissionToFeed(missionForFeed);
         console.log('✅ Mission synchronisée avec le feed');
       } catch (syncError) {
         console.error('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
