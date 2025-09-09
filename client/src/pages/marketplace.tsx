@@ -31,9 +31,22 @@ export default function Marketplace() {
   const { data: missions = [], isLoading, error } = useQuery<MissionWithBids[]>({
     queryKey: ['/api/missions'],
     refetchInterval: 30000, // Actualiser toutes les 30 secondes
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    onError: (err) => {
+      console.error('❌ Erreur chargement missions:', err);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Missions chargées avec succès:', data?.length || 0);
+    }
   });
 
-  console.log('Marketplace - Missions chargées:', missions.length);
+  console.log('🏪 Marketplace - État actuel:', { 
+    missionsCount: missions.length, 
+    isLoading, 
+    hasError: !!error,
+    errorMessage: error?.message 
+  });
 
   const filteredAndSortedMissions = missions
     .filter((mission) => {
@@ -227,7 +240,18 @@ export default function Marketplace() {
             <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
               <div className="text-red-500 mb-4">❌</div>
               <p className="text-red-500 text-lg">Erreur de chargement</p>
-              <p className="text-gray-400 text-sm mt-2">Impossible de charger les missions</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Impossible de charger les missions. 
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="block mt-1 text-xs">Debug: {error?.message}</span>
+                )}
+              </p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Recharger la page
+              </button>
             </div>
           )}
 

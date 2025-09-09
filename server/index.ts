@@ -199,6 +199,29 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint pour diagnostique
+app.get('/api/debug/missions', (req, res) => {
+  try {
+    const localMissions = missions || [];
+    const globalMissions = global.missions || [];
+    
+    res.json({
+      debug_info: {
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV,
+        local_missions_count: localMissions.length,
+        global_missions_count: globalMissions.length,
+        memory_usage: process.memoryUsage(),
+      },
+      local_missions: localMissions.map(m => ({ id: m.id, title: m.title, status: m.status })),
+      global_missions: globalMissions.map(m => ({ id: m.id, title: m.title, status: m.status })),
+      all_missions: globalMissions.length > 0 ? globalMissions : localMissions
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Debug error', details: error.message });
+  }
+});
+
 app.get('/healthz', (req, res) => {
   res.status(200).json({ 
     status: 'healthy',
@@ -221,25 +244,41 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
   });
 });
 
-// Mission endpoints
+// Mission endpoints - Rediriger vers la route dédiée pour consistance
 app.get('/api/missions', (req, res) => {
-  const allMissions = global.missions || missions;
-  res.json(allMissions);
+  try {
+    // Utiliser le stockage global comme source unique de vérité
+    const allMissions = global.missions || missions;
+    const openMissions = allMissions.filter(mission => 
+      mission.status === 'open' || !mission.status
+    );
+    
+    console.log(`📋 GET /api/missions - ${openMissions.length} missions ouvertes sur ${allMissions.length} totales`);
+    
+    // Retourner directement le tableau pour compatibilité avec react-query
+    res.json(openMissions);
+  } catch (error) {
+    console.error('❌ Erreur récupération missions:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 app.post('/api/missions', async (req, res) => {
+  console.log('📥 Données reçues pour création mission:', req.body);
+  
   const { title, description, category, budget, location, clientId, clientName } = req.body;
 
   if (!title || !description || !category || !budget || !clientId || !clientName) {
+    console.error('❌ Champs requis manquants:', { title, description, category, budget, clientId, clientName });
     return res.status(400).json({ error: 'Champs requis manquants' });
   }
 
   const newMission: Mission = {
-    id: `mission_${Date.now()}`,
+    id: `mission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     title,
     description,
     category,
-    budget,
+    budget: String(budget),
     location: location || 'Non spécifié',
     clientId,
     clientName,
@@ -249,22 +288,30 @@ app.post('/api/missions', async (req, res) => {
   };
 
   try {
-    // Ajouter à la mémoire locale
-    missions.push(newMission);
-
-    // Ajouter au stockage global
+    // Initialiser le stockage global si nécessaire
     if (!global.missions) {
-      global.missions = [];
+      global.missions = [...missions]; // Copier les missions existantes
     }
+    
+    // Ajouter uniquement au stockage global (source unique de vérité)
     global.missions.push(newMission);
 
-    // Ajouter à la base de données pour le feed
-    await missionSyncService.addMissionToFeed(newMission);
+    // Synchroniser avec le stockage local pour compatibilité
+    missions.push(newMission);
 
-    console.log(`✅ Mission créée: ${newMission.id} - ${newMission.title}`);
-    res.status(201).json(newMission);
+    // Ajouter à la base de données pour le feed (non bloquant)
+    try {
+      await missionSyncService.addMissionToFeed(newMission);
+    } catch (feedError) {
+      console.warn('⚠️ Erreur sync feed (non critique):', feedError);
+    }
+
+    console.log(`✅ Mission créée avec succès: ${newMission.id} - ${newMission.title}`);
+    console.log(`📊 Total missions: ${global.missions.length}`);
+    
+    res.status(201).json({ ok: true, mission: newMission });
   } catch (error) {
-    console.error('Erreur création mission:', error);
+    console.error('❌ Erreur création mission:', error);
     res.status(500).json({ error: 'Erreur lors de la création de la mission' });
   }
 });
