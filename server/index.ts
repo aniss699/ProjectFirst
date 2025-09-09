@@ -19,7 +19,7 @@ const port = parseInt(process.env.PORT || '5000', 10);
 // Initialize services with Cloud SQL support - Force production DB for preview
 const isPreviewMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'production';
 const databaseUrl = isPreviewMode 
-  ? (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING)
+  ? (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || '')
   : (process.env.DATABASE_URL || process.env.CLOUD_SQL_CONNECTION_STRING || 'postgresql://localhost:5432/swideal');
 
 // Cloud SQL connection string format: postgresql://user:password@/database?host=/cloudsql/project:region:instance
@@ -60,34 +60,15 @@ async function ensureDemoAccounts() {
       console.log('✅ Comptes démo déjà présents');
     }
   } catch (error) {
-    console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', errorMessage);
   }
 }
 
 // Exécuter la vérification au démarrage (non bloquant)
 ensureDemoAccounts();
 
-// Stockage temporaire des missions
-const missions: Mission[] = [
-  {
-    id: "mission1",
-    title: "Développement d'une application mobile de e-commerce",
-    description: "Je recherche un développeur expérimenté pour créer une application mobile complète de vente en ligne avec système de paiement intégré.",
-    category: "developpement",
-    budget: "5000",
-    location: "Paris, France",
-    clientId: "client1",
-    clientName: "Marie Dubois",
-    status: "open",
-    createdAt: new Date("2024-01-15").toISOString(),
-    bids: []
-  }
-];
-
-// Initialiser le stockage global
-if (!global.missions) {
-  global.missions = [...missions];
-}
+// Remove in-memory missions storage - using database only
 
 // Initialize global variables safely
 if (!global.projectStandardizations) {
@@ -200,26 +181,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Debug endpoint pour diagnostique
-app.get('/api/debug/missions', (req, res) => {
+// Debug endpoint pour diagnostique - now uses database
+app.get('/api/debug/missions', async (req, res) => {
   try {
-    const localMissions = missions || [];
-    const globalMissions = global.missions || [];
+    const { db } = await import('./database.js');
+    const { missions } = await import('../shared/schema.js');
+    const allMissions = await db.select().from(missions);
     
     res.json({
       debug_info: {
         timestamp: new Date().toISOString(),
         env: process.env.NODE_ENV,
-        local_missions_count: localMissions.length,
-        global_missions_count: globalMissions.length,
+        database_missions_count: allMissions.length,
         memory_usage: process.memoryUsage(),
       },
-      local_missions: localMissions.map(m => ({ id: m.id, title: m.title, status: m.status })),
-      global_missions: globalMissions.map(m => ({ id: m.id, title: m.title, status: m.status })),
-      all_missions: globalMissions.length > 0 ? globalMissions : localMissions
+      database_missions: allMissions.map(m => ({ id: m.id, title: m.title, status: m.status }))
     });
   } catch (error) {
-    res.status(500).json({ error: 'Debug error', details: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: 'Debug error', details: errorMessage });
   }
 });
 
@@ -245,88 +225,11 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
   });
 });
 
-// Mission endpoints - Rediriger vers la route dédiée pour consistance
-app.get('/api/missions', (req, res) => {
-  try {
-    // Utiliser le stockage global comme source unique de vérité
-    const allMissions = global.missions || missions;
-    const openMissions = allMissions.filter(mission => 
-      mission.status === 'open' || !mission.status
-    );
-    
-    console.log(`📋 GET /api/missions - ${openMissions.length} missions ouvertes sur ${allMissions.length} totales`);
-    
-    // Retourner directement le tableau pour compatibilité avec react-query
-    res.json(openMissions);
-  } catch (error) {
-    console.error('❌ Erreur récupération missions:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
+// Missions endpoints now handled by server/routes/missions.ts (database-only)
 
-app.post('/api/missions', async (req, res) => {
-  console.log('📥 Données reçues pour création mission:', req.body);
-  
-  const { title, description, category, budget, location, clientId, clientName } = req.body;
+// Mission POST endpoint now handled by server/routes/missions.ts (database-only)
 
-  if (!title || !description || !category || !budget || !clientId || !clientName) {
-    console.error('❌ Champs requis manquants:', { title, description, category, budget, clientId, clientName });
-    return res.status(400).json({ error: 'Champs requis manquants' });
-  }
-
-  const newMission: Mission = {
-    id: `mission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    title,
-    description,
-    category,
-    budget: String(budget),
-    location: location || 'Non spécifié',
-    clientId,
-    clientName,
-    status: 'open',
-    createdAt: new Date().toISOString(),
-    bids: []
-  };
-
-  try {
-    // Initialiser le stockage global si nécessaire
-    if (!global.missions) {
-      global.missions = [...missions]; // Copier les missions existantes
-    }
-    
-    // Ajouter uniquement au stockage global (source unique de vérité)
-    global.missions.push(newMission);
-
-    // Synchroniser avec le stockage local pour compatibilité
-    missions.push(newMission);
-
-    // Ajouter à la base de données pour le feed (non bloquant)
-    try {
-      await missionSyncService.addMissionToFeed(newMission);
-    } catch (feedError) {
-      console.warn('⚠️ Erreur sync feed (non critique):', feedError);
-    }
-
-    console.log(`✅ Mission créée avec succès: ${newMission.id} - ${newMission.title}`);
-    console.log(`📊 Total missions: ${global.missions.length}`);
-    
-    res.status(201).json({ ok: true, mission: newMission });
-  } catch (error) {
-    console.error('❌ Erreur création mission:', error);
-    res.status(500).json({ error: 'Erreur lors de la création de la mission' });
-  }
-});
-
-app.get('/api/missions/:id', (req, res) => {
-  const { id } = req.params;
-  const mission = missions.find(m => m.id === id);
-
-  if (!mission) {
-    return res.status(404).json({ error: 'Mission non trouvée' });
-  }
-
-  res.json(mission);
-});
+// Mission GET by ID endpoint now handled by server/routes/missions.ts (database-only)
 
 // Start server
 const server = createServer(app);
@@ -358,8 +261,7 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🎯 AI Provider: Gemini API Only`);
 });
 
-// Launch mission synchronization
-missionSyncService.syncMissionsToFeed(missions).catch(console.error);
+// Mission sync now handled by database routes
 
 console.log('✅ Advanced AI routes registered - Gemini API Only');
 
