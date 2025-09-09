@@ -42,13 +42,9 @@ console.log('🔗 Database configuration:', {
 // Vérifier et créer les comptes démo au démarrage
 async function ensureDemoAccounts() {
   try {
-    const { Pool } = await import('pg');
-    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const { db } = await import('./database.js');
     const { users } = await import('../shared/schema.js');
     const { eq } = await import('drizzle-orm');
-
-    const pool = new Pool({ connectionString: databaseUrl });
-    const db = drizzle(pool);
 
     // Vérifier si les comptes démo existent
     const existingAccounts = await db.select().from(users).where(
@@ -63,8 +59,6 @@ async function ensureDemoAccounts() {
     } else {
       console.log('✅ Comptes démo déjà présents');
     }
-
-    await pool.end();
   } catch (error) {
     console.warn('⚠️ Impossible de vérifier/créer les comptes démo:', error.message);
   }
