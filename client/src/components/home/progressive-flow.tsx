@@ -792,7 +792,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Euro className="w-4 h-4 inline mr-1" />
-                {serviceType === 'mise-en-relation' ? 'Budget consultation' : 'Budget indicatif'}
+                {serviceType === 'mise-en-relation' ? 'Budget consultation (optionnel)' : 'Budget indicatif (optionnel)'}
               </label>
               <Input
                 placeholder={serviceType === 'mise-en-relation' ? "Ex: 200 - 500 €/heure" : "Ex: 5 000 - 10 000 €"}
@@ -804,7 +804,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Délai souhaité
+                Délai souhaité (optionnel)
               </label>
               <Input
                 placeholder="Ex: 2-3 mois"
@@ -817,7 +817,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Exigences spécifiques
+                Exigences spécifiques (optionnel)
               </label>
               <TextSuggestionButton
                 currentText={projectData.requirements}
@@ -908,7 +908,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
             <Button 
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
-              disabled={!projectData.title || !projectData.description}
+              disabled={!projectData.title.trim() || !projectData.description.trim()}
               onClick={() => setCurrentStep(4)}
             >
               <ChevronRight className="w-4 h-4 mr-2" />
@@ -1041,8 +1041,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           </Button>
           <Button 
             onClick={createMission}
-            disabled={isCreating || !projectData.title || !projectData.description || 
-              (projectData.needsLocation && (!projectData.location.lat || !projectData.location.lng))}
+            disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
             className="min-w-[200px]"
           >
             {isCreating ? (

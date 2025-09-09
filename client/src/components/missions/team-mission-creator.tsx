@@ -41,10 +41,10 @@ export function TeamMissionCreator({ onComplete, onCancel }: TeamMissionCreatorP
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAnalyzeTeam = async () => {
-    if (!formData.description || formData.description.length < 20) {
+    if (!formData.title.trim() || !formData.description.trim()) {
       toast({
-        title: "Description insuffisante",
-        description: "Veuillez fournir une description plus détaillée pour l'analyse d'équipe.",
+        title: "Champs obligatoires manquants",
+        description: "Veuillez remplir au moins le titre et la description.",
         variant: "destructive"
       });
       return;
@@ -226,7 +226,7 @@ export function TeamMissionCreator({ onComplete, onCancel }: TeamMissionCreatorP
           </Button>
           <Button 
             onClick={() => isTeamMode ? setStep(2) : onComplete(formData)}
-            disabled={!formData.title || !formData.description}
+            disabled={!formData.title.trim() || !formData.description.trim()}
           >
             {isTeamMode ? 'Analyser l\'équipe' : 'Créer le projet'}
           </Button>
