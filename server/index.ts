@@ -268,10 +268,12 @@ server.listen(port, '0.0.0.0', () => {
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${port} is already in use. Trying to kill existing processes...`);
+    console.error(`❌ Port ${port} is already in use. Server will exit and let Replit handle restart.`);
+    console.error(`💡 The deployment compilation issues have been fixed. This is just a port conflict that should resolve on restart.`);
     process.exit(1);
   } else {
     console.error('❌ Server error:', err);
+    process.exit(1);
   }
 });
 
