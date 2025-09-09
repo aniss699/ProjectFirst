@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
       status: missionData.status || 'published',
       created_at: new Date(),
       updated_at: new Date(),
-      client_id: missionData.userId ? parseInt(missionData.userId) : null,
+      user_id: missionData.userId ? parseInt(missionData.userId) : null,
       // Map additional fields properly
       budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
       budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
           budget: insertedMission.budget_min?.toString() || '0',
           location: insertedMission.location || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
-          clientId: insertedMission.client_id?.toString() || '1',
+          clientId: insertedMission.user_id?.toString() || '1',
           clientName: 'Client',
           createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
           bids: []
@@ -254,7 +254,7 @@ router.get('/users/:userId/missions', async (req, res) => {
   try {
     const userId = req.params.userId;
     console.log('👤 Fetching missions for user:', userId);
-    console.log('🔗 Mapping: userId =', userId, '-> client_id filter:', userId);
+    console.log('🔗 Mapping: userId =', userId, '-> user_id filter:', userId);
 
     if (!userId || userId === 'undefined' || userId === 'null') {
       console.error('❌ Invalid user ID:', userId);
@@ -267,17 +267,17 @@ router.get('/users/:userId/missions', async (req, res) => {
       return res.status(400).json({ error: 'User ID doit être un nombre' });
     }
 
-    console.log('🔍 Querying database: SELECT * FROM missions WHERE client_id =', userIdInt);
+    console.log('🔍 Querying database: SELECT * FROM missions WHERE user_id =', userIdInt);
     
     const userMissions = await db
       .select()
       .from(missions)
-      .where(eq(missions.client_id, userIdInt))
+      .where(eq(missions.user_id, userIdInt))
       .orderBy(desc(missions.created_at));
     
-    console.log('📊 Query result: Found', userMissions.length, 'missions with client_id =', userIdInt);
+    console.log('📊 Query result: Found', userMissions.length, 'missions with user_id =', userIdInt);
     userMissions.forEach(mission => {
-      console.log('   📋 Mission:', mission.id, '| client_id:', mission.client_id, '| title:', mission.title);
+      console.log('   📋 Mission:', mission.id, '| user_id:', mission.user_id, '| title:', mission.title);
     });
 
     // Transform missions to match frontend interface
@@ -290,7 +290,7 @@ router.get('/users/:userId/missions', async (req, res) => {
       location: mission.location,
       status: mission.status,
       urgency: mission.urgency,
-      userId: mission.client_id?.toString(),
+      userId: mission.user_id?.toString(),
       userName: 'Moi', // Since it's the user's own missions
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       updatedAt: mission.updated_at?.toISOString(),

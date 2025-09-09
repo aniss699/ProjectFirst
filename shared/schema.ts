@@ -376,7 +376,7 @@ export const missions = pgTable('missions', {
   budget_min: integer('budget_min'),
   budget_max: integer('budget_max'),
   location: text('location'),
-  client_id: integer('client_id').references(() => users.id),
+  user_id: integer('user_id').references(() => users.id),
   provider_id: integer('provider_id').references(() => users.id),
   status: text('status').default('published'),
   created_at: timestamp('created_at').defaultNow(),
