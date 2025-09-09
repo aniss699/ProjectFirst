@@ -138,11 +138,10 @@ export default function Navbar() {
             {location !== ROUTES.HOME && (
               <Sheet open={showQuickCreator} onOpenChange={setShowQuickCreator}>
                 <SheetTrigger asChild>
-                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                  <Button size="sm" className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
                     <Plus className="w-4 h-4 mr-1 xl:mr-2" />
                     <span className="hidden xl:inline">Nouvelle mission</span>
                     <span className="hidden lg:inline xl:hidden">Mission</span>
-                    <span className="lg:hidden text-xs">Créer</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-[400px] sm:w-[500px]">
