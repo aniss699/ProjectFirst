@@ -1737,7 +1737,7 @@ function serveStatic(app2) {
 // server/services/mission-sync.ts
 init_schema();
 import { Pool } from "pg";
-import { drizzle } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 var MissionSyncService = class {
   db;
@@ -2208,7 +2208,21 @@ router2.post("/", async (req, res) => {
     }
     setImmediate(async () => {
       try {
-        await MissionSyncService.addMissionToFeed(insertedMission.id);
+        const missionSync = new MissionSyncService(process.env.DATABASE_URL || "postgresql://localhost:5432/swideal");
+        const missionForFeed = {
+          id: insertedMission.id.toString(),
+          title: insertedMission.title,
+          description: insertedMission.description,
+          category: insertedMission.category || "general",
+          budget: insertedMission.budget_min?.toString() || "0",
+          location: insertedMission.location || "Remote",
+          status: insertedMission.status || "open",
+          clientId: insertedMission.client_id?.toString() || "1",
+          clientName: "Client",
+          createdAt: insertedMission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+          bids: []
+        };
+        await missionSync.addMissionToFeed(missionForFeed);
         console.log("\u2705 Mission synchronis\xE9e avec le feed");
       } catch (syncError) {
         console.error("\u26A0\uFE0F Erreur synchronisation feed (non-bloquant):", syncError);
@@ -2431,7 +2445,7 @@ router3.get("/ai-analysis-demo", async (req, res) => {
         const avgBudget = budgetRange.length > 1 ? (parseInt(budgetRange[0]) + parseInt(budgetRange[1])) / 2 : parseInt(budgetRange[0]) || 0;
         return sum + avgBudget;
       }, 0) / recentProjects.length || 0,
-      popularCategories: [...new Set(recentProjects.map((p) => p.category))],
+      popularCategories: Array.from(new Set(recentProjects.map((p) => p.category))),
       averageBidAmount: recentBids.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0) / recentBids.length || 0,
       successRate: 0.87,
       timeToMatch: 2.3,
@@ -4993,13 +5007,13 @@ console.log("\u{1F517} Database configuration:", {
   NODE_ENV: process.env.NODE_ENV,
   PLATFORM: "Replit"
 });
-setTimeout(async () => {
+setImmediate(async () => {
   try {
     console.log("\u2705 Comptes d\xE9mo - v\xE9rification diff\xE9r\xE9e");
   } catch (error) {
     console.warn("\u26A0\uFE0F Comptes d\xE9mo - v\xE9rification \xE9chou\xE9e");
   }
-}, 5e3);
+});
 if (!global.projectStandardizations) {
   global.projectStandardizations = /* @__PURE__ */ new Map();
 }
@@ -5105,23 +5119,6 @@ app.get("/api/ai/gemini-diagnostic", (req, res) => {
   });
 });
 var server = createServer(app);
-var isProductionLike = process.env.NODE_ENV === "production" || process.env.PREVIEW_MODE === "true";
-if (isProductionLike) {
-  console.log("\u{1F527} Forcing production mode to bypass Vite host restrictions");
-  serveStatic(app);
-  console.log("\u2705 Production mode: serving static files");
-} else {
-  console.log("\u{1F6E0}\uFE0F Development mode: using Vite dev server");
-  setupVite(app, server).catch(console.error);
-}
-server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(`\u274C Port ${port} is already in use. Trying to kill existing processes...`);
-    process.exit(1);
-  } else {
-    console.error("\u274C Server error:", err);
-  }
-});
 server.listen(port, "0.0.0.0", () => {
   console.log(`\u{1F680} SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`\u{1F4F1} Frontend: http://0.0.0.0:${port}`);
@@ -5129,6 +5126,25 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`\u{1F3AF} AI Provider: Gemini API Only`);
   console.log(`\u{1F50D} Process ID: ${process.pid}`);
   console.log(`\u{1F50D} Node Environment: ${process.env.NODE_ENV || "development"}`);
+  const isProductionLike = process.env.NODE_ENV === "production" || process.env.PREVIEW_MODE === "true";
+  if (isProductionLike) {
+    console.log("\u{1F527} Forcing production mode to bypass Vite host restrictions");
+    serveStatic(app);
+    console.log("\u2705 Production mode: serving static files");
+  } else {
+    console.log("\u{1F6E0}\uFE0F Development mode: setting up Vite dev server...");
+    setupVite(app, server).catch((error) => {
+      console.error("\u26A0\uFE0F Vite setup failed (non-critical):", error);
+    });
+  }
+});
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`\u274C Port ${port} is already in use. Trying to kill existing processes...`);
+    process.exit(1);
+  } else {
+    console.error("\u274C Server error:", err);
+  }
 });
 console.log("\u2705 Advanced AI routes registered - Gemini API Only");
 process.on("SIGINT", () => {
