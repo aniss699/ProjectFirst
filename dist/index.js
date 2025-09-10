@@ -6331,6 +6331,7 @@ process.on("unhandledRejection", (reason, promise) => {
 app.use((error, req, res, next) => {
   const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
   const requestId = req.headers["x-request-id"] || `req_${Date.now()}`;
+  const isDebugMode = process.env.PREVIEW_MODE === "true" || process.env.NODE_ENV === "development";
   let statusCode = 500;
   let errorType = "server_error";
   if (error.name === "ValidationError") {
@@ -6372,10 +6373,12 @@ app.use((error, req, res, next) => {
     res.status(statusCode).json({
       ok: false,
       error: statusCode === 500 ? "Internal server error" : error.message,
-      details: process.env.NODE_ENV === "development" ? error.message : "An error occurred",
+      details: isDebugMode ? error.message : "An error occurred",
+      stack: isDebugMode ? error.stack : void 0,
       error_type: errorType,
       timestamp: timestamp2,
-      request_id: requestId
+      request_id: requestId,
+      debug_mode: isDebugMode
     });
   }
 });
