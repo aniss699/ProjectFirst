@@ -243,7 +243,7 @@ var init_schema = __esm({
       budget_min: integer("budget_min"),
       budget_max: integer("budget_max"),
       location: text("location"),
-      client_id: integer("client_id").references(() => users.id),
+      user_id: integer("user_id").references(() => users.id),
       provider_id: integer("provider_id").references(() => users.id),
       status: text("status").default("published"),
       created_at: timestamp("created_at").defaultNow(),
@@ -506,7 +506,7 @@ var init_geminiAdapter = __esm({
 // apps/api/src/ai/learning-engine.ts
 import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
 import { Pool as Pool4 } from "pg";
-import { desc as desc2, eq as eq3, and, gte } from "drizzle-orm";
+import { desc as desc3, eq as eq4, and, gte } from "drizzle-orm";
 var pool3, db3, AILearningEngine, aiLearningEngine;
 var init_learning_engine = __esm({
   "apps/api/src/ai/learning-engine.ts"() {
@@ -524,10 +524,10 @@ var init_learning_engine = __esm({
         try {
           console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
           const recentInteractions = await db3.select().from(aiEvents).where(and(
-            eq3(aiEvents.provider, "gemini-api"),
+            eq4(aiEvents.provider, "gemini-api"),
             gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
             // 30 jours
-          )).orderBy(desc2(aiEvents.created_at)).limit(limit);
+          )).orderBy(desc3(aiEvents.created_at)).limit(limit);
           console.log(`\u{1F4CA} Analyse de ${recentInteractions.length} interactions Gemini`);
           for (const interaction of recentInteractions) {
             await this.processInteraction(interaction);
@@ -1882,6 +1882,14 @@ router.post("/", async (req, res) => {
         length: missionData.description.length
       });
     }
+    if (!missionData.userId) {
+      console.error("\u274C Validation failed: Missing userId");
+      return res.status(401).json({
+        error: "Utilisateur non authentifi\xE9",
+        field: "userId",
+        received: missionData.userId
+      });
+    }
     const missionToInsert = {
       title: missionData.title,
       description: missionData.description,
@@ -1892,7 +1900,7 @@ router.post("/", async (req, res) => {
       status: missionData.status || "published",
       created_at: /* @__PURE__ */ new Date(),
       updated_at: /* @__PURE__ */ new Date(),
-      client_id: missionData.client_id || 1,
+      user_id: missionData.userId ? parseInt(missionData.userId) : null,
       // Map additional fields properly
       budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
       budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
@@ -1929,7 +1937,7 @@ router.post("/", async (req, res) => {
           budget: insertedMission.budget_min?.toString() || "0",
           location: insertedMission.location || "Remote",
           status: insertedMission.status || "open",
-          clientId: insertedMission.client_id?.toString() || "1",
+          clientId: insertedMission.user_id?.toString() || "1",
           clientName: "Client",
           createdAt: insertedMission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
           bids: []
@@ -1971,6 +1979,60 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch missions" });
   }
 });
+router.get("/debug", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Mission debug endpoint called");
+    const testQuery = await db.select().from(missions).limit(1);
+    const dbInfo = {
+      status: "connected",
+      sampleMissions: testQuery.length,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
+    };
+    console.log("\u{1F50D} Database info:", dbInfo);
+    res.json(dbInfo);
+  } catch (error) {
+    console.error("\u274C Debug endpoint error:", error);
+    res.status(500).json({
+      error: "Debug failed",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+router.get("/verify-sync", async (req, res) => {
+  try {
+    console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
+    const recentMissions = await db.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
+    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const feedItems = await db.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map((m) => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map((f) => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
+    };
+    console.log("\u{1F50D} Sync status:", syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error("\u274C Sync verification error:", error);
+    res.status(500).json({
+      error: "Sync verification failed",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
 router.get("/:id", async (req, res) => {
   let missionId = null;
   try {
@@ -2010,32 +2072,11 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-router.get("/debug", async (req, res) => {
-  try {
-    console.log("\u{1F50D} Mission debug endpoint called");
-    const testQuery = await db.select().from(missions).limit(1);
-    const dbInfo = {
-      status: "connected",
-      sampleMissions: testQuery.length,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      environment: process.env.NODE_ENV || "development",
-      databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
-    };
-    console.log("\u{1F50D} Database info:", dbInfo);
-    res.json(dbInfo);
-  } catch (error) {
-    console.error("\u274C Debug endpoint error:", error);
-    res.status(500).json({
-      error: "Debug failed",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
 router.get("/users/:userId/missions", async (req, res) => {
   try {
     const userId = req.params.userId;
     console.log("\u{1F464} Fetching missions for user:", userId);
-    console.log("\u{1F517} Mapping: userId =", userId, "-> client_id filter:", userId);
+    console.log("\u{1F517} Mapping: userId =", userId, "-> user_id filter:", userId);
     if (!userId || userId === "undefined" || userId === "null") {
       console.error("\u274C Invalid user ID:", userId);
       return res.status(400).json({ error: "User ID invalide" });
@@ -2045,11 +2086,11 @@ router.get("/users/:userId/missions", async (req, res) => {
       console.error("\u274C User ID is not a valid number:", userId);
       return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
     }
-    console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE client_id =", userIdInt);
-    const userMissions = await db.select().from(missions).where(eq(missions.client_id, userIdInt)).orderBy(desc(missions.created_at));
-    console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with client_id =", userIdInt);
+    console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
+    const userMissions = await db.select().from(missions).where(eq(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+    console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
     userMissions.forEach((mission) => {
-      console.log("   \u{1F4CB} Mission:", mission.id, "| client_id:", mission.client_id, "| title:", mission.title);
+      console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
     });
     const missionsWithBids = userMissions.map((mission) => ({
       id: mission.id,
@@ -2060,8 +2101,8 @@ router.get("/users/:userId/missions", async (req, res) => {
       location: mission.location,
       status: mission.status,
       urgency: mission.urgency,
-      clientId: mission.client_id?.toString(),
-      clientName: "Moi",
+      userId: mission.user_id?.toString(),
+      userName: "Moi",
       // Since it's the user's own missions
       createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
       updatedAt: mission.updated_at?.toISOString(),
@@ -2204,51 +2245,140 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
-router.get("/verify-sync", async (req, res) => {
+var missions_default = router;
+
+// server/routes/projects.ts
+import { Router as Router2 } from "express";
+import { eq as eq2, desc as desc2 } from "drizzle-orm";
+init_schema();
+var router2 = Router2();
+router2.get("/users/:userId/projects", async (req, res) => {
   try {
-    console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
-    const recentMissions = await db.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
-    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const feedItems = await db.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
-    const syncStatus = {
-      totalMissions: recentMissions.length,
-      totalFeedItems: feedItems.length,
-      recentMissions: recentMissions.map((m) => ({
-        id: m.id,
-        title: m.title,
-        status: m.status,
-        created_at: m.created_at
-      })),
-      feedItems: feedItems.map((f) => ({
-        id: f.id,
-        title: f.title,
-        status: f.status,
-        created_at: f.created_at
-      })),
-      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
-    };
-    console.log("\u{1F50D} Sync status:", syncStatus);
-    res.json(syncStatus);
+    const userId = req.params.userId;
+    console.log("\u{1F464} Fetching projects for user:", userId);
+    if (!userId || userId === "undefined" || userId === "null") {
+      console.error("\u274C Invalid user ID:", userId);
+      return res.status(400).json({ error: "User ID invalide" });
+    }
+    const userIdInt = parseInt(userId, 10);
+    if (isNaN(userIdInt)) {
+      console.error("\u274C User ID is not a valid number:", userId);
+      return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
+    }
+    console.log("\u{1F50D} Querying database: SELECT * FROM projects WHERE client_id =", userIdInt);
+    const userProjects = await db.select().from(projects).where(eq2(projects.client_id, userIdInt)).orderBy(desc2(projects.created_at));
+    console.log("\u{1F4CA} Query result: Found", userProjects.length, "projects with client_id =", userIdInt);
+    userProjects.forEach((project) => {
+      console.log("   \u{1F4CB} Project:", project.id, "| client_id:", project.client_id, "| title:", project.title);
+    });
+    console.log(`\u{1F464} Found ${userProjects.length} projects for user ${userId}`);
+    res.json(userProjects);
   } catch (error) {
-    console.error("\u274C Sync verification error:", error);
+    console.error("\u274C Error fetching user projects:", error);
     res.status(500).json({
-      error: "Sync verification failed",
+      error: "Failed to fetch user projects",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
-var missions_default = router;
+router2.get("/:id", async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration project ID:", projectId);
+    if (!projectId || projectId === "undefined" || projectId === "null") {
+      console.error("\u274C API: Project ID invalide:", projectId);
+      return res.status(400).json({ error: "Project ID invalide" });
+    }
+    const projectIdInt = parseInt(projectId, 10);
+    if (isNaN(projectIdInt)) {
+      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
+      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    }
+    const project = await db.select().from(projects).where(eq2(projects.id, projectIdInt)).limit(1);
+    if (project.length === 0) {
+      console.error("\u274C API: Project non trouv\xE9:", projectId);
+      return res.status(404).json({ error: "Project non trouv\xE9" });
+    }
+    console.log("\u2705 API: Project trouv\xE9:", project[0].title);
+    res.json(project[0]);
+  } catch (error) {
+    console.error("\u274C API: Erreur r\xE9cup\xE9ration project:", error);
+    res.status(500).json({
+      error: "Erreur interne du serveur",
+      details: error instanceof Error ? error.message : "Erreur inconnue"
+    });
+  }
+});
+router2.get("/:id/bids", async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration bids pour project ID:", projectId);
+    if (!projectId || projectId === "undefined" || projectId === "null") {
+      console.error("\u274C API: Project ID invalide:", projectId);
+      return res.status(400).json({ error: "Project ID invalide" });
+    }
+    const projectIdInt = parseInt(projectId, 10);
+    if (isNaN(projectIdInt)) {
+      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
+      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    }
+    const bids2 = await db.select().from(bids).where(eq2(bids.project_id, projectIdInt));
+    console.log("\u2705 API: Trouv\xE9", bids2.length, "bids pour project", projectId);
+    res.json(bids2);
+  } catch (error) {
+    console.error("\u274C API: Erreur r\xE9cup\xE9ration bids:", error);
+    res.status(500).json({
+      error: "Erreur interne du serveur",
+      details: error instanceof Error ? error.message : "Erreur inconnue"
+    });
+  }
+});
+router2.delete("/:id", async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    console.log("\u{1F5D1}\uFE0F API: Suppression project ID:", projectId);
+    if (!projectId || projectId === "undefined" || projectId === "null") {
+      console.error("\u274C API: Project ID invalide:", projectId);
+      return res.status(400).json({ error: "Project ID invalide" });
+    }
+    const projectIdInt = parseInt(projectId, 10);
+    if (isNaN(projectIdInt)) {
+      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
+      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    }
+    const existingProject = await db.select().from(projects).where(eq2(projects.id, projectIdInt)).limit(1);
+    if (existingProject.length === 0) {
+      console.error("\u274C API: Project non trouv\xE9 pour suppression:", projectId);
+      return res.status(404).json({ error: "Project non trouv\xE9" });
+    }
+    await db.delete(bids).where(eq2(bids.project_id, projectIdInt));
+    console.log("\u2705 API: Bids supprim\xE9s pour project:", projectId);
+    const deletedProject = await db.delete(projects).where(eq2(projects.id, projectIdInt)).returning();
+    if (deletedProject.length === 0) {
+      throw new Error("\xC9chec de la suppression du project");
+    }
+    console.log("\u2705 API: Project supprim\xE9 avec succ\xE8s:", projectId);
+    res.json({ message: "Project supprim\xE9 avec succ\xE8s", project: deletedProject[0] });
+  } catch (error) {
+    console.error("\u274C API: Erreur suppression project:", error);
+    res.status(500).json({
+      error: "Erreur interne du serveur",
+      details: error instanceof Error ? error.message : "Erreur inconnue"
+    });
+  }
+});
+var projects_default = router2;
 
 // server/api-routes.ts
 init_schema();
 import express2 from "express";
 import { Pool as Pool3 } from "pg";
 import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
-import { eq as eq2 } from "drizzle-orm";
+import { eq as eq3 } from "drizzle-orm";
 var pool2 = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db2 = drizzle3(pool2);
-var router2 = express2.Router();
-router2.get("/demo-providers", async (req, res) => {
+var router3 = express2.Router();
+router3.get("/demo-providers", async (req, res) => {
   try {
     const providers = await db2.select({
       id: users.id,
@@ -2259,14 +2389,14 @@ router2.get("/demo-providers", async (req, res) => {
       rating_count: users.rating_count,
       profile_data: users.profile_data,
       created_at: users.created_at
-    }).from(users).where(eq2(users.role, "PRO"));
+    }).from(users).where(eq3(users.role, "PRO"));
     res.json({ providers });
   } catch (error) {
     console.error("Erreur get demo providers:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/demo-projects", async (req, res) => {
+router3.get("/demo-projects", async (req, res) => {
   try {
     const projectsWithClients = await db2.select({
       id: projects.id,
@@ -2279,14 +2409,14 @@ router2.get("/demo-projects", async (req, res) => {
       created_at: projects.created_at,
       client_name: users.name,
       client_email: users.email
-    }).from(projects).leftJoin(users, eq2(projects.client_id, users.id));
+    }).from(projects).leftJoin(users, eq3(projects.client_id, users.id));
     res.json({ projects: projectsWithClients });
   } catch (error) {
     console.error("Erreur get demo projects:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/demo-bids", async (req, res) => {
+router3.get("/demo-bids", async (req, res) => {
   try {
     const bidsWithInfo = await db2.select({
       id: bids.id,
@@ -2301,17 +2431,17 @@ router2.get("/demo-bids", async (req, res) => {
       provider_name: users.name,
       provider_email: users.email,
       provider_profile: users.profile_data
-    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).leftJoin(users, eq2(bids.provider_id, users.id));
+    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).leftJoin(users, eq3(bids.provider_id, users.id));
     res.json({ bids: bidsWithInfo });
   } catch (error) {
     console.error("Erreur get demo bids:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/provider/:id", async (req, res) => {
+router3.get("/provider/:id", async (req, res) => {
   try {
     const providerId = parseInt(req.params.id);
-    const provider = await db2.select().from(users).where(eq2(users.id, providerId)).limit(1);
+    const provider = await db2.select().from(users).where(eq3(users.id, providerId)).limit(1);
     if (provider.length === 0) {
       return res.status(404).json({ error: "Prestataire non trouv\xE9" });
     }
@@ -2325,7 +2455,7 @@ router2.get("/provider/:id", async (req, res) => {
       created_at: bids.created_at,
       project_title: projects.title,
       project_budget: projects.budget
-    }).from(bids).leftJoin(projects, eq2(bids.project_id, projects.id)).where(eq2(bids.provider_id, providerId));
+    }).from(bids).leftJoin(projects, eq3(bids.project_id, projects.id)).where(eq3(bids.provider_id, providerId));
     res.json({
       provider: {
         id: providerData.id,
@@ -2344,7 +2474,7 @@ router2.get("/provider/:id", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/ai-analysis-demo", async (req, res) => {
+router3.get("/ai-analysis-demo", async (req, res) => {
   try {
     const recentProjects = await db2.select({
       id: projects.id,
@@ -2383,10 +2513,10 @@ router2.get("/ai-analysis-demo", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-var api_routes_default = router2;
+var api_routes_default = router3;
 
 // server/routes/ai-monitoring-routes.ts
-import { Router as Router2 } from "express";
+import { Router as Router3 } from "express";
 
 // apps/api/src/monitoring/event-logger.ts
 var EventLogger = class {
@@ -2671,8 +2801,8 @@ var EventLogger = class {
 var eventLogger = new EventLogger();
 
 // server/routes/ai-monitoring-routes.ts
-var router3 = Router2();
-router3.get("/health", async (req, res) => {
+var router4 = Router3();
+router4.get("/health", async (req, res) => {
   try {
     const modelMetrics = [
       {
@@ -2762,7 +2892,7 @@ router3.get("/health", async (req, res) => {
     });
   }
 });
-router3.get("/experiments", async (req, res) => {
+router4.get("/experiments", async (req, res) => {
   try {
     const experiments = [
       {
@@ -2817,7 +2947,7 @@ router3.get("/experiments", async (req, res) => {
     });
   }
 });
-router3.post("/events", async (req, res) => {
+router4.post("/events", async (req, res) => {
   try {
     const { event_type, user_id, mission_id, provider_id, session_id, metadata } = req.body;
     if (!event_type || !session_id) {
@@ -2889,7 +3019,7 @@ router3.post("/events", async (req, res) => {
     });
   }
 });
-router3.get("/performance-metrics", async (req, res) => {
+router4.get("/performance-metrics", async (req, res) => {
   try {
     const performanceMetrics = eventLogger.getPerformanceMetrics();
     const aggregated = {
@@ -2928,7 +3058,7 @@ router3.get("/performance-metrics", async (req, res) => {
     });
   }
 });
-router3.post("/clear-cache", async (req, res) => {
+router4.post("/clear-cache", async (req, res) => {
   try {
     const maxAgeMs = req.body.max_age_ms || 36e5;
     eventLogger.cleanupOldMetrics(maxAgeMs);
@@ -2945,7 +3075,7 @@ router3.post("/clear-cache", async (req, res) => {
     });
   }
 });
-router3.get("/business-metrics", async (req, res) => {
+router4.get("/business-metrics", async (req, res) => {
   try {
     const { period = "7d" } = req.query;
     const businessMetrics = {
@@ -3008,7 +3138,7 @@ router3.get("/business-metrics", async (req, res) => {
     });
   }
 });
-router3.get("/alerts", async (req, res) => {
+router4.get("/alerts", async (req, res) => {
   try {
     const alerts = [
       {
@@ -3057,12 +3187,12 @@ router3.get("/alerts", async (req, res) => {
     });
   }
 });
-var ai_monitoring_routes_default = router3;
+var ai_monitoring_routes_default = router4;
 
 // server/routes/ai-routes.ts
-import { Router as Router3 } from "express";
+import { Router as Router4 } from "express";
 import { z } from "zod";
-var router4 = Router3();
+var router5 = Router4();
 var priceSuggestionSchema = z.object({
   title: z.string().min(5, "Titre trop court"),
   description: z.string().min(10, "Description trop courte"),
@@ -3081,7 +3211,7 @@ var enhanceTextSchema = z.object({
   fieldType: z.enum(["title", "description", "requirements"]),
   category: z.string().optional()
 });
-router4.post("/suggest-pricing", async (req, res) => {
+router5.post("/suggest-pricing", async (req, res) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3111,7 +3241,7 @@ router4.post("/suggest-pricing", async (req, res) => {
     });
   }
 });
-router4.post("/enhance-description", async (req, res) => {
+router5.post("/enhance-description", async (req, res) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3141,7 +3271,7 @@ router4.post("/enhance-description", async (req, res) => {
     });
   }
 });
-router4.post("/analyze-quality", async (req, res) => {
+router5.post("/analyze-quality", async (req, res) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3167,7 +3297,7 @@ router4.post("/analyze-quality", async (req, res) => {
     });
   }
 });
-router4.post("/enhance-text", async (req, res) => {
+router5.post("/enhance-text", async (req, res) => {
   try {
     const { text: text2, fieldType, category } = req.body;
     if (!text2 || typeof text2 !== "string" || text2.trim().length === 0) {
@@ -3208,7 +3338,7 @@ router4.post("/enhance-text", async (req, res) => {
     });
   }
 });
-router4.get("/health", async (req, res) => {
+router5.get("/health", async (req, res) => {
   try {
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const geminiConfigured = !!geminiApiKey;
@@ -3239,7 +3369,7 @@ router4.get("/health", async (req, res) => {
     });
   }
 });
-router4.get("/test-config", async (req, res) => {
+router5.get("/test-config", async (req, res) => {
   try {
     const geminiAdapter = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
     const geminiCall2 = geminiAdapter.geminiCall;
@@ -3264,7 +3394,7 @@ router4.get("/test-config", async (req, res) => {
     });
   }
 });
-router4.post("/analyze", async (req, res) => {
+router5.post("/analyze", async (req, res) => {
   const { title = "", description = "", category = "autre" } = req.body ?? {};
   if (typeof description !== "string" || description.trim().length < 5) {
     return res.status(400).json({ error: "Description trop courte" });
@@ -3280,12 +3410,12 @@ router4.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur analyse IA" });
   }
 });
-var ai_routes_default = router4;
+var ai_routes_default = router5;
 
 // server/routes/ai-suggestions-routes.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 import { z as z2 } from "zod";
-var router5 = Router4();
+var router6 = Router5();
 var assistantSuggestionsSchema = z2.object({
   page: z2.string(),
   userContext: z2.object({
@@ -3405,7 +3535,7 @@ async function generatePageSuggestions(page, userContext = {}) {
   }
   return suggestions;
 }
-router5.post("/assistant-suggestions", async (req, res) => {
+router6.post("/assistant-suggestions", async (req, res) => {
   try {
     const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
     const suggestions = await generatePageSuggestions(page, userContext);
@@ -3439,12 +3569,12 @@ router5.post("/assistant-suggestions", async (req, res) => {
     });
   }
 });
-var ai_suggestions_routes_default = router5;
+var ai_suggestions_routes_default = router6;
 
 // server/routes/ai-missions-routes.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 import { z as z3 } from "zod";
-var router6 = Router5();
+var router7 = Router6();
 var missionSuggestionSchema = z3.object({
   title: z3.string().min(3, "Titre trop court"),
   description: z3.string().min(10, "Description trop courte"),
@@ -3455,7 +3585,7 @@ var missionSuggestionSchema = z3.object({
   geo_required: z3.boolean().optional(),
   onsite_radius_km: z3.number().optional()
 });
-router6.post("/suggest", async (req, res) => {
+router7.post("/suggest", async (req, res) => {
   try {
     console.log("Requ\xEAte re\xE7ue:", req.body);
     const { title, description, category } = missionSuggestionSchema.parse(req.body);
@@ -3553,13 +3683,13 @@ router6.post("/suggest", async (req, res) => {
     });
   }
 });
-var ai_missions_routes_default = router6;
+var ai_missions_routes_default = router7;
 
 // apps/api/src/routes/ai.ts
 init_aiOrchestrator();
-import { Router as Router6 } from "express";
-var router7 = Router6();
-router7.post("/pricing", async (req, res) => {
+import { Router as Router7 } from "express";
+var router8 = Router7();
+router8.post("/pricing", async (req, res) => {
   try {
     const result = await getPricingSuggestion(req.body);
     res.json(result);
@@ -3568,7 +3698,7 @@ router7.post("/pricing", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul de prix" });
   }
 });
-router7.post("/brief", async (req, res) => {
+router8.post("/brief", async (req, res) => {
   try {
     const result = await enhanceBrief(req.body);
     res.json(result);
@@ -3577,7 +3707,7 @@ router7.post("/brief", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
   }
 });
-router7.post("/feedback", async (req, res) => {
+router8.post("/feedback", async (req, res) => {
   try {
     const { phase, prompt, feedback } = req.body;
     await logUserFeedback(phase, prompt, feedback);
@@ -3587,14 +3717,14 @@ router7.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-var ai_default = router7;
+var ai_default = router8;
 
 // server/routes/feed-routes.ts
 init_schema();
 import express3 from "express";
 import { neon } from "@neondatabase/serverless";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { desc as desc3, eq as eq4, and as and2, not, inArray, sql as sql3 } from "drizzle-orm";
+import { desc as desc4, eq as eq5, and as and2, not, inArray, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -3885,22 +4015,22 @@ var FeedRanker = class {
 
 // server/routes/feed-routes.ts
 import { z as z4 } from "zod";
-var router8 = express3.Router();
+var router9 = express3.Router();
 var connection = neon(process.env.DATABASE_URL);
 var db4 = drizzle5(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
-router8.get("/feed", async (req, res) => {
+router9.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
     const seenAnnouncements = userId ? await db4.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
       and2(
-        eq4(feedSeen.user_id, parseInt(userId))
+        eq5(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq4(announcements.status, "active")];
+    let whereConditions = [eq5(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
@@ -3909,13 +4039,13 @@ router8.get("/feed", async (req, res) => {
       whereConditions.push(sql3`${announcements.id} < ${cursorId}`);
     }
     const query = db4.select().from(announcements).where(and2(...whereConditions));
-    const rawAnnouncements = await query.orderBy(desc3(announcements.created_at)).limit(limitNum + 5);
+    const rawAnnouncements = await query.orderBy(desc4(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
     const sponsoredAnnouncements = await db4.select().from(announcements).where(and2(
-      eq4(announcements.sponsored, true),
-      eq4(announcements.status, "active")
+      eq5(announcements.sponsored, true),
+      eq5(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -3933,7 +4063,7 @@ router8.get("/feed", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration du feed" });
   }
 });
-router8.post("/feedback", async (req, res) => {
+router9.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
     await db4.insert(feedFeedback).values(feedbackData);
@@ -3958,7 +4088,7 @@ router8.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-router8.get("/price-benchmark", async (req, res) => {
+router9.get("/price-benchmark", async (req, res) => {
   try {
     const { category } = req.query;
     if (!category) {
@@ -3975,8 +4105,8 @@ router8.get("/price-benchmark", async (req, res) => {
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
     }).from(announcements).where(and2(
-      eq4(announcements.category, category),
-      eq4(announcements.status, "active")
+      eq5(announcements.category, category),
+      eq5(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -4001,18 +4131,18 @@ router8.get("/price-benchmark", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul du benchmark" });
   }
 });
-var feed_routes_default = router8;
+var feed_routes_default = router9;
 
 // server/routes/favorites-routes.ts
 init_schema();
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq5, and as and3 } from "drizzle-orm";
+import { eq as eq6, and as and3 } from "drizzle-orm";
 var sql4 = neon2(process.env.DATABASE_URL);
 var db5 = drizzle6(sql4);
-var router9 = Router7();
-router9.get("/favorites", async (req, res) => {
+var router10 = Router8();
+router10.get("/favorites", async (req, res) => {
   try {
     const { user_id } = req.query;
     if (!user_id) {
@@ -4020,7 +4150,7 @@ router9.get("/favorites", async (req, res) => {
     }
     const userFavorites = await db5.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq5(favorites.announcement_id, announcements.id)).where(eq5(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -4031,7 +4161,7 @@ router9.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration des favoris" });
   }
 });
-router9.post("/favorites", async (req, res) => {
+router10.post("/favorites", async (req, res) => {
   try {
     const { user_id, announcement_id } = req.body;
     if (!user_id || !announcement_id) {
@@ -4039,8 +4169,8 @@ router9.post("/favorites", async (req, res) => {
     }
     const existing = await db5.select().from(favorites).where(
       and3(
-        eq5(favorites.user_id, user_id),
-        eq5(favorites.announcement_id, announcement_id)
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
@@ -4057,7 +4187,7 @@ router9.post("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'ajout aux favoris" });
   }
 });
-router9.delete("/favorites/:announcementId", async (req, res) => {
+router10.delete("/favorites/:announcementId", async (req, res) => {
   try {
     const { announcementId } = req.params;
     const { user_id } = req.body;
@@ -4066,8 +4196,8 @@ router9.delete("/favorites/:announcementId", async (req, res) => {
     }
     await db5.delete(favorites).where(
       and3(
-        eq5(favorites.user_id, user_id),
-        eq5(favorites.announcement_id, parseInt(announcementId))
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -4076,11 +4206,11 @@ router9.delete("/favorites/:announcementId", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression des favoris" });
   }
 });
-var favorites_routes_default = router9;
+var favorites_routes_default = router10;
 
 // server/routes/mission-demo.ts
 import express4 from "express";
-var router10 = express4.Router();
+var router11 = express4.Router();
 var getDemoMissions = () => [
   {
     id: "mission1",
@@ -4161,10 +4291,10 @@ var getDemoMissions = () => [
     bids: []
   }
 ];
-router10.get("/missions-demo", (req, res) => {
+router11.get("/missions-demo", (req, res) => {
   res.json(getDemoMissions());
 });
-var mission_demo_default = router10;
+var mission_demo_default = router11;
 
 // server/routes/ai-quick-analysis.ts
 import express5 from "express";
@@ -4540,8 +4670,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router11 = express5.Router();
-router11.post("/ai/quick-analysis", async (req, res) => {
+var router12 = express5.Router();
+router12.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -4558,7 +4688,7 @@ router11.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router11.post("/ai/price-analysis", async (req, res) => {
+router12.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -4579,12 +4709,12 @@ router11.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router11;
+var ai_quick_analysis_default = router12;
 
 // server/routes/ai-diagnostic-routes.ts
-import { Router as Router8 } from "express";
-var router12 = Router8();
-router12.get("/diagnostic", async (req, res) => {
+import { Router as Router9 } from "express";
+var router13 = Router9();
+router13.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -4648,13 +4778,13 @@ router12.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router12;
+var ai_diagnostic_routes_default = router13;
 
 // server/routes/ai-learning-routes.ts
 init_learning_engine();
-import { Router as Router9 } from "express";
-var router13 = Router9();
-router13.post("/analyze-patterns", async (req, res) => {
+import { Router as Router10 } from "express";
+var router14 = Router10();
+router14.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -4672,7 +4802,7 @@ router13.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router13.get("/stats", (req, res) => {
+router14.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -4684,12 +4814,12 @@ router13.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router13;
+var ai_learning_routes_default = router14;
 
 // server/routes/team-routes.ts
-import { Router as Router10 } from "express";
+import { Router as Router11 } from "express";
 import { z as z5 } from "zod";
-var router14 = Router10();
+var router15 = Router11();
 var teamAnalysisSchema = z5.object({
   description: z5.string().min(10),
   title: z5.string().min(3),
@@ -4716,7 +4846,7 @@ var teamProjectSchema = z5.object({
     importance: z5.enum(["high", "medium", "low"])
   }))
 });
-router14.post("/analyze", async (req, res) => {
+router15.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4761,7 +4891,7 @@ router14.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router14.post("/create-project", async (req, res) => {
+router15.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4816,7 +4946,7 @@ router14.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router14;
+var team_routes_default = router15;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -4997,6 +5127,7 @@ app.use("/api/missions", missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
 app.use("/api", api_routes_default);
 app.use("/api", missions_default);
+app.use("/api/projects", projects_default);
 app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
 app.use("/api/ai/suggest-pricing", strictAiRateLimit);
 app.use("/api/ai/enhance-description", strictAiRateLimit);
