@@ -91,6 +91,7 @@ export const announcements = pgTable('announcements', {
   user_id: integer('user_id').references(() => users.id).notNull(),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   tags: jsonb('tags'),
+  sponsored: boolean('sponsored').default(false),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull()
 });
@@ -102,6 +103,8 @@ export const feedFeedback = pgTable('feed_feedback', {
   announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
   feedback_type: varchar('feedback_type', { length: 50 }).notNull(), // 'like', 'dislike', 'not_interested'
   feedback_reason: varchar('feedback_reason', { length: 200 }),
+  action: varchar('action', { length: 100 }),
+  dwell_ms: integer('dwell_ms'),
   created_at: timestamp('created_at').defaultNow().notNull()
 });
 
