@@ -35,120 +35,28 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
-// POST /api/missions - Create new mission
+// POST /api/missions - Create new mission (simplified)
 router.post('/', async (req, res) => {
   try {
-    const missionData = req.body;
-    console.log('📝 Mission creation request received:', JSON.stringify(missionData, null, 2));
-    console.log('📝 Request headers:', JSON.stringify(req.headers, null, 2));
+    const { MissionCreator } = await import('../services/mission-creator.js');
+    
+    console.log('📝 Mission creation request:', req.body);
 
-    // Validate required fields with better error messages
-    if (!missionData.title || missionData.title.trim() === '') {
-      console.error('❌ Validation failed: Missing or empty title');
-      return res.status(400).json({
-        error: 'Le titre est requis',
-        field: 'title',
-        received: missionData.title
-      });
-    }
+    // Utiliser le service de création simplifié
+    const missionData = await MissionCreator.createSimpleMission({
+      title: req.body.title,
+      description: req.body.description,
+      category: req.body.category,
+      budget: req.body.budget ? parseInt(req.body.budget) : undefined,
+      location: req.body.location,
+      userId: req.body.userId ? parseInt(req.body.userId) : 1 // Fallback temporaire
+    });
 
-    if (!missionData.description || missionData.description.trim() === '') {
-      console.error('❌ Validation failed: Missing or empty description');
-      return res.status(400).json({
-        error: 'La description est requise',
-        field: 'description',
-        received: missionData.description
-      });
-    }
+    // Sauvegarder en base
+    const insertedMission = await MissionCreator.saveMission(missionData);
 
-    // Validate description length
-    if (missionData.description.length < 10) {
-      console.error('❌ Validation failed: Description too short');
-      return res.status(400).json({
-        error: 'La description doit contenir au moins 10 caractères',
-        field: 'description',
-        length: missionData.description.length
-      });
-    }
-
-    // Validate user_id (user must be authenticated)
-    if (!missionData.userId) {
-      console.error('❌ Validation failed: Missing userId');
-      return res.status(401).json({
-        error: 'Utilisateur non authentifié',
-        field: 'userId',
-        received: missionData.userId
-      });
-    }
-
-    // Prepare mission data with proper field mapping and validation
-    const missionToInsert = {
-      title: missionData.title,
-      description: missionData.description,
-      category: missionData.category || 'developpement',
-      // Budget handling - ensure consistency
-      budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
-      currency: missionData.currency || 'EUR',
-      // Location fields
-      location_raw: missionData.location || null,
-      city: missionData.city || null,
-      country: missionData.country || 'France',
-      remote_allowed: missionData.remote_allowed !== undefined ? missionData.remote_allowed : true,
-      // Status and timing
-      urgency: missionData.urgency || 'medium',
-      status: missionData.status || 'published',
-      deadline: missionData.deadline ? new Date(missionData.deadline) : null,
-      // User relationships - ensure consistency
-      user_id: missionData.userId ? parseInt(missionData.userId) : null,
-      client_id: missionData.userId ? parseInt(missionData.userId) : null,
-      // Team configuration
-      is_team_mission: missionData.is_team_mission || false,
-      team_size: missionData.team_size || 1,
-      // Metadata
-      tags: missionData.tags || [],
-      skills_required: missionData.skills_required || missionData.skillsRequired || [],
-      requirements: missionData.requirements || null,
-      // Timestamps
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
-    console.log('📤 Inserting mission with data:', JSON.stringify(missionToInsert, null, 2));
-
-    // Insert mission into database with error handling
-    console.log('📤 Attempting to insert mission with data:', JSON.stringify(missionToInsert, null, 2));
-
-    let insertedMission;
-    try {
-      const result = await db.insert(missions).values(missionToInsert).returning();
-      insertedMission = result[0];
-
-      if (!insertedMission) {
-        throw new Error('No mission returned from database insert');
-      }
-
-      console.log('✅ Mission created successfully:', insertedMission);
-
-      // Verify the mission was actually saved
-      const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
-      console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
-
-      // Validate data consistency
-      const validationResult = DataConsistencyValidator.validateAPIToDatabase(missionToInsert, insertedMission);
-      if (!validationResult.isValid) {
-        console.warn('⚠️ Data consistency issues detected:', validationResult.errors);
-      }
-      if (validationResult.warnings.length > 0) {
-        console.warn('⚠️ Data consistency warnings:', validationResult.warnings);
-      }
-
-      res.status(201).json(insertedMission);
-    } catch (error) {
-      console.error('❌ Database insertion failed:', error);
-      console.error('❌ Data that failed to insert:', JSON.stringify(missionToInsert, null, 2));
-      // Throw error to be caught by the outer catch block
-      throw error;
-    }
+    console.log('✅ Mission created successfully:', insertedMission.id);
+    res.status(201).json(insertedMission);
 
     // Synchronisation de la mission avec le feed en arrière-plan (non-bloquant)
     setImmediate(async () => {
@@ -194,9 +102,22 @@ router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
 
-    // Use select all with safe fallbacks
+    // Use specific columns that exist in the database
     const allMissions = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget_value_cents: missions.budget_value_cents,
+        currency: missions.currency,
+        location: missions.location,
+        user_id: missions.user_id,
+        status: missions.status,
+        urgency: missions.urgency,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at
+      })
       .from(missions)
       .orderBy(desc(missions.created_at));
 
