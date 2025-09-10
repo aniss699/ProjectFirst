@@ -114,7 +114,7 @@ POST /api/favorites
 GET  /api/favorites?user_id=1
 
 // IA et suggestions  
-POST /api/ai/projects/standardize
+POST /api/ai/missions/standardize
 POST /api/ai/pricing/neural
 POST /api/ai/matching/semantic
 

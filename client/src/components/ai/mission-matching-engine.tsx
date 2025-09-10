@@ -247,7 +247,7 @@ export default function MissionMatchingEngine({
     return Math.min(95, Math.max(5, probability));
   };
 
-  // Calcul du prix recommandé
+  // Calcul du prix recommandé pour une mission
   const calculateRecommendedPrice = (
     mission: any,
     competition: string,
@@ -266,7 +266,7 @@ export default function MissionMatchingEngine({
     }
 
     // Ajustement selon l'expérience du prestataire
-    if (provider.rating >= 4.5 && provider.completedProjects >= 20) {
+    if (provider.rating >= 4.5 && provider.completedMissions >= 20) {
       recommendedPrice *= 1.05; // Premium pour l'expérience
     }
 

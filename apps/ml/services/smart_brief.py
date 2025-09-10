@@ -328,6 +328,7 @@ class SmartBriefProcessor:
 
         return suggestions
 
+    # Brief quality assessment for projects
     def analyze_brief_quality(self, text: str) -> Dict[str, Any]:
         """Analyse la qualité d'un brief et propose des améliorations."""
 
@@ -394,30 +395,30 @@ class SmartBriefProcessor:
         missing_info = []
 
         if word_count < 50:
-            suggestions.append("📝 Ajoutez plus de détails sur les fonctionnalités et objectifs du projet")
+            suggestions.append("Ajoutez plus de détails sur les fonctionnalités et objectifs de la mission")
             missing_info.append("description_détaillée")
 
         if len(all_keywords) < 2:
-            suggestions.append("🔧 Précisez les technologies, langages ou outils requis")
+            suggestions.append("Précisez les technologies, langages ou outils requis")
             missing_info.append("technologies")
 
         if 'budget' not in found_criteria:
-            suggestions.append("💰 Indiquez votre budget approximatif ou fourchette de prix")
+            suggestions.append("Indiquez votre budget approximatif ou fourchette de prix")
             missing_info.append("budget")
 
         if 'timeline' not in found_criteria:
-            suggestions.append("⏰ Précisez vos contraintes de délai et planning souhaité")
+            suggestions.append("Précisez vos contraintes de délai et planning souhaité")
             missing_info.append("délais")
 
         if 'quality' not in found_criteria:
-            suggestions.append("⭐ Mentionnez vos attentes en termes d'expérience/qualifications")
+            suggestions.append("Mentionnez vos attentes en termes d'expérience/qualifications")
             missing_info.append("qualifications")
 
         if avg_sentence_length > 20:
-            suggestions.append("✂️ Rédigez des phrases plus courtes pour améliorer la lisibilité")
+            suggestions.append("Rédigez des phrases plus courtes pour améliorer la lisibilité")
 
         if not any(word in text.lower() for word in ['pourquoi', 'comment', 'objectif', 'but']):
-            suggestions.append("🎯 Expliquez l'objectif et le contexte de votre projet")
+            suggestions.append("Expliquez l'objectif et le contexte de votre mission")
             missing_info.append("contexte")
 
         # Détection du niveau de complexité
@@ -455,14 +456,14 @@ class SmartBriefProcessor:
                 'complexity': complexity_level,
                 'urgency': 'high' if any(word in text.lower() for word in ['urgent', 'rapide', 'vite', 'asap']) else 'normal',
                 'domain': max(found_keywords.keys(), key=lambda k: len(found_keywords[k])) if found_keywords else 'general',
-                'project_type': self._detect_project_type(text, found_keywords)
+                'mission_type': self._detect_mission_type(text, found_keywords)
             },
             'enhancement_potential': self._calculate_enhancement_potential(text, all_keywords, found_criteria)
         }
 
-    def _detect_project_type(self, text: str, found_keywords: dict) -> str:
-        """Détecte le type de projet basé sur les mots-clés."""
-        project_patterns = {
+    def _detect_mission_type(self, text: str, found_keywords: dict) -> str:
+        """Détecte le type de mission basé sur les mots-clés."""
+        mission_patterns = {
             'e-commerce': ['boutique', 'e-commerce', 'vente', 'panier', 'paiement', 'catalogue'],
             'website': ['site', 'vitrine', 'présentation', 'corporate'],
             'web_app': ['application', 'webapp', 'dashboard', 'gestion', 'crm'],
@@ -472,9 +473,9 @@ class SmartBriefProcessor:
         }
 
         text_lower = text.lower()
-        for project_type, patterns in project_patterns.items():
+        for mission_type, patterns in mission_patterns.items():
             if any(pattern in text_lower for pattern in patterns):
-                return project_type
+                return mission_type
 
         # Détection basée sur les domaines techniques
         if 'mobile' in found_keywords:
@@ -487,7 +488,7 @@ class SmartBriefProcessor:
         return 'general'
 
     def _calculate_enhancement_potential(self, text: str, keywords: list, criteria: dict) -> dict:
-        """Calcule le potentiel d'amélioration du brief."""
+        """Calcule le potentiel d'amélioration de la mission."""
         potential_score = 0
         improvements = []
 
@@ -497,7 +498,7 @@ class SmartBriefProcessor:
 
         if len(criteria) < 3:
             potential_score += 25
-            improvements.append("Définition des critères projet")
+            improvements.append("Définition des critères de mission")
 
         if len(text.split()) < 100:
             potential_score += 15

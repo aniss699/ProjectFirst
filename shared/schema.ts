@@ -308,7 +308,4 @@ export interface LocationObject {
   remoteAllowed: boolean;
 }
 
-// Legacy pour compatibilité (à supprimer progressivement)
-export const projects = missions; // Alias
-export type Project = Mission;
-export type NewProject = NewMission;
+// Types métier pour les missions (terminologie unifiée)

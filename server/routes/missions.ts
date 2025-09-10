@@ -149,12 +149,12 @@ router.post('/', async (req, res) => {
       throw error;
     }
 
-    // Synchronisation avec le feed en arrière-plan (non-bloquant)
+    // Synchronisation de la mission avec le feed en arrière-plan (non-bloquant)
     setImmediate(async () => {
       try {
-        // Use the imported MissionSyncService as an instance
+        // Utilisation du service de synchronisation des missions
         const missionSync = new MissionSyncService(process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal');
-        // Convert database mission to Mission type
+        // Conversion de la mission base de données vers le type Mission du feed
         const missionForFeed = {
           id: insertedMission.id.toString(),
           title: insertedMission.title,

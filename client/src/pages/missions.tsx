@@ -155,7 +155,7 @@ export default function Missions() {
             Mes Missions
           </h1>
           <p className="text-base sm:text-lg text-gray-600">
-            Gérez vos projets et consultez les offres reçues
+            Gérez vos missions et consultez les offres reçues
           </p>
         </div>
         <Button
@@ -164,7 +164,7 @@ export default function Missions() {
           className="w-full sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-          Nouveau Projet
+          Nouvelle Mission
         </Button>
       </div>
 

@@ -18,7 +18,7 @@ export interface Mission {
 
 export interface TeamRequirement {
   id: string;
-  projectId: string;
+  missionId: string;
   profession: string;
   description: string;
   requiredSkills: string[];
@@ -130,9 +130,9 @@ export interface CategoryMarketDataMap {
   [category: string]: CategoryMarketData;
 }
 
-export interface ProjectStandardization {
+export interface MissionStandardization {
   id: string;
-  projectId: string;
+  missionId: string;
   title_std: string;
   summary_std: string;
   acceptance_criteria: string[];
@@ -154,13 +154,13 @@ export interface ProjectStandardization {
 declare global {
   namespace NodeJS {
     interface Global {
-      projectStandardizations?: Map<string, ProjectStandardization>;
+      missionStandardizations?: Map<string, MissionStandardization>;
       aiEnhancementCache?: Map<string, any>;
       performanceMetrics?: Map<string, any>;
     }
   }
   
-  var projectStandardizations: Map<string, ProjectStandardization> | undefined;
+  var missionStandardizations: Map<string, MissionStandardization> | undefined;
   var aiEnhancementCache: Map<string, any> | undefined;
   var performanceMetrics: Map<string, any> | undefined;
 }
