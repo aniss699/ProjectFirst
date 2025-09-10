@@ -12,24 +12,37 @@ const router = express.Router();
 // Login route
 router.post('/login', async (req, res) => {
   try {
+    console.log('🔑 Tentative de connexion:', { email: req.body.email });
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email et mot de passe requis' });
+      console.log('❌ Email ou mot de passe manquant');
+      return res.status(400).json({ 
+        error: 'Email et mot de passe requis',
+        success: false 
+      });
     }
 
     // Chercher l'utilisateur
     const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (user.length === 0) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      console.log('❌ Utilisateur non trouvé:', email);
+      return res.status(401).json({ 
+        error: 'Email ou mot de passe incorrect',
+        success: false 
+      });
     }
 
     const userData = user[0];
 
     // Vérifier le mot de passe (en production, utiliser bcrypt)
-    if (userData.password !== password) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    if (!userData.password || userData.password !== password) {
+      console.log('❌ Mot de passe incorrect pour:', email);
+      return res.status(401).json({ 
+        error: 'Email ou mot de passe incorrect',
+        success: false 
+      });
     }
 
     // Créer la session utilisateur (sans le mot de passe)
@@ -59,28 +72,56 @@ router.post('/login', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   try {
+    console.log('📝 Tentative de création de compte:', { email: req.body.email, name: req.body.name });
     const { email, password, name, role = 'CLIENT' } = req.body;
 
+    // Validation améliorée
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email et mot de passe requis' });
+      console.log('❌ Email ou mot de passe manquant');
+      return res.status(400).json({ 
+        error: 'Email et mot de passe requis',
+        success: false 
+      });
+    }
+
+    if (!name || name.trim().length < 2) {
+      console.log('❌ Nom invalide');
+      return res.status(400).json({ 
+        error: 'Le nom doit contenir au moins 2 caractères',
+        success: false 
+      });
+    }
+
+    if (password.length < 6) {
+      console.log('❌ Mot de passe trop court');
+      return res.status(400).json({ 
+        error: 'Le mot de passe doit contenir au moins 6 caractères',
+        success: false 
+      });
     }
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (existingUser.length > 0) {
-      return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
+      console.log('❌ Email déjà utilisé:', email);
+      return res.status(409).json({ 
+        error: 'Un compte existe déjà avec cet email',
+        success: false 
+      });
     }
 
     // Créer l'utilisateur
     const [newUser] = await db
       .insert(users)
       .values({
-        email,
+        email: email.toLowerCase().trim(),
         password, // En production, hasher avec bcrypt
-        name,
-        role,
-        profile_data: {}
+        name: name.trim(),
+        role: role.toUpperCase(),
+        profile_data: {},
+        created_at: new Date(),
+        updated_at: new Date()
       })
       .returning();
 

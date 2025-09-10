@@ -57,7 +57,15 @@ router.post('/', asyncHandler(async (req, res) => {
   }));
 
   // 1. Validation stricte d'entrée
-  const { title, description, category, budget, location, userId } = req.body;
+  const { title, description, category, budget, location, userId, postal_code } = req.body;
+
+  console.log(JSON.stringify({
+    level: 'info',
+    timestamp: new Date().toISOString(),
+    request_id: requestId,
+    action: 'mission_data_received',
+    data: { title, description, category, budget, location, postal_code, userId }
+  }));
 
   if (!title || typeof title !== 'string' || title.trim().length < 3) {
     console.log(JSON.stringify({

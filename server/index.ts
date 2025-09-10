@@ -130,8 +130,11 @@ app.use(express.json({ limit: '10mb' }));
 // Import auth routes
 import authRoutes from './auth-routes.js';
 
-// Mount auth routes
-app.use('/api/auth', authRoutes);
+// Auth routes avec logging amélioré
+app.use('/api/auth', (req, res, next) => {
+  console.log(`🔐 Auth request: ${req.method} ${req.path}`, { body: req.body.email ? { email: req.body.email } : {} });
+  next();
+}, authRoutes);
 // Import missions routes here
 import missionsRoutes from './routes/missions.js';
 // Import projects supprimé - remplacé par missions
@@ -155,7 +158,13 @@ import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middlewar
 // Mount routes
 // Register missions routes first
 console.log('📋 Registering missions routes...');
-app.use('/api/missions', missionsRoutes);
+// Mission routes avec logging amélioré
+app.use('/api/missions', (req, res, next) => {
+  console.log(`📋 Mission request: ${req.method} ${req.path}`, { 
+    body: req.body.title ? { title: req.body.title, userId: req.body.userId } : {} 
+  });
+  next();
+}, missionsRoutes);
 
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
@@ -163,7 +172,7 @@ app.use('/api', apiRoutes);
 app.use('/api/projects', (req, res, next) => {
   const newUrl = req.originalUrl.replace('/api/projects', '/api/missions');
   console.log(`🔄 Proxying deprecated projects API ${req.originalUrl} to missions API`);
-  
+
   // Forward the request to missions API internally
   req.url = req.url.replace('/projects', '/missions');
   req.originalUrl = newUrl;
@@ -223,7 +232,7 @@ app.get('/api/health', async (req, res) => {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Database query timeout')), 5000);
     });
-    
+
     const queryPromise = pool.query('SELECT 1');
     await Promise.race([queryPromise, timeoutPromise]);
 
@@ -363,14 +372,14 @@ process.on('unhandledRejection', (reason, promise) => {
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   const timestamp = new Date().toISOString();
   const requestId = req.headers['x-request-id'] || `req_${Date.now()}`;
-  
+
   // Enable debug mode in preview
   const isDebugMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'development';
-  
+
   // Categorize error types
   let statusCode = 500;
   let errorType = 'server_error';
-  
+
   if (error.name === 'ValidationError') {
     statusCode = 400;
     errorType = 'validation_error';

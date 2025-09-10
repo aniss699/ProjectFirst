@@ -6,6 +6,7 @@ export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
+  password: text("password").notNull(),
   role: text('role').notNull().$type<'CLIENT' | 'PRO'>(),
   rating_mean: decimal('rating_mean', { precision: 3, scale: 2 }),
   rating_count: integer('rating_count').default(0),
@@ -22,6 +23,7 @@ export const missions = pgTable('missions', {
   category: text('category').notNull(),
   location: text('location'),
   location_raw: text('location_raw'),
+  postal_code: text("postal_code"),
   city: text('city'),
   country: text('country'),
   remote_allowed: boolean('remote_allowed').default(true),
@@ -173,7 +175,8 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
 export const insertUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
-  role: z.enum(['CLIENT', 'PRO']),
+  password: z.string().min(8), // Added password validation, assuming a minimum of 8 characters
+  role: z.enum(['CLIENT', 'PRO', 'ADMIN']),
   rating_mean: z.string().optional(),
   rating_count: z.number().int().min(0).optional(),
   profile_data: z.any().optional()
@@ -185,6 +188,7 @@ export const insertMissionSchema = z.object({
   description: z.string().min(1),
   category: z.string().min(1),
   location: z.string().optional(),
+  postal_code: z.string().optional(), // Added postal_code validation
   budget_min: z.number().int().min(0).optional(),
   budget_max: z.number().int().min(0).optional(),
   budget_value_cents: z.number().int().min(0).optional(),
