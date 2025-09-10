@@ -7,8 +7,8 @@ import apiRoutes from './api-routes.js';
 import projectRoutes from './routes/projects.js';
 import teamRoutes from './routes/team-routes.js';
 import aiRoutes from './routes/ai-routes.js';
-import feedRoutes from './routes/feed-routes.js';
-import favoritesRoutes from './routes/favorites-routes.js';
+// import feedRoutes from './routes/feed-routes.js'; // Temporarily disabled
+// import favoritesRoutes from './routes/favorites-routes.js'; // Temporarily disabled
 import './environment-check.js';
 
 const app = express();
@@ -31,8 +31,8 @@ app.use('/api', apiRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/feed', feedRoutes);
-app.use('/api/favorites', favoritesRoutes);
+// app.use('/api/feed', feedRoutes); // Temporarily disabled
+// app.use('/api/favorites', favoritesRoutes); // Temporarily disabled
 
 // Routes missions supprimées - retourner 410 Gone
 app.all('/api/missions*', (req, res) => {

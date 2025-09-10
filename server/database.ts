@@ -24,6 +24,17 @@ pool.on('connect', () => {
 // Create drizzle database instance
 export const db = drizzle(pool);
 
+// Test database connection function
+export async function testConnection() {
+  try {
+    const client = await pool.connect();
+    console.log('✅ Database connection test successful');
+    client.release();
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error);
+  }
+}
+
 // Log database configuration
 console.log('🔗 Database connection established:', {
   databaseUrl: databaseUrl ? '***configured***' : 'missing',
