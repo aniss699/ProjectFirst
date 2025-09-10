@@ -285,3 +285,22 @@ export const insertAiEventSchema = z.object({
 // Export types that might be used elsewhere
 export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
 export type AnnouncementStatus = 'active' | 'completed' | 'cancelled' | 'draft';
+
+// Added team mission types
+export interface TeamRequirement {
+  profession: string;
+  description: string;
+  required_skills: string[];
+  estimated_budget: number;
+  estimated_days: number;
+  min_experience: number;
+  is_lead_role: boolean;
+  importance: 'high' | 'medium' | 'low';
+}
+
+export interface Mission {
+  id: number;
+  title: string;
+  description: string;
+  teamRequirements?: TeamRequirement[];
+}

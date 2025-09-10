@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { GeoSearch } from '@/components/location/geo-search';
 import { useQueryClient } from '@tanstack/react-query';
+import type { TeamRequirement } from '../../../shared/schema';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
