@@ -476,7 +476,14 @@ router.get('/:id', async (req, res) => {
     const result = {
       ...mission[0],
       excerpt: generateExcerpt(mission[0].description || '', 200),
-      bids: bids || []
+      bids: bids || [],
+      // Ensure consistent budget format for frontend
+      budget: mission[0].budget_value_cents?.toString() || '0',
+      // Ensure consistent location format
+      location: mission[0].location_raw || mission[0].city || 'Remote',
+      // Ensure consistent timestamps
+      createdAt: mission[0].created_at?.toISOString() || new Date().toISOString(),
+      updatedAt: mission[0].updated_at?.toISOString()
     };
 
     console.log('✅ API: Mission trouvée:', result.title, 'avec', result.bids.length, 'offres');
@@ -583,7 +590,7 @@ router.get('/users/:userId/missions', async (req, res) => {
       user_id: mission.user_id,
       client_id: mission.client_id,
       userId: mission.user_id?.toString(),
-      userName: 'Moi', // Since it's the user's own missions
+      clientName: 'Moi', // Consistent with API format
       // Team configuration
       is_team_mission: mission.is_team_mission,
       team_size: mission.team_size,

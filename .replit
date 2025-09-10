@@ -163,6 +163,15 @@ args = "echo \"🔍 Test de cohérence des données...\""
 task = "shell.exec"
 args = "tsx scripts/test-data-consistency.ts"
 
+[[workflows.workflow]]
+name = "Vérification Flux Mission Complet"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "tsx scripts/complete-mission-flow-verification.ts"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
