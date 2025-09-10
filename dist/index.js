@@ -299,6 +299,325 @@ var init_schema = __esm({
   }
 });
 
+// apps/api/src/monitoring/event-logger.ts
+var event_logger_exports = {};
+__export(event_logger_exports, {
+  EventLogger: () => EventLogger,
+  eventLogger: () => eventLogger
+});
+var EventLogger, eventLogger;
+var init_event_logger = __esm({
+  "apps/api/src/monitoring/event-logger.ts"() {
+    "use strict";
+    EventLogger = class {
+      eventBuffer = [];
+      performanceCache = /* @__PURE__ */ new Map();
+      batchSize = 50;
+      flushInterval = 3e4;
+      // 30 secondes
+      constructor() {
+        this.startAutoFlush();
+      }
+      /**
+       * Log d'événement d'erreur système
+       */
+      logErrorEvent(error, userId, sessionId, context = {}) {
+        const event = {
+          event_type: "click",
+          // Using existing type for error tracking
+          user_id: userId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            error_type: "system_error",
+            error_message: error.message,
+            error_stack: error.stack,
+            context,
+            severity: "high"
+          }
+        };
+        this.addToBuffer(event);
+        console.log("\u{1F6A8} [ERROR_LOGGED]", JSON.stringify({
+          error: error.message,
+          user: userId,
+          session: sessionId,
+          timestamp: event.timestamp
+        }));
+      }
+      /**
+       * Log d'événement utilisateur générique
+       */
+      logUserEvent(eventType, userId, sessionId, metadata = {}) {
+        const event = {
+          event_type: eventType,
+          user_id: userId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            ...metadata,
+            user_agent: metadata.user_agent || "unknown",
+            ip_address: metadata.ip_address || "unknown",
+            platform: metadata.platform || "web"
+          }
+        };
+        this.addToBuffer(event);
+        console.log("\u{1F4CA} [EVENT_LOGGED]", JSON.stringify({
+          type: eventType,
+          user: userId,
+          session: sessionId,
+          timestamp: event.timestamp
+        }));
+      }
+      /**
+       * Log d'événement de vue d'annonce
+       */
+      logAnnouncementView(userId, missionId, sessionId, dwellTime, metadata = {}) {
+        const event = {
+          event_type: "view",
+          user_id: userId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            dwell_time_ms: dwellTime,
+            click_depth: metadata.click_depth || 0,
+            scroll_percentage: metadata.scroll_percentage || 0,
+            interaction_quality: this.calculateInteractionQuality(dwellTime, metadata),
+            device_type: metadata.device_type || "desktop",
+            referrer: metadata.referrer || "direct",
+            feed_position: metadata.feed_position || 0,
+            recommendation_score: metadata.recommendation_score || 0
+          }
+        };
+        this.addToBuffer(event);
+        this.logPerformanceMetrics("view_recommendation", {
+          ai_latency_ms: metadata.recommendation_latency || 0,
+          confidence_level: metadata.recommendation_score || 0,
+          model_version: "feed_ranker_v2.1",
+          features_used: ["relevance", "quality", "freshness", "price"]
+        });
+      }
+      /**
+       * Log d'événement de sauvegarde/favori
+       */
+      logSave(userId, missionId, sessionId, metadata = {}) {
+        const event = {
+          event_type: "save",
+          user_id: userId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            save_source: metadata.save_source || "feed",
+            // 'feed', 'detail', 'search'
+            user_decision_time_ms: metadata.decision_time || 0,
+            mission_rank_in_feed: metadata.feed_position || 0,
+            previous_interactions: metadata.previous_interactions || [],
+            recommendation_accuracy: "pending"
+            // Sera mis à jour plus tard
+          }
+        };
+        this.addToBuffer(event);
+        this.logConversion("save", userId, missionId, metadata);
+      }
+      /**
+       * Log d'événement de proposition
+       */
+      logProposal(providerId, missionId, sessionId, metadata = {}) {
+        const event = {
+          event_type: "proposal",
+          provider_id: providerId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            proposal_value: metadata.proposal_value || 0,
+            time_to_proposal_hours: metadata.time_to_proposal_hours || 0,
+            proposal_rank: metadata.proposal_rank || 0,
+            pricing_confidence: metadata.pricing_confidence || 0,
+            matching_score: metadata.matching_score || 0,
+            bid_strategy: metadata.bid_strategy || "unknown",
+            ai_price_suggestion: metadata.ai_price_suggestion || 0,
+            price_deviation_percentage: metadata.price_deviation_percentage || 0
+          }
+        };
+        this.addToBuffer(event);
+        this.logPerformanceMetrics("pricing_suggestion", {
+          ai_latency_ms: metadata.pricing_latency || 0,
+          accuracy_score: metadata.pricing_confidence || 0,
+          model_version: "neural_pricing_v2.1",
+          features_used: ["complexity", "market", "urgency", "provider"],
+          prediction_outcome: "pending"
+        });
+      }
+      /**
+       * Log d'événement de victoire (projet attribué)
+       */
+      logWin(providerId, missionId, sessionId, metadata = {}) {
+        const event = {
+          event_type: "win",
+          provider_id: providerId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            final_value: metadata.final_value || 0,
+            negotiation_rounds: metadata.negotiation_rounds || 0,
+            time_to_decision_hours: metadata.time_to_decision_hours || 0,
+            client_satisfaction_prediction: metadata.client_satisfaction_prediction || 0,
+            ai_match_score: metadata.ai_match_score || 0,
+            ai_price_accuracy: metadata.ai_price_accuracy || 0
+          }
+        };
+        this.addToBuffer(event);
+        this.updatePredictionOutcome("pricing_suggestion", missionId, "success");
+        this.updatePredictionOutcome("matching_recommendation", missionId, "success");
+      }
+      /**
+       * Log d'événement de litige
+       */
+      logDispute(userId, missionId, sessionId, metadata = {}) {
+        const event = {
+          event_type: "dispute",
+          user_id: userId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: sessionId,
+          metadata: {
+            dispute_type: metadata.dispute_type || "unknown",
+            dispute_stage: metadata.dispute_stage || "initial",
+            estimated_resolution_time: metadata.estimated_resolution_time || 0,
+            client_satisfaction_drop: metadata.client_satisfaction_drop || 0,
+            ai_risk_score: metadata.ai_risk_score || 0,
+            preventability_score: metadata.preventability_score || 0
+          }
+        };
+        this.addToBuffer(event);
+        this.updatePredictionOutcome("risk_assessment", missionId, "failure");
+      }
+      /**
+       * Log des métriques de performance IA
+       */
+      logPerformanceMetrics(modelType, metrics) {
+        const key = `${modelType}_${Date.now()}`;
+        this.performanceCache.set(key, {
+          ...metrics,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        });
+        console.log("\u{1F9E0} [AI_PERFORMANCE]", JSON.stringify({
+          model: modelType,
+          latency: metrics.ai_latency_ms,
+          confidence: metrics.confidence_level,
+          version: metrics.model_version
+        }));
+      }
+      /**
+       * Log d'événement de conversion
+       */
+      logConversion(conversionType, userId, missionId, metadata) {
+        const conversionEvent = {
+          event_type: "conversion",
+          user_id: userId,
+          mission_id: missionId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          session_id: metadata.session_id || "unknown",
+          metadata: {
+            conversion_type: conversionType,
+            funnel_stage: metadata.funnel_stage || "unknown",
+            conversion_value: metadata.conversion_value || 0,
+            time_to_conversion: metadata.time_to_conversion || 0,
+            attribution_source: metadata.attribution_source || "organic"
+          }
+        };
+        this.addToBuffer(conversionEvent);
+      }
+      /**
+       * Calcule la qualité d'interaction
+       */
+      calculateInteractionQuality(dwellTime, metadata) {
+        let score = 0;
+        if (dwellTime > 1e4) score += 3;
+        else if (dwellTime > 3e3) score += 2;
+        else if (dwellTime > 1e3) score += 1;
+        if (metadata.click_depth > 2) score += 2;
+        else if (metadata.click_depth > 0) score += 1;
+        if (metadata.scroll_percentage > 75) score += 1;
+        if (score >= 5) return "high";
+        if (score >= 2) return "medium";
+        return "low";
+      }
+      /**
+       * Met à jour le résultat d'une prédiction
+       */
+      updatePredictionOutcome(modelType, missionId, outcome) {
+        console.log("\u{1F4C8} [PREDICTION_UPDATE]", JSON.stringify({
+          model: modelType,
+          mission: missionId,
+          outcome,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }));
+      }
+      /**
+       * Ajoute un événement au buffer
+       */
+      addToBuffer(event) {
+        this.eventBuffer.push(event);
+        if (this.eventBuffer.length >= this.batchSize) {
+          this.flushEvents();
+        }
+      }
+      /**
+       * Vide le buffer d'événements
+       */
+      flushEvents() {
+        if (this.eventBuffer.length === 0) return;
+        const events = [...this.eventBuffer];
+        this.eventBuffer = [];
+        console.log("\u{1F680} [EVENTS_FLUSHED]", `${events.length} \xE9v\xE9nements envoy\xE9s vers analytics`);
+        this.sendToAnalyticsService(events);
+      }
+      /**
+       * Envoi simulé vers service d'analytics
+       */
+      async sendToAnalyticsService(events) {
+        try {
+          console.log("\u2705 Events sent to analytics service");
+        } catch (error) {
+          console.error("\u274C Failed to send events to analytics:", error);
+          this.eventBuffer.unshift(...events);
+        }
+      }
+      /**
+       * Démarrage du flush automatique
+       */
+      startAutoFlush() {
+        setInterval(() => {
+          this.flushEvents();
+        }, this.flushInterval);
+      }
+      /**
+       * Récupération des métriques de performance
+       */
+      getPerformanceMetrics() {
+        return new Map(this.performanceCache);
+      }
+      /**
+       * Nettoyage des métriques anciennes
+       */
+      cleanupOldMetrics(maxAgeMs = 36e5) {
+        const cutoff = Date.now() - maxAgeMs;
+        for (const [key, metrics] of this.performanceCache.entries()) {
+          const metricTime = new Date(metrics.timestamp).getTime();
+          if (metricTime < cutoff) {
+            this.performanceCache.delete(key);
+          }
+        }
+      }
+    };
+    eventLogger = new EventLogger();
+  }
+});
+
 // apps/api/src/ai/aiOrchestrator.ts
 import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -544,16 +863,16 @@ var init_geminiAdapter = __esm({
 });
 
 // apps/api/src/ai/learning-engine.ts
-import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
-import { Pool as Pool3 } from "pg";
-import { desc as desc2, eq as eq4, and, gte } from "drizzle-orm";
-var pool3, db3, AILearningEngine, aiLearningEngine;
+import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
+import { Pool as Pool4 } from "pg";
+import { desc as desc2, eq as eq5, and, gte } from "drizzle-orm";
+var pool4, db4, AILearningEngine, aiLearningEngine;
 var init_learning_engine = __esm({
   "apps/api/src/ai/learning-engine.ts"() {
     "use strict";
     init_schema();
-    pool3 = new Pool3({ connectionString: process.env.DATABASE_URL });
-    db3 = drizzle3(pool3);
+    pool4 = new Pool4({ connectionString: process.env.DATABASE_URL });
+    db4 = drizzle4(pool4);
     AILearningEngine = class {
       patterns = /* @__PURE__ */ new Map();
       insights = [];
@@ -563,8 +882,8 @@ var init_learning_engine = __esm({
       async analyzePastInteractions(limit = 1e3) {
         try {
           console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
-          const recentInteractions = await db3.select().from(aiEvents).where(and(
-            eq4(aiEvents.provider, "gemini-api"),
+          const recentInteractions = await db4.select().from(aiEvents).where(and(
+            eq5(aiEvents.provider, "gemini-api"),
             gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
             // 30 jours
           )).orderBy(desc2(aiEvents.created_at)).limit(limit);
@@ -1647,7 +1966,7 @@ Score entre 0.0 (tr\xE8s vague) et 1.0 (tr\xE8s d\xE9taill\xE9).`;
 });
 
 // server/index.ts
-import express6 from "express";
+import express7 from "express";
 import path3 from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
@@ -1785,11 +2104,28 @@ var pool = new Pool({
   max: 20
 });
 pool.on("error", (err) => {
-  console.error("Database pool error:", err);
+  console.error("\u274C Database pool error:", {
+    message: err.message,
+    code: err.code,
+    stack: err.stack,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
 });
-pool.on("connect", () => {
+pool.on("connect", (client) => {
   console.log("\u2705 Database connection established");
 });
+async function testConnection() {
+  try {
+    const result = await pool.query("SELECT NOW() as current_time");
+    console.log("\u2705 Database connection test successful:", result.rows[0]);
+  } catch (error) {
+    console.error("\u274C Database connection test failed:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail
+    });
+  }
+}
 var db = drizzle(pool);
 async function initializeDatabase() {
   try {
@@ -1925,6 +2261,7 @@ async function initializeDatabase() {
   }
 }
 initializeDatabase();
+testConnection();
 console.log("\u{1F517} Database connection established:", {
   databaseUrl: databaseUrl ? "***configured***" : "missing",
   isCloudSQL: databaseUrl?.includes("/cloudsql/") || false
@@ -2262,15 +2599,306 @@ function validateEnvironment() {
 }
 
 // server/index.ts
-import { Pool as Pool4 } from "pg";
+import { Pool as Pool5 } from "pg";
 import cors from "cors";
+
+// server/auth-routes.ts
+init_schema();
+import express2 from "express";
+import { Pool as Pool2 } from "pg";
+import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
+import { eq as eq2, sql } from "drizzle-orm";
+var pool2 = new Pool2({ connectionString: process.env.DATABASE_URL });
+var db2 = drizzle2(pool2);
+var router = express2.Router();
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email et mot de passe requis" });
+    }
+    const user = await db2.select().from(users).where(eq2(users.email, email)).limit(1);
+    if (user.length === 0) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+    const userData = user[0];
+    if (userData.password !== password) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+    const userSession = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      rating_mean: userData.rating_mean,
+      rating_count: userData.rating_count,
+      profile_data: userData.profile_data,
+      created_at: userData.created_at
+    };
+    res.json({
+      success: true,
+      user: userSession,
+      message: `Bienvenue ${userData.name || userData.email} !`
+    });
+  } catch (error) {
+    console.error("Erreur login:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la connexion" });
+  }
+});
+router.post("/register", async (req, res) => {
+  try {
+    const { email, password, name, role = "CLIENT" } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email et mot de passe requis" });
+    }
+    const existingUser = await db2.select().from(users).where(eq2(users.email, email)).limit(1);
+    if (existingUser.length > 0) {
+      return res.status(409).json({ error: "Un compte existe d\xE9j\xE0 avec cet email" });
+    }
+    const [newUser] = await db2.insert(users).values({
+      email,
+      password,
+      // En production, hasher avec bcrypt
+      name,
+      role,
+      profile_data: {}
+    }).returning();
+    const userSession = {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role,
+      rating_mean: newUser.rating_mean,
+      rating_count: newUser.rating_count,
+      profile_data: newUser.profile_data,
+      created_at: newUser.created_at
+    };
+    res.status(201).json({
+      success: true,
+      user: userSession,
+      message: "Compte cr\xE9\xE9 avec succ\xE8s !"
+    });
+  } catch (error) {
+    console.error("Erreur register:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du compte" });
+  }
+});
+router.get("/profile/:id", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await db2.select().from(users).where(eq2(users.id, userId)).limit(1);
+    if (user.length === 0) {
+      return res.status(404).json({ error: "Utilisateur non trouv\xE9" });
+    }
+    const userData = user[0];
+    const userProfile = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      rating_mean: userData.rating_mean,
+      rating_count: userData.rating_count,
+      profile_data: userData.profile_data,
+      created_at: userData.created_at
+    };
+    res.json({ user: userProfile });
+  } catch (error) {
+    console.error("Erreur get profile:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la r\xE9cup\xE9ration du profil" });
+  }
+});
+router.get("/demo-users", async (req, res) => {
+  try {
+    const demoUsers = await db2.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      profile_data: users.profile_data
+    }).from(users);
+    res.json({
+      users: demoUsers,
+      message: "Utilisateurs de d\xE9monstration disponibles"
+    });
+  } catch (error) {
+    console.error("Erreur get demo users:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router.get("/demo-accounts/verify", async (req, res) => {
+  try {
+    const demoEmails = ["demo@swideal.com", "prestataire@swideal.com", "admin@swideal.com"];
+    const demoAccounts = await db2.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    }).from(users).where(sql`${users.email} = ANY(${demoEmails})`);
+    const accountsStatus = {
+      client: demoAccounts.find((u) => u.email === "demo@swideal.com"),
+      provider: demoAccounts.find((u) => u.email === "prestataire@swideal.com"),
+      admin: demoAccounts.find((u) => u.email === "admin@swideal.com"),
+      total: demoAccounts.length
+    };
+    res.json({
+      success: true,
+      accounts: accountsStatus,
+      allPresent: demoAccounts.length === 3
+    });
+  } catch (error) {
+    console.error("Erreur v\xE9rification comptes d\xE9mo:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors de la v\xE9rification des comptes d\xE9mo"
+    });
+  }
+});
+router.get("/debug/demo-accounts", async (req, res) => {
+  try {
+    console.log("\u{1F50D} Diagnostic des comptes d\xE9mo...");
+    const allUsers = await db2.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      created_at: users.created_at
+    }).from(users);
+    const demoUsers = await db2.select().from(users).where(sql`${users.email} IN ('demo@swideal.com', 'prestataire@swideal.com', 'admin@swideal.com')`);
+    res.json({
+      debug: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      database_url_exists: !!process.env.DATABASE_URL,
+      total_users: allUsers.length,
+      all_users: allUsers,
+      demo_accounts_found: demoUsers.length,
+      demo_accounts: demoUsers.map((user) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        password_length: user.password?.length || 0,
+        password_is_demo123: user.password === "demo123",
+        password_is_admin123: user.password === "admin123",
+        created_at: user.created_at
+      }))
+    });
+  } catch (error) {
+    console.error("\u274C Erreur diagnostic:", error);
+    res.status(500).json({
+      error: "Erreur lors du diagnostic",
+      details: error.message,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
+router.post("/debug/create-demo-accounts", async (req, res) => {
+  try {
+    console.log("\u{1F6E0}\uFE0F Cr\xE9ation forc\xE9e des comptes d\xE9mo...");
+    const demoAccounts = [
+      {
+        email: "demo@swideal.com",
+        password: "demo123",
+        name: "Emma Rousseau",
+        role: "CLIENT",
+        rating_mean: "0",
+        rating_count: 0,
+        profile_data: {
+          company: "TechStart Innovation",
+          sector: "SaaS",
+          projects_posted: 0,
+          total_budget_spent: 0,
+          verified: true,
+          phone: "+33 1 45 67 89 12",
+          location: "Paris, France"
+        }
+      },
+      {
+        email: "prestataire@swideal.com",
+        password: "demo123",
+        name: "Julien Moreau",
+        role: "PRO",
+        rating_mean: "0",
+        rating_count: 0,
+        profile_data: {
+          specialties: ["React", "Node.js", "TypeScript", "Python"],
+          hourly_rate: 65,
+          availability: "Disponible",
+          experience_years: 5,
+          completed_projects: 0,
+          success_rate: 0,
+          response_time_hours: 4,
+          certifications: ["React Developer"],
+          portfolio_url: "https://julienmoreau.dev",
+          linkedin: "https://linkedin.com/in/julienmoreau",
+          phone: "+33 6 78 90 12 34",
+          location: "Lyon, France"
+        }
+      },
+      {
+        email: "admin@swideal.com",
+        password: "admin123",
+        name: "Clara Dubois",
+        role: "ADMIN",
+        profile_data: {
+          department: "Platform Management",
+          access_level: "full",
+          phone: "+33 1 56 78 90 12"
+        }
+      }
+    ];
+    const results = [];
+    for (const account of demoAccounts) {
+      try {
+        const existingUser = await db2.select().from(users).where(eq2(users.email, account.email)).limit(1);
+        if (existingUser.length > 0) {
+          results.push({
+            email: account.email,
+            status: "exists",
+            message: "Compte d\xE9j\xE0 existant"
+          });
+        } else {
+          const [newUser] = await db2.insert(users).values(account).returning();
+          results.push({
+            email: account.email,
+            status: "created",
+            id: newUser.id,
+            message: "Compte cr\xE9\xE9 avec succ\xE8s"
+          });
+        }
+      } catch (error) {
+        results.push({
+          email: account.email,
+          status: "error",
+          message: error.message
+        });
+      }
+    }
+    res.json({
+      success: true,
+      message: "Cr\xE9ation des comptes d\xE9mo termin\xE9e",
+      results,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("\u274C Erreur cr\xE9ation comptes d\xE9mo:", error);
+    res.status(500).json({
+      error: "Erreur lors de la cr\xE9ation des comptes d\xE9mo",
+      details: error.message,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+});
+var auth_routes_default = router;
 
 // server/routes/missions.ts
 import { Router } from "express";
-import { eq as eq2, desc } from "drizzle-orm";
-init_schema();
+import { eq as eq3, desc } from "drizzle-orm";
 init_schema();
 import { randomUUID } from "crypto";
+var asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 function generateExcerpt(description, maxLength = 200) {
   if (!description || description.length <= maxLength) {
     return description || "";
@@ -2290,8 +2918,8 @@ function generateExcerpt(description, maxLength = 200) {
   }
   return truncated.trim() + "...";
 }
-var router = Router();
-router.post("/", async (req, res) => {
+var router2 = Router();
+router2.post("/", asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
   console.log(JSON.stringify({
@@ -2303,716 +2931,627 @@ router.post("/", async (req, res) => {
     user_agent: req.headers["user-agent"],
     ip: req.ip
   }));
-  try {
-    const { title, description, category, budget, location, userId } = req.body;
-    if (!title || typeof title !== "string" || title.trim().length < 3) {
-      console.log(JSON.stringify({
-        level: "warn",
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        request_id: requestId,
-        action: "validation_failed",
-        field: "title",
-        value: title
-      }));
-      return res.status(400).json({
-        ok: false,
-        error: "Le titre doit contenir au moins 3 caract\xE8res",
-        field: "title",
-        request_id: requestId
-      });
-    }
-    if (!description || typeof description !== "string" || description.trim().length < 10) {
-      console.log(JSON.stringify({
-        level: "warn",
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        request_id: requestId,
-        action: "validation_failed",
-        field: "description",
-        value_length: description?.length || 0
-      }));
-      return res.status(400).json({
-        ok: false,
-        error: "La description doit contenir au moins 10 caract\xE8res",
-        field: "description",
-        request_id: requestId
-      });
-    }
-    const userIdInt = userId ? parseInt(userId.toString()) : 1;
-    if (isNaN(userIdInt) || userIdInt <= 0) {
-      console.log(JSON.stringify({
-        level: "warn",
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        request_id: requestId,
-        action: "validation_failed",
-        field: "userId",
-        value: userId
-      }));
-      return res.status(400).json({
-        ok: false,
-        error: "User ID invalide",
-        field: "userId",
-        request_id: requestId
-      });
-    }
-    const now = /* @__PURE__ */ new Date();
-    const budgetCents = budget ? parseInt(budget.toString()) * 100 : 1e5;
-    const missionData = {
-      title: title.trim(),
-      description: description.trim(),
-      category: category || "developpement",
-      budget_value_cents: budgetCents,
-      currency: "EUR",
-      location_raw: location || "Remote",
-      user_id: userIdInt,
-      client_id: userIdInt,
-      status: "published",
-      urgency: "medium",
-      remote_allowed: true,
-      is_team_mission: false,
-      team_size: 1,
-      created_at: now,
-      updated_at: now
-    };
+  const { title, description, category, budget, location, userId } = req.body;
+  if (!title || typeof title !== "string" || title.trim().length < 3) {
     console.log(JSON.stringify({
-      level: "info",
+      level: "warn",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      action: "mission_data_prepared",
-      title_length: missionData.title.length,
-      description_length: missionData.description.length,
-      budget_cents: missionData.budget_value_cents,
-      user_id: missionData.user_id
+      action: "validation_failed",
+      field: "title",
+      value: title
     }));
-    console.log(JSON.stringify({
-      level: "info",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "db_transaction_start"
-    }));
-    const insertResult = await db.insert(missions).values(missionData).returning({
-      id: missions.id,
-      title: missions.title,
-      status: missions.status,
-      user_id: missions.user_id,
-      created_at: missions.created_at
-    });
-    if (!insertResult || insertResult.length === 0) {
-      throw new Error("Insert failed - no result returned");
-    }
-    const insertedMission = insertResult[0];
-    console.log(JSON.stringify({
-      level: "info",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "db_insert_success",
-      mission_id: insertedMission.id,
-      execution_time_ms: Date.now() - startTime
-    }));
-    const fullMission = await db.select().from(missions).where(eq2(missions.id, insertedMission.id)).limit(1);
-    if (fullMission.length === 0) {
-      throw new Error("Mission not found after insert");
-    }
-    const mission = fullMission[0];
-    const responsePayload = {
-      ok: true,
-      id: mission.id,
-      title: mission.title,
-      description: mission.description,
-      excerpt: generateExcerpt(mission.description || "", 200),
-      category: mission.category,
-      budget: mission.budget_value_cents?.toString() || "0",
-      budget_value_cents: mission.budget_value_cents,
-      currency: mission.currency,
-      location: mission.location_raw || "Remote",
-      user_id: mission.user_id,
-      client_id: mission.client_id,
-      status: mission.status,
-      urgency: mission.urgency,
-      remote_allowed: mission.remote_allowed,
-      is_team_mission: mission.is_team_mission,
-      team_size: mission.team_size,
-      created_at: mission.created_at,
-      updated_at: mission.updated_at,
-      createdAt: mission.created_at?.toISOString() || now.toISOString(),
-      updatedAt: mission.updated_at?.toISOString(),
-      clientName: "Client",
-      bids: [],
+    return res.status(400).json({
+      ok: false,
+      error: "Le titre doit contenir au moins 3 caract\xE8res",
+      field: "title",
       request_id: requestId
-    };
+    });
+  }
+  if (!description || typeof description !== "string" || description.trim().length < 10) {
     console.log(JSON.stringify({
-      level: "info",
+      level: "warn",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      action: "mission_create_success",
-      mission_id: mission.id,
-      total_time_ms: Date.now() - startTime
+      action: "validation_failed",
+      field: "description",
+      value_length: description?.length || 0
     }));
-    res.status(201).json(responsePayload);
-    setImmediate(async () => {
-      try {
-        const missionSync2 = new MissionSyncService(process.env.DATABASE_URL || "postgresql://localhost:5432/swideal");
-        const missionForFeed = {
-          id: mission.id.toString(),
-          title: mission.title,
-          description: mission.description,
-          category: mission.category || "developpement",
-          budget: mission.budget_value_cents?.toString() || "0",
-          location: mission.location_raw || "Remote",
-          status: mission.status || "open",
-          clientId: mission.user_id?.toString() || "1",
-          clientName: "Client",
-          createdAt: mission.created_at?.toISOString() || now.toISOString(),
-          bids: []
-        };
-        await missionSync2.addMissionToFeed(missionForFeed);
-        console.log(JSON.stringify({
-          level: "info",
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-          request_id: requestId,
-          action: "feed_sync_success",
-          mission_id: mission.id
-        }));
-      } catch (syncError) {
-        console.log(JSON.stringify({
-          level: "warn",
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-          request_id: requestId,
-          action: "feed_sync_failed",
-          mission_id: mission.id,
-          error: syncError instanceof Error ? syncError.message : "Unknown sync error"
-        }));
-      }
+    return res.status(400).json({
+      ok: false,
+      error: "La description doit contenir au moins 10 caract\xE8res",
+      field: "description",
+      request_id: requestId
     });
-  } catch (error) {
+  }
+  const userIdInt = userId ? parseInt(userId.toString()) : 1;
+  if (isNaN(userIdInt) || userIdInt <= 0) {
     console.log(JSON.stringify({
-      level: "error",
+      level: "warn",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      action: "mission_create_failed",
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : void 0,
-      execution_time_ms: Date.now() - startTime
+      action: "validation_failed",
+      field: "userId",
+      value: userId
     }));
-    if (!res.headersSent) {
-      res.status(500).json({
-        ok: false,
-        error: "Failed to create mission",
-        details: error instanceof Error ? error.message : "Unknown error",
-        request_id: requestId,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-  }
-});
-router.get("/", async (req, res) => {
-  try {
-    console.log("\u{1F4CB} Fetching all missions...");
-    const allMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location: missions.location,
-      user_id: missions.user_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
-    }).from(missions).orderBy(desc(missions.created_at));
-    console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
-    const missionsWithBids = allMissions.map((mission) => ({
-      ...mission,
-      excerpt: generateExcerpt(mission.description || "", 200),
-      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-      clientName: "Client anonyme",
-      // Default client name
-      bids: [],
-      // Empty bids array for now
-      // Ensure budget consistency
-      budget: mission.budget_value_cents?.toString() || "0",
-      // Ensure location consistency
-      location: mission.location_raw || mission.city || "Remote"
-    }));
-    console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
-    res.json(missionsWithBids);
-  } catch (error) {
-    console.error("\u274C Error fetching missions:", error);
-    res.status(500).json({ error: "Failed to fetch missions" });
-  }
-});
-router.get("/health", async (req, res) => {
-  try {
-    console.log("\u{1F3E5} Mission health check endpoint called");
-    const healthInfo = {
-      status: "healthy",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      service: "missions-api",
-      environment: process.env.NODE_ENV || "development"
-    };
-    console.log("\u{1F3E5} Health check passed:", healthInfo);
-    res.json(healthInfo);
-  } catch (error) {
-    console.error("\u274C Health check failed:", error);
-    res.status(500).json({
-      status: "unhealthy",
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    return res.status(400).json({
+      ok: false,
+      error: "User ID invalide",
+      field: "userId",
+      request_id: requestId
     });
   }
-});
-router.get("/debug", async (req, res) => {
-  try {
-    console.log("\u{1F50D} Mission debug endpoint called");
-    const testQuery = await db.select({ id: missions.id }).from(missions).limit(1);
-    const dbInfo = {
-      status: "connected",
-      sampleMissions: testQuery.length,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      environment: process.env.NODE_ENV || "development",
-      databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
-    };
-    console.log("\u{1F50D} Database info:", dbInfo);
-    res.json(dbInfo);
-  } catch (error) {
-    console.error("\u274C Debug endpoint error:", error);
-    res.status(500).json({
-      error: "Debug failed",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
+  const now = /* @__PURE__ */ new Date();
+  const budgetCents = budget ? parseInt(budget.toString()) * 100 : 1e5;
+  const missionData = {
+    title: title.trim(),
+    description: description.trim(),
+    category: category || "developpement",
+    budget_value_cents: budgetCents,
+    currency: "EUR",
+    location_raw: location || "Remote",
+    user_id: userIdInt,
+    client_id: userIdInt,
+    status: "published",
+    urgency: "medium",
+    remote_allowed: true,
+    is_team_mission: false,
+    team_size: 1,
+    created_at: now,
+    updated_at: now
+  };
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_data_prepared",
+    title_length: missionData.title.length,
+    description_length: missionData.description.length,
+    budget_cents: missionData.budget_value_cents,
+    user_id: missionData.user_id
+  }));
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "db_transaction_start"
+  }));
+  const insertResult = await db.insert(missions).values(missionData).returning({
+    id: missions.id,
+    title: missions.title,
+    status: missions.status,
+    user_id: missions.user_id,
+    created_at: missions.created_at
+  });
+  if (!insertResult || insertResult.length === 0) {
+    throw new Error("Insert failed - no result returned");
   }
-});
-router.get("/verify-sync", async (req, res) => {
-  try {
-    console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
-    const recentMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      budget_min_cents: missions.budget_min_cents,
-      budget_max_cents: missions.budget_max_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
-    }).from(missions).orderBy(desc(missions.created_at)).limit(5);
-    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const feedItems = await db.select({
-      id: announcements2.id,
-      title: announcements2.title,
-      description: announcements2.description,
-      category: announcements2.category,
-      budget_value_cents: announcements2.budget_value_cents,
-      budget_min_cents: announcements2.budget_min_cents,
-      budget_max_cents: announcements2.budget_max_cents,
-      currency: announcements2.currency,
-      location_raw: announcements2.location_raw,
-      city: announcements2.city,
-      country: announcements2.country,
-      remote_allowed: announcements2.remote_allowed,
-      user_id: announcements2.user_id,
-      client_id: announcements2.client_id,
-      status: announcements2.status,
-      urgency: announcements2.urgency,
-      deadline: announcements2.deadline,
-      tags: announcements2.tags,
-      skills_required: announcements2.skills_required,
-      requirements: announcements2.requirements,
-      is_team_mission: announcements2.is_team_mission,
-      team_size: announcements2.team_size,
-      created_at: announcements2.created_at,
-      updated_at: announcements2.updated_at
-    }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
-    const syncStatus = {
-      totalMissions: recentMissions.length,
-      totalFeedItems: feedItems.length,
-      recentMissions: recentMissions.map((m) => ({
-        id: m.id,
-        title: m.title,
-        status: m.status,
-        created_at: m.created_at
-      })),
-      feedItems: feedItems.map((f) => ({
-        id: f.id,
-        title: f.title,
-        status: f.status,
-        created_at: f.created_at
-      })),
-      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
-    };
-    console.log("\u{1F50D} Sync status:", syncStatus);
-    res.json(syncStatus);
-  } catch (error) {
-    console.error("\u274C Sync verification error:", error);
-    res.status(500).json({
-      error: "Sync verification failed",
-      details: error instanceof Error ? error.message : "Unknown error"
-    });
+  const insertedMission = insertResult[0];
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "db_insert_success",
+    mission_id: insertedMission.id,
+    execution_time_ms: Date.now() - startTime
+  }));
+  const fullMission = await db.select().from(missions).where(eq3(missions.id, insertedMission.id)).limit(1);
+  if (fullMission.length === 0) {
+    throw new Error("Mission not found after insert");
   }
-});
-router.get("/:id", async (req, res) => {
-  let missionId = null;
-  try {
-    missionId = req.params.id;
-    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
-    if (missionId === "debug" || missionId === "verify-sync" || missionId === "health") {
-      console.log("\u26A0\uFE0F API: Endpoint sp\xE9cial d\xE9tect\xE9, ignor\xE9 dans cette route:", missionId);
-      return res.status(404).json({ error: "Endpoint non trouv\xE9" });
-    }
-    if (!missionId || missionId === "undefined" || missionId === "null") {
-      console.error("\u274C API: Mission ID invalide:", missionId);
-      return res.status(400).json({
-        error: "Mission ID invalide",
-        details: "L'ID de mission est requis et ne peut pas \xEAtre vide"
-      });
-    }
-    const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt) || missionIdInt <= 0 || !Number.isInteger(missionIdInt)) {
-      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
-      return res.status(400).json({
-        error: "Mission ID doit \xEAtre un nombre entier valide",
-        received: missionId,
-        details: "L'ID doit \xEAtre un nombre entier positif"
-      });
-    }
-    const mission = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
-    }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
-    if (mission.length === 0) {
-      console.error("\u274C API: Mission non trouv\xE9e:", missionId);
-      return res.status(404).json({
-        error: "Mission non trouv\xE9e",
-        missionId: missionIdInt,
-        details: "Aucune mission trouv\xE9e avec cet ID"
-      });
-    }
-    let missionBids = [];
+  const mission = fullMission[0];
+  const responsePayload = {
+    ok: true,
+    id: mission.id,
+    title: mission.title,
+    description: mission.description,
+    excerpt: generateExcerpt(mission.description || "", 200),
+    category: mission.category,
+    budget: mission.budget_value_cents?.toString() || "0",
+    budget_value_cents: mission.budget_value_cents,
+    currency: mission.currency,
+    location: mission.location_raw || "Remote",
+    user_id: mission.user_id,
+    client_id: mission.client_id,
+    status: mission.status,
+    urgency: mission.urgency,
+    remote_allowed: mission.remote_allowed,
+    is_team_mission: mission.is_team_mission,
+    team_size: mission.team_size,
+    created_at: mission.created_at,
+    updated_at: mission.updated_at,
+    createdAt: mission.created_at?.toISOString() || now.toISOString(),
+    updatedAt: mission.updated_at?.toISOString(),
+    clientName: "Client",
+    bids: [],
+    request_id: requestId
+  };
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_create_success",
+    mission_id: mission.id,
+    total_time_ms: Date.now() - startTime
+  }));
+  res.status(201).json(responsePayload);
+  setImmediate(async () => {
     try {
-      missionBids = await db.select({
-        id: bids.id,
-        amount: bids.amount,
-        timeline_days: bids.timeline_days,
-        message: bids.message,
-        score_breakdown: bids.score_breakdown,
-        is_leading: bids.is_leading,
-        status: bids.status,
-        created_at: bids.created_at,
-        provider_name: users.name,
-        provider_email: users.email,
-        provider_profile: users.profile_data
-      }).from(bids).leftJoin(users, eq2(bids.provider_id, users.id)).where(eq2(bids.mission_id, missionIdInt));
-    } catch (error) {
-      console.warn("\u26A0\uFE0F Could not fetch bids (table may not exist):", error);
-      missionBids = [];
+      const missionSync2 = new MissionSyncService(process.env.DATABASE_URL || "postgresql://localhost:5432/swideal");
+      const missionForFeed = {
+        id: mission.id.toString(),
+        title: mission.title,
+        description: mission.description,
+        category: mission.category || "developpement",
+        budget: mission.budget_value_cents?.toString() || "0",
+        location: mission.location_raw || "Remote",
+        status: mission.status || "open",
+        clientId: mission.user_id?.toString() || "1",
+        clientName: "Client",
+        createdAt: mission.created_at?.toISOString() || now.toISOString(),
+        bids: []
+      };
+      await missionSync2.addMissionToFeed(missionForFeed);
+      console.log(JSON.stringify({
+        level: "info",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: requestId,
+        action: "feed_sync_success",
+        mission_id: mission.id
+      }));
+    } catch (syncError) {
+      console.log(JSON.stringify({
+        level: "warn",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: requestId,
+        action: "feed_sync_failed",
+        mission_id: mission.id,
+        error: syncError instanceof Error ? syncError.message : "Unknown sync error"
+      }));
     }
-    const result = {
-      ...mission[0],
-      excerpt: generateExcerpt(mission[0].description || "", 200),
-      bids: missionBids || [],
-      // Ensure consistent budget format for frontend
-      budget: mission[0].budget_value_cents?.toString() || "0",
-      // Ensure consistent location format
-      location: mission[0].location_raw || mission[0].city || "Remote",
-      // Ensure consistent timestamps
-      createdAt: mission[0].created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-      updatedAt: mission[0].updated_at?.toISOString()
-    };
-    console.log("\u2705 API: Mission trouv\xE9e:", result.title, "avec", result.bids.length, "offres");
-    res.json(result);
-  } catch (error) {
-    console.error("\u274C API: Erreur r\xE9cup\xE9ration mission:", error);
-    console.error("\u274C API: Stack trace:", error instanceof Error ? error.stack : "No stack");
-    console.error("\u274C API: Mission ID demand\xE9e:", missionId || "undefined");
-    console.error("\u274C API: Type de l'ID:", typeof missionId);
-    res.status(500).json({
-      error: "Erreur interne du serveur",
-      details: error instanceof Error ? error.message : "Erreur inconnue",
-      missionId: missionId || "undefined",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+}));
+router2.get("/", asyncHandler(async (req, res) => {
+  console.log("\u{1F4CB} Fetching all missions...");
+  const allMissions = await db.select({
+    id: missions.id,
+    title: missions.title,
+    description: missions.description,
+    category: missions.category,
+    budget_value_cents: missions.budget_value_cents,
+    currency: missions.currency,
+    location_raw: missions.location_raw,
+    city: missions.city,
+    country: missions.country,
+    user_id: missions.user_id,
+    status: missions.status,
+    urgency: missions.urgency,
+    created_at: missions.created_at,
+    updated_at: missions.updated_at,
+    remote_allowed: missions.remote_allowed,
+    is_team_mission: missions.is_team_mission,
+    team_size: missions.team_size,
+    deadline: missions.deadline,
+    tags: missions.tags,
+    skills_required: missions.skills_required,
+    requirements: missions.requirements
+  }).from(missions).orderBy(desc(missions.created_at));
+  console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
+  const missionsWithBids = allMissions.map((mission) => ({
+    ...mission,
+    excerpt: generateExcerpt(mission.description || "", 200),
+    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+    clientName: "Client anonyme",
+    // Default client name
+    bids: [],
+    // Empty bids array for now
+    // Ensure budget consistency
+    budget: mission.budget_value_cents?.toString() || "0",
+    // Ensure location consistency
+    location: mission.location_raw || mission.city || "Remote"
+  }));
+  console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
+  res.json(missionsWithBids);
+}));
+router2.get("/health", asyncHandler(async (req, res) => {
+  console.log("\u{1F3E5} Mission health check endpoint called");
+  const healthInfo = {
+    status: "healthy",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    service: "missions-api",
+    environment: process.env.NODE_ENV || "development"
+  };
+  console.log("\u{1F3E5} Health check passed:", healthInfo);
+  res.json(healthInfo);
+}));
+router2.get("/debug", asyncHandler(async (req, res) => {
+  console.log("\u{1F50D} Mission debug endpoint called");
+  const testQuery = await db.select({ id: missions.id }).from(missions).limit(1);
+  const dbInfo = {
+    status: "connected",
+    sampleMissions: testQuery.length,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
+  };
+  console.log("\u{1F50D} Database info:", dbInfo);
+  res.json(dbInfo);
+}));
+router2.get("/verify-sync", asyncHandler(async (req, res) => {
+  console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
+  const recentMissions = await db.select({
+    id: missions.id,
+    title: missions.title,
+    description: missions.description,
+    category: missions.category,
+    budget_value_cents: missions.budget_value_cents,
+    budget_min_cents: missions.budget_min_cents,
+    budget_max_cents: missions.budget_max_cents,
+    currency: missions.currency,
+    location_raw: missions.location_raw,
+    city: missions.city,
+    country: missions.country,
+    remote_allowed: missions.remote_allowed,
+    user_id: missions.user_id,
+    client_id: missions.client_id,
+    status: missions.status,
+    urgency: missions.urgency,
+    deadline: missions.deadline,
+    tags: missions.tags,
+    skills_required: missions.skills_required,
+    requirements: missions.requirements,
+    is_team_mission: missions.is_team_mission,
+    team_size: missions.team_size,
+    created_at: missions.created_at,
+    updated_at: missions.updated_at
+  }).from(missions).orderBy(desc(missions.created_at)).limit(5);
+  const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const feedItems = await db.select({
+    id: announcements2.id,
+    title: announcements2.title,
+    description: announcements2.description,
+    category: announcements2.category,
+    budget_value_cents: announcements2.budget_value_cents,
+    budget_min_cents: announcements2.budget_min_cents,
+    budget_max_cents: announcements2.budget_max_cents,
+    currency: announcements2.currency,
+    location_raw: announcements2.location_raw,
+    city: announcements2.city,
+    country: announcements2.country,
+    remote_allowed: announcements2.remote_allowed,
+    user_id: announcements2.user_id,
+    client_id: announcements2.client_id,
+    status: announcements2.status,
+    urgency: announcements2.urgency,
+    deadline: announcements2.deadline,
+    tags: announcements2.tags,
+    skills_required: announcements2.skills_required,
+    requirements: announcements2.requirements,
+    is_team_mission: announcements2.is_team_mission,
+    team_size: announcements2.team_size,
+    created_at: announcements2.created_at,
+    updated_at: announcements2.updated_at
+  }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+  const syncStatus = {
+    totalMissions: recentMissions.length,
+    totalFeedItems: feedItems.length,
+    recentMissions: recentMissions.map((m) => ({
+      id: m.id,
+      title: m.title,
+      status: m.status,
+      created_at: m.created_at
+    })),
+    feedItems: feedItems.map((f) => ({
+      id: f.id,
+      title: f.title,
+      status: f.status,
+      created_at: f.created_at
+    })),
+    syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
+  };
+  console.log("\u{1F50D} Sync status:", syncStatus);
+  res.json(syncStatus);
+}));
+router2.get("/:id", asyncHandler(async (req, res) => {
+  let missionId = null;
+  missionId = req.params.id;
+  console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
+  if (missionId === "debug" || missionId === "verify-sync" || missionId === "health") {
+    console.log("\u26A0\uFE0F API: Endpoint sp\xE9cial d\xE9tect\xE9, ignor\xE9 dans cette route:", missionId);
+    return res.status(404).json({ error: "Endpoint non trouv\xE9" });
+  }
+  if (!missionId || missionId === "undefined" || missionId === "null") {
+    console.error("\u274C API: Mission ID invalide:", missionId);
+    return res.status(400).json({
+      error: "Mission ID invalide",
+      details: "L'ID de mission est requis et ne peut pas \xEAtre vide"
     });
   }
-});
-router.get("/users/:userId/missions", async (req, res) => {
+  const missionIdInt = parseInt(missionId, 10);
+  if (isNaN(missionIdInt) || missionIdInt <= 0 || !Number.isInteger(missionIdInt)) {
+    console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+    return res.status(400).json({
+      error: "Mission ID doit \xEAtre un nombre entier valide",
+      received: missionId,
+      details: "L'ID doit \xEAtre un nombre entier positif"
+    });
+  }
+  const mission = await db.select({
+    id: missions.id,
+    title: missions.title,
+    description: missions.description,
+    category: missions.category,
+    budget_value_cents: missions.budget_value_cents,
+    currency: missions.currency,
+    location_raw: missions.location_raw,
+    city: missions.city,
+    country: missions.country,
+    remote_allowed: missions.remote_allowed,
+    user_id: missions.user_id,
+    client_id: missions.client_id,
+    status: missions.status,
+    urgency: missions.urgency,
+    deadline: missions.deadline,
+    tags: missions.tags,
+    skills_required: missions.skills_required,
+    requirements: missions.requirements,
+    is_team_mission: missions.is_team_mission,
+    team_size: missions.team_size,
+    created_at: missions.created_at,
+    updated_at: missions.updated_at
+  }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+  if (mission.length === 0) {
+    console.error("\u274C API: Mission non trouv\xE9e:", missionId);
+    return res.status(404).json({
+      error: "Mission non trouv\xE9e",
+      missionId: missionIdInt,
+      details: "Aucune mission trouv\xE9e avec cet ID"
+    });
+  }
+  let missionBids = [];
   try {
-    const userId = req.params.userId;
-    console.log("\u{1F464} Fetching missions for user:", userId);
-    console.log("\u{1F517} Mapping: userId =", userId, "-> user_id filter:", userId);
-    if (!userId || userId === "undefined" || userId === "null") {
-      console.error("\u274C Invalid user ID:", userId);
-      return res.status(400).json({
-        error: "User ID invalide",
-        details: "L'ID utilisateur est requis"
-      });
-    }
-    const userIdInt = parseInt(userId, 10);
-    if (isNaN(userIdInt) || userIdInt <= 0 || !Number.isInteger(userIdInt)) {
-      console.error("\u274C User ID is not a valid number:", userId);
-      return res.status(400).json({
-        error: "User ID doit \xEAtre un nombre entier valide",
-        received: userId,
-        details: "L'ID utilisateur doit \xEAtre un nombre entier positif"
-      });
-    }
-    console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
-    const userMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
-    }).from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
-    console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
-    userMissions.forEach((mission) => {
-      console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
-    });
-    const missionsWithBids = userMissions.map((mission) => ({
-      // Core fields - ensure exact mapping
-      id: mission.id,
-      title: mission.title,
-      description: mission.description,
-      excerpt: generateExcerpt(mission.description || "", 200),
-      category: mission.category,
-      // Budget - maintain consistency with database values
-      budget_value_cents: mission.budget_value_cents,
-      budget: mission.budget_value_cents?.toString() || "0",
-      currency: mission.currency,
-      // Location - full structure
-      location_raw: mission.location_raw,
-      location: mission.location_raw || mission.city || "Remote",
-      city: mission.city,
-      country: mission.country,
-      remote_allowed: mission.remote_allowed,
-      // Status and metadata
-      status: mission.status,
-      urgency: mission.urgency,
-      // User relationships - preserve exact values
-      user_id: mission.user_id,
-      client_id: mission.client_id,
-      userId: mission.user_id?.toString(),
-      clientName: "Moi",
-      // Consistent with API format
-      // Team configuration
-      is_team_mission: mission.is_team_mission,
-      team_size: mission.team_size,
-      // Timestamps - consistent formatting
-      created_at: mission.created_at,
-      updated_at: mission.updated_at,
-      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-      updatedAt: mission.updated_at?.toISOString(),
-      deadline: mission.deadline?.toISOString(),
-      // Arrays and metadata
-      tags: mission.tags || [],
-      skills_required: mission.skills_required || [],
-      requirements: mission.requirements,
-      bids: []
-      // We'll populate this separately if needed
-    }));
-    console.log(`\u{1F464} Found ${missionsWithBids.length} missions for user ${userId}`);
-    res.json(missionsWithBids);
+    missionBids = await db.select({
+      id: bids.id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      message: bids.message,
+      score_breakdown: bids.score_breakdown,
+      is_leading: bids.is_leading,
+      status: bids.status,
+      created_at: bids.created_at,
+      provider_name: users.name,
+      provider_email: users.email,
+      provider_profile: users.profile_data
+    }).from(bids).leftJoin(users, eq3(bids.provider_id, users.id)).where(eq3(bids.mission_id, missionIdInt));
   } catch (error) {
-    console.error("\u274C Error fetching user missions:", error);
-    res.status(500).json({
-      error: "Failed to fetch user missions",
-      details: error instanceof Error ? error.message : "Unknown error"
+    console.warn("\u26A0\uFE0F Could not fetch bids (table may not exist):", error);
+    missionBids = [];
+  }
+  const result = {
+    ...mission[0],
+    excerpt: generateExcerpt(mission[0].description || "", 200),
+    bids: missionBids || [],
+    // Ensure consistent budget format for frontend
+    budget: mission[0].budget_value_cents?.toString() || "0",
+    // Ensure consistent location format
+    location: mission[0].location_raw || mission[0].city || "Remote",
+    // Ensure consistent timestamps
+    createdAt: mission[0].created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: mission[0].updated_at?.toISOString()
+  };
+  console.log("\u2705 API: Mission trouv\xE9e:", result.title, "avec", result.bids.length, "offres");
+  res.json(result);
+}));
+router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
+  const userId = req.params.userId;
+  console.log("\u{1F464} Fetching missions for user:", userId);
+  console.log("\u{1F517} Mapping: userId =", userId, "-> user_id filter:", userId);
+  if (!userId || userId === "undefined" || userId === "null") {
+    console.error("\u274C Invalid user ID:", userId);
+    return res.status(400).json({
+      error: "User ID invalide",
+      details: "L'ID utilisateur est requis"
     });
   }
-});
-router.get("/users/:userId/bids", async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    console.log("\u{1F464} Fetching bids for user:", userId);
-    if (!userId || userId === "undefined" || userId === "null") {
-      console.error("\u274C Invalid user ID:", userId);
-      return res.status(400).json({ error: "User ID invalide" });
-    }
-    const userIdInt = parseInt(userId, 10);
-    if (isNaN(userIdInt)) {
-      console.error("\u274C User ID is not a valid number:", userId);
-      return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
-    }
-    const userBids = [];
-    console.log("\u{1F517} Mapping: userId =", userId, "-> provider_id filter:", userIdInt);
-    console.log(`\u{1F464} Found ${userBids.length} bids for user ${userId}`);
-    res.json(userBids);
-  } catch (error) {
-    console.error("\u274C Error fetching user bids:", error);
-    res.status(500).json({
-      error: "Failed to fetch user bids",
-      details: error instanceof Error ? error.message : "Unknown error"
+  const userIdInt = parseInt(userId, 10);
+  if (isNaN(userIdInt) || userIdInt <= 0 || !Number.isInteger(userIdInt)) {
+    console.error("\u274C User ID is not a valid number:", userId);
+    return res.status(400).json({
+      error: "User ID doit \xEAtre un nombre entier valide",
+      received: userId,
+      details: "L'ID utilisateur doit \xEAtre un nombre entier positif"
     });
   }
-});
-router.put("/:id", async (req, res) => {
-  try {
-    const missionId = req.params.id;
-    const updateData = req.body;
-    console.log("\u270F\uFE0F API: Modification mission ID:", missionId);
-    console.log("\u270F\uFE0F API: Donn\xE9es re\xE7ues:", JSON.stringify(updateData, null, 2));
-    if (missionId === "debug" || missionId === "verify-sync") {
-      return res.status(404).json({ error: "Endpoint non trouv\xE9" });
-    }
-    if (!missionId || missionId === "undefined" || missionId === "null") {
-      console.error("\u274C API: Mission ID invalide:", missionId);
-      return res.status(400).json({ error: "Mission ID invalide" });
-    }
-    const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt) || missionIdInt <= 0) {
-      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
-      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
-    }
-    if (!updateData.title || updateData.title.trim() === "") {
-      return res.status(400).json({
-        error: "Le titre est requis",
-        field: "title"
-      });
-    }
-    if (!updateData.description || updateData.description.trim() === "") {
-      return res.status(400).json({
-        error: "La description est requise",
-        field: "description"
-      });
-    }
-    const existingMission = await db.select({ id: missions.id }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
-    if (existingMission.length === 0) {
-      console.error("\u274C API: Mission non trouv\xE9e pour modification:", missionId);
-      return res.status(404).json({ error: "Mission non trouv\xE9e" });
-    }
-    const missionToUpdate = {
-      title: updateData.title,
-      description: updateData.description,
-      category: updateData.category || existingMission[0].category,
-      budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
-      location_raw: updateData.location || null,
-      urgency: updateData.urgency || "medium",
-      status: updateData.status || "published",
-      updated_at: /* @__PURE__ */ new Date(),
-      deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
-      tags: updateData.tags || existingMission[0].tags,
-      requirements: updateData.requirements || existingMission[0].requirements,
-      currency: updateData.currency || existingMission[0].currency,
-      city: updateData.city || existingMission[0].city,
-      country: updateData.country || existingMission[0].country
-    };
-    console.log("\u270F\uFE0F API: Donn\xE9es de mise \xE0 jour:", JSON.stringify(missionToUpdate, null, 2));
-    const updatedMission = await db.update(missions).set(missionToUpdate).where(eq2(missions.id, missionIdInt)).returning();
-    if (updatedMission.length === 0) {
-      throw new Error("\xC9chec de la mise \xE0 jour de la mission");
-    }
-    console.log("\u2705 API: Mission modifi\xE9e avec succ\xE8s:", missionId);
-    res.json(updatedMission[0]);
-  } catch (error) {
-    console.error("\u274C API: Erreur modification mission:", error);
-    res.status(500).json({
-      error: "Erreur interne du serveur",
-      details: error instanceof Error ? error.message : "Erreur inconnue",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
+  const userMissions = await db.select({
+    id: missions.id,
+    title: missions.title,
+    description: missions.description,
+    category: missions.category,
+    budget_value_cents: missions.budget_value_cents,
+    currency: missions.currency,
+    location_raw: missions.location_raw,
+    city: missions.city,
+    country: missions.country,
+    remote_allowed: missions.remote_allowed,
+    user_id: missions.user_id,
+    client_id: missions.client_id,
+    status: missions.status,
+    urgency: missions.urgency,
+    deadline: missions.deadline,
+    tags: missions.tags,
+    skills_required: missions.skills_required,
+    requirements: missions.requirements,
+    is_team_mission: missions.is_team_mission,
+    team_size: missions.team_size,
+    created_at: missions.created_at,
+    updated_at: missions.updated_at
+  }).from(missions).where(eq3(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+  console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
+  userMissions.forEach((mission) => {
+    console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
+  });
+  const missionsWithBids = userMissions.map((mission) => ({
+    // Core fields - ensure exact mapping
+    id: mission.id,
+    title: mission.title,
+    description: mission.description,
+    excerpt: generateExcerpt(mission.description || "", 200),
+    category: mission.category,
+    // Budget - maintain consistency with database values
+    budget_value_cents: mission.budget_value_cents,
+    budget: mission.budget_value_cents?.toString() || "0",
+    currency: mission.currency,
+    // Location - full structure
+    location_raw: mission.location_raw,
+    location: mission.location_raw || mission.city || "Remote",
+    city: mission.city,
+    country: mission.country,
+    remote_allowed: mission.remote_allowed,
+    // Status and metadata
+    status: mission.status,
+    urgency: mission.urgency,
+    // User relationships - preserve exact values
+    user_id: mission.user_id,
+    client_id: mission.client_id,
+    userId: mission.user_id?.toString(),
+    clientName: "Moi",
+    // Consistent with API format
+    // Team configuration
+    is_team_mission: mission.is_team_mission,
+    team_size: mission.team_size,
+    // Timestamps - consistent formatting
+    created_at: mission.created_at,
+    updated_at: mission.updated_at,
+    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: mission.updated_at?.toISOString(),
+    deadline: mission.deadline?.toISOString(),
+    // Arrays and metadata
+    tags: mission.tags || [],
+    skills_required: mission.skills_required || [],
+    requirements: mission.requirements,
+    bids: []
+    // We'll populate this separately if needed
+  }));
+  console.log(`\u{1F464} Found ${missionsWithBids.length} missions for user ${userId}`);
+  res.json(missionsWithBids);
+}));
+router2.get("/users/:userId/bids", asyncHandler(async (req, res) => {
+  const userId = req.params.userId;
+  console.log("\u{1F464} Fetching bids for user:", userId);
+  if (!userId || userId === "undefined" || userId === "null") {
+    console.error("\u274C Invalid user ID:", userId);
+    return res.status(400).json({ error: "User ID invalide" });
+  }
+  const userIdInt = parseInt(userId, 10);
+  if (isNaN(userIdInt)) {
+    console.error("\u274C User ID is not a valid number:", userId);
+    return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
+  }
+  const userBids = [];
+  console.log("\u{1F517} Mapping: userId =", userId, "-> provider_id filter:", userIdInt);
+  console.log(`\u{1F464} Found ${userBids.length} bids for user ${userId}`);
+  res.json(userBids);
+}));
+router2.put("/:id", asyncHandler(async (req, res) => {
+  const missionId = req.params.id;
+  const updateData = req.body;
+  console.log("\u270F\uFE0F API: Modification mission ID:", missionId);
+  console.log("\u270F\uFE0F API: Donn\xE9es re\xE7ues:", JSON.stringify(updateData, null, 2));
+  if (missionId === "debug" || missionId === "verify-sync") {
+    return res.status(404).json({ error: "Endpoint non trouv\xE9" });
+  }
+  if (!missionId || missionId === "undefined" || missionId === "null") {
+    console.error("\u274C API: Mission ID invalide:", missionId);
+    return res.status(400).json({ error: "Mission ID invalide" });
+  }
+  const missionIdInt = parseInt(missionId, 10);
+  if (isNaN(missionIdInt) || missionIdInt <= 0) {
+    console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+    return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
+  }
+  if (!updateData.title || updateData.title.trim() === "") {
+    return res.status(400).json({
+      error: "Le titre est requis",
+      field: "title"
     });
   }
-});
-router.delete("/:id", async (req, res) => {
-  try {
-    const missionId = req.params.id;
-    console.log("\u{1F5D1}\uFE0F API: Suppression mission ID:", missionId);
-    if (missionId === "debug" || missionId === "verify-sync") {
-      return res.status(404).json({ error: "Endpoint non trouv\xE9" });
-    }
-    if (!missionId || missionId === "undefined" || missionId === "null") {
-      console.error("\u274C API: Mission ID invalide:", missionId);
-      return res.status(400).json({ error: "Mission ID invalide" });
-    }
-    const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt) || missionIdInt <= 0) {
-      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
-      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
-    }
-    const existingMission = await db.select({ id: missions.id }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
-    if (existingMission.length === 0) {
-      console.error("\u274C API: Mission non trouv\xE9e pour suppression:", missionId);
-      return res.status(404).json({ error: "Mission non trouv\xE9e" });
-    }
-    const deletedMission = await db.delete(missions).where(eq2(missions.id, missionIdInt)).returning();
-    if (deletedMission.length === 0) {
-      throw new Error("\xC9chec de la suppression de la mission");
-    }
-    console.log("\u2705 API: Mission supprim\xE9e avec succ\xE8s:", missionId);
-    res.json({ message: "Mission supprim\xE9e avec succ\xE8s", mission: deletedMission[0] });
-  } catch (error) {
-    console.error("\u274C API: Erreur suppression mission:", error);
-    res.status(500).json({
-      error: "Erreur interne du serveur",
-      details: error instanceof Error ? error.message : "Erreur inconnue",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  if (!updateData.description || updateData.description.trim() === "") {
+    return res.status(400).json({
+      error: "La description est requise",
+      field: "description"
     });
   }
-});
-var missions_default = router;
+  const existingMission = await db.select({ id: missions.id, category: missions.category, deadline: missions.deadline, tags: missions.tags, requirements: missions.requirements, currency: missions.currency, city: missions.city, country: missions.country }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+  if (existingMission.length === 0) {
+    console.error("\u274C API: Mission non trouv\xE9e pour modification:", missionId);
+    return res.status(404).json({ error: "Mission non trouv\xE9e" });
+  }
+  const missionToUpdate = {
+    title: updateData.title,
+    description: updateData.description,
+    category: updateData.category || existingMission[0].category,
+    budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
+    location_raw: updateData.location || null,
+    urgency: updateData.urgency || "medium",
+    status: updateData.status || "published",
+    updated_at: /* @__PURE__ */ new Date(),
+    deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
+    tags: updateData.tags || existingMission[0].tags,
+    requirements: updateData.requirements || existingMission[0].requirements,
+    currency: updateData.currency || existingMission[0].currency,
+    city: updateData.city || existingMission[0].city,
+    country: updateData.country || existingMission[0].country
+  };
+  console.log("\u270F\uFE0F API: Donn\xE9es de mise \xE0 jour:", JSON.stringify(missionToUpdate, null, 2));
+  const updatedMission = await db.update(missions).set(missionToUpdate).where(eq3(missions.id, missionIdInt)).returning();
+  if (updatedMission.length === 0) {
+    throw new Error("\xC9chec de la mise \xE0 jour de la mission");
+  }
+  console.log("\u2705 API: Mission modifi\xE9e avec succ\xE8s:", missionId);
+  res.json(updatedMission[0]);
+}));
+router2.delete("/:id", asyncHandler(async (req, res) => {
+  const missionId = req.params.id;
+  console.log("\u{1F5D1}\uFE0F API: Suppression mission ID:", missionId);
+  if (missionId === "debug" || missionId === "verify-sync") {
+    return res.status(404).json({ error: "Endpoint non trouv\xE9" });
+  }
+  if (!missionId || missionId === "undefined" || missionId === "null") {
+    console.error("\u274C API: Mission ID invalide:", missionId);
+    return res.status(400).json({ error: "Mission ID invalide" });
+  }
+  const missionIdInt = parseInt(missionId, 10);
+  if (isNaN(missionIdInt) || missionIdInt <= 0) {
+    console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+    return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
+  }
+  const existingMission = await db.select({ id: missions.id }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+  if (existingMission.length === 0) {
+    console.error("\u274C API: Mission non trouv\xE9e pour suppression:", missionId);
+    return res.status(404).json({ error: "Mission non trouv\xE9e" });
+  }
+  const deletedMission = await db.delete(missions).where(eq3(missions.id, missionIdInt)).returning();
+  if (deletedMission.length === 0) {
+    throw new Error("\xC9chec de la suppression de la mission");
+  }
+  console.log("\u2705 API: Mission supprim\xE9e avec succ\xE8s:", missionId);
+  res.json({ message: "Mission supprim\xE9e avec succ\xE8s", mission: deletedMission[0] });
+}));
+var missions_default = router2;
 
 // server/api-routes.ts
 init_schema();
-import express2 from "express";
-import { Pool as Pool2 } from "pg";
-import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
-import { eq as eq3 } from "drizzle-orm";
-var pool2 = new Pool2({ connectionString: process.env.DATABASE_URL });
-var db2 = drizzle2(pool2);
-var router2 = express2.Router();
-router2.get("/demo-providers", async (req, res) => {
+import express3 from "express";
+import { Pool as Pool3 } from "pg";
+import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
+import { eq as eq4 } from "drizzle-orm";
+var pool3 = new Pool3({ connectionString: process.env.DATABASE_URL });
+var db3 = drizzle3(pool3);
+var router3 = express3.Router();
+router3.get("/demo-providers", async (req, res) => {
   try {
-    const providers = await db2.select({
+    const providers = await db3.select({
       id: users.id,
       email: users.email,
       name: users.name,
@@ -3021,16 +3560,16 @@ router2.get("/demo-providers", async (req, res) => {
       rating_count: users.rating_count,
       profile_data: users.profile_data,
       created_at: users.created_at
-    }).from(users).where(eq3(users.role, "PRO"));
+    }).from(users).where(eq4(users.role, "PRO"));
     res.json({ providers });
   } catch (error) {
     console.error("Erreur get demo providers:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/demo-projects", async (req, res) => {
+router3.get("/demo-projects", async (req, res) => {
   try {
-    const projectsWithClients = await db2.select({
+    const projectsWithClients = await db3.select({
       id: users.id,
       title: users.name,
       description: users.email,
@@ -3041,16 +3580,16 @@ router2.get("/demo-projects", async (req, res) => {
       created_at: users.created_at,
       client_name: users.name,
       client_email: users.email
-    }).from(users).leftJoin(users, eq3(users.id, users.id));
+    }).from(users).leftJoin(users, eq4(users.id, users.id));
     res.json({ projects: projectsWithClients });
   } catch (error) {
     console.error("Erreur get demo projects:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/demo-bids", async (req, res) => {
+router3.get("/demo-bids", async (req, res) => {
   try {
-    const bidsWithInfo = await db2.select({
+    const bidsWithInfo = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -3063,22 +3602,22 @@ router2.get("/demo-bids", async (req, res) => {
       provider_name: users.name,
       provider_email: users.email,
       provider_profile: users.profile_data
-    }).from(bids).leftJoin(users, eq3(bids.project_id, users.id)).leftJoin(users, eq3(bids.provider_id, users.id));
+    }).from(bids).leftJoin(users, eq4(bids.project_id, users.id)).leftJoin(users, eq4(bids.provider_id, users.id));
     res.json({ bids: bidsWithInfo });
   } catch (error) {
     console.error("Erreur get demo bids:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/provider/:id", async (req, res) => {
+router3.get("/provider/:id", async (req, res) => {
   try {
     const providerId = parseInt(req.params.id);
-    const provider = await db2.select().from(users).where(eq3(users.id, providerId)).limit(1);
+    const provider = await db3.select().from(users).where(eq4(users.id, providerId)).limit(1);
     if (provider.length === 0) {
       return res.status(404).json({ error: "Prestataire non trouv\xE9" });
     }
     const providerData = provider[0];
-    const providerBids = await db2.select({
+    const providerBids = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -3087,7 +3626,7 @@ router2.get("/provider/:id", async (req, res) => {
       created_at: bids.created_at,
       project_title: users.name,
       project_budget: users.email
-    }).from(bids).leftJoin(users, eq3(bids.project_id, users.id)).where(eq3(bids.provider_id, providerId));
+    }).from(bids).leftJoin(users, eq4(bids.project_id, users.id)).where(eq4(bids.provider_id, providerId));
     res.json({
       provider: {
         id: providerData.id,
@@ -3106,9 +3645,9 @@ router2.get("/provider/:id", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router2.get("/ai-analysis-demo", async (req, res) => {
+router3.get("/ai-analysis-demo", async (req, res) => {
   try {
-    const recentProjects = await db2.select({
+    const recentProjects = await db3.select({
       id: users.id,
       title: users.name,
       description: users.email,
@@ -3116,7 +3655,7 @@ router2.get("/ai-analysis-demo", async (req, res) => {
       category: users.rating_mean,
       created_at: users.created_at
     }).from(users).limit(3);
-    const recentBids = await db2.select({
+    const recentBids = await db3.select({
       id: bids.id,
       amount: bids.amount,
       timeline_days: bids.timeline_days,
@@ -3145,296 +3684,13 @@ router2.get("/ai-analysis-demo", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-var api_routes_default = router2;
+var api_routes_default = router3;
 
 // server/routes/ai-monitoring-routes.ts
+init_event_logger();
 import { Router as Router2 } from "express";
-
-// apps/api/src/monitoring/event-logger.ts
-var EventLogger = class {
-  eventBuffer = [];
-  performanceCache = /* @__PURE__ */ new Map();
-  batchSize = 50;
-  flushInterval = 3e4;
-  // 30 secondes
-  constructor() {
-    this.startAutoFlush();
-  }
-  /**
-   * Log d'événement utilisateur générique
-   */
-  logUserEvent(eventType, userId, sessionId, metadata = {}) {
-    const event = {
-      event_type: eventType,
-      user_id: userId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        ...metadata,
-        user_agent: metadata.user_agent || "unknown",
-        ip_address: metadata.ip_address || "unknown",
-        platform: metadata.platform || "web"
-      }
-    };
-    this.addToBuffer(event);
-    console.log("\u{1F4CA} [EVENT_LOGGED]", JSON.stringify({
-      type: eventType,
-      user: userId,
-      session: sessionId,
-      timestamp: event.timestamp
-    }));
-  }
-  /**
-   * Log d'événement de vue d'annonce
-   */
-  logAnnouncementView(userId, missionId, sessionId, dwellTime, metadata = {}) {
-    const event = {
-      event_type: "view",
-      user_id: userId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        dwell_time_ms: dwellTime,
-        click_depth: metadata.click_depth || 0,
-        scroll_percentage: metadata.scroll_percentage || 0,
-        interaction_quality: this.calculateInteractionQuality(dwellTime, metadata),
-        device_type: metadata.device_type || "desktop",
-        referrer: metadata.referrer || "direct",
-        feed_position: metadata.feed_position || 0,
-        recommendation_score: metadata.recommendation_score || 0
-      }
-    };
-    this.addToBuffer(event);
-    this.logPerformanceMetrics("view_recommendation", {
-      ai_latency_ms: metadata.recommendation_latency || 0,
-      confidence_level: metadata.recommendation_score || 0,
-      model_version: "feed_ranker_v2.1",
-      features_used: ["relevance", "quality", "freshness", "price"]
-    });
-  }
-  /**
-   * Log d'événement de sauvegarde/favori
-   */
-  logSave(userId, missionId, sessionId, metadata = {}) {
-    const event = {
-      event_type: "save",
-      user_id: userId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        save_source: metadata.save_source || "feed",
-        // 'feed', 'detail', 'search'
-        user_decision_time_ms: metadata.decision_time || 0,
-        mission_rank_in_feed: metadata.feed_position || 0,
-        previous_interactions: metadata.previous_interactions || [],
-        recommendation_accuracy: "pending"
-        // Sera mis à jour plus tard
-      }
-    };
-    this.addToBuffer(event);
-    this.logConversion("save", userId, missionId, metadata);
-  }
-  /**
-   * Log d'événement de proposition
-   */
-  logProposal(providerId, missionId, sessionId, metadata = {}) {
-    const event = {
-      event_type: "proposal",
-      provider_id: providerId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        proposal_value: metadata.proposal_value || 0,
-        time_to_proposal_hours: metadata.time_to_proposal_hours || 0,
-        proposal_rank: metadata.proposal_rank || 0,
-        pricing_confidence: metadata.pricing_confidence || 0,
-        matching_score: metadata.matching_score || 0,
-        bid_strategy: metadata.bid_strategy || "unknown",
-        ai_price_suggestion: metadata.ai_price_suggestion || 0,
-        price_deviation_percentage: metadata.price_deviation_percentage || 0
-      }
-    };
-    this.addToBuffer(event);
-    this.logPerformanceMetrics("pricing_suggestion", {
-      ai_latency_ms: metadata.pricing_latency || 0,
-      accuracy_score: metadata.pricing_confidence || 0,
-      model_version: "neural_pricing_v2.1",
-      features_used: ["complexity", "market", "urgency", "provider"],
-      prediction_outcome: "pending"
-    });
-  }
-  /**
-   * Log d'événement de victoire (projet attribué)
-   */
-  logWin(providerId, missionId, sessionId, metadata = {}) {
-    const event = {
-      event_type: "win",
-      provider_id: providerId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        final_value: metadata.final_value || 0,
-        negotiation_rounds: metadata.negotiation_rounds || 0,
-        time_to_decision_hours: metadata.time_to_decision_hours || 0,
-        client_satisfaction_prediction: metadata.client_satisfaction_prediction || 0,
-        ai_match_score: metadata.ai_match_score || 0,
-        ai_price_accuracy: metadata.ai_price_accuracy || 0
-      }
-    };
-    this.addToBuffer(event);
-    this.updatePredictionOutcome("pricing_suggestion", missionId, "success");
-    this.updatePredictionOutcome("matching_recommendation", missionId, "success");
-  }
-  /**
-   * Log d'événement de litige
-   */
-  logDispute(userId, missionId, sessionId, metadata = {}) {
-    const event = {
-      event_type: "dispute",
-      user_id: userId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: sessionId,
-      metadata: {
-        dispute_type: metadata.dispute_type || "unknown",
-        dispute_stage: metadata.dispute_stage || "initial",
-        estimated_resolution_time: metadata.estimated_resolution_time || 0,
-        client_satisfaction_drop: metadata.client_satisfaction_drop || 0,
-        ai_risk_score: metadata.ai_risk_score || 0,
-        preventability_score: metadata.preventability_score || 0
-      }
-    };
-    this.addToBuffer(event);
-    this.updatePredictionOutcome("risk_assessment", missionId, "failure");
-  }
-  /**
-   * Log des métriques de performance IA
-   */
-  logPerformanceMetrics(modelType, metrics) {
-    const key = `${modelType}_${Date.now()}`;
-    this.performanceCache.set(key, {
-      ...metrics,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-    console.log("\u{1F9E0} [AI_PERFORMANCE]", JSON.stringify({
-      model: modelType,
-      latency: metrics.ai_latency_ms,
-      confidence: metrics.confidence_level,
-      version: metrics.model_version
-    }));
-  }
-  /**
-   * Log d'événement de conversion
-   */
-  logConversion(conversionType, userId, missionId, metadata) {
-    const conversionEvent = {
-      event_type: "conversion",
-      user_id: userId,
-      mission_id: missionId,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      session_id: metadata.session_id || "unknown",
-      metadata: {
-        conversion_type: conversionType,
-        funnel_stage: metadata.funnel_stage || "unknown",
-        conversion_value: metadata.conversion_value || 0,
-        time_to_conversion: metadata.time_to_conversion || 0,
-        attribution_source: metadata.attribution_source || "organic"
-      }
-    };
-    this.addToBuffer(conversionEvent);
-  }
-  /**
-   * Calcule la qualité d'interaction
-   */
-  calculateInteractionQuality(dwellTime, metadata) {
-    let score = 0;
-    if (dwellTime > 1e4) score += 3;
-    else if (dwellTime > 3e3) score += 2;
-    else if (dwellTime > 1e3) score += 1;
-    if (metadata.click_depth > 2) score += 2;
-    else if (metadata.click_depth > 0) score += 1;
-    if (metadata.scroll_percentage > 75) score += 1;
-    if (score >= 5) return "high";
-    if (score >= 2) return "medium";
-    return "low";
-  }
-  /**
-   * Met à jour le résultat d'une prédiction
-   */
-  updatePredictionOutcome(modelType, missionId, outcome) {
-    console.log("\u{1F4C8} [PREDICTION_UPDATE]", JSON.stringify({
-      model: modelType,
-      mission: missionId,
-      outcome,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    }));
-  }
-  /**
-   * Ajoute un événement au buffer
-   */
-  addToBuffer(event) {
-    this.eventBuffer.push(event);
-    if (this.eventBuffer.length >= this.batchSize) {
-      this.flushEvents();
-    }
-  }
-  /**
-   * Vide le buffer d'événements
-   */
-  flushEvents() {
-    if (this.eventBuffer.length === 0) return;
-    const events = [...this.eventBuffer];
-    this.eventBuffer = [];
-    console.log("\u{1F680} [EVENTS_FLUSHED]", `${events.length} \xE9v\xE9nements envoy\xE9s vers analytics`);
-    this.sendToAnalyticsService(events);
-  }
-  /**
-   * Envoi simulé vers service d'analytics
-   */
-  async sendToAnalyticsService(events) {
-    try {
-      console.log("\u2705 Events sent to analytics service");
-    } catch (error) {
-      console.error("\u274C Failed to send events to analytics:", error);
-      this.eventBuffer.unshift(...events);
-    }
-  }
-  /**
-   * Démarrage du flush automatique
-   */
-  startAutoFlush() {
-    setInterval(() => {
-      this.flushEvents();
-    }, this.flushInterval);
-  }
-  /**
-   * Récupération des métriques de performance
-   */
-  getPerformanceMetrics() {
-    return new Map(this.performanceCache);
-  }
-  /**
-   * Nettoyage des métriques anciennes
-   */
-  cleanupOldMetrics(maxAgeMs = 36e5) {
-    const cutoff = Date.now() - maxAgeMs;
-    for (const [key, metrics] of this.performanceCache.entries()) {
-      const metricTime = new Date(metrics.timestamp).getTime();
-      if (metricTime < cutoff) {
-        this.performanceCache.delete(key);
-      }
-    }
-  }
-};
-var eventLogger = new EventLogger();
-
-// server/routes/ai-monitoring-routes.ts
-var router3 = Router2();
-router3.get("/health", async (req, res) => {
+var router4 = Router2();
+router4.get("/health", async (req, res) => {
   try {
     const modelMetrics = [
       {
@@ -3524,7 +3780,7 @@ router3.get("/health", async (req, res) => {
     });
   }
 });
-router3.get("/experiments", async (req, res) => {
+router4.get("/experiments", async (req, res) => {
   try {
     const experiments = [
       {
@@ -3579,7 +3835,7 @@ router3.get("/experiments", async (req, res) => {
     });
   }
 });
-router3.post("/events", async (req, res) => {
+router4.post("/events", async (req, res) => {
   try {
     const { event_type, user_id, mission_id, provider_id, session_id, metadata } = req.body;
     if (!event_type || !session_id) {
@@ -3651,7 +3907,7 @@ router3.post("/events", async (req, res) => {
     });
   }
 });
-router3.get("/performance-metrics", async (req, res) => {
+router4.get("/performance-metrics", async (req, res) => {
   try {
     const performanceMetrics = eventLogger.getPerformanceMetrics();
     const aggregated = {
@@ -3690,7 +3946,7 @@ router3.get("/performance-metrics", async (req, res) => {
     });
   }
 });
-router3.post("/clear-cache", async (req, res) => {
+router4.post("/clear-cache", async (req, res) => {
   try {
     const maxAgeMs = req.body.max_age_ms || 36e5;
     eventLogger.cleanupOldMetrics(maxAgeMs);
@@ -3707,7 +3963,7 @@ router3.post("/clear-cache", async (req, res) => {
     });
   }
 });
-router3.get("/business-metrics", async (req, res) => {
+router4.get("/business-metrics", async (req, res) => {
   try {
     const { period = "7d" } = req.query;
     const businessMetrics = {
@@ -3770,7 +4026,7 @@ router3.get("/business-metrics", async (req, res) => {
     });
   }
 });
-router3.get("/alerts", async (req, res) => {
+router4.get("/alerts", async (req, res) => {
   try {
     const alerts = [
       {
@@ -3819,12 +4075,12 @@ router3.get("/alerts", async (req, res) => {
     });
   }
 });
-var ai_monitoring_routes_default = router3;
+var ai_monitoring_routes_default = router4;
 
 // server/routes/ai-routes.ts
 import { Router as Router3 } from "express";
 import { z as z2 } from "zod";
-var router4 = Router3();
+var router5 = Router3();
 var priceSuggestionSchema = z2.object({
   title: z2.string().min(5, "Titre trop court"),
   description: z2.string().min(10, "Description trop courte"),
@@ -3843,7 +4099,7 @@ var enhanceTextSchema = z2.object({
   fieldType: z2.enum(["title", "description", "requirements"]),
   category: z2.string().optional()
 });
-router4.post("/suggest-pricing", async (req, res) => {
+router5.post("/suggest-pricing", async (req, res) => {
   try {
     const { title, description, category } = priceSuggestionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3873,7 +4129,7 @@ router4.post("/suggest-pricing", async (req, res) => {
     });
   }
 });
-router4.post("/enhance-description", async (req, res) => {
+router5.post("/enhance-description", async (req, res) => {
   try {
     const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3903,7 +4159,7 @@ router4.post("/enhance-description", async (req, res) => {
     });
   }
 });
-router4.post("/analyze-quality", async (req, res) => {
+router5.post("/analyze-quality", async (req, res) => {
   try {
     const { description } = analyzeQualitySchema.parse(req.body);
     const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
@@ -3929,7 +4185,7 @@ router4.post("/analyze-quality", async (req, res) => {
     });
   }
 });
-router4.post("/enhance-text", async (req, res) => {
+router5.post("/enhance-text", async (req, res) => {
   try {
     const { text: text2, fieldType, category } = req.body;
     if (!text2 || typeof text2 !== "string" || text2.trim().length === 0) {
@@ -3970,7 +4226,7 @@ router4.post("/enhance-text", async (req, res) => {
     });
   }
 });
-router4.get("/health", async (req, res) => {
+router5.get("/health", async (req, res) => {
   try {
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const geminiConfigured = !!geminiApiKey;
@@ -4001,7 +4257,7 @@ router4.get("/health", async (req, res) => {
     });
   }
 });
-router4.get("/test-config", async (req, res) => {
+router5.get("/test-config", async (req, res) => {
   try {
     const geminiAdapter = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
     const geminiCall2 = geminiAdapter.geminiCall;
@@ -4026,7 +4282,7 @@ router4.get("/test-config", async (req, res) => {
     });
   }
 });
-router4.post("/analyze", async (req, res) => {
+router5.post("/analyze", async (req, res) => {
   const { title = "", description = "", category = "autre" } = req.body ?? {};
   if (typeof description !== "string" || description.trim().length < 5) {
     return res.status(400).json({ error: "Description trop courte" });
@@ -4042,12 +4298,12 @@ router4.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur analyse IA" });
   }
 });
-var ai_routes_default = router4;
+var ai_routes_default = router5;
 
 // server/routes/ai-suggestions-routes.ts
 import { Router as Router4 } from "express";
 import { z as z3 } from "zod";
-var router5 = Router4();
+var router6 = Router4();
 var assistantSuggestionsSchema = z3.object({
   page: z3.string(),
   userContext: z3.object({
@@ -4167,7 +4423,7 @@ async function generatePageSuggestions(page, userContext = {}) {
   }
   return suggestions;
 }
-router5.post("/assistant-suggestions", async (req, res) => {
+router6.post("/assistant-suggestions", async (req, res) => {
   try {
     const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
     const suggestions = await generatePageSuggestions(page, userContext);
@@ -4201,12 +4457,12 @@ router5.post("/assistant-suggestions", async (req, res) => {
     });
   }
 });
-var ai_suggestions_routes_default = router5;
+var ai_suggestions_routes_default = router6;
 
 // server/routes/ai-missions-routes.ts
 import { Router as Router5 } from "express";
 import { z as z4 } from "zod";
-var router6 = Router5();
+var router7 = Router5();
 var missionSuggestionSchema = z4.object({
   title: z4.string().min(3, "Titre trop court"),
   description: z4.string().min(10, "Description trop courte"),
@@ -4217,7 +4473,7 @@ var missionSuggestionSchema = z4.object({
   geo_required: z4.boolean().optional(),
   onsite_radius_km: z4.number().optional()
 });
-router6.post("/suggest", async (req, res) => {
+router7.post("/suggest", async (req, res) => {
   try {
     console.log("Requ\xEAte re\xE7ue:", req.body);
     const { title, description, category } = missionSuggestionSchema.parse(req.body);
@@ -4315,13 +4571,13 @@ router6.post("/suggest", async (req, res) => {
     });
   }
 });
-var ai_missions_routes_default = router6;
+var ai_missions_routes_default = router7;
 
 // apps/api/src/routes/ai.ts
 init_aiOrchestrator();
 import { Router as Router6 } from "express";
-var router7 = Router6();
-router7.post("/pricing", async (req, res) => {
+var router8 = Router6();
+router8.post("/pricing", async (req, res) => {
   try {
     const result = await getPricingSuggestion(req.body);
     res.json(result);
@@ -4330,7 +4586,7 @@ router7.post("/pricing", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul de prix" });
   }
 });
-router7.post("/brief", async (req, res) => {
+router8.post("/brief", async (req, res) => {
   try {
     const result = await enhanceBrief(req.body);
     res.json(result);
@@ -4339,7 +4595,7 @@ router7.post("/brief", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
   }
 });
-router7.post("/feedback", async (req, res) => {
+router8.post("/feedback", async (req, res) => {
   try {
     const { phase, prompt, feedback } = req.body;
     await logUserFeedback(phase, prompt, feedback);
@@ -4349,14 +4605,14 @@ router7.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-var ai_default = router7;
+var ai_default = router8;
 
 // server/routes/feed-routes.ts
 init_schema();
-import express3 from "express";
+import express4 from "express";
 import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { desc as desc3, eq as eq5, and as and2, not, inArray, sql as sql2 } from "drizzle-orm";
+import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { desc as desc3, eq as eq6, and as and2, not, inArray, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -4647,37 +4903,37 @@ var FeedRanker = class {
 
 // server/routes/feed-routes.ts
 import { z as z5 } from "zod";
-var router8 = express3.Router();
+var router9 = express4.Router();
 var connection = neon(process.env.DATABASE_URL);
-var db4 = drizzle4(connection);
+var db5 = drizzle5(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
-router8.get("/feed", async (req, res) => {
+router9.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
-    const seenAnnouncements = userId ? await db4.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
+    const seenAnnouncements = userId ? await db5.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
       and2(
-        eq5(feedSeen.user_id, parseInt(userId))
+        eq6(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq5(announcements.status, "active")];
+    let whereConditions = [eq6(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
     if (cursor) {
       const cursorId = parseInt(cursor);
-      whereConditions.push(sql2`${announcements.id} < ${cursorId}`);
+      whereConditions.push(sql3`${announcements.id} < ${cursorId}`);
     }
-    const query = db4.select().from(announcements).where(and2(...whereConditions));
+    const query = db5.select().from(announcements).where(and2(...whereConditions));
     const rawAnnouncements = await query.orderBy(desc3(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    const sponsoredAnnouncements = await db4.select().from(announcements).where(and2(
-      eq5(announcements.sponsored, true),
-      eq5(announcements.status, "active")
+    const sponsoredAnnouncements = await db5.select().from(announcements).where(and2(
+      eq6(announcements.sponsored, true),
+      eq6(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -4695,12 +4951,12 @@ router8.get("/feed", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration du feed" });
   }
 });
-router8.post("/feedback", async (req, res) => {
+router9.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    await db4.insert(feedFeedback).values(feedbackData);
+    await db5.insert(feedFeedback).values(feedbackData);
     if (feedbackData.action !== "view") {
-      await db4.insert(feedSeen).values({
+      await db5.insert(feedSeen).values({
         user_id: feedbackData.user_id,
         announcement_id: feedbackData.announcement_id
       }).onConflictDoNothing();
@@ -4720,7 +4976,7 @@ router8.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-router8.get("/price-benchmark", async (req, res) => {
+router9.get("/price-benchmark", async (req, res) => {
   try {
     const { category } = req.query;
     if (!category) {
@@ -4733,12 +4989,12 @@ router8.get("/price-benchmark", async (req, res) => {
         return res.json(cached.data);
       }
     }
-    const prices = await db4.select({
+    const prices = await db5.select({
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
     }).from(announcements).where(and2(
-      eq5(announcements.category, category),
-      eq5(announcements.status, "active")
+      eq6(announcements.category, category),
+      eq6(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -4763,26 +5019,26 @@ router8.get("/price-benchmark", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul du benchmark" });
   }
 });
-var feed_routes_default = router8;
+var feed_routes_default = router9;
 
 // server/routes/favorites-routes.ts
 init_schema();
 import { Router as Router7 } from "express";
-import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq6, and as and3 } from "drizzle-orm";
-var sql3 = neon2(process.env.DATABASE_URL);
-var db5 = drizzle5(sql3);
-var router9 = Router7();
-router9.get("/favorites", async (req, res) => {
+import { eq as eq7, and as and3 } from "drizzle-orm";
+var sql4 = neon2(process.env.DATABASE_URL);
+var db6 = drizzle6(sql4);
+var router10 = Router7();
+router10.get("/favorites", async (req, res) => {
   try {
     const { user_id } = req.query;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    const userFavorites = await db5.select({
+    const userFavorites = await db6.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq7(favorites.announcement_id, announcements.id)).where(eq7(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -4793,22 +5049,22 @@ router9.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration des favoris" });
   }
 });
-router9.post("/favorites", async (req, res) => {
+router10.post("/favorites", async (req, res) => {
   try {
     const { user_id, announcement_id } = req.body;
     if (!user_id || !announcement_id) {
       return res.status(400).json({ error: "user_id et announcement_id requis" });
     }
-    const existing = await db5.select().from(favorites).where(
+    const existing = await db6.select().from(favorites).where(
       and3(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, announcement_id)
+        eq7(favorites.user_id, user_id),
+        eq7(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
       return res.status(200).json({ message: "D\xE9j\xE0 en favori" });
     }
-    await db5.insert(favorites).values({
+    await db6.insert(favorites).values({
       user_id,
       announcement_id,
       created_at: /* @__PURE__ */ new Date()
@@ -4819,17 +5075,17 @@ router9.post("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'ajout aux favoris" });
   }
 });
-router9.delete("/favorites/:announcementId", async (req, res) => {
+router10.delete("/favorites/:announcementId", async (req, res) => {
   try {
     const { announcementId } = req.params;
     const { user_id } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    await db5.delete(favorites).where(
+    await db6.delete(favorites).where(
       and3(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, parseInt(announcementId))
+        eq7(favorites.user_id, user_id),
+        eq7(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -4838,11 +5094,11 @@ router9.delete("/favorites/:announcementId", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression des favoris" });
   }
 });
-var favorites_routes_default = router9;
+var favorites_routes_default = router10;
 
 // server/routes/mission-demo.ts
-import express4 from "express";
-var router10 = express4.Router();
+import express5 from "express";
+var router11 = express5.Router();
 var getDemoMissions = () => [
   {
     id: "mission1",
@@ -4923,13 +5179,13 @@ var getDemoMissions = () => [
     bids: []
   }
 ];
-router10.get("/missions-demo", (req, res) => {
+router11.get("/missions-demo", (req, res) => {
   res.json(getDemoMissions());
 });
-var mission_demo_default = router10;
+var mission_demo_default = router11;
 
 // server/routes/ai-quick-analysis.ts
-import express5 from "express";
+import express6 from "express";
 
 // server/services/ai-analysis.ts
 var AIAnalysisService = class {
@@ -5302,8 +5558,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router11 = express5.Router();
-router11.post("/ai/quick-analysis", async (req, res) => {
+var router12 = express6.Router();
+router12.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -5320,7 +5576,7 @@ router11.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router11.post("/ai/price-analysis", async (req, res) => {
+router12.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -5341,12 +5597,12 @@ router11.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router11;
+var ai_quick_analysis_default = router12;
 
 // server/routes/ai-diagnostic-routes.ts
 import { Router as Router8 } from "express";
-var router12 = Router8();
-router12.get("/diagnostic", async (req, res) => {
+var router13 = Router8();
+router13.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -5410,13 +5666,13 @@ router12.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router12;
+var ai_diagnostic_routes_default = router13;
 
 // server/routes/ai-learning-routes.ts
 init_learning_engine();
 import { Router as Router9 } from "express";
-var router13 = Router9();
-router13.post("/analyze-patterns", async (req, res) => {
+var router14 = Router9();
+router14.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -5434,7 +5690,7 @@ router13.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router13.get("/stats", (req, res) => {
+router14.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -5446,12 +5702,12 @@ router13.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router13;
+var ai_learning_routes_default = router14;
 
 // server/routes/team-routes.ts
 import { Router as Router10 } from "express";
 import { z as z6 } from "zod";
-var router14 = Router10();
+var router15 = Router10();
 var teamAnalysisSchema = z6.object({
   description: z6.string().min(10),
   title: z6.string().min(3),
@@ -5478,7 +5734,7 @@ var teamProjectSchema = z6.object({
     importance: z6.enum(["high", "medium", "low"])
   }))
 });
-router14.post("/analyze", async (req, res) => {
+router15.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -5523,7 +5779,7 @@ router14.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router14.post("/create-project", async (req, res) => {
+router15.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -5578,7 +5834,7 @@ router14.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router14;
+var team_routes_default = router15;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -5680,12 +5936,12 @@ var monitoringRateLimit = rateLimit({
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
 validateEnvironment();
-var app = express6();
+var app = express7();
 var port = parseInt(process.env.PORT || "5000", 10);
 var databaseUrl2 = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
 console.log("\u{1F517} Using Replit PostgreSQL connection");
 var missionSyncService = new MissionSyncService(databaseUrl2);
-var pool4 = new Pool4({
+var pool5 = new Pool5({
   connectionString: databaseUrl2,
   connectionTimeoutMillis: 5e3,
   // 5 second timeout
@@ -5706,7 +5962,7 @@ async function validateDatabaseConnection() {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Database connection timeout")), timeout);
     });
-    const connectionPromise = pool4.query("SELECT 1 as test");
+    const connectionPromise = pool5.query("SELECT 1 as test");
     await Promise.race([connectionPromise, timeoutPromise]);
     console.log("\u2705 Database connection validated successfully");
     return true;
@@ -5753,14 +6009,17 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app.use(express6.json());
+app.use(express7.json());
+app.use("/api/auth", auth_routes_default);
 console.log("\u{1F4CB} Registering missions routes...");
 app.use("/api/missions", missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
 app.use("/api", api_routes_default);
 app.use("/api", missions_default);
-app.use("/api/projects", () => {
-  throw new Error("Projects API is deprecated and has been replaced by Missions API");
+app.use("/api/projects", (req, res) => {
+  const newUrl = req.originalUrl.replace("/api/projects", "/api/missions");
+  console.log(`\u{1F504} Redirecting deprecated projects API ${req.originalUrl} to ${newUrl}`);
+  res.redirect(301, newUrl);
 });
 app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
 app.use("/api/ai/suggest-pricing", strictAiRateLimit);
@@ -5781,14 +6040,19 @@ app.use("/api", mission_demo_default);
 app.use("/api/team", team_routes_default);
 app.get("/api/health", async (req, res) => {
   try {
-    await pool4.query("SELECT 1");
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Database query timeout")), 5e3);
+    });
+    const queryPromise = pool5.query("SELECT 1");
+    await Promise.race([queryPromise, timeoutPromise]);
     res.status(200).json({
-      status: "ok",
+      status: "healthy",
       message: "SwipDEAL API is running",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       uptime: process.uptime(),
       env: process.env.NODE_ENV || "development",
-      database: "connected"
+      database: "connected",
+      service: "missions-api"
     });
   } catch (error) {
     console.error("Health check database error:", error);
@@ -5799,6 +6063,7 @@ app.get("/api/health", async (req, res) => {
       uptime: process.uptime(),
       env: process.env.NODE_ENV || "development",
       database: "disconnected",
+      service: "missions-api",
       error: error instanceof Error ? error.message : "Unknown error"
     });
   }
@@ -5883,15 +6148,38 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 app.use((error, req, res, next) => {
-  console.error("\u{1F6A8} Global error handler:", error);
-  console.error("\u{1F6A8} Request URL:", req.url);
-  console.error("\u{1F6A8} Request method:", req.method);
-  console.error("\u{1F6A8} Request body:", req.body);
-  res.status(500).json({
-    error: "Internal server error",
-    details: process.env.NODE_ENV === "development" ? error.message : "Something went wrong",
+  console.error("\u{1F6A8} Global error handler:", {
+    error: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    query: req.query,
+    params: req.params,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
+  Promise.resolve().then(async () => {
+    try {
+      const eventLoggerModule = await Promise.resolve().then(() => (init_event_logger(), event_logger_exports));
+      eventLoggerModule.eventLogger?.logUserEvent("error", req.user?.id || "anonymous", req.sessionID || "unknown", {
+        error_type: "server_error",
+        error_message: error.message,
+        endpoint: req.originalUrl,
+        method: req.method
+      });
+    } catch (logError) {
+      console.warn("Could not log error event:", logError instanceof Error ? logError.message : "Unknown error");
+    }
+  });
+  if (!res.headersSent) {
+    res.status(500).json({
+      error: "Internal server error",
+      details: process.env.NODE_ENV === "development" ? error.message : "Something went wrong",
+      stack: process.env.NODE_ENV === "development" ? error.stack : void 0,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: req.headers["x-request-id"] || "unknown"
+    });
+  }
 });
 var index_default = app;
 export {
