@@ -53,6 +53,7 @@ var init_schema = __esm({
       id: serial("id").primaryKey(),
       email: text("email").notNull().unique(),
       name: text("name").notNull(),
+      password: text("password").notNull(),
       role: text("role").notNull().$type(),
       rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
       rating_count: integer("rating_count").default(0),
@@ -68,6 +69,7 @@ var init_schema = __esm({
       category: text("category").notNull(),
       location: text("location"),
       location_raw: text("location_raw"),
+      postal_code: text("postal_code"),
       city: text("city"),
       country: text("country"),
       remote_allowed: boolean("remote_allowed").default(true),
@@ -201,7 +203,9 @@ var init_schema = __esm({
     insertUserSchema = z.object({
       email: z.string().email(),
       name: z.string().min(1),
-      role: z.enum(["CLIENT", "PRO"]),
+      password: z.string().min(8),
+      // Added password validation, assuming a minimum of 8 characters
+      role: z.enum(["CLIENT", "PRO", "ADMIN"]),
       rating_mean: z.string().optional(),
       rating_count: z.number().int().min(0).optional(),
       profile_data: z.any().optional()
@@ -212,6 +216,8 @@ var init_schema = __esm({
       description: z.string().min(1),
       category: z.string().min(1),
       location: z.string().optional(),
+      postal_code: z.string().optional(),
+      // Added postal_code validation
       budget_min: z.number().int().min(0).optional(),
       budget_max: z.number().int().min(0).optional(),
       budget_value_cents: z.number().int().min(0).optional(),
@@ -2736,17 +2742,30 @@ var db2 = drizzle2(pool2);
 var router = express2.Router();
 router.post("/login", async (req, res) => {
   try {
+    console.log("\u{1F511} Tentative de connexion:", { email: req.body.email });
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
+      console.log("\u274C Email ou mot de passe manquant");
+      return res.status(400).json({
+        error: "Email et mot de passe requis",
+        success: false
+      });
     }
     const user = await db2.select().from(users).where(eq2(users.email, email)).limit(1);
     if (user.length === 0) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+      console.log("\u274C Utilisateur non trouv\xE9:", email);
+      return res.status(401).json({
+        error: "Email ou mot de passe incorrect",
+        success: false
+      });
     }
     const userData = user[0];
-    if (userData.password !== password) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    if (!userData.password || userData.password !== password) {
+      console.log("\u274C Mot de passe incorrect pour:", email);
+      return res.status(401).json({
+        error: "Email ou mot de passe incorrect",
+        success: false
+      });
     }
     const userSession = {
       id: userData.id,
@@ -2770,21 +2789,46 @@ router.post("/login", async (req, res) => {
 });
 router.post("/register", async (req, res) => {
   try {
+    console.log("\u{1F4DD} Tentative de cr\xE9ation de compte:", { email: req.body.email, name: req.body.name });
     const { email, password, name, role = "CLIENT" } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
+      console.log("\u274C Email ou mot de passe manquant");
+      return res.status(400).json({
+        error: "Email et mot de passe requis",
+        success: false
+      });
+    }
+    if (!name || name.trim().length < 2) {
+      console.log("\u274C Nom invalide");
+      return res.status(400).json({
+        error: "Le nom doit contenir au moins 2 caract\xE8res",
+        success: false
+      });
+    }
+    if (password.length < 6) {
+      console.log("\u274C Mot de passe trop court");
+      return res.status(400).json({
+        error: "Le mot de passe doit contenir au moins 6 caract\xE8res",
+        success: false
+      });
     }
     const existingUser = await db2.select().from(users).where(eq2(users.email, email)).limit(1);
     if (existingUser.length > 0) {
-      return res.status(409).json({ error: "Un compte existe d\xE9j\xE0 avec cet email" });
+      console.log("\u274C Email d\xE9j\xE0 utilis\xE9:", email);
+      return res.status(409).json({
+        error: "Un compte existe d\xE9j\xE0 avec cet email",
+        success: false
+      });
     }
     const [newUser] = await db2.insert(users).values({
-      email,
+      email: email.toLowerCase().trim(),
       password,
       // En production, hasher avec bcrypt
-      name,
-      role,
-      profile_data: {}
+      name: name.trim(),
+      role: role.toUpperCase(),
+      profile_data: {},
+      created_at: /* @__PURE__ */ new Date(),
+      updated_at: /* @__PURE__ */ new Date()
     }).returning();
     const userSession = {
       id: newUser.id,
@@ -3054,7 +3098,14 @@ router2.post("/", asyncHandler(async (req, res) => {
     user_agent: req.headers["user-agent"],
     ip: req.ip
   }));
-  const { title, description, category, budget, location, userId } = req.body;
+  const { title, description, category, budget, location, userId, postal_code } = req.body;
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_data_received",
+    data: { title, description, category, budget, location, postal_code, userId }
+  }));
   if (!title || typeof title !== "string" || title.trim().length < 3) {
     console.log(JSON.stringify({
       level: "warn",
@@ -6203,9 +6254,17 @@ app.use(limitRequestSize);
 app.use(validateRequest);
 app.use(performanceMonitor);
 app.use(express7.json({ limit: "10mb" }));
-app.use("/api/auth", auth_routes_default);
+app.use("/api/auth", (req, res, next) => {
+  console.log(`\u{1F510} Auth request: ${req.method} ${req.path}`, { body: req.body.email ? { email: req.body.email } : {} });
+  next();
+}, auth_routes_default);
 console.log("\u{1F4CB} Registering missions routes...");
-app.use("/api/missions", missions_default);
+app.use("/api/missions", (req, res, next) => {
+  console.log(`\u{1F4CB} Mission request: ${req.method} ${req.path}`, {
+    body: req.body.title ? { title: req.body.title, userId: req.body.userId } : {}
+  });
+  next();
+}, missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
 app.use("/api", api_routes_default);
 app.use("/api/projects", (req, res, next) => {
