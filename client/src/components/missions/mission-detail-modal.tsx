@@ -153,61 +153,62 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[100vw] h-[100vh] max-w-none max-h-none p-0 gap-0 bg-gray-50 overflow-hidden md:w-[90vw] md:h-[90vh] md:max-w-4xl md:rounded-xl">
+      <DialogContent className="w-[95vw] h-[85vh] max-w-4xl max-h-[85vh] p-0 gap-0 bg-gray-50 overflow-hidden rounded-xl">
+        <div className="flex flex-col h-full">
         
         {/* Header Mobile/Desktop */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative">
-          <div className="flex items-center justify-between p-4 md:p-6">
-            <Button
-              onClick={onClose}
-              size="sm"
-              variant="ghost"
-              className="text-white hover:bg-white/20 p-2 rounded-full md:hidden"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex-1 md:flex-none">
-              <DialogTitle className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
-                {mission.title}
-              </DialogTitle>
-              <DialogDescription className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
-                Par {mission.clientName} • {formatBudget(mission.budget || '0')}
-              </DialogDescription>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6">
+              <Button
+                onClick={onClose}
+                size="sm"
+                variant="ghost"
+                className="text-white hover:bg-white/20 p-2 rounded-full md:hidden"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              
+              <div className="flex-1 md:flex-none">
+                <DialogTitle className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
+                  {mission.title}
+                </DialogTitle>
+                <DialogDescription className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
+                  Par {mission.clientName} • {formatBudget(mission.budget || '0')}
+                </DialogDescription>
+              </div>
+
+              <Button
+                onClick={onClose}
+                size="sm"
+                variant="ghost"
+                className="text-white hover:bg-white/20 p-2 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
 
-            <Button
-              onClick={onClose}
-              size="sm"
-              variant="ghost"
-              className="text-white hover:bg-white/20 p-2 rounded-full hidden md:flex"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Stats rapides */}
-          <div className="px-4 pb-4 md:px-6">
-            <div className="flex items-center gap-4 text-xs md:text-sm text-blue-100">
-              <div className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
+            {/* Stats rapides */}
+            <div className="px-4 pb-4 md:px-6">
+              <div className="flex items-center gap-4 text-xs md:text-sm text-blue-100">
+                <div className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{formatDate(mission.createdAt || new Date().toISOString())}</span>
+                </div>
+                {category && (
+                  <Badge className="bg-white/20 text-white border-none text-xs px-2 py-0.5">
+                    {category.name}
+                  </Badge>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span>{formatDate(mission.createdAt || new Date().toISOString())}</span>
-              </div>
-              {category && (
-                <Badge className="bg-white/20 text-white border-none text-xs px-2 py-0.5">
-                  {category.name}
-                </Badge>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white border-b sticky top-0 z-10">
+          {/* Navigation Tabs */}
+          <div className="bg-white border-b flex-shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full h-12 bg-transparent rounded-none border-none p-0">
               <div className="flex w-full">
@@ -238,7 +239,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             </TabsList>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               
               {/* Overview Tab */}
               <TabsContent value="overview" className="m-0 p-4 md:p-6 space-y-4">
