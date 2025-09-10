@@ -5,33 +5,11 @@ import { z } from 'zod';
 // SCHEMAS ZOD POUR VALIDATION SERVER-SIDE
 // ============================================
 
-// Budget schemas
-const budgetFixedSchema = z.object({
-  type: z.literal('fixed'),
-  valueCents: z.number().int().positive(),
+// Budget schema simplifié avec prix unique
+const budgetSchema = z.object({
+  valueCents: z.number().int().positive().min(1000, "Budget minimum de 10€"),
   currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).default('EUR')
 });
-
-const budgetRangeSchema = z.object({
-  type: z.literal('range'),
-  minCents: z.number().int().positive(),
-  maxCents: z.number().int().positive(),
-  currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).default('EUR')
-}).refine(data => data.minCents <= data.maxCents, {
-  message: "Budget minimum doit être inférieur ou égal au maximum",
-  path: ['maxCents']
-});
-
-const budgetNegotiableSchema = z.object({
-  type: z.literal('negotiable'),
-  currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).default('EUR')
-});
-
-const budgetSchema = z.discriminatedUnion('type', [
-  budgetFixedSchema,
-  budgetRangeSchema,
-  budgetNegotiableSchema
-]);
 
 // Location schema
 const locationSchema = z.object({

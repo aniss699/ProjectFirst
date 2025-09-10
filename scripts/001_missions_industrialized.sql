@@ -40,18 +40,9 @@ CREATE TABLE IF NOT EXISTS missions (
   tags TEXT[] DEFAULT '{}',
   skills_required TEXT[] DEFAULT '{}',
   
-  -- Budget (en centimes)
-  budget_type TEXT NOT NULL DEFAULT 'fixed' CHECK (budget_type IN ('fixed', 'range', 'negotiable')),
-  budget_value_cents INTEGER CHECK (budget_value_cents >= 0),
-  budget_min_cents INTEGER CHECK (budget_min_cents >= 0),
-  budget_max_cents INTEGER CHECK (budget_max_cents >= 0),
+  -- Budget (en centimes) - prix unique
+  budget_value_cents INTEGER NOT NULL CHECK (budget_value_cents >= 1000), -- Minimum 10€
   currency currency_code NOT NULL DEFAULT 'EUR',
-  
-  -- Contrainte : budget_min <= budget_max si range
-  CONSTRAINT budget_range_valid CHECK (
-    (budget_type != 'range') OR 
-    (budget_min_cents IS NOT NULL AND budget_max_cents IS NOT NULL AND budget_min_cents <= budget_max_cents)
-  ),
   
   -- Localisation
   location_raw TEXT,

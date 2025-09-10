@@ -110,37 +110,13 @@ export function normalizeMission(
 // ============================================
 
 function normalizeBudget(budget: BudgetInput): {
-  type: string;
-  valueCents?: number;
-  minCents?: number;
-  maxCents?: number;
+  valueCents: number;
   currency: string;
 } {
-  switch (budget.type) {
-    case 'fixed':
-      return {
-        type: 'fixed',
-        valueCents: budget.valueCents,
-        currency: budget.currency
-      };
-      
-    case 'range':
-      return {
-        type: 'range',
-        minCents: budget.minCents,
-        maxCents: budget.maxCents,
-        currency: budget.currency
-      };
-      
-    case 'negotiable':
-      return {
-        type: 'negotiable',
-        currency: budget.currency
-      };
-      
-    default:
-      throw new Error(`Unsupported budget type: ${(budget as any).type}`);
-  }
+  return {
+    valueCents: budget.valueCents,
+    currency: budget.currency
+  };
 }
 
 function normalizeLocation(location?: LocationInput): {
@@ -221,24 +197,9 @@ function validateBusinessRules_internal(
     throw new Error('Team mission must have team size greater than 1');
   }
   
-  // Règle 2: Budget range doit être cohérent
-  if (budget.type === 'range' && budget.minCents && budget.maxCents) {
-    if (budget.minCents > budget.maxCents) {
-      throw new Error('Budget minimum cannot be greater than maximum');
-    }
-    
-    // Écart maximum de 10x entre min et max
-    if (budget.maxCents > budget.minCents * 10) {
-      throw new Error('Budget range too wide (max 10x difference)');
-    }
-  }
-  
-  // Règle 3: Budget minimum absolu (10€)
+  // Règle 2: Budget minimum absolu (10€)
   const minBudgetCents = 1000; // 10€
-  if (budget.type === 'fixed' && budget.valueCents && budget.valueCents < minBudgetCents) {
-    throw new Error(`Minimum budget is ${minBudgetCents / 100}€`);
-  }
-  if (budget.type === 'range' && budget.minCents && budget.minCents < minBudgetCents) {
+  if (budget.valueCents < minBudgetCents) {
     throw new Error(`Minimum budget is ${minBudgetCents / 100}€`);
   }
   
