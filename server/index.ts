@@ -364,6 +364,9 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   const timestamp = new Date().toISOString();
   const requestId = req.headers['x-request-id'] || `req_${Date.now()}`;
   
+  // Enable debug mode in preview
+  const isDebugMode = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV === 'development';
+  
   // Categorize error types
   let statusCode = 500;
   let errorType = 'server_error';
@@ -411,10 +414,12 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(statusCode).json({
       ok: false,
       error: statusCode === 500 ? 'Internal server error' : error.message,
-      details: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred',
+      details: isDebugMode ? error.message : 'An error occurred',
+      stack: isDebugMode ? error.stack : undefined,
       error_type: errorType,
       timestamp,
-      request_id: requestId
+      request_id: requestId,
+      debug_mode: isDebugMode
     });
   }
 });
