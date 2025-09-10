@@ -4,6 +4,33 @@ import { db } from '../database.js';
 import { missions, bids as bidTable } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js'; // Import MissionSyncService
 
+// Utilitaire pour générer un excerpt à partir de la description
+function generateExcerpt(description: string, maxLength: number = 200): string {
+  if (!description || description.length <= maxLength) {
+    return description || '';
+  }
+  
+  // Chercher la fin de phrase la plus proche avant maxLength
+  const truncated = description.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('.'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?')
+  );
+  
+  if (lastSentenceEnd > maxLength * 0.6) {
+    return truncated.substring(0, lastSentenceEnd + 1).trim();
+  }
+  
+  // Sinon, couper au dernier espace pour éviter de couper un mot
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + '...';
+  }
+  
+  return truncated.trim() + '...';
+}
+
 const router = Router();
 
 // POST /api/missions - Create new mission
@@ -154,6 +181,7 @@ router.get('/', async (req, res) => {
     // Transform missions to include required fields for MissionWithBids type
     const missionsWithBids = allMissions.map(mission => ({
       ...mission,
+      excerpt: generateExcerpt(mission.description || '', 200),
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       clientName: 'Client anonyme', // Default client name
       bids: [] // Empty bids array for now
@@ -285,6 +313,7 @@ router.get('/:id', async (req, res) => {
 
     const result = {
       ...mission[0],
+      excerpt: generateExcerpt(mission[0].description || '', 200),
       bids: bids || []
     };
 
@@ -341,6 +370,7 @@ router.get('/users/:userId/missions', async (req, res) => {
       id: mission.id,
       title: mission.title,
       description: mission.description,
+      excerpt: generateExcerpt(mission.description || '', 200),
       category: mission.category,
       budget: mission.budget?.toString() || mission.budget_min?.toString() || '0',
       location: mission.location,

@@ -1,5 +1,31 @@
-
 import { Mission, Bid, User } from '../../shared/schema.js';
+
+// Utilitaire pour générer un excerpt à partir de la description
+function generateExcerpt(description: string, maxLength: number = 200): string {
+  if (!description || description.length <= maxLength) {
+    return description || '';
+  }
+
+  // Chercher la fin de phrase la plus proche avant maxLength
+  const truncated = description.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('.'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?')
+  );
+
+  if (lastSentenceEnd > maxLength * 0.6) {
+    return truncated.substring(0, lastSentenceEnd + 1).trim();
+  }
+
+  // Sinon, couper au dernier espace pour éviter de couper un mot
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + '...';
+  }
+
+  return truncated.trim() + '...';
+}
 
 // ============================================
 // TYPES DE RÉPONSES API
@@ -58,30 +84,30 @@ export interface MissionDetailResponse {
   title: string;
   description: string;
   excerpt: string;
-  
+
   // Catégorisation
   category: string;
   tags: string[];
   skillsRequired: string[];
-  
+
   // Budget structuré
   budget: BudgetResponse;
-  
+
   // Localisation structurée
   location: LocationResponse;
-  
+
   // Client info (limitée)
   client: ClientResponse;
-  
+
   // Statut et timing
   status: string;
   urgency: string;
   deadline?: string; // ISO 8601
-  
+
   // Équipe
   isTeamMission: boolean;
   teamSize: number;
-  
+
   // Métadonnées
   requirements?: string;
   deliverables: Array<{
@@ -89,13 +115,13 @@ export interface MissionDetailResponse {
     description?: string;
     dueDate?: string;
   }>;
-  
+
   // Résumé des offres (pas la liste complète)
   bidsSummary: BidsSummary;
-  
+
   // Permissions pour l'utilisateur connecté
   permissions: PermissionsResponse;
-  
+
   // Audit
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
@@ -112,11 +138,11 @@ export const missionDetailResponseExample: MissionDetailResponse = {
   title: "Développement d'une application mobile e-commerce",
   description: "Nous recherchons un développeur expérimenté pour créer une application mobile iOS/Android complète pour notre boutique en ligne. L'application doit inclure un catalogue produits, panier, paiement sécurisé, gestion des commandes et système de notifications push.",
   excerpt: "Nous recherchons un développeur expérimenté pour créer une application mobile iOS/Android complète pour notre boutique en ligne...",
-  
+
   category: "developpement",
   tags: ["mobile", "e-commerce", "urgent"],
   skillsRequired: ["React Native", "TypeScript", "API REST", "Payment Gateway"],
-  
+
   budget: {
     type: "range",
     minCents: 800000, // 8000€
@@ -124,7 +150,7 @@ export const missionDetailResponseExample: MissionDetailResponse = {
     currency: "EUR",
     display: "8000-12000€"
   },
-  
+
   location: {
     city: "Paris",
     country: "France",
@@ -135,7 +161,7 @@ export const missionDetailResponseExample: MissionDetailResponse = {
     display: "Paris, France",
     remoteAllowed: true
   },
-  
+
   client: {
     id: 456,
     displayName: "TechStartup SAS",
@@ -145,14 +171,14 @@ export const missionDetailResponseExample: MissionDetailResponse = {
     },
     isVerified: true
   },
-  
+
   status: "published",
   urgency: "high",
   deadline: "2024-03-15T23:59:59.000Z",
-  
+
   isTeamMission: false,
   teamSize: 1,
-  
+
   requirements: "Expérience minimum 3 ans en React Native. Portfolio d'applications e-commerce obligatoire. Connaissance des APIs de paiement (Stripe, PayPal).",
   deliverables: [
     {
@@ -170,7 +196,7 @@ export const missionDetailResponseExample: MissionDetailResponse = {
       description: "Guide d'installation et maintenance"
     }
   ],
-  
+
   bidsSummary: {
     count: 8,
     lowestAmountCents: 750000, // 7500€
@@ -178,7 +204,7 @@ export const missionDetailResponseExample: MissionDetailResponse = {
     hasMyBid: false,
     myBidRank: undefined
   },
-  
+
   permissions: {
     canEdit: false,
     canApply: true,
@@ -186,7 +212,7 @@ export const missionDetailResponseExample: MissionDetailResponse = {
     canDelete: false,
     canAward: false
   },
-  
+
   createdAt: "2024-01-15T10:30:00.000Z",
   updatedAt: "2024-01-20T14:45:30.000Z",
   publishedAt: "2024-01-15T11:00:00.000Z",
@@ -203,7 +229,7 @@ export function buildMissionDetailResponse(
   client: User,
   currentUserId?: number
 ): MissionDetailResponse {
-  
+
   // Calculer bidsSummary
   const bidsSummary: BidsSummary = {
     count: bids.length,
@@ -211,28 +237,28 @@ export function buildMissionDetailResponse(
     averageAmountCents: bids.length > 0 ? Math.round(bids.reduce((sum, b) => sum + b.amount_cents, 0) / bids.length) : null,
     hasMyBid: currentUserId ? bids.some(b => b.provider_id === currentUserId) : false
   };
-  
+
   // Calculer myBidRank si applicable
   if (bidsSummary.hasMyBid && currentUserId) {
     const sortedBids = [...bids].sort((a, b) => a.amount_cents - b.amount_cents);
     const myBidIndex = sortedBids.findIndex(b => b.provider_id === currentUserId);
     bidsSummary.myBidRank = myBidIndex + 1;
   }
-  
+
   // Construire budget object
   const budget: BudgetResponse = {
     type: mission.budget_type as any,
     currency: mission.currency,
     display: formatBudgetDisplay(mission)
   };
-  
+
   if (mission.budget_type === 'fixed' && mission.budget_value_cents) {
     budget.valueCents = mission.budget_value_cents;
   } else if (mission.budget_type === 'range') {
     budget.minCents = mission.budget_min_cents || undefined;
     budget.maxCents = mission.budget_max_cents || undefined;
   }
-  
+
   // Construire location object
   const location: LocationResponse = {
     raw: mission.location_raw || undefined,
@@ -246,7 +272,7 @@ export function buildMissionDetailResponse(
     display: formatLocationDisplay(mission),
     remoteAllowed: mission.remote_allowed || false
   };
-  
+
   // Permissions
   const permissions: PermissionsResponse = {
     canEdit: currentUserId === mission.user_id,
@@ -255,20 +281,20 @@ export function buildMissionDetailResponse(
     canDelete: currentUserId === mission.user_id && mission.status === 'draft',
     canAward: currentUserId === mission.user_id && mission.status === 'published' && bids.length > 0
   };
-  
+
   return {
     id: mission.id,
     title: mission.title,
     description: mission.description,
-    excerpt: mission.excerpt || mission.description.substring(0, 200) + '...',
-    
+    excerpt: generateExcerpt(mission.description || ''),
+
     category: mission.category || 'general',
     tags: mission.tags || [],
     skillsRequired: mission.skills_required || [],
-    
+
     budget,
     location,
-    
+
     client: {
       id: client.id,
       displayName: client.name || 'Client anonyme',
@@ -278,20 +304,20 @@ export function buildMissionDetailResponse(
       } : undefined,
       isVerified: true // TODO: logique de vérification
     },
-    
+
     status: mission.status,
     urgency: mission.urgency || 'medium',
     deadline: mission.deadline?.toISOString(),
-    
+
     isTeamMission: mission.is_team_mission || false,
     teamSize: mission.team_size || 1,
-    
+
     requirements: mission.requirements || undefined,
     deliverables: (mission.deliverables as any) || [],
-    
+
     bidsSummary,
     permissions,
-    
+
     createdAt: mission.created_at.toISOString(),
     updatedAt: mission.updated_at.toISOString(),
     publishedAt: mission.published_at?.toISOString(),
