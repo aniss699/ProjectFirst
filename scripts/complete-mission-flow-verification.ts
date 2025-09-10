@@ -56,27 +56,48 @@ class MissionFlowVerifier {
     const step = this.addStep('CREATE_MISSION', 'running', 'Création d\'une mission de test...');
     
     try {
-      const testMissionData = {
+      // Vérifier quelles colonnes existent dans la table missions
+      const existingColumns = await this.getExistingColumns('missions');
+      
+      // Données de base obligatoires
+      const baseMissionData = {
         title: `Mission Test ${Date.now()}`,
         description: 'Mission de test pour vérification complète du système. Cette description contient plus de 10 caractères requis pour la validation.',
         category: 'developpement',
+        status: 'published',
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+
+      // Données optionnelles selon les colonnes disponibles
+      const optionalData = {
         budget_value_cents: 500000, // 5000€
+        budget: 500000, // Fallback pour l'ancienne colonne
         currency: 'EUR',
         location_raw: 'Paris, France',
+        location: 'Paris, France', // Fallback pour l'ancienne colonne
         city: 'Paris',
         country: 'France',
         remote_allowed: true,
-        user_id: 1,
         client_id: 1,
-        status: 'published',
         urgency: 'medium',
         tags: ['test', 'verification'],
         skills_required: ['TypeScript', 'React'],
         is_team_mission: false,
-        team_size: 1,
-        created_at: new Date(),
-        updated_at: new Date()
+        team_size: 1
       };
+
+      // Construire l'objet final avec seulement les colonnes qui existent
+      const testMissionData = { ...baseMissionData };
+      for (const [key, value] of Object.entries(optionalData)) {
+        if (existingColumns.includes(key)) {
+          testMissionData[key] = value;
+        }
+      }
+
+      console.log('📝 Colonnes disponibles:', existingColumns);
+      console.log('📝 Données à insérer:', Object.keys(testMissionData));
 
       const result = await db.insert(missions).values(testMissionData).returning();
       
@@ -92,6 +113,25 @@ class MissionFlowVerifier {
       step.status = 'error';
       step.message = `Erreur création mission: ${error.message}`;
       throw error;
+    }
+  }
+
+  // Nouvelle méthode pour récupérer les colonnes existantes
+  private async getExistingColumns(tableName: string): Promise<string[]> {
+    try {
+      const query = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1 
+        ORDER BY ordinal_position
+      `;
+      
+      const result = await db.execute(query, [tableName]);
+      return result.rows.map(row => row.column_name);
+    } catch (error) {
+      console.warn(`⚠️ Impossible de récupérer les colonnes de ${tableName}:`, error.message);
+      // Retourner les colonnes de base minimales
+      return ['id', 'title', 'description', 'category', 'status', 'user_id', 'created_at', 'updated_at'];
     }
   }
 
@@ -212,8 +252,16 @@ class MissionFlowVerifier {
         throw new Error('Mission non trouvée pour synchronisation');
       }
 
-      // Synchronisation manuelle avec le feed
+      // Synchronisation manuelle avec le feed (adaptative selon colonnes disponibles)
       const missionData = mission[0];
+      
+      // Budget adaptatif selon les colonnes disponibles
+      const budgetValue = missionData.budget_value_cents || missionData.budget || 0;
+      const budgetDisplay = budgetValue > 0 ? `${Math.round(budgetValue / 100)}€` : 'Budget non défini';
+      
+      // Location adaptative
+      const locationDisplay = missionData.location_raw || missionData.location || missionData.city || 'Remote';
+      
       const announcementData = {
         id: missionData.id,
         title: missionData.title,
@@ -221,15 +269,15 @@ class MissionFlowVerifier {
         excerpt: missionData.description.substring(0, 200) + (missionData.description.length > 200 ? '...' : ''),
         category: missionData.category || 'developpement',
         tags: missionData.tags || [],
-        budget_display: `${(missionData.budget_value_cents || 0) / 100}€`,
-        budget_value_cents: missionData.budget_value_cents,
+        budget_display: budgetDisplay,
+        budget_value_cents: budgetValue,
         currency: missionData.currency || 'EUR',
-        location_display: missionData.location_raw || missionData.city || 'Remote',
+        location_display: locationDisplay,
         city: missionData.city,
         country: missionData.country || 'France',
         client_id: missionData.client_id || missionData.user_id,
         client_display_name: 'Client Test',
-        status: missionData.status || 'active',
+        status: missionData.status === 'published' ? 'active' : 'inactive',
         urgency: missionData.urgency || 'medium',
         deadline: missionData.deadline,
         search_text: `${missionData.title} ${missionData.description} ${missionData.category}`,
