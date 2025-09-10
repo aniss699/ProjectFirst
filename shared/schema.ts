@@ -190,6 +190,54 @@ export const insertBidSchema = createInsertSchema(bids, {
   message: z.string().min(10)
 });
 
+export const insertFeedFeedbackSchema = createInsertSchema(feedFeedback, {
+  action: z.enum(['view', 'click', 'apply', 'save', 'skip']),
+  dwell_ms: z.number().int().positive().optional()
+});
+
+export const insertFeedSeenSchema = createInsertSchema(feedSeen);
+export const insertFavoriteSchema = createInsertSchema(favorites);
+
+// ============================================
+// TABLES FEED & AI EVENTS
+// ============================================
+
+export const aiEvents = pgTable('ai_events', {
+  id: serial('id').primaryKey(),
+  phase: text('phase').notNull(),
+  prompt_hash: text('prompt_hash').notNull(),
+  input_redacted: jsonb('input_redacted'),
+  output: jsonb('output'),
+  provider: text('provider').notNull().default('gemini-api'),
+  accepted: boolean('accepted').default(false),
+  allow_training: boolean('allow_training').default(true),
+  provenance: text('provenance').default('ai_generated'),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const feedFeedback = pgTable('feed_feedback', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  announcement_id: integer('announcement_id').notNull().references(() => announcements.id, { onDelete: 'cascade' }),
+  action: text('action').notNull(), // 'view', 'click', 'apply', 'save', 'skip'
+  dwell_ms: integer('dwell_ms'),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const feedSeen = pgTable('feed_seen', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  announcement_id: integer('announcement_id').notNull().references(() => announcements.id, { onDelete: 'cascade' }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const favorites = pgTable('favorites', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  announcement_id: integer('announcement_id').notNull().references(() => announcements.id, { onDelete: 'cascade' }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
 // ============================================
 // TYPES TYPESCRIPT
 // ============================================
@@ -205,6 +253,18 @@ export type NewBid = typeof bids.$inferInsert;
 
 export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
+
+export type AiEvent = typeof aiEvents.$inferSelect;
+export type NewAiEvent = typeof aiEvents.$inferInsert;
+
+export type FeedFeedback = typeof feedFeedback.$inferSelect;
+export type NewFeedFeedback = typeof feedFeedback.$inferInsert;
+
+export type FeedSeen = typeof feedSeen.$inferSelect;
+export type NewFeedSeen = typeof feedSeen.$inferInsert;
+
+export type Favorite = typeof favorites.$inferSelect;
+export type NewFavorite = typeof favorites.$inferInsert;
 
 // Types métier enrichis
 export interface MissionWithBids extends Mission {
