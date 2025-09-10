@@ -109,9 +109,7 @@ app.set('trust proxy', true);
 
 // CORS configuration - optimized for Replit
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://swideal.com', 'https://www.swideal.com', /\.replit\.app$/]
-    : true,
+  origin: ['https://swideal.com', 'https://www.swideal.com', /\.replit\.app$/],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -313,16 +311,9 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🔍 Process ID: ${process.pid}`);
   console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Setup environment based on NODE_ENV only
-  if (process.env.NODE_ENV === 'production') {
-    console.log('🏭 Production mode: serving static files');
-    serveStatic(app);
-  } else {
-    console.log('🛠️ Development mode: setting up Vite dev server...');
-    setupVite(app, server).catch(error => {
-      console.error('⚠️ Vite setup failed (non-critical):', error);
-    });
-  }
+  // Production mode only: serving static files
+  console.log('🏭 Production mode: serving static files');
+  serveStatic(app);
 });
 
 server.on('error', (err: any) => {

@@ -124,7 +124,7 @@ args = "sleep 2"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "echo \"🚀 Starting stable production server...\""
+args = "echo \"🚀 Starting production server...\""
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
