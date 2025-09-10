@@ -118,6 +118,8 @@ var init_schema = __esm({
     bids = pgTable("bids", {
       id: serial("id").primaryKey(),
       mission_id: integer("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
+      project_id: integer("project_id").references(() => missions.id, { onDelete: "cascade" }),
+      // For compatibility
       provider_id: integer("provider_id").notNull().references(() => users.id, { onDelete: "cascade" }),
       // Proposition
       amount_cents: integer("amount_cents").notNull(),
@@ -2229,7 +2231,15 @@ router.get("/", async (req, res) => {
       is_team_mission: missions.is_team_mission,
       team_size: missions.team_size,
       created_at: missions.created_at,
-      updated_at: missions.updated_at
+      updated_at: missions.updated_at,
+      budget_type: missions.budget_type,
+      postal_code: missions.postal_code,
+      latitude: missions.latitude,
+      longitude: missions.longitude,
+      provider_id: missions.provider_id,
+      published_at: missions.published_at,
+      expires_at: missions.expires_at,
+      deliverables: missions.deliverables
     }).from(missions).orderBy(desc(missions.created_at));
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
@@ -2316,7 +2326,15 @@ router.get("/verify-sync", async (req, res) => {
       is_team_mission: missions.is_team_mission,
       team_size: missions.team_size,
       created_at: missions.created_at,
-      updated_at: missions.updated_at
+      updated_at: missions.updated_at,
+      budget_type: missions.budget_type,
+      postal_code: missions.postal_code,
+      latitude: missions.latitude,
+      longitude: missions.longitude,
+      provider_id: missions.provider_id,
+      published_at: missions.published_at,
+      expires_at: missions.expires_at,
+      deliverables: missions.deliverables
     }).from(missions).orderBy(desc(missions.created_at)).limit(5);
     const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const feedItems = await db.select({
@@ -2421,7 +2439,15 @@ router.get("/:id", async (req, res) => {
       is_team_mission: missions.is_team_mission,
       team_size: missions.team_size,
       created_at: missions.created_at,
-      updated_at: missions.updated_at
+      updated_at: missions.updated_at,
+      budget_type: missions.budget_type,
+      postal_code: missions.postal_code,
+      latitude: missions.latitude,
+      longitude: missions.longitude,
+      provider_id: missions.provider_id,
+      published_at: missions.published_at,
+      expires_at: missions.expires_at,
+      deliverables: missions.deliverables
     }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (mission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId);
@@ -2431,7 +2457,7 @@ router.get("/:id", async (req, res) => {
         details: "Aucune mission trouv\xE9e avec cet ID"
       });
     }
-    const bids2 = await db.select().from(bids).where(eq2(bids.project_id, missionIdInt));
+    const bids2 = await db.select().from(bids).where(eq2(bids.mission_id, missionIdInt));
     const result = {
       ...mission[0],
       excerpt: generateExcerpt(mission[0].description || "", 200),
@@ -2498,7 +2524,15 @@ router.get("/users/:userId/missions", async (req, res) => {
       is_team_mission: missions.is_team_mission,
       team_size: missions.team_size,
       created_at: missions.created_at,
-      updated_at: missions.updated_at
+      updated_at: missions.updated_at,
+      budget_type: missions.budget_type,
+      postal_code: missions.postal_code,
+      latitude: missions.latitude,
+      longitude: missions.longitude,
+      provider_id: missions.provider_id,
+      published_at: missions.published_at,
+      expires_at: missions.expires_at,
+      deliverables: missions.deliverables
     }).from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
     console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
     userMissions.forEach((mission) => {
