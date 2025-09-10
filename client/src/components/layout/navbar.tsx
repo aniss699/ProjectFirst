@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart } from 'lucide-react';
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -260,6 +260,28 @@ export default function Navbar() {
                         Messages
                       </button>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLocation('/missions')}
+                        className="justify-start"
+                      >
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        Mes missions
+                      </Button>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLocation('/mes-demandes')}
+                        className="justify-start"
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Mes demandes
+                      </Button>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <button
@@ -437,6 +459,9 @@ export default function Navbar() {
                         </MobileNavLink>
                         <MobileNavLink href="/missions" icon={Briefcase}>
                           Mes Missions
+                        </MobileNavLink>
+                        <MobileNavLink href="/mes-demandes" icon={FileText}>
+                          Mes demandes
                         </MobileNavLink>
                         <MobileNavLink href="/messages" icon={MessageSquare}>
                           Messages

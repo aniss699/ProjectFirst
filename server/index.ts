@@ -123,6 +123,7 @@ app.use(express.json());
 import authRoutes from './auth-routes.js';
 // Import missions routes here
 import missionsRoutes from './routes/missions.js';
+import projectRoutes from './routes/projects.js';
 import apiRoutes from './api-routes.js';
 import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
 import aiRoutes from './routes/ai-routes.js';
@@ -148,6 +149,7 @@ app.use('/api/missions', missionsRoutes);
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
 app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
+app.use('/api/projects', projectRoutes);
 
 // Apply rate limiting to AI routes
 app.use('/api/ai/monitoring', monitoringRateLimit, aiMonitoringRoutes);

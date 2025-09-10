@@ -45,6 +45,8 @@ const Favorites = React.lazy(() => import('@/pages/favorites'));
 // Lazy load the edit mission page
 const EditMission = React.lazy(() => import('@/pages/edit-mission'));
 
+// Lazy load the mes demandes page
+const MesDemandes = React.lazy(() => import('@/pages/mes-demandes'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -123,6 +125,8 @@ function App() {
                     <Route path="/login" component={LoginPage} />
                     {/* Added route for Favorites */}
                     <Route path="/favorites" component={Favorites} />
+                    {/* Added route for Mes demandes */}
+                    <Route path="/mes-demandes" component={MesDemandes} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>
