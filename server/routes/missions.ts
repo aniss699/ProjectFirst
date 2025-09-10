@@ -4,6 +4,7 @@ import { db } from '../database.js';
 import { missions, bids as bidTable } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js';
 import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
+import { users } from '../../shared/schema.js'; // Ensure users schema is imported
 
 // Utilitaire pour générer un excerpt à partir de la description
 function generateExcerpt(description: string, maxLength: number = 200): string {
@@ -467,16 +468,36 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Récupérer les offres pour cette mission
-    const bids = await db
-      .select()
-      .from(bidTable)
-      .where(eq(bidTable.mission_id, missionIdInt));
+    // Get bids for this mission with error handling
+    let missionBids = [];
+    try {
+      missionBids = await db
+        .select({
+          id: bidTable.id,
+          amount: bidTable.amount,
+          timeline_days: bidTable.timeline_days,
+          message: bidTable.message,
+          score_breakdown: bidTable.score_breakdown,
+          is_leading: bidTable.is_leading,
+          status: bidTable.status,
+          created_at: bidTable.created_at,
+          provider_name: users.name,
+          provider_email: users.email,
+          provider_profile: users.profile_data
+        })
+        .from(bidTable)
+        .leftJoin(users, eq(bidTable.provider_id, users.id))
+        .where(eq(bidTable.mission_id, missionIdInt));
+    } catch (error) {
+      console.warn('⚠️ Could not fetch bids (table may not exist):', error);
+      missionBids = [];
+    }
+
 
     const result = {
       ...mission[0],
       excerpt: generateExcerpt(mission[0].description || '', 200),
-      bids: bids || [],
+      bids: missionBids || [],
       // Ensure consistent budget format for frontend
       budget: mission[0].budget_value_cents?.toString() || '0',
       // Ensure consistent location format
