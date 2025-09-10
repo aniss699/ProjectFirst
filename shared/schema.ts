@@ -97,6 +97,7 @@ export const missions = pgTable('missions', {
 export const bids = pgTable('bids', {
   id: serial('id').primaryKey(),
   mission_id: integer('mission_id').notNull().references(() => missions.id, { onDelete: 'cascade' }),
+  project_id: integer('project_id').references(() => missions.id, { onDelete: 'cascade' }), // For compatibility
   provider_id: integer('provider_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 
   // Proposition

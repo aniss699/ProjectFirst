@@ -179,7 +179,7 @@ router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
 
-    // Use simple select() to avoid Drizzle column mapping issues
+    // Select only existing columns from missions table
     const allMissions = await db
       .select({
         id: missions.id,
@@ -205,7 +205,15 @@ router.get('/', async (req, res) => {
         is_team_mission: missions.is_team_mission,
         team_size: missions.team_size,
         created_at: missions.created_at,
-        updated_at: missions.updated_at
+        updated_at: missions.updated_at,
+        budget_type: missions.budget_type,
+        postal_code: missions.postal_code,
+        latitude: missions.latitude,
+        longitude: missions.longitude,
+        provider_id: missions.provider_id,
+        published_at: missions.published_at,
+        expires_at: missions.expires_at,
+        deliverables: missions.deliverables
       })
       .from(missions)
       .orderBy(desc(missions.created_at));
@@ -287,7 +295,7 @@ router.get('/verify-sync', async (req, res) => {
   try {
     console.log('🔍 Vérification de la synchronisation missions/feed');
 
-    // Récupérer les dernières missions
+    // Récupérer les dernières missions avec toutes les colonnes existantes
     const recentMissions = await db.select({
       id: missions.id,
       title: missions.title,
@@ -312,7 +320,15 @@ router.get('/verify-sync', async (req, res) => {
       is_team_mission: missions.is_team_mission,
       team_size: missions.team_size,
       created_at: missions.created_at,
-      updated_at: missions.updated_at
+      updated_at: missions.updated_at,
+      budget_type: missions.budget_type,
+      postal_code: missions.postal_code,
+      latitude: missions.latitude,
+      longitude: missions.longitude,
+      provider_id: missions.provider_id,
+      published_at: missions.published_at,
+      expires_at: missions.expires_at,
+      deliverables: missions.deliverables
     })
       .from(missions)
       .orderBy(desc(missions.created_at))
@@ -412,7 +428,7 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Use simple select() to avoid Drizzle column mapping issues
+    // Select only existing columns from missions table
     const mission = await db
       .select({
         id: missions.id,
@@ -438,7 +454,15 @@ router.get('/:id', async (req, res) => {
         is_team_mission: missions.is_team_mission,
         team_size: missions.team_size,
         created_at: missions.created_at,
-        updated_at: missions.updated_at
+        updated_at: missions.updated_at,
+        budget_type: missions.budget_type,
+        postal_code: missions.postal_code,
+        latitude: missions.latitude,
+        longitude: missions.longitude,
+        provider_id: missions.provider_id,
+        published_at: missions.published_at,
+        expires_at: missions.expires_at,
+        deliverables: missions.deliverables
       })
       .from(missions)
       .where(eq(missions.id, missionIdInt))
@@ -453,11 +477,11 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Fix: bids table uses project_id, not missionId
+    // Fix: bids table uses mission_id for missions
     const bids = await db
       .select()
       .from(bidTable)
-      .where(eq(bidTable.project_id, missionIdInt));
+      .where(eq(bidTable.mission_id, missionIdInt));
 
     const result = {
       ...mission[0],
@@ -509,7 +533,7 @@ router.get('/users/:userId/missions', async (req, res) => {
 
     console.log('🔍 Querying database: SELECT * FROM missions WHERE user_id =', userIdInt);
 
-    // Use simple select() without explicit column mapping to avoid Drizzle errors
+    // Select only existing columns from missions table
     const userMissions = await db
       .select({
         id: missions.id,
@@ -535,7 +559,15 @@ router.get('/users/:userId/missions', async (req, res) => {
         is_team_mission: missions.is_team_mission,
         team_size: missions.team_size,
         created_at: missions.created_at,
-        updated_at: missions.updated_at
+        updated_at: missions.updated_at,
+        budget_type: missions.budget_type,
+        postal_code: missions.postal_code,
+        latitude: missions.latitude,
+        longitude: missions.longitude,
+        provider_id: missions.provider_id,
+        published_at: missions.published_at,
+        expires_at: missions.expires_at,
+        deliverables: missions.deliverables
       })
       .from(missions)
       .where(eq(missions.user_id, userIdInt))
