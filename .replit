@@ -80,6 +80,19 @@ args = "npm run build"
 task = "shell.exec"
 args = "NODE_ENV=production npm run start"
 
+[[workflows.workflow]]
+name = "Test Complet Mission"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"🚀 Démarrage du test complet de la chaîne de mission...\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "tsx scripts/run-complete-test.ts"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
