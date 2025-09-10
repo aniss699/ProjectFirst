@@ -49,6 +49,20 @@ BEGIN
     SET budget_value_cents = budget * 100 
     WHERE budget_value_cents IS NULL AND budget IS NOT NULL;
 
+    -- Ajouter la colonne currency si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'currency') THEN
+        -- Créer d'abord l'enum currency_code s'il n'existe pas
+        DO $currency$ BEGIN
+            CREATE TYPE currency_code AS ENUM ('EUR', 'USD', 'GBP', 'CHF');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $currency$;
+        
+        ALTER TABLE missions ADD COLUMN currency currency_code DEFAULT 'EUR';
+        RAISE NOTICE 'Colonne currency ajoutée à la table missions';
+    END IF;
+
     -- Supprimer les anciennes colonnes budget_min_cents et budget_max_cents si elles existent
     IF EXISTS (SELECT 1 FROM information_schema.columns 
                WHERE table_name = 'missions' AND column_name = 'budget_min_cents') THEN

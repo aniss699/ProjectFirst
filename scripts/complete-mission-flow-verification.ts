@@ -73,7 +73,6 @@ class MissionFlowVerifier {
       const optionalData = {
         budget_value_cents: 500000, // 5000€
         budget: 5000, // Fallback pour l'ancienne colonne (en euros)
-        currency: 'EUR',
         location_raw: 'Paris, France',
         location: 'Paris, France', // Fallback pour l'ancienne colonne
         city: 'Paris',
