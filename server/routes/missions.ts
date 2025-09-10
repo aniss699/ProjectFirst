@@ -320,18 +320,45 @@ router.get('/', asyncHandler(async (req, res) => {
 
 // GET /api/missions/health - Health check endpoint (must be before /:id route)
 router.get('/health', asyncHandler(async (req, res) => {
+  const startTime = Date.now();
   console.log('🏥 Mission health check endpoint called');
 
-  // Simple health check
-  const healthInfo = {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'missions-api',
-    environment: process.env.NODE_ENV || 'development'
-  };
+  try {
+    // Test database connectivity
+    const dbTest = await db.select({ count: sql`COUNT(*)` }).from(missions).limit(1);
+    const dbConnected = dbTest.length > 0;
 
-  console.log('🏥 Health check passed:', healthInfo);
-  res.json(healthInfo);
+    // Calculate response time
+    const responseTime = Date.now() - startTime;
+
+    const healthInfo = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'missions-api',
+      environment: process.env.NODE_ENV || 'development',
+      database: dbConnected ? 'connected' : 'disconnected',
+      response_time_ms: responseTime,
+      uptime_seconds: Math.floor(process.uptime()),
+      memory_usage: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    };
+
+    console.log('🏥 Health check passed:', healthInfo);
+    res.status(200).json(healthInfo);
+  } catch (error) {
+    console.error('🏥 Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      service: 'missions-api',
+      environment: process.env.NODE_ENV || 'development',
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      response_time_ms: Date.now() - startTime
+    });
+  }
 }));
 
 // GET /api/missions/debug - Diagnostic endpoint (must be before /:id route)

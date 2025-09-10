@@ -11,7 +11,7 @@ localPort = 5000
 externalPort = 80
 
 [workflows]
-runButton = "Development Debug"
+runButton = "Production Stable"
 
 [[workflows.workflow]]
 name = "Project"
@@ -104,6 +104,35 @@ args = "echo \"🔧 Starting development server with enhanced debugging...\""
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "NODE_ENV=development DEBUG=* tsx server/index.ts"
+
+[[workflows.workflow]]
+name = "Production Stable"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"tsx.*server/index.ts\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"node.*dist/index.js\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sleep 2"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"🚀 Starting stable production server...\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=production npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=production npm run start"
 
 [deployment]
 deploymentTarget = "autoscale"

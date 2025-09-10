@@ -117,7 +117,15 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
-app.use(express.json());
+// Import middleware
+import { validateRequest, limitRequestSize } from './middleware/request-validator.js';
+import { performanceMonitor, getPerformanceStats } from './middleware/performance-monitor.js';
+
+// Apply middleware in correct order
+app.use(limitRequestSize);
+app.use(validateRequest);
+app.use(performanceMonitor);
+app.use(express.json({ limit: '10mb' }));
 
 // Import auth routes
 import authRoutes from './auth-routes.js';
@@ -151,12 +159,16 @@ app.use('/api/missions', missionsRoutes);
 
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
-// Redirect projects API to missions API for backward compatibility
-app.use('/api/projects', (req, res) => {
+// Handle deprecated projects API with proper proxy to missions
+app.use('/api/projects', (req, res, next) => {
   const newUrl = req.originalUrl.replace('/api/projects', '/api/missions');
-  console.log(`🔄 Redirecting deprecated projects API ${req.originalUrl} to ${newUrl}`);
-  res.redirect(301, newUrl);
-});
+  console.log(`🔄 Proxying deprecated projects API ${req.originalUrl} to missions API`);
+  
+  // Forward the request to missions API internally
+  req.url = req.url.replace('/projects', '/missions');
+  req.originalUrl = newUrl;
+  next();
+}, missionsRoutes);
 
 // Apply rate limiting to AI routes
 app.use('/api/ai/monitoring', monitoringRateLimit, aiMonitoringRoutes);
@@ -179,6 +191,30 @@ app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
 app.use('/api', missionDemoRoutes);
 app.use('/api/team', teamRoutes);
+
+// Performance stats endpoint
+app.get('/api/performance', (req, res) => {
+  try {
+    const stats = getPerformanceStats();
+    res.json({
+      ok: true,
+      performance: stats,
+      server_uptime: process.uptime(),
+      memory: {
+        used_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total_mb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss_mb: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to get performance stats',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -323,41 +359,62 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Global error handler
+// Global error handler with better error categorization
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  const timestamp = new Date().toISOString();
+  const requestId = req.headers['x-request-id'] || `req_${Date.now()}`;
+  
+  // Categorize error types
+  let statusCode = 500;
+  let errorType = 'server_error';
+  
+  if (error.name === 'ValidationError') {
+    statusCode = 400;
+    errorType = 'validation_error';
+  } else if (error.message.includes('not found')) {
+    statusCode = 404;
+    errorType = 'not_found';
+  } else if (error.message.includes('unauthorized')) {
+    statusCode = 401;
+    errorType = 'unauthorized';
+  }
+
   console.error('🚨 Global error handler:', {
+    error_type: errorType,
     error: error.message,
-    stack: error.stack,
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     url: req.url,
     method: req.method,
-    body: req.body,
-    query: req.query,
-    params: req.params,
-    timestamp: new Date().toISOString()
+    user_agent: req.headers['user-agent'],
+    ip: req.ip,
+    request_id: requestId,
+    timestamp
   });
 
-  // Log to event logger if available
-  Promise.resolve().then(async () => {
+  // Safe event logging without blocking response
+  setImmediate(async () => {
     try {
       const eventLoggerModule = await import('../apps/api/src/monitoring/event-logger.js');
-      eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
-        error_type: 'server_error',
+      eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || requestId, {
+        error_type: errorType,
         error_message: error.message,
         endpoint: req.originalUrl,
-        method: req.method
+        method: req.method,
+        status_code: statusCode
       });
     } catch (logError) {
-      console.warn('Could not log error event:', logError instanceof Error ? logError.message : 'Unknown error');
+      console.warn('Event logging failed (non-critical):', logError instanceof Error ? logError.message : 'Unknown error');
     }
   });
 
   if (!res.headersSent) {
-    res.status(500).json({
-      error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
-      request_id: req.headers['x-request-id'] || 'unknown'
+    res.status(statusCode).json({
+      ok: false,
+      error: statusCode === 500 ? 'Internal server error' : error.message,
+      details: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred',
+      error_type: errorType,
+      timestamp,
+      request_id: requestId
     });
   }
 });
