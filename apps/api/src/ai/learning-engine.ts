@@ -5,7 +5,7 @@
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { aiEvents } from '../../../../shared/schema.js';
+import { aiEvents } from '../../../../shared/schema';
 import { desc, eq, and, gte } from 'drizzle-orm';
 
 interface LearningPattern {

@@ -1,4 +1,3 @@
-
 // Types pour une meilleure type safety
 export interface RouteConfig {
   path: string;
@@ -17,14 +16,14 @@ export const ROUTES = {
   FEATURES: '/features',
   NOTRE_CONCEPT: '/notre-concept',
   LEGAL: '/legal',
-  
+
   // Routes authentifiées
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
   MISSIONS: '/missions',
   CREATE_MISSION: '/create-mission',
   MESSAGES: '/messages',
-  
+
   // Routes AI - Consolidées vers AI Hub
   AI: {
     HUB: '/ai-hub',
@@ -34,7 +33,7 @@ export const ROUTES = {
     ADVANCED: '/ai-advanced',
     TEST: '/ai-test',
   },
-  
+
   // Routes API
   API: {
     BASE: '/api',
@@ -130,4 +129,17 @@ export const navigationGroups = {
     { path: ROUTES.AI.DASHBOARD, label: 'Dashboard IA' },
     { path: ROUTES.AI.ADVANCED, label: 'IA Avancée' }
   ]
+};
+
+export const paths = {
+  home: '/',
+  marketplace: '/marketplace',
+  missions: '/missions',
+  editMission: (id: string) => `/missions/${id}/edit`,
+  createMission: '/create-mission',
+  profile: '/profile',
+  login: '/login',
+  dashboard: '/dashboard',
+  messages: '/messages',
+  favorites: '/favorites'
 };

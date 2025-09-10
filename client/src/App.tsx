@@ -39,6 +39,14 @@ const GroupRequestPage = React.lazy(() => import('@/pages/services/GroupRequestP
 const IaHumanPage = React.lazy(() => import('@/pages/services/IaHumanPage'));
 const OpportunitiesPage = React.lazy(() => import('@/pages/services/OpportunitiesPage'));
 
+// Lazy load the new Favorites page
+const Favorites = React.lazy(() => import('@/pages/favorites'));
+
+// Lazy load the edit mission page
+const EditMission = React.lazy(() => import('@/pages/edit-mission'));
+
+// Lazy load the mes demandes page
+const MesDemandes = React.lazy(() => import('@/pages/mes-demandes'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -54,7 +62,7 @@ function App() {
     console.log('📍 URL actuelle:', window.location.href);
     console.log('🔧 User Agent:', navigator.userAgent);
     console.log('📱 Viewport:', window.innerWidth + 'x' + window.innerHeight);
-    
+
     // Test de connectivité API
     fetch('/api/health')
       .then(res => res.json())
@@ -76,6 +84,8 @@ function App() {
                     <Route path="/marketplace" component={Marketplace} />
                     <Route path="/missions" component={Missions} />
                     <Route path="/create-mission" component={CreateMission} />
+                    {/* Route for editing missions */}
+                    <Route path="/missions/edit/:missionId" component={EditMission} />
                     <Route path="/profile" component={Profile} />
                     <Route path="/dashboard" component={Dashboard} />
                     <Route path="/messages" component={Messages} />
@@ -113,6 +123,10 @@ function App() {
                     <Route path="/admin/feed-metrics" component={AdminFeedMetrics} />
                     <Route path="/test-feedback" component={FeedbackButtonsTest} />
                     <Route path="/login" component={LoginPage} />
+                    {/* Added route for Favorites */}
+                    <Route path="/favorites" component={Favorites} />
+                    {/* Added route for Mes demandes */}
+                    <Route path="/mes-demandes" component={MesDemandes} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

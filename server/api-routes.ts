@@ -171,7 +171,7 @@ router.get('/ai-analysis-demo', async (req, res) => {
           : parseInt(budgetRange[0]) || 0;
         return sum + avgBudget;
       }, 0) / recentProjects.length || 0,
-      popularCategories: [...new Set(recentProjects.map(p => p.category))],
+      popularCategories: Array.from(new Set(recentProjects.map(p => p.category))),
       averageBidAmount: recentBids.reduce((sum, b) => sum + parseFloat(b.amount || '0'), 0) / recentBids.length || 0,
       successRate: 0.87,
       timeToMatch: 2.3, // days

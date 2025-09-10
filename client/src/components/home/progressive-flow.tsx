@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,12 @@ import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
+import { GeoSearch } from '@/components/location/geo-search';
+import { useQueryClient } from '@tanstack/react-query';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
@@ -36,11 +41,15 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
+  const [isSubmitting, setIsSubmitting] = useState(false); // State pour le bouton de soumission
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
@@ -69,118 +78,208 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     needsLocation: false,
     dynamicFields: {} as Record<string, string | number | boolean>
   });
-  
+
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const progress = ((currentStep + 1) / 5) * 100;
+  const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
 
-  // Fonction pour créer la mission via l'API
+  // Function to create the mission via API
   const createMission = async () => {
-    if (!projectData.title || !projectData.description) {
-      toast({
-        title: 'Champs requis',
-        description: 'Veuillez remplir au moins le titre et la description',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsCreating(true);
-    
+
     try {
-      // Mapper les catégories vers les valeurs acceptées par l'API
-      const categoryMapping: Record<string, string> = {
-        'web-dev': 'developpement',
-        'mobile-dev': 'mobile', 
-        'design': 'design',
-        'marketing': 'marketing',
-        'consulting': 'conseil',
-        'lawyer': 'conseil',
-        'doctor': 'services',
-        'coach': 'services',
-        'celebrity': 'services',
-        'ai-ml': 'ai',
-        'writing': 'redaction',
-        'video': 'multimedia',
-        'data': 'data',
-        'photography': 'photo',
-        'translation': 'traduction'
-      };
+      if (isTeamMode) {
+        // Analyser les besoins d'équipe
+        const response = await fetch('/api/team/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: projectData.description,
+            title: projectData.title,
+            category: selectedCategory,
+            budget: projectData.budget
+          })
+        });
 
-      // Formater le budget
-      const budgetText = projectData.budget || '2000';
-      const budgetFormatted = budgetText.includes('-') ? budgetText : `${budgetText}`;
+        if (response.ok) {
+          const analysis = await response.json();
 
-      // Formater les champs dynamiques pour la description
-      const dynamicFieldsText = Object.keys(projectData.dynamicFields).length > 0 
-        ? Object.entries(projectData.dynamicFields)
-            .filter(([key, value]) => value !== '' && value !== null && value !== undefined)
-            .map(([key, value]) => {
-              const field = getCategoryDynamicFields(selectedCategory).find(f => f.id === key);
-              return field ? `${field.label}: ${value}` : null;
+          // Créer le projet avec l'équipe analysée
+          const createResponse = await fetch('/api/team/create-project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectData: {
+                title: projectData.title,
+                description: projectData.description,
+                category: selectedCategory,
+                budget: projectData.budget,
+                location: projectData.needsLocation ? projectData.location.address : 'Remote',
+                isTeamMode: true
+              },
+              teamRequirements: analysis.professions
             })
-            .filter(Boolean)
-            .join('\n')
-        : '';
+          });
 
-      const missionData = {
-        title: projectData.title,
-        description: projectData.description + 
-          (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
-          (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
-        category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
-        budget: budgetFormatted,
-        location: 'Remote',
-        clientId: 'user_1', // ID utilisateur temporaire
-        clientName: 'Utilisateur',
-        dynamicFields: projectData.dynamicFields
-      };
+          if (createResponse.ok) {
+            const result = await createResponse.json();
+            toast({
+              title: 'Projet équipe créé !',
+              description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
+            });
 
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(missionData)
-      });
+            // Invalider le cache des missions pour forcer le rechargement
+            queryClient.invalidateQueries({ queryKey: ['missions'] });
 
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: 'Mission créée avec succès !',
-          description: 'Votre projet a été publié et est maintenant visible par les prestataires',
-        });
-        
-        // Rediriger vers la page des missions
-        setLocation('/missions');
-        
-        // Appeler le callback s'il existe
-        onComplete?.({
-          userType,
-          serviceType,
-          selectedCategory,
-          projectData,
-          missionId: result.id
-        });
+            // Rediriger vers les missions
+            setLocation('/missions');
+            onComplete?.({
+              userType,
+              serviceType,
+              selectedCategory,
+              projectData,
+              projectId: result.project.id
+            });
+          } else {
+            const error = await createResponse.json();
+            throw new Error(error.error || 'Erreur lors de la création du projet');
+          }
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de l\'analyse d\'équipe');
+        }
       } else {
-        const error = await response.json();
-        toast({
-          title: 'Erreur lors de la création',
-          description: error.message || 'Une erreur est survenue lors de la création de la mission',
-          variant: 'destructive',
+        // Mode mission simple
+        const budgetFormatted = typeof projectData.budget === 'string' 
+          ? projectData.budget 
+          : projectData.budget?.toString() || '';
+
+        const dynamicFieldsText = projectData.dynamicFields && Object.keys(projectData.dynamicFields).length > 0
+          ? Object.entries(projectData.dynamicFields)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join('\n')
+          : '';
+
+        const missionData = {
+          title: projectData.title,
+          description: projectData.description + 
+            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
+            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
+          category: selectedCategory,
+          budget: budgetFormatted,
+          location: projectData.needsLocation ? projectData.location.address : 'Remote',
+          userId: user?.id?.toString() || null,
+          clientName: user?.name || 'Utilisateur'
+        };
+
+        const response = await fetch('/api/missions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(missionData)
         });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Mission créée avec succès:', result);
+
+          toast({ 
+            title: 'Mission créée !', 
+            description: 'Votre mission a été publiée avec succès.' 
+          });
+
+          // Invalider le cache des missions pour forcer le rechargement
+          queryClient.invalidateQueries({ queryKey: ['missions'] });
+
+          // Rediriger vers les missions
+          setLocation('/missions');
+          onComplete?.({
+            userType,
+            serviceType,
+            selectedCategory,
+            projectData,
+            missionId: result.id
+          });
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de la création de la mission');
+        }
       }
     } catch (error) {
       console.error('Erreur création mission:', error);
       toast({
-        title: 'Erreur de connexion',
-        description: 'Impossible de créer la mission. Vérifiez votre connexion.',
+        title: 'Erreur de création',
+        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
         variant: 'destructive',
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // --- Nouvelle fonction handleSubmitMission modifiée ---
+  const handleSubmitMission = async (values: any) => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour créer une mission",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Ensure proper data formatting before sending
+      const formattedData = {
+        title: values.title,
+        description: values.description,
+        category: values.category || 'developpement',
+        budget: values.budget ? parseInt(values.budget.toString()) : null,
+        location: values.location || null,
+        urgency: values.urgency || 'medium',
+        requirements: values.requirements || null,
+        tags: values.tags || [],
+        deadline: values.deadline ? new Date(values.deadline).toISOString() : null,
+      };
+
+      console.log('🚀 Sending formatted data:', formattedData);
+
+      const response = await fetch('/api/missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Erreur serveur:', result);
+        throw new Error(result.error || 'Erreur lors de la création de la mission');
+      }
+
+      console.log('Mission créée avec succès:', result);
+
+      toast({
+        title: "Mission créée !",
+        description: "Votre mission a été publiée avec succès",
+      });
+
+      onComplete?.(result);
+    } catch (error) {
+      console.error('Erreur création mission:', error);
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de créer la mission. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -200,7 +299,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   // Fonction pour rendre les champs dynamiques
   const renderDynamicFields = (categoryId: string) => {
     const fields = getCategoryDynamicFields(categoryId);
-    
+
     if (fields.length === 0) return null;
 
     const handleFieldChange = (fieldId: string, value: string | number | boolean) => {
@@ -321,6 +420,62 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
+  // Étape -1 (Niveau 0): Présentation de Swideal
+  const renderStepMinus1 = () => (
+    <div className="text-center space-y-3 max-w-3xl mx-auto">
+      <div className="space-y-3 animate-fade-in">
+        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm border border-gray-200">
+          <div className="text-center mb-3">
+            <p className="text-base md:text-lg text-gray-900 font-semibold mb-1">
+              <span className="text-blue-600">Swideal</span> place le client au cœur du modèle.
+            </p>
+            <p className="text-sm text-gray-600">
+              Notre approche repose sur deux leviers puissants :
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-blue-500">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
+                <span className="inline-block w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">1</span>
+                L'enchère inversée
+              </h3>
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Le client décrit son besoin et les prestataires rivalisent pour offrir le meilleur deal.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-green-500 text-center">
+              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
+                <span className="inline-block w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">2</span>
+                La mise en relation stratégique
+              </h3>
+              <p className="text-xs md:text-sm text-gray-700 leading-snug">
+                Connectez-vous directement à la bonne personne grâce aux réseaux et connaissances partagées.
+                <br />
+                Toi aussi, valorise ton réseau
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs md:text-sm text-gray-800 leading-snug text-center">
+              <strong>Swideal</strong> transforme la mise en relation en véritable <strong>art du deal</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Button 
+        onClick={() => setCurrentStep(0)}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200"
+        size="lg"
+      >
+        🚀 Démarrer
+      </Button>
+    </div>
+  );
+
   // Étape 0: Choix du type d'utilisateur
   const renderStep0 = () => (
     <div className="text-center space-y-3">
@@ -332,7 +487,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           Publiez votre projet et recevez des propositions de <span className="text-green-600 font-semibold">prestataires</span> qualifiés
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto progressive-flow-grid">
         <Card 
           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1 group card-shine progressive-flow-card ${
@@ -479,7 +634,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     // Choisir les catégories appropriées selon le type de service
     const categoriesToShow = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const categoryLabel = serviceType === 'mise-en-relation' ? 'expert' : 'projet';
-    
+
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -543,7 +698,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     const categoriesToSearch = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const selectedCat = categoriesToSearch.find(cat => cat.id === selectedCategory);
     const projectLabel = serviceType === 'mise-en-relation' ? 'demande de contact' : 'projet';
-    
+
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -556,6 +711,18 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
         </div>
 
         <div className="space-y-6 max-w-2xl mx-auto progressive-flow-form">
+          {/* Switch Mode Équipe */}
+          <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <Switch
+              id="team-mode"
+              checked={isTeamMode}
+              onCheckedChange={setIsTeamMode}
+            />
+            <Label htmlFor="team-mode" className="text-blue-900 font-medium">
+              🤝 Mode équipe - Diviser le projet en plusieurs spécialités
+            </Label>
+          </div>
+
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -627,7 +794,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Euro className="w-4 h-4 inline mr-1" />
-                {serviceType === 'mise-en-relation' ? 'Budget consultation' : 'Budget indicatif'}
+                {serviceType === 'mise-en-relation' ? 'Budget consultation (optionnel)' : 'Budget indicatif (optionnel)'}
               </label>
               <Input
                 placeholder={serviceType === 'mise-en-relation' ? "Ex: 200 - 500 €/heure" : "Ex: 5 000 - 10 000 €"}
@@ -639,7 +806,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Délai souhaité
+                Délai souhaité (optionnel)
               </label>
               <Input
                 placeholder="Ex: 2-3 mois"
@@ -652,7 +819,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Exigences spécifiques
+                Exigences spécifiques (optionnel)
               </label>
               <TextSuggestionButton
                 currentText={projectData.requirements}
@@ -699,7 +866,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 setShowFeedbackButtons(true);
               }}
             />
-            
+
             {/* Boutons feedback IA */}
             {showFeedbackButtons && aiSuggestions && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
@@ -743,7 +910,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
             <Button 
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
-              disabled={!projectData.title || !projectData.description}
+              disabled={!projectData.title.trim() || !projectData.description.trim()}
               onClick={() => setCurrentStep(4)}
             >
               <ChevronRight className="w-4 h-4 mr-2" />
@@ -812,7 +979,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               <h3 className="text-lg font-semibold text-gray-900">
                 Où se situe votre projet ?
               </h3>
-              
+
               <InteractiveMap
                 center={projectData.location.lat && projectData.location.lng 
                   ? [projectData.location.lat, projectData.location.lng] 
@@ -833,7 +1000,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 showProviders={true}
                 className="h-96"
               />
-              
+
               {projectData.location.address && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm text-blue-800">
@@ -842,7 +1009,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                   </p>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Rayon de recherche (km)
@@ -876,8 +1043,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           </Button>
           <Button 
             onClick={createMission}
-            disabled={isCreating || !projectData.title || !projectData.description || 
-              (projectData.needsLocation && (!projectData.location.lat || !projectData.location.lng))}
+            disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
             className="min-w-[200px]"
           >
             {isCreating ? (
@@ -897,55 +1063,57 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
-  const steps = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {steps[currentStep]()}
+          {steps[currentStep + 1]()}
         </div>
-        
-        {/* Bloc de progression compact sous le contenu */}
-        <div className="bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Étape {currentStep + 1} sur 5
-            </span>
-            <span className="text-sm font-semibold text-blue-600">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          
-          {/* Barre de progression avec gradient et animation */}
-          <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-              style={{ width: `${progress}%` }}
-            >
-              {/* Effet de brillance */}
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
+
+        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
+        {currentStep >= 0 && (
+          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Étape {currentStep + 1} sur 5
+              </span>
+              <span className="text-sm font-semibold text-blue-600">
+                {Math.round(((currentStep + 1) / 5) * 100)}%
+              </span>
+            </div>
+
+            {/* Barre de progression avec gradient et animation */}
+            <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
+                style={{ width: `${((currentStep + 1) / 5) * 100}%` }}
+              >
+                {/* Effet de brillance */}
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Points d'étapes réduits */}
+            <div className="flex justify-between mt-2">
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div key={step} className="flex flex-col items-center">
+                  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    step <= currentStep + 1 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
+                      : 'bg-gray-300'
+                  }`}></div>
+                  <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
+                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
+                  }`}>
+                    {step}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-          
-          {/* Points d'étapes réduits */}
-          <div className="flex justify-between mt-2">
-            {[1, 2, 3, 4, 5].map((step) => (
-              <div key={step} className="flex flex-col items-center">
-                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  step <= currentStep + 1 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
-                    : 'bg-gray-300'
-                }`}></div>
-                <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                  step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
-                }`}>
-                  {step}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -28,8 +28,27 @@ export default function Marketplace() {
     sort: 'newest',
   });
 
-  const { data: missions = [] } = useQuery<MissionWithBids[]>({
+  const { data: missions = [], isLoading, error } = useQuery<MissionWithBids[]>({
     queryKey: ['/api/missions'],
+    refetchInterval: 60000, // Réduire à 1 minute pour moins de charge serveur
+    retry: 2, // Réduire les tentatives
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000),
+    staleTime: 30000, // Cache valide 30 secondes
+    gcTime: 300000, // Garder en cache 5 minutes
+    refetchOnWindowFocus: false, // Éviter les requêtes inutiles
+    onError: (err) => {
+      console.error('❌ Erreur chargement missions:', err);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Missions chargées avec succès:', data?.length || 0);
+    }
+  });
+
+  console.log('🏪 Marketplace - État actuel:', { 
+    missionsCount: missions.length, 
+    isLoading, 
+    hasError: !!error,
+    errorMessage: error?.message 
   });
 
   const filteredAndSortedMissions = missions
@@ -213,7 +232,33 @@ export default function Marketplace() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredAndSortedMissions.map((mission) => (
+          {isLoading && (
+            <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-500">Chargement des missions...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
+              <div className="text-red-500 mb-4">❌</div>
+              <p className="text-red-500 text-lg">Erreur de chargement</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Impossible de charger les missions. 
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="block mt-1 text-xs">Debug: {error?.message}</span>
+                )}
+              </p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Recharger la page
+              </button>
+            </div>
+          )}
+
+          {!isLoading && !error && filteredAndSortedMissions.map((mission) => (
             <MissionCard
               key={mission.id}
               mission={mission}
@@ -221,14 +266,14 @@ export default function Marketplace() {
             />
           ))}
 
-          {filteredAndSortedMissions.length === 0 && (
+          {!isLoading && !error && filteredAndSortedMissions.length === 0 && (
             <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
               <div className="text-gray-300 mb-4">
                 <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L10 8.586 8.707 7.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
-              <p className="text-gray-500 text-lg">Aucune mission trouvée</p>
+              <p className="text-gray-500 text-lg">Aucune mission trouvée ({missions.length} missions totales)</p>
               <p className="text-gray-400 text-sm mt-2">Essayez de modifier vos filtres</p>
             </div>
           )}

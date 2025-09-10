@@ -2,7 +2,7 @@ import express from 'express';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { desc, eq, and, not, inArray, sql } from 'drizzle-orm';
-import { announcements, feedFeedback, feedSeen, insertFeedFeedbackSchema } from '../../shared/schema.js';
+import { announcements, feedFeedback, feedSeen, insertFeedFeedbackSchema } from '../../shared/schema';
 import { FeedRanker } from '../services/feedRanker.js';
 import { z } from 'zod';
 

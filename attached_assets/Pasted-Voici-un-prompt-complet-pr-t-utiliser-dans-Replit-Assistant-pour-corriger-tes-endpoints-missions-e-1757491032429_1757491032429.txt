@@ -1,0 +1,55 @@
+Voici un prompt complet prêt à utiliser dans Replit Assistant pour corriger tes endpoints missions et éviter les erreurs excerpt does not exist et mission ID n’est pas un nombre valide :
+
+⸻
+
+Prompt Replit Assistant (FR)
+
+Tu es un assistant technique expert TypeScript/Node/PostgreSQL. Mon projet rencontre deux problèmes sur les endpoints missions (GET /api/missions/:id et GET /api/missions) :
+	1.	Erreur excerpt does not exist : le backend essaye de sélectionner la colonne excerpt dans la table missions, mais cette colonne n’existe pas en base.
+	2.	Erreur mission ID n’est pas un nombre valide : l’ID de mission arrive depuis la requête en tant que string et Drizzle/Postgres ne peut pas l’utiliser directement.
+
+⸻
+
+Objectifs pour Replit Assistant
+	1.	Modifier les endpoints GET /api/missions/:id et GET /api/missions pour ne jamais sélectionner excerpt en base.
+	2.	Générer l’excerpt à la volée côté backend à partir de la colonne description (description.slice(0, 200) ou équivalent).
+	3.	Convertir et valider req.params.id et les IDs dans les requêtes pour s’assurer qu’ils sont des nombres valides.
+	4.	Retourner une réponse JSON complète avec tous les champs existants (id, title, description, budget, tags, skills_required, etc.) et l’excerpt généré.
+	5.	Fournir un snippet TypeScript complet prêt à coller pour les deux endpoints.
+	6.	Ajouter des messages d’erreur clairs pour les ID invalides et les missions non trouvées.
+	7.	Expliquer brièvement pourquoi ces erreurs se produisaient et comment les éviter à l’avenir.
+
+⸻
+
+Contraintes
+	•	Fournir uniquement du TypeScript valide compatible Drizzle ORM.
+	•	Ne pas créer de colonne excerpt en base.
+	•	Maintenir tous les autres champs renvoyés par l’API.
+	•	Rester concis et privilégier du code prêt à coller et à build.
+
+⸻
+
+Veux‑tu que je génère directement les endpoints corrigés avec ces deux fix appliqués ?
+
+Tu es un assistant technique expert TypeScript/Node/PostgreSQL. Mon projet rencontre deux problèmes sur les endpoints missions (GET /api/missions/:id et GET /api/missions) :
+	1.	Erreur excerpt does not exist : le backend essaye de sélectionner la colonne excerpt dans la table missions, mais cette colonne n’existe pas en base.
+	2.	Erreur mission ID n’est pas un nombre valide : l’ID de mission arrive depuis la requête en tant que string et Drizzle/Postgres ne peut pas l’utiliser directement.
+
+⸻
+
+Objectifs pour Replit Assistant
+	1.	Modifier les endpoints GET /api/missions/:id et GET /api/missions pour ne jamais sélectionner excerpt en base.
+	2.	Générer l’excerpt à la volée côté backend à partir de la colonne description (description.slice(0, 200) ou équivalent).
+	3.	Convertir et valider req.params.id et les IDs dans les requêtes pour s’assurer qu’ils sont des nombres valides.
+	4.	Retourner une réponse JSON complète avec tous les champs existants (id, title, description, budget, tags, skills_required, etc.) et l’excerpt généré.
+	5.	Fournir un snippet TypeScript complet prêt à coller pour les deux endpoints.
+	6.	Ajouter des messages d’erreur clairs pour les ID invalides et les missions non trouvées.
+	7.	Expliquer brièvement pourquoi ces erreurs se produisaient et comment les éviter à l’avenir.
+
+⸻
+
+Contraintes
+	•	Fournir uniquement du TypeScript valide compatible Drizzle ORM.
+	•	Ne pas créer de colonne excerpt en base.
+	•	Maintenir tous les autres champs renvoyés par l’API.
+	•	Rester concis et privilégier du code prêt à coller et à build.
