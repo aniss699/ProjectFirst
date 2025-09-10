@@ -307,3 +307,59 @@ export interface LocationObject {
 }
 
 // Types métier pour les missions (terminologie unifiée)
+
+// ============================================
+// EXPORTS CENTRALISÉS
+// ============================================
+
+// Réexporter les types principaux pour éviter les conflits d'import
+export {
+  users,
+  missions,
+  bids,
+  announcements,
+  aiEvents,
+  feedFeedback,
+  feedSeen,
+  favorites
+} from './schema';
+
+// Réexporter les enums
+export {
+  missionStatusEnum,
+  currencyCodeEnum,
+  urgencyLevelEnum
+} from './schema';
+
+// Réexporter les schémas Zod
+export {
+  insertMissionSchema,
+  selectMissionSchema,
+  insertBidSchema,
+  insertFeedFeedbackSchema,
+  insertFeedSeenSchema,
+  insertFavoriteSchema
+} from './schema';
+
+// Réexporter tous les types TypeScript
+export type {
+  User,
+  NewUser,
+  Mission,
+  NewMission,
+  Bid,
+  NewBid,
+  Announcement,
+  NewAnnouncement,
+  AiEvent,
+  NewAiEvent,
+  FeedFeedback,
+  NewFeedFeedback,
+  FeedSeen,
+  NewFeedSeen,
+  Favorite,
+  NewFavorite,
+  MissionWithBids,
+  BudgetObject,
+  LocationObject
+} from './schema';
