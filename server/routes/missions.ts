@@ -194,32 +194,9 @@ router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
 
-    // Use simple select() to avoid Drizzle column mapping issues
+    // Use select all with safe fallbacks
     const allMissions = await db
-      .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget_value_cents: missions.budget_value_cents,
-        currency: missions.currency,
-        location_raw: missions.location_raw,
-        city: missions.city,
-        country: missions.country,
-        remote_allowed: missions.remote_allowed,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        status: missions.status,
-        urgency: missions.urgency,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        skills_required: missions.skills_required,
-        requirements: missions.requirements,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at
-      })
+      .select()
       .from(missions)
       .orderBy(desc(missions.created_at));
 
