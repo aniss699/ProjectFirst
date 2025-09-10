@@ -31,6 +31,5 @@ export function validateEnvironment() {
     DATABASE_URL: process.env.DATABASE_URL ? '✅ Configuré' : '❌ Manquant',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ Configuré' : '❌ Manquant',
     PORT: process.env.PORT || 5000
-  });ss.env.PORT || '5000'
   });
 }
