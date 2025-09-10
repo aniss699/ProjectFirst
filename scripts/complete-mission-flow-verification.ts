@@ -73,7 +73,7 @@ class MissionFlowVerifier {
       // Données optionnelles selon les colonnes disponibles
       const optionalData = {
         budget_value_cents: 500000, // 5000€
-        budget: 500000, // Fallback pour l'ancienne colonne
+        budget: 5000, // Fallback pour l'ancienne colonne (en euros)
         currency: 'EUR',
         location_raw: 'Paris, France',
         location: 'Paris, France', // Fallback pour l'ancienne colonne
@@ -122,11 +122,11 @@ class MissionFlowVerifier {
       const query = `
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name = $1 
+        WHERE table_name = '${tableName}' 
         ORDER BY ordinal_position
       `;
       
-      const result = await db.execute(query, [tableName]);
+      const result = await db.execute(query);
       return result.rows.map(row => row.column_name);
     } catch (error) {
       console.warn(`⚠️ Impossible de récupérer les colonnes de ${tableName}:`, error.message);

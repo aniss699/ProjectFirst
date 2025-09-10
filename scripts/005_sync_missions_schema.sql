@@ -37,6 +37,18 @@ BEGIN
         RAISE NOTICE 'Colonne search_vector ajoutée à la table missions';
     END IF;
 
+    -- Ajouter la colonne budget_value_cents si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'budget_value_cents') THEN
+        ALTER TABLE missions ADD COLUMN budget_value_cents INTEGER;
+        RAISE NOTICE 'Colonne budget_value_cents ajoutée à la table missions';
+    END IF;
+
+    -- Migrer les données de budget vers budget_value_cents si nécessaire
+    UPDATE missions 
+    SET budget_value_cents = budget * 100 
+    WHERE budget_value_cents IS NULL AND budget IS NOT NULL;
+
     -- Vérifier les colonnes de budget
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'missions' AND column_name = 'budget_type') THEN
