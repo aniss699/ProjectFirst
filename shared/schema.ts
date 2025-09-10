@@ -4,7 +4,7 @@ export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  role: text('role').notNull(), // 'CLIENT' | 'PRO'
+  role: text('role').notNull().$type<'CLIENT' | 'PRO'>(),
   rating_mean: decimal('rating_mean', { precision: 3, scale: 2 }),
   rating_count: integer('rating_count').default(0),
   profile_data: jsonb('profile_data'),
@@ -22,9 +22,9 @@ export const missions = pgTable('missions', {
   budget_min: integer('budget_min'),
   budget_max: integer('budget_max'),
   budget_value_cents: integer('budget_value_cents'),
-  urgency: text('urgency').default('medium'),
-  status: text('status').default('open'),
-  quality_target: text('quality_target').default('standard'),
+  urgency: text('urgency').$type<'low' | 'medium' | 'high' | 'urgent'>().default('medium'),
+  status: text('status').$type<'draft' | 'open' | 'published' | 'assigned' | 'completed' | 'cancelled'>().default('open'),
+  quality_target: text('quality_target').$type<'basic' | 'standard' | 'premium' | 'luxury'>().default('standard'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
 });
@@ -38,7 +38,7 @@ export const bids = pgTable('bids', {
   message: text('message'),
   score_breakdown: jsonb('score_breakdown'),
   is_leading: boolean('is_leading').default(false),
-  status: text('status').default('pending'),
+  status: text('status').$type<'pending' | 'accepted' | 'rejected' | 'withdrawn'>().default('pending'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
 });
@@ -47,7 +47,7 @@ export const announcements = pgTable('announcements', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
   content: text('content').notNull(),
-  type: text('type').default('info'),
+  type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
   priority: integer('priority').default(1),
   is_active: boolean('is_active').default(true),
   created_at: timestamp('created_at').defaultNow(),
