@@ -9,8 +9,9 @@ var __export = (target, all) => {
 };
 
 // shared/schema.ts
-import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
-var users, missions, offers, aiEvents;
+import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb, decimal } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var users, missions, offers, aiEvents, announcements, feedFeedback, feedSeen, insertFeedFeedbackSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -19,6 +20,10 @@ var init_schema = __esm({
       name: varchar("name", { length: 255 }).notNull(),
       email: varchar("email", { length: 255 }).notNull().unique(),
       password: varchar("password", { length: 255 }).notNull(),
+      role: varchar("role", { length: 50 }).default("CLIENT").notNull(),
+      rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }).default("0"),
+      rating_count: integer("rating_count").default(0),
+      profile_data: jsonb("profile_data"),
       created_at: timestamp("created_at").defaultNow().notNull(),
       updated_at: timestamp("updated_at").defaultNow().notNull()
     });
@@ -63,6 +68,39 @@ var init_schema = __esm({
       created_at: timestamp("created_at").defaultNow().notNull(),
       updated_at: timestamp("updated_at").defaultNow().notNull()
     });
+    announcements = pgTable("announcements", {
+      id: serial("id").primaryKey(),
+      title: varchar("title", { length: 500 }).notNull(),
+      description: text("description").notNull(),
+      category: varchar("category", { length: 100 }),
+      budget_min: integer("budget_min"),
+      budget_max: integer("budget_max"),
+      location: varchar("location", { length: 255 }),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      status: varchar("status", { length: 50 }).default("active").notNull(),
+      tags: jsonb("tags"),
+      sponsored: boolean("sponsored").default(false),
+      created_at: timestamp("created_at").defaultNow().notNull(),
+      updated_at: timestamp("updated_at").defaultNow().notNull()
+    });
+    feedFeedback = pgTable("feed_feedback", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+      feedback_type: varchar("feedback_type", { length: 50 }).notNull(),
+      // 'like', 'dislike', 'not_interested'
+      feedback_reason: varchar("feedback_reason", { length: 200 }),
+      action: varchar("action", { length: 100 }),
+      dwell_ms: integer("dwell_ms"),
+      created_at: timestamp("created_at").defaultNow().notNull()
+    });
+    feedSeen = pgTable("feed_seen", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+      seen_at: timestamp("seen_at").defaultNow().notNull()
+    });
+    insertFeedFeedbackSchema = createInsertSchema(feedFeedback);
   }
 });
 
@@ -2304,8 +2342,8 @@ var ai_routes_default = router5;
 
 // server/index.ts
 var app = express3();
-var port = process.env.PORT || 5e3;
-console.log("\u{1F680} Starting SwipDEAL Server...");
+var port = Number(process.env.PORT) || 3001;
+console.log("\u{1F680} Starting Swideal Server...");
 app.use(cors({
   origin: ["http://localhost:3000", "http://localhost:5173", process.env.CLIENT_URL].filter(Boolean),
   credentials: true
