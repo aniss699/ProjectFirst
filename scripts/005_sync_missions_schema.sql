@@ -84,6 +84,13 @@ BEGIN
         RAISE NOTICE 'Colonne country ajoutée à la table missions';
     END IF;
 
+    -- Ajouter la colonne postal_code si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'postal_code') THEN
+        ALTER TABLE missions ADD COLUMN postal_code TEXT;
+        RAISE NOTICE 'Colonne postal_code ajoutée à la table missions';
+    END IF;
+
     -- Ajouter la colonne client_id si elle n'existe pas
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'missions' AND column_name = 'client_id') THEN
