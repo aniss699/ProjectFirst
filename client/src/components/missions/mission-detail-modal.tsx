@@ -153,31 +153,31 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] h-[85vh] max-w-4xl p-0 gap-0 bg-gray-50 overflow-hidden rounded-xl">
+      <DialogContent className="w-[95vw] h-[90vh] max-w-4xl p-0 gap-0 bg-gray-50 overflow-hidden rounded-xl max-h-screen">
         <DialogHeader className="sr-only">
           <DialogTitle>{mission.title}</DialogTitle>
           <DialogDescription>Détails de la mission</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
 
         {/* Header Mobile/Desktop */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
-            <div className="flex items-center justify-between p-4 md:p-6">
+            <div className="flex items-center justify-between p-3 md:p-6">
               <Button
                 onClick={onClose}
                 size="sm"
                 variant="ghost"
                 className="text-white hover:bg-white/20 p-2 rounded-full md:hidden"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </Button>
 
-              <div className="flex-1 md:flex-none">
-                <h2 className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
+              <div className="flex-1 md:flex-none min-w-0">
+                <h2 className="text-base md:text-xl font-bold leading-tight pr-2 md:pr-0 truncate">
                   {mission.title}
                 </h2>
-                <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
+                <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90 truncate">
                   Par {mission.clientName} • {formatBudget(mission.budget || '0')}
                 </p>
               </div>
@@ -186,26 +186,27 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 onClick={onClose}
                 size="sm"
                 variant="ghost"
-                className="text-white hover:bg-white/20 p-2 rounded-full"
+                className="text-white hover:bg-white/20 p-1.5 rounded-full"
                 aria-label="Fermer la modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Stats rapides */}
-            <div className="px-4 pb-4 md:px-6">
-              <div className="flex items-center gap-4 text-xs md:text-sm text-blue-100">
+            <div className="px-3 pb-3 md:px-6 md:pb-4">
+              <div className="flex items-center gap-2 md:gap-4 text-xs text-blue-100 flex-wrap">
                 <div className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{formatDate(mission.createdAt || new Date().toISOString())}</span>
+                  <span className="hidden sm:inline">{formatDate(mission.createdAt || new Date().toISOString())}</span>
+                  <span className="sm:hidden">Créé</span>
                 </div>
                 {category && (
-                  <Badge className="bg-white/20 text-white border-none text-xs px-2 py-0.5">
+                  <Badge className="bg-white/20 text-white border-none text-xs px-1.5 py-0.5">
                     {category.name}
                   </Badge>
                 )}
@@ -216,40 +217,43 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           {/* Navigation Tabs */}
           <div className="bg-white border-b flex-shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-12 bg-transparent rounded-none border-none p-0">
+            <TabsList className="w-full h-10 md:h-12 bg-transparent rounded-none border-none p-0">
               <div className="flex w-full">
                 <TabsTrigger
                   value="overview"
-                  className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
                 >
-                  <Briefcase className="w-4 h-4 mr-1.5" />
-                  Aperçu
+                  <Briefcase className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                  <span className="hidden sm:inline">Aperçu</span>
+                  <span className="sm:hidden">Info</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="bids"
-                  className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
                 >
-                  <Users className="w-4 h-4 mr-1.5" />
-                  Offres ({sortedBids.length})
+                  <Users className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                  <span className="hidden sm:inline">Offres ({sortedBids.length})</span>
+                  <span className="sm:hidden">({sortedBids.length})</span>
                 </TabsTrigger>
                 {isTeamMission && (
                   <TabsTrigger
                     value="team"
-                    className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                    className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
                   >
-                    <Target className="w-4 h-4 mr-1.5" />
-                    Équipe
+                    <Target className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                    <span className="hidden sm:inline">Équipe</span>
+                    <span className="sm:hidden">Team</span>
                   </TabsTrigger>
                 )}
               </div>
             </TabsList>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden min-h-0">
 
               {/* Overview Tab */}
               <TabsContent value="overview" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4 pb-8">
+                <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
 
                   {/* Description */}
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
@@ -258,39 +262,39 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                   </div>
 
                   {/* Informations clés */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                          <Euro className="w-4 h-4 text-white" />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                    <div className="bg-green-50 rounded-lg p-3 md:p-4 border border-green-100">
+                      <div className="flex items-center gap-2 mb-1 md:mb-2">
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                          <Euro className="w-3 h-3 md:w-4 md:h-4 text-white" />
                         </div>
-                        <span className="font-medium text-gray-900 text-sm">Budget</span>
+                        <span className="font-medium text-gray-900 text-xs md:text-sm">Budget</span>
                       </div>
-                      <div className="text-xl md:text-2xl font-bold text-green-600">
+                      <div className="text-lg md:text-2xl font-bold text-green-600">
                         {formatBudget(mission.budget || '0')}
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                          <MapPin className="w-4 h-4 text-white" />
+                    <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-1 md:mb-2">
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                          <MapPin className="w-3 h-3 md:w-4 md:h-4 text-white" />
                         </div>
-                        <span className="font-medium text-gray-900 text-sm">Localisation</span>
+                        <span className="font-medium text-gray-900 text-xs md:text-sm">Lieu</span>
                       </div>
-                      <div className="text-blue-600 font-medium text-sm md:text-base">
+                      <div className="text-blue-600 font-medium text-xs md:text-base truncate">
                         {mission.location || 'Non spécifié'}
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                          <TrendingUp className="w-4 h-4 text-white" />
+                    <div className="bg-purple-50 rounded-lg p-3 md:p-4 border border-purple-100 col-span-2 md:col-span-1">
+                      <div className="flex items-center gap-2 mb-1 md:mb-2">
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
                         </div>
-                        <span className="font-medium text-gray-900 text-sm">Intérêt</span>
+                        <span className="font-medium text-gray-900 text-xs md:text-sm">Intérêt</span>
                       </div>
-                      <div className="text-purple-600 font-medium text-sm md:text-base">
+                      <div className="text-purple-600 font-medium text-xs md:text-base">
                         {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
                       </div>
                     </div>
@@ -383,7 +387,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
               {/* Bids Tab */}
               <TabsContent value="bids" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4 pb-8">
+                <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
 
                   {sortedBids.length === 0 ? (
                     <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
@@ -480,7 +484,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               {/* Team Tab */}
               {isTeamMission && (
                 <TabsContent value="team" className="m-0 h-full overflow-y-auto">
-                  <div className="p-4 md:p-6 space-y-4 pb-8">
+                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
                     <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
                       <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
                         <Target className="w-5 h-5" />
