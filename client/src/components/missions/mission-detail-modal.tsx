@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { MissionWithBids, Bid } from '@shared/schema';
@@ -16,13 +15,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Star, 
-  Euro, 
-  Briefcase, 
+import {
+  MapPin,
+  Calendar,
+  Users,
+  Star,
+  Euro,
+  Briefcase,
   MessageCircle,
   UserCheck,
   Clock,
@@ -38,6 +37,7 @@ import {
 import { ProviderProfileModal } from './provider-profile-modal';
 import { BidResponseModal } from './bid-response-modal';
 import SmartBidAnalyzer from '@/components/ai/smart-bid-analyzer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MissionDetailModalProps {
   missionId: string | null;
@@ -158,9 +158,9 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <DialogTitle>{mission.title}</DialogTitle>
           <DialogDescription>Détails de la mission</DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex flex-col h-full">
-        
+
         {/* Header Mobile/Desktop */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
             <div className="flex items-center justify-between p-4 md:p-6">
@@ -172,7 +172,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              
+
               <div className="flex-1 md:flex-none">
                 <h2 className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
                   {mission.title}
@@ -218,23 +218,23 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full h-12 bg-transparent rounded-none border-none p-0">
               <div className="flex w-full">
-                <TabsTrigger 
-                  value="overview" 
+                <TabsTrigger
+                  value="overview"
                   className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
                 >
                   <Briefcase className="w-4 h-4 mr-1.5" />
                   Aperçu
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="bids" 
+                <TabsTrigger
+                  value="bids"
                   className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
                 >
                   <Users className="w-4 h-4 mr-1.5" />
                   Offres ({sortedBids.length})
                 </TabsTrigger>
                 {isTeamMission && (
-                  <TabsTrigger 
-                    value="team" 
+                  <TabsTrigger
+                    value="team"
                     className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
                   >
                     <Target className="w-4 h-4 mr-1.5" />
@@ -246,282 +246,288 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-              
+
               {/* Overview Tab */}
-              <TabsContent value="overview" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4 pb-8">
-                
-                {/* Description */}
-                <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
-                  <h3 className="font-semibold text-gray-900 mb-3 text-sm md:text-base">Description du projet</h3>
-                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">{mission.description}</p>
-                </div>
+              <TabsContent value="overview" className="m-0 h-full overflow-y-hidden">
+                <ScrollArea className="h-full w-full">
+                  <div className="p-4 md:p-6 space-y-4 pb-8">
 
-                {/* Informations clés */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                        <Euro className="w-4 h-4 text-white" />
+                  {/* Description */}
+                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
+                    <h3 className="font-semibold text-gray-900 mb-3 text-sm md:text-base">Description du projet</h3>
+                    <p className="text-gray-700 leading-relaxed text-sm md:text-base">{mission.description}</p>
+                  </div>
+
+                  {/* Informations clés */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                          <Euro className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium text-gray-900 text-sm">Budget</span>
                       </div>
-                      <span className="font-medium text-gray-900 text-sm">Budget</span>
+                      <div className="text-xl md:text-2xl font-bold text-green-600">
+                        {formatBudget(mission.budget || '0')}
+                      </div>
                     </div>
-                    <div className="text-xl md:text-2xl font-bold text-green-600">
-                      {formatBudget(mission.budget || '0')}
+
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium text-gray-900 text-sm">Localisation</span>
+                      </div>
+                      <div className="text-blue-600 font-medium text-sm md:text-base">
+                        {mission.location || 'Non spécifié'}
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <TrendingUp className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium text-gray-900 text-sm">Intérêt</span>
+                      </div>
+                      <div className="text-purple-600 font-medium text-sm md:text-base">
+                        {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <MapPin className="w-4 h-4 text-white" />
+                  {/* Actions pour prestataires */}
+                  {user && user.type === 'provider' && mission.clientName !== user.name && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 md:p-6 border border-green-200">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                          <Award className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 text-sm md:text-base">Candidater à cette mission</h4>
+                          <p className="text-xs md:text-sm text-gray-600">Soumettez votre proposition</p>
+                        </div>
                       </div>
-                      <span className="font-medium text-gray-900 text-sm">Localisation</span>
+
+                      <div className="space-y-3">
+                        <Button
+                          onClick={() => setShowAIAnalyzer(!showAIAnalyzer)}
+                          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-sm"
+                          size="default"
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Analyser avec l'IA
+                        </Button>
+
+                        <Button
+                          onClick={() => setShowBidForm(!showBidForm)}
+                          className="w-full bg-green-600 hover:bg-green-700 text-sm"
+                          size="default"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          {showBidForm ? 'Masquer le formulaire' : 'Soumettre une offre'}
+                        </Button>
+                      </div>
+
+                      {/* AI Analyzer */}
+                      {showAIAnalyzer && (
+                        <div className="mt-4 p-4 bg-white rounded-lg border">
+                          <SmartBidAnalyzer
+                            missionTitle={mission.title}
+                            missionDescription={mission.description}
+                            missionBudget={parseFloat(mission.budget || '0')}
+                            missionCategory={mission.category}
+                            currentBid={{}}
+                            providerProfile={{
+                              rating: 4.5,
+                              completedProjects: 25,
+                              skills: ['React', 'Node.js', 'TypeScript'],
+                              portfolio: []
+                            }}
+                            competitorBids={sortedBids}
+                            onOptimizedBidGenerated={(optimizedBid) => {
+                              setShowBidForm(true);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Bid Form */}
+                      {showBidForm && (
+                        <div className="mt-4 p-4 bg-white rounded-lg border">
+                          <BidForm
+                            missionId={mission.id}
+                            onSuccess={() => {
+                              setShowBidForm(false);
+                              setShowAIAnalyzer(false);
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div className="text-blue-600 font-medium text-sm md:text-base">
-                      {mission.location || 'Non spécifié'}
+                  )}
+
+                  {/* Message pour sa propre mission */}
+                  {user && user.type === 'provider' && mission.clientName === user.name && (
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                          <UserCheck className="w-4 h-4 text-white" />
+                        </div>
+                        <p className="text-blue-700 font-medium text-sm">Ceci est votre mission</p>
+                      </div>
                     </div>
+                  )}
                   </div>
-
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="font-medium text-gray-900 text-sm">Intérêt</span>
-                    </div>
-                    <div className="text-purple-600 font-medium text-sm md:text-base">
-                      {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions pour prestataires */}
-                {user && user.type === 'provider' && mission.clientName !== user.name && (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 md:p-6 border border-green-200">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                        <Award className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 text-sm md:text-base">Candidater à cette mission</h4>
-                        <p className="text-xs md:text-sm text-gray-600">Soumettez votre proposition</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={() => setShowAIAnalyzer(!showAIAnalyzer)}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-sm"
-                        size="default"
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Analyser avec l'IA
-                      </Button>
-
-                      <Button 
-                        onClick={() => setShowBidForm(!showBidForm)}
-                        className="w-full bg-green-600 hover:bg-green-700 text-sm"
-                        size="default"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        {showBidForm ? 'Masquer le formulaire' : 'Soumettre une offre'}
-                      </Button>
-                    </div>
-
-                    {/* AI Analyzer */}
-                    {showAIAnalyzer && (
-                      <div className="mt-4 p-4 bg-white rounded-lg border">
-                        <SmartBidAnalyzer
-                          missionTitle={mission.title}
-                          missionDescription={mission.description}
-                          missionBudget={parseFloat(mission.budget || '0')}
-                          missionCategory={mission.category}
-                          currentBid={{}}
-                          providerProfile={{
-                            rating: 4.5,
-                            completedProjects: 25,
-                            skills: ['React', 'Node.js', 'TypeScript'],
-                            portfolio: []
-                          }}
-                          competitorBids={sortedBids}
-                          onOptimizedBidGenerated={(optimizedBid) => {
-                            setShowBidForm(true);
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Bid Form */}
-                    {showBidForm && (
-                      <div className="mt-4 p-4 bg-white rounded-lg border">
-                        <BidForm 
-                          missionId={mission.id} 
-                          onSuccess={() => {
-                            setShowBidForm(false);
-                            setShowAIAnalyzer(false);
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Message pour sa propre mission */}
-                {user && user.type === 'provider' && mission.clientName === user.name && (
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <UserCheck className="w-4 h-4 text-white" />
-                      </div>
-                      <p className="text-blue-700 font-medium text-sm">Ceci est votre mission</p>
-                    </div>
-                  </div>
-                )}
-                </div>
+                </ScrollArea>
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent value="bids" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4 pb-8">
-                
-                {sortedBids.length === 0 ? (
-                  <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune candidature</h4>
-                    <p className="text-sm text-gray-500">Les prestataires peuvent encore postuler</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {sortedBids.map((bid: Bid, index: number) => (
-                      <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
-                        
-                        {/* Header offre */}
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                              {bid.providerName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <h5 
-                                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
-                                onClick={() => {
-                                  setSelectedProviderId(bid.providerId);
-                                  setSelectedProviderName(bid.providerName);
-                                }}
-                              >
-                                {bid.providerName}
-                              </h5>
-                              <div className="flex items-center gap-1">
-                                <div className="flex items-center">
-                                  {renderStars(bid.rating || '5.0')}
-                                </div>
-                                <span className="text-xs text-gray-500 ml-1">
-                                  {parseFloat(bid.rating || '5.0').toFixed(1)}/5
-                                </span>
-                                {index === 0 && sortedBids.length > 1 && (
-                                  <Badge className="bg-green-100 text-green-700 text-xs ml-2">
-                                    Meilleure offre
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-lg md:text-xl font-bold text-green-600">
-                              {formatBudget(bid.price)}
-                            </div>
-                            <div className="text-xs text-gray-500 flex items-center justify-end mt-1">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {bid.timeline}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Proposition */}
-                        <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4 border-l-4 border-blue-400">
-                          <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.proposal}</p>
-                        </div>
-
-                        {/* Actions */}
-                        {user && mission.userName === user.name && (
-                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <Button 
-                              onClick={() => {
-                                setSelectedBidId(bid.id);
-                                setSelectedBidderName(bid.providerName);
-                              }}
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center justify-center gap-2 text-sm"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              Répondre
-                            </Button>
-                            <Button 
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 text-sm"
-                            >
-                              <UserCheck className="w-4 h-4" />
-                              Accepter
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                </div>
-              </TabsContent>
-
-              {/* Team Tab */}
-              {isTeamMission && (
-                <TabsContent value="team" className="m-0 h-full overflow-y-auto">
+              <TabsContent value="bids" className="m-0 h-full overflow-y-hidden">
+                <ScrollArea className="h-full w-full">
                   <div className="p-4 md:p-6 space-y-4 pb-8">
-                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
-                      <Target className="w-5 h-5" />
-                      Composition de l'équipe
-                    </h3>
-                    
+
+                  {sortedBids.length === 0 ? (
+                    <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune candidature</h4>
+                      <p className="text-sm text-gray-500">Les prestataires peuvent encore postuler</p>
+                    </div>
+                  ) : (
                     <div className="space-y-3">
-                      {mission.teamRequirements?.map((requirement: any, index: number) => (
-                        <div key={index} className="border-l-4 border-l-blue-500 bg-blue-50/50 rounded-r-lg p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="font-semibold text-gray-900 text-sm md:text-base">{requirement.role}</h4>
-                              <p className="text-gray-600 text-xs md:text-sm">{requirement.description}</p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm md:text-base font-bold text-green-600">
-                                {formatBudget(requirement.budget || '0')}
+                      {sortedBids.map((bid: Bid, index: number) => (
+                        <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
+
+                          {/* Header offre */}
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                {bid.providerName.charAt(0).toUpperCase()}
                               </div>
-                              <Badge variant="outline" className="text-xs">
-                                {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
-                              </Badge>
+                              <div>
+                                <h5
+                                  className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
+                                  onClick={() => {
+                                    setSelectedProviderId(bid.providerId);
+                                    setSelectedProviderName(bid.providerName);
+                                  }}
+                                >
+                                  {bid.providerName}
+                                </h5>
+                                <div className="flex items-center gap-1">
+                                  <div className="flex items-center">
+                                    {renderStars(bid.rating || '5.0')}
+                                  </div>
+                                  <span className="text-xs text-gray-500 ml-1">
+                                    {parseFloat(bid.rating || '5.0').toFixed(1)}/5
+                                  </span>
+                                  {index === 0 && sortedBids.length > 1 && (
+                                    <Badge className="bg-green-100 text-green-700 text-xs ml-2">
+                                      Meilleure offre
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <div className="text-lg md:text-xl font-bold text-green-600">
+                                {formatBudget(bid.price)}
+                              </div>
+                              <div className="text-xs text-gray-500 flex items-center justify-end mt-1">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {bid.timeline}
+                              </div>
                             </div>
                           </div>
 
-                          {requirement.skills && requirement.skills.length > 0 && (
-                            <div>
-                              <h5 className="font-medium text-xs mb-2">Compétences :</h5>
-                              <div className="flex flex-wrap gap-1">
-                                {requirement.skills.map((skill: string, skillIndex: number) => (
-                                  <Badge key={skillIndex} variant="secondary" className="text-xs">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </div>
+                          {/* Proposition */}
+                          <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4 border-l-4 border-blue-400">
+                            <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.proposal}</p>
+                          </div>
+
+                          {/* Actions */}
+                          {user && mission.userName === user.name && (
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                              <Button
+                                onClick={() => {
+                                  setSelectedBidId(bid.id);
+                                  setSelectedBidderName(bid.providerName);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center justify-center gap-2 text-sm"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                Répondre
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 text-sm"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                                Accepter
+                              </Button>
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
+                  )}
                   </div>
-                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Team Tab */}
+              {isTeamMission && (
+                <TabsContent value="team" className="m-0 h-full overflow-y-hidden">
+                  <ScrollArea className="h-full w-full">
+                    <div className="p-4 md:p-6 space-y-4 pb-8">
+                    <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
+                        <Target className="w-5 h-5" />
+                        Composition de l'équipe
+                      </h3>
+
+                      <div className="space-y-3">
+                        {mission.teamRequirements?.map((requirement: any, index: number) => (
+                          <div key={index} className="border-l-4 border-l-blue-500 bg-blue-50/50 rounded-r-lg p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h4 className="font-semibold text-gray-900 text-sm md:text-base">{requirement.role}</h4>
+                                <p className="text-gray-600 text-xs md:text-sm">{requirement.description}</p>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm md:text-base font-bold text-green-600">
+                                  {formatBudget(requirement.budget || '0')}
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {requirement.skills && requirement.skills.length > 0 && (
+                              <div>
+                                <h5 className="font-medium text-xs mb-2">Compétences :</h5>
+                                <div className="flex flex-wrap gap-1">
+                                  {requirement.skills.map((skill: string, skillIndex: number) => (
+                                    <Badge key={skillIndex} variant="secondary" className="text-xs">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    </div>
+                  </ScrollArea>
                 </TabsContent>
               )}
             </div>
