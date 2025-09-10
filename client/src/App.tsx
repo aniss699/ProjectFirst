@@ -10,8 +10,6 @@ import { queryClient } from '@/lib/queryClient';
 
 // Lazy load pages for better performance
 const Home = React.lazy(() => import('@/pages/home'));
-const Marketplace = React.lazy(() => import('@/pages/marketplace'));
-const Missions = React.lazy(() => import('@/pages/missions'));
 const CreateMission = React.lazy(() => import('@/pages/create-mission'));
 const Profile = React.lazy(() => import('@/pages/profile'));
 const Dashboard = React.lazy(() => import('@/pages/dashboard'));
@@ -44,9 +42,6 @@ const Favorites = React.lazy(() => import('@/pages/favorites'));
 
 // Lazy load the edit mission page
 const EditMission = React.lazy(() => import('@/pages/edit-mission'));
-
-// Lazy load the mes demandes page
-const MesDemandes = React.lazy(() => import('@/pages/mes-demandes'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -81,8 +76,6 @@ function App() {
                 <Suspense fallback={<LoadingSpinner />}>
                   <Switch>
                     <Route path="/" component={Home} />
-                    <Route path="/marketplace" component={Marketplace} />
-                    <Route path="/missions" component={Missions} />
                     <Route path="/create-mission" component={CreateMission} />
                     {/* Route for editing missions */}
                     <Route path="/missions/edit/:missionId" component={EditMission} />
@@ -125,8 +118,6 @@ function App() {
                     <Route path="/login" component={LoginPage} />
                     {/* Added route for Favorites */}
                     <Route path="/favorites" component={Favorites} />
-                    {/* Added route for Mes demandes */}
-                    <Route path="/mes-demandes" component={MesDemandes} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

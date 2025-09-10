@@ -11,7 +11,6 @@ export interface RouteConfig {
 export const ROUTES = {
   // Routes publiques
   HOME: '/',
-  MARKETPLACE: '/marketplace',
   SERVICES: '/services',
   FEATURES: '/features',
   NOTRE_CONCEPT: '/notre-concept',
@@ -20,7 +19,6 @@ export const ROUTES = {
   // Routes authentifiées
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
-  MISSIONS: '/missions',
   CREATE_MISSION: '/create-mission',
   MESSAGES: '/messages',
 
@@ -51,11 +49,6 @@ export const routeConfigs: Record<string, RouteConfig> = {
     title: 'Accueil - AppelsPro',
     description: 'Plateforme d\'appels d\'offres inversés'
   },
-  [ROUTES.MARKETPLACE]: {
-    path: ROUTES.MARKETPLACE,
-    title: 'Marketplace - AppelsPro',
-    description: 'Trouvez des missions et prestataires'
-  },
   [ROUTES.DASHBOARD]: {
     path: ROUTES.DASHBOARD,
     title: 'Tableau de bord - AppelsPro',
@@ -64,11 +57,6 @@ export const routeConfigs: Record<string, RouteConfig> = {
   [ROUTES.PROFILE]: {
     path: ROUTES.PROFILE,
     title: 'Mon profil - AppelsPro',
-    requiresAuth: true
-  },
-  [ROUTES.MISSIONS]: {
-    path: ROUTES.MISSIONS,
-    title: 'Mes missions - AppelsPro',
     requiresAuth: true
   },
   [ROUTES.CREATE_MISSION]: {
@@ -112,13 +100,11 @@ export const buildApiUrl = (endpoint: string): string => {
 export const navigationGroups = {
   main: [
     { path: ROUTES.HOME, label: 'Accueil' },
-    { path: ROUTES.MARKETPLACE, label: 'Marketplace' },
     { path: ROUTES.SERVICES, label: 'Services' },
     { path: ROUTES.FEATURES, label: 'Fonctionnalités' }
   ],
   user: [
     { path: ROUTES.DASHBOARD, label: 'Dashboard' },
-    { path: ROUTES.MISSIONS, label: 'Missions' },
     { path: ROUTES.PROFILE, label: 'Profil' },
     { path: ROUTES.MESSAGES, label: 'Messages' }
   ],
@@ -133,13 +119,30 @@ export const navigationGroups = {
 
 export const paths = {
   home: '/',
-  marketplace: '/marketplace',
-  missions: '/missions',
-  editMission: (id: string) => `/missions/${id}/edit`,
-  createMission: '/create-mission',
-  profile: '/profile',
   login: '/login',
+  createMission: '/create-mission',
+  editMission: (id: string) => `/edit-mission/${id}`,
+  profile: '/profile',
   dashboard: '/dashboard',
   messages: '/messages',
-  favorites: '/favorites'
+  favorites: '/favorites',
+  features: '/features',
+  legal: '/legal',
+  services: '/services',
+  feed: '/feed',
+  availableProviders: '/available-providers',
+  aiHub: '/ai-hub',
+  aiMonitoring: '/ai-monitoring',
+  adminFeedMetrics: '/admin-feed-metrics',
+  demoMissions: '/demo-missions',
+  providerProfile: (id: string) => `/provider/${id}`,
+  sitemap: '/sitemap',
+  projectImprove: '/project-improve',
+  flashDeal: '/services/flash-deal',
+  groupRequest: '/services/group-request',
+  reverseSubscription: '/services/reverse-subscription',
+  opportunities: '/services/opportunities',
+  iaHuman: '/services/ia-human',
+  notFound: '/404',
+  notreConcept: '/notre-concept'
 };

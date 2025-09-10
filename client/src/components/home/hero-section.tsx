@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import { ROUTES } from '../../routes/paths';
+
+const ROUTES = {
+  CREATE_MISSION: '/create-mission'
+};
 
 export function HeroSection() {
   return (
@@ -27,15 +30,14 @@ export function HeroSection() {
             </span>
           </div>
         </div>
-        
+
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
           Trouvez le prestataire parfait avec l'IA
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
           Plateforme française d'appels d'offres inversés avec intelligence artificielle.
         </p>
-        <div className="flex justify-center gap-3 text-sm">
-          <div className="flex items-center text-green-600 font-medium">
+        <div className="flex items-center text-green-600 font-medium">
             <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
             Plateforme en lancement
           </div>
@@ -43,14 +45,8 @@ export function HeroSection() {
             <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
             Premiers utilisateurs
           </div>
-        </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           <Button asChild size="lg">
-            <Link href={ROUTES.MARKETPLACE}>
-              Découvrir les missions
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
             <Link href={ROUTES.CREATE_MISSION}>
               Poster une mission
             </Link>
