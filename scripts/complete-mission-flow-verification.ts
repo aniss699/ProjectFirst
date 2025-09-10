@@ -73,6 +73,7 @@ class MissionFlowVerifier {
       const optionalData = {
         budget_value_cents: 500000, // 5000€
         budget: 5000, // Fallback pour l'ancienne colonne (en euros)
+        currency: 'EUR',
         location_raw: 'Paris, France',
         location: 'Paris, France', // Fallback pour l'ancienne colonne
         city: 'Paris',
@@ -83,7 +84,8 @@ class MissionFlowVerifier {
         tags: ['test', 'verification'],
         skills_required: ['TypeScript', 'React'],
         is_team_mission: false,
-        team_size: 1
+        team_size: 1,
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 jours dans le futur
       };
 
       // Construire l'objet final avec seulement les colonnes qui existent

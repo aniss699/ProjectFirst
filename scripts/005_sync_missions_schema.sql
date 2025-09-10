@@ -63,6 +63,69 @@ BEGIN
         RAISE NOTICE 'Colonne currency ajoutée à la table missions';
     END IF;
 
+    -- Ajouter la colonne location_raw si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'location_raw') THEN
+        ALTER TABLE missions ADD COLUMN location_raw TEXT;
+        RAISE NOTICE 'Colonne location_raw ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne city si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'city') THEN
+        ALTER TABLE missions ADD COLUMN city TEXT;
+        RAISE NOTICE 'Colonne city ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne country si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'country') THEN
+        ALTER TABLE missions ADD COLUMN country TEXT DEFAULT 'France';
+        RAISE NOTICE 'Colonne country ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne client_id si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'client_id') THEN
+        ALTER TABLE missions ADD COLUMN client_id INTEGER REFERENCES users(id);
+        RAISE NOTICE 'Colonne client_id ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne urgency si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'urgency') THEN
+        ALTER TABLE missions ADD COLUMN urgency TEXT DEFAULT 'medium';
+        RAISE NOTICE 'Colonne urgency ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne remote_allowed si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'remote_allowed') THEN
+        ALTER TABLE missions ADD COLUMN remote_allowed BOOLEAN DEFAULT true;
+        RAISE NOTICE 'Colonne remote_allowed ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne is_team_mission si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'is_team_mission') THEN
+        ALTER TABLE missions ADD COLUMN is_team_mission BOOLEAN DEFAULT false;
+        RAISE NOTICE 'Colonne is_team_mission ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne team_size si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'team_size') THEN
+        ALTER TABLE missions ADD COLUMN team_size INTEGER DEFAULT 1;
+        RAISE NOTICE 'Colonne team_size ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne deadline si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'deadline') THEN
+        ALTER TABLE missions ADD COLUMN deadline TIMESTAMP WITH TIME ZONE;
+        RAISE NOTICE 'Colonne deadline ajoutée à la table missions';
+    END IF;
+
     -- Supprimer les anciennes colonnes budget_min_cents et budget_max_cents si elles existent
     IF EXISTS (SELECT 1 FROM information_schema.columns 
                WHERE table_name = 'missions' AND column_name = 'budget_min_cents') THEN
