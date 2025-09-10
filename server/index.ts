@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
@@ -151,7 +151,6 @@ app.use('/api/missions', missionsRoutes);
 
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
-app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
 // Redirect projects API to missions API for backward compatibility
 app.use('/api/projects', (req, res) => {
   const newUrl = req.originalUrl.replace('/api/projects', '/api/missions');
@@ -325,7 +324,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Global error handler
-app.use((error: any, req: any, res: any, next: any) => {
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('🚨 Global error handler:', {
     error: error.message,
     stack: error.stack,

@@ -358,89 +358,98 @@ router.get('/debug', asyncHandler(async (req, res) => {
 router.get('/verify-sync', asyncHandler(async (req, res) => {
   console.log('🔍 Vérification de la synchronisation missions/feed');
 
-  // Récupérer les dernières missions
-  const recentMissions = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    budget_min_cents: missions.budget_min_cents,
-    budget_max_cents: missions.budget_max_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    city: missions.city,
-    country: missions.country,
-    remote_allowed: missions.remote_allowed,
-    user_id: missions.user_id,
-    client_id: missions.client_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at
-  })
-    .from(missions)
-    .orderBy(desc(missions.created_at))
-    .limit(5);
+  try {
+    // Récupérer les dernières missions
+    const recentMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    })
+      .from(missions)
+      .orderBy(desc(missions.created_at))
+      .limit(5);
 
-  // Vérifier la présence dans le feed (table announcements)
-  const { announcements } = await import('../../shared/schema.js');
-  const feedItems = await db.select({
-    id: announcements.id,
-    title: announcements.title,
-    description: announcements.description,
-    category: announcements.category,
-    budget_value_cents: announcements.budget_value_cents,
-    budget_min_cents: announcements.budget_min_cents,
-    budget_max_cents: announcements.budget_max_cents,
-    currency: announcements.currency,
-    location_raw: announcements.location_raw,
-    city: announcements.city,
-    country: announcements.country,
-    remote_allowed: announcements.remote_allowed,
-    user_id: announcements.user_id,
-    client_id: announcements.client_id,
-    status: announcements.status,
-    urgency: announcements.urgency,
-    deadline: announcements.deadline,
-    tags: announcements.tags,
-    skills_required: announcements.skills_required,
-    requirements: announcements.requirements,
-    is_team_mission: announcements.is_team_mission,
-    team_size: announcements.team_size,
-    created_at: announcements.created_at,
-    updated_at: announcements.updated_at
-  })
-    .from(announcements)
-    .orderBy(desc(announcements.created_at))
-    .limit(10);
+    // Vérifier la présence dans le feed (table announcements)
+    const { announcements } = await import('../../shared/schema.js');
 
-  const syncStatus = {
-    totalMissions: recentMissions.length,
-    totalFeedItems: feedItems.length,
-    recentMissions: recentMissions.map(m => ({
-      id: m.id,
-      title: m.title,
-      status: m.status,
-      created_at: m.created_at
-    })),
-    feedItems: feedItems.map(f => ({
-      id: f.id,
-      title: f.title,
-      status: f.status,
-      created_at: f.created_at
-    })),
-    syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
-  };
+    const feedItems = await db.select({
+      id: announcements.id,
+      title: announcements.title,
+      description: announcements.description,
+      category: announcements.category,
+      budget_value_cents: announcements.budget_value_cents,
+      budget_min_cents: announcements.budget_min_cents,
+      budget_max_cents: announcements.budget_max_cents,
+      currency: announcements.currency,
+      location_raw: announcements.location_raw,
+      city: announcements.city,
+      country: announcements.country,
+      remote_allowed: announcements.remote_allowed,
+      user_id: announcements.user_id,
+      client_id: announcements.client_id,
+      status: announcements.status,
+      urgency: announcements.urgency,
+      deadline: announcements.deadline,
+      tags: announcements.tags,
+      skills_required: announcements.skills_required,
+      requirements: announcements.requirements,
+      is_team_mission: announcements.is_team_mission,
+      team_size: announcements.team_size,
+      created_at: announcements.created_at,
+      updated_at: announcements.updated_at
+    })
+      .from(announcements)
+      .orderBy(desc(announcements.created_at))
+      .limit(10);
 
-  console.log('🔍 Sync status:', syncStatus);
-  res.json(syncStatus);
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map(m => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map(f => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? 'OK' : 'WARNING'
+    };
+
+    console.log('🔍 Sync status:', syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error('🔍 Verify sync error:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la vérification de synchronisation',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 }));
 
 // GET /api/missions/:id - Get a specific mission with bids
