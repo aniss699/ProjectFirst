@@ -1,5 +1,5 @@
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../database.js';
 import { missions, offers, users } from '../../shared/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/missions/my - Récupérer les missions de l'utilisateur connecté
-router.get('/my', async (req, res) => {
+router.get('/my', async (req: any, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -55,7 +55,7 @@ router.get('/my', async (req, res) => {
 });
 
 // POST /api/missions - Créer une nouvelle mission
-router.post('/', async (req, res) => {
+router.post('/', async (req: any, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/missions/:id - Modifier une mission
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: any, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -138,7 +138,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // POST /api/missions/:id/offers - Créer une offre pour une mission
-router.post('/:id/offers', async (req, res) => {
+router.post('/:id/offers', async (req: any, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
