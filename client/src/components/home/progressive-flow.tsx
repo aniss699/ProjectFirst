@@ -75,8 +75,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
       lng: null as number | null,
       radius: 10
     },
-    needsLocation: false,
-    dynamicFields: {} as Record<string, string | number | boolean>
+    needsLocation: false
   });
 
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
@@ -156,17 +155,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           ? projectData.budget 
           : projectData.budget?.toString() || '';
 
-        const dynamicFieldsText = projectData.dynamicFields && Object.keys(projectData.dynamicFields).length > 0
-          ? Object.entries(projectData.dynamicFields)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join('\n')
-          : '';
-
         const missionData = {
           title: projectData.title,
           description: projectData.description + 
-            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
-            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
+            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : ''),
           category: selectedCategory,
           budget: budgetFormatted,
           location: projectData.needsLocation ? projectData.location.address : 'Remote',
@@ -283,10 +275,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     }
   };
 
-  // Réinitialiser les champs dynamiques lors du changement de catégorie
-  useEffect(() => {
-    setProjectData(prev => ({ ...prev, dynamicFields: {} }));
-  }, [selectedCategory]);
+  
 
   // Animation d'entrée pour chaque étape
   useEffect(() => {
@@ -296,129 +285,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     return () => clearTimeout(timer);
   }, [currentStep]);
 
-  // Fonction pour rendre les champs dynamiques
-  const renderDynamicFields = (categoryId: string) => {
-    const fields = getCategoryDynamicFields(categoryId);
-
-    if (fields.length === 0) return null;
-
-    const handleFieldChange = (fieldId: string, value: string | number | boolean) => {
-      setProjectData(prev => ({ 
-        ...prev, 
-        dynamicFields: { ...prev.dynamicFields, [fieldId]: value }
-      }));
-    };
-
-    const renderField = (field: DynamicField) => {
-      const fieldValue = projectData.dynamicFields[field.id] || '';
-
-      switch (field.type) {
-        case 'text':
-          return (
-            <div key={field.id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {field.label} {field.required && '*'}
-              </label>
-              <Input
-                placeholder={field.placeholder}
-                value={fieldValue as string}
-                onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                required={field.required}
-              />
-            </div>
-          );
-
-        case 'number':
-          return (
-            <div key={field.id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {field.label} {field.required && '*'}
-              </label>
-              <Input
-                type="number"
-                placeholder={field.placeholder}
-                value={fieldValue as string}
-                min={field.min}
-                max={field.max}
-                onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                required={field.required}
-              />
-            </div>
-          );
-
-        case 'textarea':
-          return (
-            <div key={field.id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {field.label} {field.required && '*'}
-              </label>
-              <Textarea
-                placeholder={field.placeholder}
-                value={fieldValue as string}
-                rows={3}
-                onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                required={field.required}
-              />
-            </div>
-          );
-
-        case 'select':
-          return (
-            <div key={field.id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {field.label} {field.required && '*'}
-              </label>
-              <Select
-                value={fieldValue as string}
-                onValueChange={(value) => handleFieldChange(field.id, value)}
-                required={field.required}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={field.placeholder || `Choisir ${field.label.toLowerCase()}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {field.options?.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          );
-
-        case 'checkbox':
-          return (
-            <div key={field.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id={field.id}
-                checked={fieldValue as boolean}
-                onChange={(e) => handleFieldChange(field.id, e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              />
-              <label htmlFor={field.id} className="text-sm font-medium text-gray-700">
-                {field.label} {field.required && '*'}
-              </label>
-            </div>
-          );
-
-        default:
-          return null;
-      }
-    };
-
-    return (
-      <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Informations spécifiques à votre projet
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map(renderField)}
-        </div>
-      </div>
-    );
-  };
+  
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
@@ -850,8 +717,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             )}
           </div>
 
-          {/* Champs dynamiques spécifiques à la catégorie */}
-          {renderDynamicFields(selectedCategory)}
+          
 
           {/* Intégration IA Enhancement */}
           <div className="mt-6">
