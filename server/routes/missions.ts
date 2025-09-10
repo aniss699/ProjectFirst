@@ -467,11 +467,11 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Fix: bids table uses project_id, not mission_id
+    // Récupérer les offres pour cette mission
     const bids = await db
       .select()
       .from(bidTable)
-      .where(eq(bidTable.project_id, missionIdInt));
+      .where(eq(bidTable.mission_id, missionIdInt));
 
     const result = {
       ...mission[0],
@@ -785,7 +785,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Delete associated bids first
-    await db.delete(bidTable).where(eq(bidTable.project_id, missionIdInt));
+    await db.delete(bidTable).where(eq(bidTable.mission_id, missionIdInt));
     console.log('✅ API: Offres supprimées pour mission:', missionId);
 
     // Delete the mission
