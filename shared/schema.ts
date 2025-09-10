@@ -1,4 +1,5 @@
 import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -46,6 +47,33 @@ export const bids = pgTable('bids', {
 export const announcements = pgTable('announcements', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
+
+
+// Relations entre les tables
+export const usersRelations = relations(users, ({ many }) => ({
+  missions: many(missions),
+  bids: many(bids)
+}));
+
+export const missionsRelations = relations(missions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [missions.user_id],
+    references: [users.id]
+  }),
+  bids: many(bids)
+}));
+
+export const bidsRelations = relations(bids, ({ one }) => ({
+  mission: one(missions, {
+    fields: [bids.mission_id],
+    references: [missions.id]
+  }),
+  provider: one(users, {
+    fields: [bids.provider_id],
+    references: [users.id]
+  })
+}));
+
   content: text('content').notNull(),
   type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
   priority: integer('priority').default(1),

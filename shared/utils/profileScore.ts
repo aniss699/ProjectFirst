@@ -97,3 +97,42 @@ export function getMissingElements(p: Partial<AnyProfile>): Array<{
     return priorityOrder[b.priority] - priorityOrder[a.priority];
   });
 }
+// Utilitaires pour le calcul de score de profil
+
+export interface ProfileScoreFactors {
+  completeness: number;
+  activity: number;
+  reputation: number;
+  verification: number;
+}
+
+export function calculateProfileScore(factors: ProfileScoreFactors): number {
+  const weights = {
+    completeness: 0.3,
+    activity: 0.2,
+    reputation: 0.4,
+    verification: 0.1
+  };
+  
+  return Math.round(
+    factors.completeness * weights.completeness +
+    factors.activity * weights.activity +
+    factors.reputation * weights.reputation +
+    factors.verification * weights.verification
+  );
+}
+
+export function getProfileCompletenessScore(profile: any): number {
+  if (!profile) return 0;
+  
+  let score = 0;
+  const fields = ['name', 'email', 'description', 'location', 'skills'];
+  
+  fields.forEach(field => {
+    if (profile[field] && profile[field].length > 0) {
+      score += 20; // 20 points par champ complété
+    }
+  });
+  
+  return Math.min(score, 100);
+}

@@ -136,3 +136,28 @@ export function getSkillSuggestions(role: "client" | "provider", keywords: strin
       level: (skillMapping[keyword] || 3) as 1|2|3|4|5
     }));
 }
+// Utilitaires pour la gestion des mots-clés
+
+export function extractKeywords(text: string): string[] {
+  if (!text) return [];
+  
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(word => word.length > 2)
+    .slice(0, 10); // Limiter à 10 mots-clés
+}
+
+export function normalizeKeyword(keyword: string): string {
+  return keyword.toLowerCase().trim();
+}
+
+export function matchKeywords(keywords1: string[], keywords2: string[]): number {
+  const set1 = new Set(keywords1.map(normalizeKeyword));
+  const set2 = new Set(keywords2.map(normalizeKeyword));
+  
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  return union.size > 0 ? intersection.size / union.size : 0;
+}
