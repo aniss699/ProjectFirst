@@ -154,6 +154,11 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] h-[85vh] max-w-4xl max-h-[85vh] p-0 gap-0 bg-gray-50 overflow-hidden rounded-xl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{mission.title}</DialogTitle>
+          <DialogDescription>Détails de la mission</DialogDescription>
+        </DialogHeader>
+        
         <div className="flex flex-col h-full">
         
         {/* Header Mobile/Desktop */}
@@ -169,12 +174,12 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </Button>
               
               <div className="flex-1 md:flex-none">
-                <DialogTitle className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
+                <h2 className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
                   {mission.title}
-                </DialogTitle>
-                <DialogDescription className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
+                </h2>
+                <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
                   Par {mission.clientName} • {formatBudget(mission.budget || '0')}
-                </DialogDescription>
+                </p>
               </div>
 
               <Button
@@ -182,6 +187,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 size="sm"
                 variant="ghost"
                 className="text-white hover:bg-white/20 p-2 rounded-full"
+                aria-label="Fermer la modal"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -239,10 +245,10 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             </TabsList>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 max-h-full">
               
               {/* Overview Tab */}
-              <TabsContent value="overview" className="m-0 p-4 md:p-6 space-y-4">
+              <TabsContent value="overview" className="m-0 p-4 md:p-6 space-y-4 h-full">
                 
                 {/* Description */}
                 <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
@@ -374,7 +380,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent value="bids" className="m-0 p-4 md:p-6 space-y-4">
+              <TabsContent value="bids" className="m-0 p-4 md:p-6 space-y-4 h-full">
                 
                 {sortedBids.length === 0 ? (
                   <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
@@ -469,7 +475,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
               {/* Team Tab */}
               {isTeamMission && (
-                <TabsContent value="team" className="m-0 p-4 md:p-6 space-y-4">
+                <TabsContent value="team" className="m-0 p-4 md:p-6 space-y-4 h-full">
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
                     <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
                       <Target className="w-5 h-5" />
@@ -514,6 +520,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               )}
             </div>
           </Tabs>
+          </div>
         </div>
       </DialogContent>
 
