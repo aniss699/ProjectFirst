@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { MissionWithBids, Bid } from '@shared/schema';
@@ -27,7 +28,12 @@ import {
   Clock,
   Target,
   Award,
-  AlertCircle
+  AlertCircle,
+  X,
+  ChevronLeft,
+  TrendingUp,
+  Eye,
+  Zap
 } from 'lucide-react';
 import { ProviderProfileModal } from './provider-profile-modal';
 import { BidResponseModal } from './bid-response-modal';
@@ -82,9 +88,9 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
       }
     },
     enabled: !!missionId && isOpen,
-    retry: 1, // Réduire les tentatives
+    retry: 1,
     retryDelay: 2000,
-    staleTime: 30000, // Cache plus long
+    staleTime: 30000,
   });
 
   // Fonction de rendu des étoiles
@@ -93,7 +99,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${
+        className={`w-3 h-3 ${
           i < Math.floor(numRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
         }`}
       />
@@ -104,14 +110,11 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Chargement de la mission...</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center p-12">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Chargement des détails...</p>
+        <DialogContent className="w-[95vw] max-w-lg mx-auto p-0 gap-0 bg-white">
+          <div className="flex items-center justify-center min-h-[200px]">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+              <p className="text-sm text-gray-500 font-medium">Chargement...</p>
             </div>
           </div>
         </DialogContent>
@@ -123,31 +126,20 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   if (error || !mission) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              Erreur de chargement
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center p-8">
-            <div className="text-red-500 mb-4 text-6xl">⚠️</div>
-            <h3 className="text-lg font-semibold mb-2">Impossible de charger la mission</h3>
-            <p className="text-gray-500 mb-6">
-              {error instanceof Error ? error.message : 'Mission introuvable ou serveur indisponible'}
+        <DialogContent className="w-[95vw] max-w-lg mx-auto p-6 gap-4 bg-white">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {error instanceof Error ? error.message : 'Mission introuvable'}
             </p>
             <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={() => window.location.reload()} 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
+              <Button onClick={() => window.location.reload()} variant="outline" size="sm">
                 Recharger
               </Button>
-              <Button onClick={onClose}>
-                Fermer
-              </Button>
+              <Button onClick={onClose} size="sm">Fermer</Button>
             </div>
           </div>
         </DialogContent>
@@ -161,136 +153,177 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[96vw] max-w-6xl max-h-[92vh] overflow-y-auto p-0">
-        {/* Header */}
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-          <DialogTitle className="text-2xl font-bold pr-6">
-            {mission.title}
-          </DialogTitle>
-          <DialogDescription className="text-blue-100 mt-2">
-            Par {mission.clientName} • {formatBudget(mission.budget || '0')} • {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="w-[100vw] h-[100vh] max-w-none max-h-none p-0 gap-0 bg-gray-50 overflow-hidden md:w-[90vw] md:h-[90vh] md:max-w-4xl md:rounded-xl">
+        
+        {/* Header Mobile/Desktop */}
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative">
+          <div className="flex items-center justify-between p-4 md:p-6">
+            <Button
+              onClick={onClose}
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/20 p-2 rounded-full md:hidden"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            
+            <div className="flex-1 md:flex-none">
+              <DialogTitle className="text-lg md:text-xl font-bold leading-tight pr-2 md:pr-0">
+                {mission.title}
+              </DialogTitle>
+              <DialogDescription className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
+                Par {mission.clientName} • {formatBudget(mission.budget || '0')}
+              </DialogDescription>
+            </div>
 
-        <div className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${isTeamMission ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4" />
-                Aperçu
-              </TabsTrigger>
-              <TabsTrigger value="bids" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Candidatures ({sortedBids.length})
-              </TabsTrigger>
-              {isTeamMission && (
-                <TabsTrigger value="team" className="flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Équipe
-                </TabsTrigger>
+            <Button
+              onClick={onClose}
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/20 p-2 rounded-full hidden md:flex"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Stats rapides */}
+          <div className="px-4 pb-4 md:px-6">
+            <div className="flex items-center gap-4 text-xs md:text-sm text-blue-100">
+              <div className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>{formatDate(mission.createdAt || new Date().toISOString())}</span>
+              </div>
+              {category && (
+                <Badge className="bg-white/20 text-white border-none text-xs px-2 py-0.5">
+                  {category.name}
+                </Badge>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="bg-white border-b sticky top-0 z-10">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full h-12 bg-transparent rounded-none border-none p-0">
+              <div className="flex w-full">
+                <TabsTrigger 
+                  value="overview" 
+                  className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                >
+                  <Briefcase className="w-4 h-4 mr-1.5" />
+                  Aperçu
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="bids" 
+                  className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                >
+                  <Users className="w-4 h-4 mr-1.5" />
+                  Offres ({sortedBids.length})
+                </TabsTrigger>
+                {isTeamMission && (
+                  <TabsTrigger 
+                    value="team" 
+                    className="flex-1 h-12 text-xs md:text-sm font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  >
+                    <Target className="w-4 h-4 mr-1.5" />
+                    Équipe
+                  </TabsTrigger>
+                )}
+              </div>
             </TabsList>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 mt-6">
-              {/* Mission Header */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center">
-                      <Briefcase className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-semibold">{mission.title}</h3>
-                          <p className="text-gray-500">
-                            Par <span className="font-medium text-blue-600">{mission.clientName}</span> • {formatDate(mission.createdAt || new Date().toISOString())}
-                          </p>
-                        </div>
-                        <Badge className="bg-green-100 text-green-700">
-                          {category?.name || mission.category}
-                        </Badge>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="m-0 p-4 md:p-6 space-y-4">
+                
+                {/* Description */}
+                <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm md:text-base">Description du projet</h3>
+                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">{mission.description}</p>
+                </div>
+
+                {/* Informations clés */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                        <Euro className="w-4 h-4 text-white" />
                       </div>
+                      <span className="font-medium text-gray-900 text-sm">Budget</span>
+                    </div>
+                    <div className="text-xl md:text-2xl font-bold text-green-600">
+                      {formatBudget(mission.budget || '0')}
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-gray-700 leading-relaxed">{mission.description}</p>
-                  </div>
 
-                  {/* Mission Stats */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Euro className="w-5 h-5 text-green-600" />
-                        <span className="font-medium">Budget</span>
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <MapPin className="w-4 h-4 text-white" />
                       </div>
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatBudget(mission.budget || '0')}
-                      </div>
+                      <span className="font-medium text-gray-900 text-sm">Localisation</span>
                     </div>
-
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium">Localisation</span>
-                      </div>
-                      <div className="text-blue-600 font-medium">
-                        {mission.location || 'Non spécifié'}
-                      </div>
-                    </div>
-
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-5 h-5 text-purple-600" />
-                        <span className="font-medium">Publié</span>
-                      </div>
-                      <div className="text-purple-600 font-medium">
-                        {formatDate(mission.createdAt || new Date().toISOString())}
-                      </div>
+                    <div className="text-blue-600 font-medium text-sm md:text-base">
+                      {mission.location || 'Non spécifié'}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Bidding Section for Providers */}
-              {user && user.type === 'provider' && mission.clientName !== user.name && (
-                <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                        <Award className="w-6 h-6 text-white" />
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="font-medium text-gray-900 text-sm">Intérêt</span>
+                    </div>
+                    <div className="text-purple-600 font-medium text-sm md:text-base">
+                      {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions pour prestataires */}
+                {user && user.type === 'provider' && mission.clientName !== user.name && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 md:p-6 border border-green-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                        <Award className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold">Postuler à cette mission</h4>
-                        <p className="text-sm text-gray-600 font-normal">Soumettez votre offre avec prix et délai</p>
+                        <h4 className="font-semibold text-gray-900 text-sm md:text-base">Candidater à cette mission</h4>
+                        <p className="text-xs md:text-sm text-gray-600">Soumettez votre proposition</p>
                       </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex flex-col gap-3">
+                    </div>
+
+                    <div className="space-y-3">
                       <Button 
                         onClick={() => setShowAIAnalyzer(!showAIAnalyzer)}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                        size="lg"
+                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-sm"
+                        size="default"
                       >
-                        🧠 Analyser avec l'IA
+                        <Zap className="w-4 h-4 mr-2" />
+                        Analyser avec l'IA
                       </Button>
 
                       <Button 
                         onClick={() => setShowBidForm(!showBidForm)}
-                        className="w-full bg-primary hover:bg-primary/90"
-                        size="lg"
+                        className="w-full bg-green-600 hover:bg-green-700 text-sm"
+                        size="default"
                       >
+                        <MessageCircle className="w-4 h-4 mr-2" />
                         {showBidForm ? 'Masquer le formulaire' : 'Soumettre une offre'}
                       </Button>
                     </div>
 
                     {/* AI Analyzer */}
                     {showAIAnalyzer && (
-                      <div className="mt-6 p-6 bg-white rounded-lg border">
+                      <div className="mt-4 p-4 bg-white rounded-lg border">
                         <SmartBidAnalyzer
                           missionTitle={mission.title}
                           missionDescription={mission.description}
@@ -313,7 +346,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
                     {/* Bid Form */}
                     {showBidForm && (
-                      <div className="mt-6 p-6 bg-white rounded-lg border">
+                      <div className="mt-4 p-4 bg-white rounded-lg border">
                         <BidForm 
                           missionId={mission.id} 
                           onSuccess={() => {
@@ -323,55 +356,47 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                         />
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Own Mission Message */}
-              {user && user.type === 'provider' && mission.clientName === user.name && (
-                <Card className="border-2 border-blue-200 bg-blue-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <UserCheck className="w-5 h-5 text-white" />
-                      </div>
-                      <p className="text-blue-700 font-medium">Ceci est votre propre mission</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Bids Tab */}
-            <TabsContent value="bids" className="space-y-6 mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">Offres reçues ({sortedBids.length})</h3>
-                {sortedBids.length > 0 && (
-                  <Badge variant="outline">Triées par prix croissant</Badge>
+                  </div>
                 )}
-              </div>
 
-              {sortedBids.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune offre reçue</h4>
-                    <p className="text-gray-500">Les prestataires peuvent encore postuler à cette mission</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {sortedBids.map((bid: Bid, index: number) => (
-                    <Card key={bid.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
+                {/* Message pour sa propre mission */}
+                {user && user.type === 'provider' && mission.clientName === user.name && (
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <UserCheck className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-blue-700 font-medium text-sm">Ceci est votre mission</p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Bids Tab */}
+              <TabsContent value="bids" className="m-0 p-4 md:p-6 space-y-4">
+                
+                {sortedBids.length === 0 ? (
+                  <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune candidature</h4>
+                    <p className="text-sm text-gray-500">Les prestataires peuvent encore postuler</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sortedBids.map((bid: Bid, index: number) => (
+                      <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
+                        
+                        {/* Header offre */}
                         <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                               {bid.providerName.charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <h5 
-                                className="font-semibold text-lg cursor-pointer hover:text-primary transition-colors"
+                                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
                                 onClick={() => {
                                   setSelectedProviderId(bid.providerId);
                                   setSelectedProviderName(bid.providerName);
@@ -379,136 +404,114 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                               >
                                 {bid.providerName}
                               </h5>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
                                 <div className="flex items-center">
                                   {renderStars(bid.rating || '5.0')}
-                                  <span className="text-sm text-gray-600 ml-1">
-                                    {parseFloat(bid.rating || '5.0').toFixed(1)}/5
-                                  </span>
                                 </div>
+                                <span className="text-xs text-gray-500 ml-1">
+                                  {parseFloat(bid.rating || '5.0').toFixed(1)}/5
+                                </span>
                                 {index === 0 && sortedBids.length > 1 && (
-                                  <Badge className="bg-green-100 text-green-700">
+                                  <Badge className="bg-green-100 text-green-700 text-xs ml-2">
                                     Meilleure offre
                                   </Badge>
                                 )}
                               </div>
                             </div>
                           </div>
+                          
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-lg md:text-xl font-bold text-green-600">
                               {formatBudget(bid.price)}
                             </div>
-                            <div className="text-sm text-gray-500 flex items-center justify-end mt-1">
-                              <Calendar className="w-4 h-4 mr-1" />
+                            <div className="text-xs text-gray-500 flex items-center justify-end mt-1">
+                              <Clock className="w-3 h-3 mr-1" />
                               {bid.timeline}
                             </div>
                           </div>
                         </div>
 
-                        <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 mb-4 border-l-4 border-blue-400">
-                          <p className="text-gray-700 whitespace-pre-line leading-relaxed">{bid.proposal}</p>
+                        {/* Proposition */}
+                        <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4 border-l-4 border-blue-400">
+                          <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.proposal}</p>
                         </div>
 
+                        {/* Actions */}
                         {user && mission.userName === user.name && (
-                          <div className="flex gap-3">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <Button 
                               onClick={() => {
                                 setSelectedBidId(bid.id);
                                 setSelectedBidderName(bid.providerName);
                               }}
                               variant="outline"
-                              className="flex items-center gap-2"
+                              size="sm"
+                              className="flex items-center justify-center gap-2 text-sm"
                             >
                               <MessageCircle className="w-4 h-4" />
                               Répondre
                             </Button>
                             <Button 
-                              className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 text-sm"
                             >
                               <UserCheck className="w-4 h-4" />
-                              Accepter l'offre
+                              Accepter
                             </Button>
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Team Tab */}
-            {isTeamMission && (
-              <TabsContent value="team" className="space-y-6 mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5" />
-                      Composition de l'équipe requise
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4">
-                      {mission.teamRequirements?.map((requirement: any, index: number) => (
-                        <Card key={index} className="border-l-4 border-l-blue-500">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <h4 className="font-semibold text-lg">{requirement.role}</h4>
-                                <p className="text-gray-600">{requirement.description}</p>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-green-600">
-                                  {formatBudget(requirement.budget || '0')}
-                                </div>
-                                <Badge variant="outline">
-                                  {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {requirement.skills && requirement.skills.length > 0 && (
-                              <div>
-                                <h5 className="font-medium text-sm mb-2">Compétences requises :</h5>
-                                <div className="flex flex-wrap gap-1">
-                                  {requirement.skills.map((skill: string, skillIndex: number) => (
-                                    <Badge key={skillIndex} variant="secondary" className="text-xs">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Team Bidding Section */}
-                {user && user.type === 'provider' && mission.clientName !== user.name && (
-                  <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-yellow-600 rounded-xl flex items-center justify-center">
-                          <Users className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold">Candidature d'équipe</h4>
-                          <p className="text-sm text-gray-600 font-normal">Postulez pour un ou plusieurs rôles</p>
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-center text-gray-600 py-4">
-                        Fonctionnalité de candidature d'équipe en cours de développement
-                      </p>
-                    </CardContent>
-                  </Card>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
-            )}
+
+              {/* Team Tab */}
+              {isTeamMission && (
+                <TabsContent value="team" className="m-0 p-4 md:p-6 space-y-4">
+                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
+                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
+                      <Target className="w-5 h-5" />
+                      Composition de l'équipe
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      {mission.teamRequirements?.map((requirement: any, index: number) => (
+                        <div key={index} className="border-l-4 border-l-blue-500 bg-blue-50/50 rounded-r-lg p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-900 text-sm md:text-base">{requirement.role}</h4>
+                              <p className="text-gray-600 text-xs md:text-sm">{requirement.description}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm md:text-base font-bold text-green-600">
+                                {formatBudget(requirement.budget || '0')}
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {requirement.skills && requirement.skills.length > 0 && (
+                            <div>
+                              <h5 className="font-medium text-xs mb-2">Compétences :</h5>
+                              <div className="flex flex-wrap gap-1">
+                                {requirement.skills.map((skill: string, skillIndex: number) => (
+                                  <Badge key={skillIndex} variant="secondary" className="text-xs">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+            </div>
           </Tabs>
         </div>
       </DialogContent>
