@@ -82,7 +82,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
+  const progress = ((currentStep + 2) / 5) * 100; // 5 niveaux au total maintenant (niveau -1 + 4 étapes)
 
   // Function to create the mission via API
   const createMission = async () => {
@@ -763,6 +763,73 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             )}
           </div>
 
+          {/* Section Localisation */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+              Localisation
+            </h3>
+            
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="remote"
+                  name="location-type"
+                  checked={!projectData.needsLocation}
+                  onChange={() => setProjectData(prev => ({ ...prev, needsLocation: false, location: { ...prev.location, address: '' } }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor="remote" className="text-sm font-medium text-gray-700">
+                  À distance
+                </label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="onsite"
+                  name="location-type"
+                  checked={projectData.needsLocation}
+                  onChange={() => setProjectData(prev => ({ ...prev, needsLocation: true }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor="onsite" className="text-sm font-medium text-gray-700">
+                  Intervention sur site
+                </label>
+              </div>
+            </div>
+
+            {projectData.needsLocation && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Code postal (5 chiffres) *
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Ex: 75001"
+                  pattern="[0-9]{5}"
+                  maxLength={5}
+                  value={projectData.location.address}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
+                    setProjectData(prev => ({
+                      ...prev,
+                      location: {
+                        ...prev.location,
+                        address: value
+                      }
+                    }));
+                  }}
+                  className="w-40"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Saisissez le code postal de l'intervention
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-between">
             <Button 
               variant="outline" 
@@ -774,19 +841,25 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
             <Button 
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
-              disabled={!projectData.title.trim() || !projectData.description.trim()}
-              onClick={() => {
-                // Si le mode équipe est activé, on passe directement à la soumission
-                // Sinon, on passe à l'étape localisation (qui est maintenant intégrée à l'étape 3)
-                if (isTeamMode) {
-                  createMission(); // Appel direct pour le mode équipe
-                } else {
-                  setCurrentStep(4); // Passer à la nouvelle étape 4 (qui était avant la localisation)
-                }
-              }}
+              disabled={
+                !projectData.title.trim() || 
+                !projectData.description.trim() ||
+                (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
+              }
+              onClick={createMission}
+              loading={isCreating}
             >
-              <ChevronRight className="w-4 h-4 mr-2" />
-              Étape suivante
+              {isCreating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Target className="w-4 h-4 mr-2" />
+                  {isTeamMode ? 'Créer le projet équipe' : 'Publier la mission'}
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -809,10 +882,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 5
+                Étape {currentStep + 1} sur 4
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 5) * 100)}%
+                {Math.round(((currentStep + 1) / 4) * 100)}%
               </span>
             </div>
 
@@ -820,7 +893,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 5) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
@@ -829,7 +902,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
             {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
-              {[1, 2, 3, 4, 5].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     step <= currentStep + 1 
