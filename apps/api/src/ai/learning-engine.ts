@@ -1,5 +1,5 @@
 /**
- * Moteur d'apprentissage automatique - SwipDEAL AI
+ * Moteur d'apprentissage automatique - Swideal AI
  * Apprend des réponses de Gemini pour améliorer les suggestions futures
  */
 

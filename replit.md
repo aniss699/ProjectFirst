@@ -1,7 +1,7 @@
-# SwipDEAL - Plateforme de mise en relation client-prestataire
+# Swideal - Plateforme de mise en relation client-prestataire
 
 ## Overview
-SwipDEAL est une plateforme moderne de mise en relation entre clients et prestataires, intégrant des fonctionnalités d'intelligence artificielle pour optimiser les correspondances. L'application utilise React + TypeScript pour le frontend et Node.js/Express pour le backend.
+Swideal est une plateforme moderne de mise en relation entre clients et prestataires, intégrant des fonctionnalités d'intelligence artificielle pour optimiser les correspondances. L'application utilise React + TypeScript pour le frontend et Node.js/Express pour le backend.
 
 ## Recent Changes
 

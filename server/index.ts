@@ -14,7 +14,7 @@ import './environment-check.js';
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-console.log('🚀 Starting SwipDEAL Server...');
+console.log('🚀 Starting Swideal Server...');
 
 // Middleware
 app.use(cors({
