@@ -159,7 +159,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <DialogDescription>Détails de la mission</DialogDescription>
         </DialogHeader>
         
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full max-h-[85vh]">
         
         {/* Header Mobile/Desktop */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
@@ -245,11 +245,11 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             </TabsList>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden min-h-0">
+            <div className="flex-1 min-h-0 relative">
               
               {/* Overview Tab */}
-              <TabsContent value="overview" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4">
+              <TabsContent value="overview" className="m-0 absolute inset-0 overflow-y-auto">
+                <div className="p-4 md:p-6 space-y-4 pb-8">
                 
                 {/* Description */}
                 <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
@@ -382,8 +382,8 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent value="bids" className="m-0 h-full overflow-y-auto">
-                <div className="p-4 md:p-6 space-y-4">
+              <TabsContent value="bids" className="m-0 absolute inset-0 overflow-y-auto">
+                <div className="p-4 md:p-6 space-y-4 pb-8">
                 
                 {sortedBids.length === 0 ? (
                   <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
@@ -479,8 +479,8 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
               {/* Team Tab */}
               {isTeamMission && (
-                <TabsContent value="team" className="m-0 h-full overflow-y-auto">
-                  <div className="p-4 md:p-6 space-y-4">
+                <TabsContent value="team" className="m-0 absolute inset-0 overflow-y-auto">
+                  <div className="p-4 md:p-6 space-y-4 pb-8">
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
                     <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
                       <Target className="w-5 h-5" />
