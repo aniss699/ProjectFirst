@@ -498,17 +498,17 @@ var init_event_logger = __esm({
       /**
        * Log des métriques de performance IA
        */
-      logPerformanceMetrics(modelType, metrics) {
+      logPerformanceMetrics(modelType, metrics2) {
         const key = `${modelType}_${Date.now()}`;
         this.performanceCache.set(key, {
-          ...metrics,
+          ...metrics2,
           timestamp: (/* @__PURE__ */ new Date()).toISOString()
         });
         console.log("\u{1F9E0} [AI_PERFORMANCE]", JSON.stringify({
           model: modelType,
-          latency: metrics.ai_latency_ms,
-          confidence: metrics.confidence_level,
-          version: metrics.model_version
+          latency: metrics2.ai_latency_ms,
+          confidence: metrics2.confidence_level,
+          version: metrics2.model_version
         }));
       }
       /**
@@ -606,8 +606,8 @@ var init_event_logger = __esm({
        */
       cleanupOldMetrics(maxAgeMs = 36e5) {
         const cutoff = Date.now() - maxAgeMs;
-        for (const [key, metrics] of this.performanceCache.entries()) {
-          const metricTime = new Date(metrics.timestamp).getTime();
+        for (const [key, metrics2] of this.performanceCache.entries()) {
+          const metricTime = new Date(metrics2.timestamp).getTime();
           if (metricTime < cutoff) {
             this.performanceCache.delete(key);
           }
@@ -2194,16 +2194,32 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS announcements (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
+        description TEXT,
         content TEXT NOT NULL,
         type TEXT DEFAULT 'info',
         priority INTEGER DEFAULT 1,
         is_active BOOLEAN DEFAULT true,
         status TEXT DEFAULT 'active',
         category TEXT,
-        budget INTEGER,
+        budget_value_cents INTEGER,
+        budget_min_cents INTEGER,
+        budget_max_cents INTEGER,
+        currency TEXT DEFAULT 'EUR',
         location TEXT,
+        location_raw TEXT,
+        city TEXT,
+        country TEXT,
+        remote_allowed BOOLEAN DEFAULT true,
         user_id INTEGER REFERENCES users(id),
+        client_id INTEGER REFERENCES users(id),
         sponsored BOOLEAN DEFAULT false,
+        urgency TEXT DEFAULT 'medium',
+        deadline TIMESTAMP,
+        tags JSONB,
+        skills_required JSONB,
+        requirements TEXT,
+        is_team_mission BOOLEAN DEFAULT false,
+        team_size INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -2602,6 +2618,113 @@ function validateEnvironment() {
 import { Pool as Pool5 } from "pg";
 import cors from "cors";
 
+// server/middleware/request-validator.ts
+var validateRequest = (req, res, next) => {
+  const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  req.headers["x-request-id"] = requestId;
+  console.log(`\u{1F4E5} ${req.method} ${req.originalUrl}`, {
+    request_id: requestId,
+    user_agent: req.headers["user-agent"]?.substring(0, 100),
+    ip: req.ip,
+    content_type: req.headers["content-type"],
+    content_length: req.headers["content-length"],
+    timestamp: timestamp2
+  });
+  if (["POST", "PUT", "PATCH"].includes(req.method)) {
+    const contentType = req.headers["content-type"];
+    if (!contentType || !contentType.includes("application/json")) {
+      console.warn(`\u26A0\uFE0F Invalid Content-Type: ${contentType} for ${req.method} ${req.originalUrl}`);
+      return res.status(400).json({
+        ok: false,
+        error: "Content-Type must be application/json",
+        request_id: requestId,
+        timestamp: timestamp2
+      });
+    }
+  }
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(`\u23F0 Request timeout: ${req.method} ${req.originalUrl} (${requestId})`);
+      res.status(408).json({
+        ok: false,
+        error: "Request timeout",
+        request_id: requestId,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  }, 3e4);
+  res.on("finish", () => {
+    clearTimeout(timeout);
+    console.log(`\u{1F4E4} ${req.method} ${req.originalUrl} - ${res.statusCode} (${requestId})`);
+  });
+  next();
+};
+var limitRequestSize = (req, res, next) => {
+  const maxSize = 10 * 1024 * 1024;
+  const contentLength = parseInt(req.headers["content-length"] || "0", 10);
+  if (contentLength > maxSize) {
+    return res.status(413).json({
+      ok: false,
+      error: "Request too large",
+      max_size: "10MB",
+      received_size: `${Math.round(contentLength / 1024 / 1024)}MB`
+    });
+  }
+  next();
+};
+
+// server/middleware/performance-monitor.ts
+var metrics = [];
+var MAX_METRICS = 1e3;
+var performanceMonitor = (req, res, next) => {
+  const startTime = Date.now();
+  const startMemory = process.memoryUsage().heapUsed;
+  const originalEnd = res.end;
+  res.end = function(chunk, encoding) {
+    const duration = Date.now() - startTime;
+    const memoryUsed = process.memoryUsage().heapUsed - startMemory;
+    const metric = {
+      endpoint: req.originalUrl,
+      method: req.method,
+      duration,
+      status: res.statusCode,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      memory_usage: memoryUsed
+    };
+    metrics.push(metric);
+    if (metrics.length > MAX_METRICS) {
+      metrics.splice(0, metrics.length - MAX_METRICS);
+    }
+    if (duration > 2e3) {
+      console.warn(`\u{1F40C} Slow request: ${req.method} ${req.originalUrl} took ${duration}ms`);
+    }
+    if (memoryUsed > 50 * 1024 * 1024) {
+      console.warn(`\u{1F525} High memory usage: ${req.method} ${req.originalUrl} used ${Math.round(memoryUsed / 1024 / 1024)}MB`);
+    }
+    originalEnd.call(this, chunk, encoding);
+  };
+  next();
+};
+var getPerformanceStats = () => {
+  if (metrics.length === 0) {
+    return { message: "No metrics available" };
+  }
+  const recentMetrics = metrics.slice(-100);
+  const averageDuration = recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length;
+  const slowRequests = recentMetrics.filter((m) => m.duration > 1e3).length;
+  const errorRequests = recentMetrics.filter((m) => m.status >= 400).length;
+  return {
+    total_requests: metrics.length,
+    recent_requests: recentMetrics.length,
+    average_duration_ms: Math.round(averageDuration),
+    slow_requests_count: slowRequests,
+    error_requests_count: errorRequests,
+    error_rate_percent: Math.round(errorRequests / recentMetrics.length * 100),
+    last_updated: (/* @__PURE__ */ new Date()).toISOString()
+  };
+};
+
 // server/auth-routes.ts
 init_schema();
 import express2 from "express";
@@ -2893,7 +3016,7 @@ var auth_routes_default = router;
 
 // server/routes/missions.ts
 import { Router } from "express";
-import { eq as eq3, desc } from "drizzle-orm";
+import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
 init_schema();
 import { randomUUID } from "crypto";
 var asyncHandler = (fn) => (req, res, next) => {
@@ -3154,15 +3277,39 @@ router2.get("/", asyncHandler(async (req, res) => {
   res.json(missionsWithBids);
 }));
 router2.get("/health", asyncHandler(async (req, res) => {
+  const startTime = Date.now();
   console.log("\u{1F3E5} Mission health check endpoint called");
-  const healthInfo = {
-    status: "healthy",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    service: "missions-api",
-    environment: process.env.NODE_ENV || "development"
-  };
-  console.log("\u{1F3E5} Health check passed:", healthInfo);
-  res.json(healthInfo);
+  try {
+    const dbTest = await db.select({ count: sql2`COUNT(*)` }).from(missions).limit(1);
+    const dbConnected = dbTest.length > 0;
+    const responseTime = Date.now() - startTime;
+    const healthInfo = {
+      status: "healthy",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "missions-api",
+      environment: process.env.NODE_ENV || "development",
+      database: dbConnected ? "connected" : "disconnected",
+      response_time_ms: responseTime,
+      uptime_seconds: Math.floor(process.uptime()),
+      memory_usage: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    };
+    console.log("\u{1F3E5} Health check passed:", healthInfo);
+    res.status(200).json(healthInfo);
+  } catch (error) {
+    console.error("\u{1F3E5} Health check failed:", error);
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "missions-api",
+      environment: process.env.NODE_ENV || "development",
+      database: "disconnected",
+      error: error instanceof Error ? error.message : "Unknown error",
+      response_time_ms: Date.now() - startTime
+    });
+  }
 }));
 router2.get("/debug", asyncHandler(async (req, res) => {
   console.log("\u{1F50D} Mission debug endpoint called");
@@ -3179,78 +3326,86 @@ router2.get("/debug", asyncHandler(async (req, res) => {
 }));
 router2.get("/verify-sync", asyncHandler(async (req, res) => {
   console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
-  const recentMissions = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    budget_min_cents: missions.budget_min_cents,
-    budget_max_cents: missions.budget_max_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    city: missions.city,
-    country: missions.country,
-    remote_allowed: missions.remote_allowed,
-    user_id: missions.user_id,
-    client_id: missions.client_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at
-  }).from(missions).orderBy(desc(missions.created_at)).limit(5);
-  const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const feedItems = await db.select({
-    id: announcements2.id,
-    title: announcements2.title,
-    description: announcements2.description,
-    category: announcements2.category,
-    budget_value_cents: announcements2.budget_value_cents,
-    budget_min_cents: announcements2.budget_min_cents,
-    budget_max_cents: announcements2.budget_max_cents,
-    currency: announcements2.currency,
-    location_raw: announcements2.location_raw,
-    city: announcements2.city,
-    country: announcements2.country,
-    remote_allowed: announcements2.remote_allowed,
-    user_id: announcements2.user_id,
-    client_id: announcements2.client_id,
-    status: announcements2.status,
-    urgency: announcements2.urgency,
-    deadline: announcements2.deadline,
-    tags: announcements2.tags,
-    skills_required: announcements2.skills_required,
-    requirements: announcements2.requirements,
-    is_team_mission: announcements2.is_team_mission,
-    team_size: announcements2.team_size,
-    created_at: announcements2.created_at,
-    updated_at: announcements2.updated_at
-  }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
-  const syncStatus = {
-    totalMissions: recentMissions.length,
-    totalFeedItems: feedItems.length,
-    recentMissions: recentMissions.map((m) => ({
-      id: m.id,
-      title: m.title,
-      status: m.status,
-      created_at: m.created_at
-    })),
-    feedItems: feedItems.map((f) => ({
-      id: f.id,
-      title: f.title,
-      status: f.status,
-      created_at: f.created_at
-    })),
-    syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
-  };
-  console.log("\u{1F50D} Sync status:", syncStatus);
-  res.json(syncStatus);
+  try {
+    const recentMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).orderBy(desc(missions.created_at)).limit(5);
+    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const feedItems = await db.select({
+      id: announcements2.id,
+      title: announcements2.title,
+      description: announcements2.description,
+      category: announcements2.category,
+      budget_value_cents: announcements2.budget_value_cents,
+      budget_min_cents: announcements2.budget_min_cents,
+      budget_max_cents: announcements2.budget_max_cents,
+      currency: announcements2.currency,
+      location_raw: announcements2.location_raw,
+      city: announcements2.city,
+      country: announcements2.country,
+      remote_allowed: announcements2.remote_allowed,
+      user_id: announcements2.user_id,
+      client_id: announcements2.client_id,
+      status: announcements2.status,
+      urgency: announcements2.urgency,
+      deadline: announcements2.deadline,
+      tags: announcements2.tags,
+      skills_required: announcements2.skills_required,
+      requirements: announcements2.requirements,
+      is_team_mission: announcements2.is_team_mission,
+      team_size: announcements2.team_size,
+      created_at: announcements2.created_at,
+      updated_at: announcements2.updated_at
+    }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const syncStatus = {
+      totalMissions: recentMissions.length,
+      totalFeedItems: feedItems.length,
+      recentMissions: recentMissions.map((m) => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        created_at: m.created_at
+      })),
+      feedItems: feedItems.map((f) => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        created_at: f.created_at
+      })),
+      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
+    };
+    console.log("\u{1F50D} Sync status:", syncStatus);
+    res.json(syncStatus);
+  } catch (error) {
+    console.error("\u{1F50D} Verify sync error:", error);
+    res.status(500).json({
+      error: "Erreur lors de la v\xE9rification de synchronisation",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
 }));
 router2.get("/:id", asyncHandler(async (req, res) => {
   let missionId = null;
@@ -6009,18 +6164,22 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app.use(express7.json());
+app.use(limitRequestSize);
+app.use(validateRequest);
+app.use(performanceMonitor);
+app.use(express7.json({ limit: "10mb" }));
 app.use("/api/auth", auth_routes_default);
 console.log("\u{1F4CB} Registering missions routes...");
 app.use("/api/missions", missions_default);
 console.log("\u{1F4CB} Registering other API routes...");
 app.use("/api", api_routes_default);
-app.use("/api", missions_default);
-app.use("/api/projects", (req, res) => {
+app.use("/api/projects", (req, res, next) => {
   const newUrl = req.originalUrl.replace("/api/projects", "/api/missions");
-  console.log(`\u{1F504} Redirecting deprecated projects API ${req.originalUrl} to ${newUrl}`);
-  res.redirect(301, newUrl);
-});
+  console.log(`\u{1F504} Proxying deprecated projects API ${req.originalUrl} to missions API`);
+  req.url = req.url.replace("/projects", "/missions");
+  req.originalUrl = newUrl;
+  next();
+}, missions_default);
 app.use("/api/ai/monitoring", monitoringRateLimit, ai_monitoring_routes_default);
 app.use("/api/ai/suggest-pricing", strictAiRateLimit);
 app.use("/api/ai/enhance-description", strictAiRateLimit);
@@ -6038,6 +6197,28 @@ app.use("/api", feed_routes_default);
 app.use("/api", favorites_routes_default);
 app.use("/api", mission_demo_default);
 app.use("/api/team", team_routes_default);
+app.get("/api/performance", (req, res) => {
+  try {
+    const stats = getPerformanceStats();
+    res.json({
+      ok: true,
+      performance: stats,
+      server_uptime: process.uptime(),
+      memory: {
+        used_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total_mb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss_mb: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      },
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Failed to get performance stats",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
 app.get("/api/health", async (req, res) => {
   try {
     const timeoutPromise = new Promise((_, reject) => {
@@ -6148,36 +6329,53 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 app.use((error, req, res, next) => {
+  const timestamp2 = (/* @__PURE__ */ new Date()).toISOString();
+  const requestId = req.headers["x-request-id"] || `req_${Date.now()}`;
+  let statusCode = 500;
+  let errorType = "server_error";
+  if (error.name === "ValidationError") {
+    statusCode = 400;
+    errorType = "validation_error";
+  } else if (error.message.includes("not found")) {
+    statusCode = 404;
+    errorType = "not_found";
+  } else if (error.message.includes("unauthorized")) {
+    statusCode = 401;
+    errorType = "unauthorized";
+  }
   console.error("\u{1F6A8} Global error handler:", {
+    error_type: errorType,
     error: error.message,
-    stack: error.stack,
+    stack: process.env.NODE_ENV === "development" ? error.stack : void 0,
     url: req.url,
     method: req.method,
-    body: req.body,
-    query: req.query,
-    params: req.params,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    user_agent: req.headers["user-agent"],
+    ip: req.ip,
+    request_id: requestId,
+    timestamp: timestamp2
   });
-  Promise.resolve().then(async () => {
+  setImmediate(async () => {
     try {
       const eventLoggerModule = await Promise.resolve().then(() => (init_event_logger(), event_logger_exports));
-      eventLoggerModule.eventLogger?.logUserEvent("error", req.user?.id || "anonymous", req.sessionID || "unknown", {
-        error_type: "server_error",
+      eventLoggerModule.eventLogger?.logUserEvent("error", req.user?.id || "anonymous", req.sessionID || requestId, {
+        error_type: errorType,
         error_message: error.message,
         endpoint: req.originalUrl,
-        method: req.method
+        method: req.method,
+        status_code: statusCode
       });
     } catch (logError) {
-      console.warn("Could not log error event:", logError instanceof Error ? logError.message : "Unknown error");
+      console.warn("Event logging failed (non-critical):", logError instanceof Error ? logError.message : "Unknown error");
     }
   });
   if (!res.headersSent) {
-    res.status(500).json({
-      error: "Internal server error",
-      details: process.env.NODE_ENV === "development" ? error.message : "Something went wrong",
-      stack: process.env.NODE_ENV === "development" ? error.stack : void 0,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: req.headers["x-request-id"] || "unknown"
+    res.status(statusCode).json({
+      ok: false,
+      error: statusCode === 500 ? "Internal server error" : error.message,
+      details: process.env.NODE_ENV === "development" ? error.message : "An error occurred",
+      error_type: errorType,
+      timestamp: timestamp2,
+      request_id: requestId
     });
   }
 });
