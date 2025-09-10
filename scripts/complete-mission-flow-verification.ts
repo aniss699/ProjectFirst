@@ -192,8 +192,29 @@ class MissionFlowVerifier {
         throw new Error('Pas de mission ID disponible');
       }
 
+      // Déterminer l'URL du serveur selon l'environnement
+      const serverUrl = process.env.REPL_ID ? 
+        `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 
+        'http://0.0.0.0:5000';
+
+      console.log('🌐 Test serveur sur:', serverUrl);
+
+      // Vérifier d'abord que le serveur répond
+      try {
+        const healthResponse = await fetch(`${serverUrl}/api/health`);
+        if (!healthResponse.ok) {
+          throw new Error(`Serveur non accessible: ${healthResponse.status}`);
+        }
+        console.log('✅ Serveur accessible');
+      } catch (healthError) {
+        console.warn('⚠️ Serveur non accessible, test API annulé');
+        step.status = 'error';
+        step.message = 'Serveur non démarré - Démarrez le serveur avec le bouton Run avant de lancer ce test';
+        return;
+      }
+
       // Test GET /api/missions
-      const getAllResponse = await fetch('http://localhost:5000/api/missions');
+      const getAllResponse = await fetch(`${serverUrl}/api/missions`);
       if (!getAllResponse.ok) {
         throw new Error(`GET /api/missions failed: ${getAllResponse.status}`);
       }
@@ -204,7 +225,7 @@ class MissionFlowVerifier {
       }
 
       // Test GET /api/missions/:id
-      const getOneResponse = await fetch(`http://localhost:5000/api/missions/${this.testMissionId}`);
+      const getOneResponse = await fetch(`${serverUrl}/api/missions/${this.testMissionId}`);
       if (!getOneResponse.ok) {
         throw new Error(`GET /api/missions/${this.testMissionId} failed: ${getOneResponse.status}`);
       }
@@ -325,7 +346,11 @@ class MissionFlowVerifier {
 
     try {
       // Test API marketplace
-      const marketplaceResponse = await fetch('http://localhost:5000/api/missions');
+      const serverUrl = process.env.REPL_ID ? 
+        `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 
+        'http://0.0.0.0:5000';
+
+      const marketplaceResponse = await fetch(`${serverUrl}/api/missions`);
       if (!marketplaceResponse.ok) {
         throw new Error(`Marketplace API error: ${marketplaceResponse.status}`);
       }
@@ -385,7 +410,11 @@ class MissionFlowVerifier {
       }
 
       // Vérifier récupération des offres via API
-      const missionWithBidsResponse = await fetch(`http://localhost:5000/api/missions/${this.testMissionId}`);
+      const serverUrl = process.env.REPL_ID ? 
+        `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 
+        'http://0.0.0.0:5000';
+
+      const missionWithBidsResponse = await fetch(`${serverUrl}/api/missions/${this.testMissionId}`);
       if (!missionWithBidsResponse.ok) {
         throw new Error('Erreur récupération mission avec offres');
       }
@@ -418,9 +447,13 @@ class MissionFlowVerifier {
       }
 
       // Récupérer données de toutes les sources
+      const serverUrl = process.env.REPL_ID ? 
+        `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 
+        'http://0.0.0.0:5000';
+
       const [dbMission, apiMission, feedItem] = await Promise.all([
         db.select().from(missions).where(eq(missions.id, this.testMissionId)).limit(1),
-        fetch(`http://localhost:5000/api/missions/${this.testMissionId}`).then(r => r.json()),
+        fetch(`${serverUrl}/api/missions/${this.testMissionId}`).then(r => r.json()),
         db.select().from(announcements).where(eq(announcements.id, this.testMissionId)).limit(1)
       ]);
 

@@ -172,6 +172,15 @@ mode = "sequential"
 task = "shell.exec"
 args = "tsx scripts/complete-mission-flow-verification.ts"
 
+[[workflows.workflow]]
+name = "Start Server Only"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development tsx server/index.ts"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
