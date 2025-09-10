@@ -12,13 +12,13 @@ import aiRoutes from './routes/ai-routes.js';
 import './environment-check.js';
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = Number(process.env.PORT) || 5000;
 
 console.log('🚀 Starting SwipDEAL Server...');
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', process.env.CLIENT_URL].filter(Boolean),
+  origin: ['http://localhost:3000', 'http://localhost:5173', process.env.CLIENT_URL].filter(Boolean) as string[],
   credentials: true
 }));
 
