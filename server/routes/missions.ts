@@ -21,70 +21,12 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
-// POST /api/missions - Create new mission
+// POST /api/missions - DISABLED - Mission creation removed
 router.post('/', async (req, res) => {
-  try {
-    const missionData = req.body;
-    console.log('📝 Mission creation request received:', JSON.stringify(missionData, null, 2));
-
-    // Validate required fields
-    if (!missionData.title || missionData.title.trim() === '') {
-      console.error('❌ Validation failed: Missing or empty title');
-      return res.status(400).json({
-        error: 'Le titre est requis',
-        field: 'title'
-      });
-    }
-
-    if (!missionData.description || missionData.description.trim() === '') {
-      console.error('❌ Validation failed: Missing or empty description');
-      return res.status(400).json({
-        error: 'La description est requise',
-        field: 'description'
-      });
-    }
-
-    if (!missionData.userId) {
-      console.error('❌ Validation failed: Missing userId');
-      return res.status(401).json({
-        error: 'Utilisateur non authentifié',
-        field: 'userId'
-      });
-    }
-
-    // Prepare mission data with only existing columns
-    const missionToInsert = {
-      title: missionData.title.trim(),
-      description: missionData.description.trim(),
-      category: missionData.category || 'developpement',
-      budget: missionData.budget ? parseInt(missionData.budget) : 0,
-      currency: missionData.currency || 'EUR',
-      location: missionData.location || null,
-      status: missionData.status || 'published',
-      user_id: parseInt(missionData.userId),
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
-    console.log('📤 Inserting mission with data:', JSON.stringify(missionToInsert, null, 2));
-
-    const result = await db.insert(missions).values(missionToInsert).returning();
-    const insertedMission = result[0];
-
-    if (!insertedMission) {
-      throw new Error('No mission returned from database insert');
-    }
-
-    console.log('✅ Mission created successfully:', insertedMission);
-    res.status(201).json(insertedMission);
-
-  } catch (error) {
-    console.error('❌ Error creating mission:', error);
-    res.status(500).json({
-      error: 'Failed to create mission',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  res.status(410).json({
+    error: 'La création de missions a été supprimée',
+    message: 'Cette fonctionnalité n\'est plus disponible'
+  });
 });
 
 // GET /api/missions - Get all missions

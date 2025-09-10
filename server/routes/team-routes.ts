@@ -53,7 +53,7 @@ router.post('/analyze', async (req, res) => {
         importance: 'high' as const
       },
       {
-        profession: "Développeur Backend", 
+        profession: "Développeur Backend",
         description: "Architecture serveur et APIs",
         required_skills: ["Node.js", "PostgreSQL", "REST API"],
         estimated_budget: Math.floor(Number(budget) * 0.4),
@@ -128,17 +128,17 @@ router.post('/create-project', async (req, res) => {
     if (!global.missions) {
       global.missions = [];
     }
-    
+
     // Ajouter le projet principal
     global.missions.push(mainProject);
-    
+
     // Ajouter les sous-missions
     global.missions.push(...subMissions);
 
     console.log(`✅ Projet en équipe créé: ${mainProject.id} avec ${subMissions.length} sous-missions`);
 
-    res.json({ 
-      ok: true, 
+    res.json({
+      ok: true,
       project: mainProject,
       subMissions,
       message: `Projet créé avec ${subMissions.length} missions spécialisées`
@@ -147,6 +147,14 @@ router.post('/create-project', async (req, res) => {
     console.error('Team project creation error:', error);
     res.status(500).json({ error: 'Erreur serveur lors de la création du projet' });
   }
+});
+
+// GET /api/users/:userId/missions - DISABLED - Mission functionality removed
+router.get('/users/:userId/missions', async (req, res) => {
+  res.status(410).json({
+    error: 'Les missions ont été supprimées',
+    message: 'Cette fonctionnalité n\'est plus disponible'
+  });
 });
 
 export default router;
