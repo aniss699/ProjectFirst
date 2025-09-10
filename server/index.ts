@@ -121,6 +121,9 @@ app.use(express.json());
 
 // Import auth routes
 import authRoutes from './auth-routes.js';
+
+// Mount auth routes
+app.use('/api/auth', authRoutes);
 // Import missions routes here
 import missionsRoutes from './routes/missions.js';
 // Import projects supprimé - remplacé par missions
@@ -149,15 +152,11 @@ app.use('/api/missions', missionsRoutes);
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
 app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
-// Route projects supprimée - remplacée par missions
+// Redirect projects API to missions API for backward compatibility
 app.use('/api/projects', (req, res) => {
-  console.log(`⚠️ Deprecated projects API called: ${req.method} ${req.originalUrl}`);
-  res.status(410).json({
-    error: 'API Deprecated',
-    message: 'Projects API has been replaced by Missions API',
-    migration_guide: 'Use /api/missions instead of /api/projects',
-    timestamp: new Date().toISOString()
-  });
+  const newUrl = req.originalUrl.replace('/api/projects', '/api/missions');
+  console.log(`🔄 Redirecting deprecated projects API ${req.originalUrl} to ${newUrl}`);
+  res.redirect(301, newUrl);
 });
 
 // Apply rate limiting to AI routes
@@ -185,16 +184,22 @@ app.use('/api/team', teamRoutes);
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    // Test database connection
-    await pool.query('SELECT 1');
+    // Test database connection with timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 5000);
+    });
+    
+    const queryPromise = pool.query('SELECT 1');
+    await Promise.race([queryPromise, timeoutPromise]);
 
     res.status(200).json({
-      status: 'ok',
+      status: 'healthy',
       message: 'SwipDEAL API is running',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       env: process.env.NODE_ENV || 'development',
-      database: 'connected'
+      database: 'connected',
+      service: 'missions-api'
     });
   } catch (error) {
     console.error('Health check database error:', error);
@@ -205,6 +210,7 @@ app.get('/api/health', async (req, res) => {
       uptime: process.uptime(),
       env: process.env.NODE_ENV || 'development',
       database: 'disconnected',
+      service: 'missions-api',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -332,23 +338,25 @@ app.use((error: any, req: any, res: any, next: any) => {
 
   // Log to event logger if available
   try {
-    const { eventLogger } = require('../apps/api/src/monitoring/event-logger.js');
-    eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
+    const eventLoggerModule = await import('../apps/api/src/monitoring/event-logger.js');
+    eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
       error_type: 'server_error',
       error_message: error.message,
       endpoint: req.originalUrl,
       method: req.method
     });
   } catch (logError) {
-    console.warn('Could not log error event:', logError.message);
+    console.warn('Could not log error event:', logError instanceof Error ? logError.message : 'Unknown error');
   }
 
-  res.status(500).json({
-    error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
-    timestamp: new Date().toISOString(),
-    request_id: req.headers['x-request-id'] || 'unknown'
-  });
+  if (!res.headersSent) {
+    res.status(500).json({
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+      timestamp: new Date().toISOString(),
+      request_id: req.headers['x-request-id'] || 'unknown'
+    });
+  }
 });
 
 export default app;
