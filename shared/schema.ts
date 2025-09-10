@@ -1,5 +1,6 @@
 
-import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb, decimal } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
 
 // ============================================
 // SCHÉMA SIMPLIFIÉ ET HARMONISÉ
@@ -13,6 +14,10 @@ export const users = pgTable('users', {
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   password: varchar('password', { length: 255 }).notNull(),
+  role: varchar('role', { length: 50 }).default('CLIENT').notNull(),
+  rating_mean: decimal('rating_mean', { precision: 3, scale: 2 }).default('0'),
+  rating_count: integer('rating_count').default(0),
+  profile_data: jsonb('profile_data'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull()
 });
@@ -74,5 +79,51 @@ export const aiEvents = pgTable('ai_events', {
 export type Offer = typeof offers.$inferSelect;
 export type NewOffer = typeof offers.$inferInsert;
 
+// Table des annonces (feed)
+export const announcements = pgTable('announcements', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description').notNull(),
+  category: varchar('category', { length: 100 }),
+  budget_min: integer('budget_min'),
+  budget_max: integer('budget_max'),
+  location: varchar('location', { length: 255 }),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  tags: jsonb('tags'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Table des retours sur le feed (feedback)
+export const feedFeedback = pgTable('feed_feedback', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
+  feedback_type: varchar('feedback_type', { length: 50 }).notNull(), // 'like', 'dislike', 'not_interested'
+  feedback_reason: varchar('feedback_reason', { length: 200 }),
+  created_at: timestamp('created_at').defaultNow().notNull()
+});
+
+// Table des annonces vues par les utilisateurs
+export const feedSeen = pgTable('feed_seen', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
+  seen_at: timestamp('seen_at').defaultNow().notNull()
+});
+
 export type AiEvent = typeof aiEvents.$inferSelect;
 export type NewAiEvent = typeof aiEvents.$inferInsert;
+
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;
+
+export type FeedFeedback = typeof feedFeedback.$inferSelect;
+export type NewFeedFeedback = typeof feedFeedback.$inferInsert;
+
+export type FeedSeen = typeof feedSeen.$inferSelect;
+export type NewFeedSeen = typeof feedSeen.$inferInsert;
+
+// Schémas de validation Zod
+export const insertFeedFeedbackSchema = createInsertSchema(feedFeedback);
