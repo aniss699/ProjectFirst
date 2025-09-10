@@ -9,7 +9,7 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
   if (!description || description.length <= maxLength) {
     return description || '';
   }
-  
+
   // Chercher la fin de phrase la plus proche avant maxLength
   const truncated = description.substring(0, maxLength);
   const lastSentenceEnd = Math.max(
@@ -17,17 +17,17 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
     truncated.lastIndexOf('!'),
     truncated.lastIndexOf('?')
   );
-  
+
   if (lastSentenceEnd > maxLength * 0.6) {
     return truncated.substring(0, lastSentenceEnd + 1).trim();
   }
-  
+
   // Sinon, couper au dernier espace pour éviter de couper un mot
   const lastSpace = truncated.lastIndexOf(' ');
   if (lastSpace > maxLength * 0.6) {
     return truncated.substring(0, lastSpace).trim() + '...';
   }
-  
+
   return truncated.trim() + '...';
 }
 
@@ -84,8 +84,8 @@ router.post('/', async (req, res) => {
       title: missionData.title,
       description: missionData.description,
       category: missionData.category || 'developpement',
-      budget: missionData.budget ? parseInt(missionData.budget) : null,
-      location: missionData.location || null,
+      budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
+      location_raw: missionData.location || null,
       urgency: missionData.urgency || 'medium',
       status: missionData.status || 'published',
       created_at: new Date(),
@@ -93,8 +93,8 @@ router.post('/', async (req, res) => {
       user_id: missionData.userId ? parseInt(missionData.userId) : null,
       client_id: missionData.userId ? parseInt(missionData.userId) : null, // Pour compatibilité
       // Map additional fields properly
-      budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : (missionData.budget ? parseInt(missionData.budget) : null),
-      budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : (missionData.budget ? parseInt(missionData.budget) : null),
+      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : (missionData.budget ? parseInt(missionData.budget) : null),
+      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : (missionData.budget ? parseInt(missionData.budget) : null),
       deadline: missionData.deadline ? new Date(missionData.deadline) : null,
       tags: missionData.tags || [],
       requirements: missionData.requirements || null,
@@ -102,6 +102,9 @@ router.post('/', async (req, res) => {
       is_team_mission: missionData.is_team_mission || false,
       team_size: missionData.team_size || 1,
       remote_allowed: missionData.remote_allowed !== undefined ? missionData.remote_allowed : true,
+      currency: missionData.currency || 'USD',
+      city: missionData.city || null,
+      country: missionData.country || null,
     };
 
     console.log('📤 Inserting mission with data:', JSON.stringify(missionToInsert, null, 2));
@@ -143,8 +146,8 @@ router.post('/', async (req, res) => {
           title: insertedMission.title,
           description: insertedMission.description,
           category: insertedMission.category || 'general',
-          budget: insertedMission.budget?.toString() || insertedMission.budget_min?.toString() || '0',
-          location: insertedMission.location || 'Remote',
+          budget: insertedMission.budget_value_cents?.toString() || insertedMission.budget_min_cents?.toString() || '0',
+          location: insertedMission.location_raw || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
           clientId: insertedMission.user_id?.toString() || insertedMission.client_id?.toString() || '1',
           clientName: 'Client',
@@ -175,13 +178,38 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
-    
+
     // Use simple select() to avoid Drizzle column mapping issues
     const allMissions = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget_value_cents: missions.budget_value_cents,
+        budget_min_cents: missions.budget_min_cents,
+        budget_max_cents: missions.budget_max_cents,
+        currency: missions.currency,
+        location_raw: missions.location_raw,
+        city: missions.city,
+        country: missions.country,
+        remote_allowed: missions.remote_allowed,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        status: missions.status,
+        urgency: missions.urgency,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        skills_required: missions.skills_required,
+        requirements: missions.requirements,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at
+      })
       .from(missions)
       .orderBy(desc(missions.created_at));
-    
+
     console.log(`📋 Found ${allMissions.length} missions in database`);
 
     // Transform missions to include required fields for MissionWithBids type
@@ -205,7 +233,7 @@ router.get('/', async (req, res) => {
 router.get('/health', async (req, res) => {
   try {
     console.log('🏥 Mission health check endpoint called');
-    
+
     // Simple health check
     const healthInfo = {
       status: 'healthy',
@@ -232,7 +260,7 @@ router.get('/debug', async (req, res) => {
     console.log('🔍 Mission debug endpoint called');
 
     // Test database connection
-    const testQuery = await db.select().from(missions).limit(1);
+    const testQuery = await db.select({ id: missions.id }).from(missions).limit(1);
 
     // Check database structure
     const dbInfo = {
@@ -260,13 +288,65 @@ router.get('/verify-sync', async (req, res) => {
     console.log('🔍 Vérification de la synchronisation missions/feed');
 
     // Récupérer les dernières missions
-    const recentMissions = await db.select().from(missions)
+    const recentMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    })
+      .from(missions)
       .orderBy(desc(missions.created_at))
       .limit(5);
 
     // Vérifier la présence dans le feed (table announcements)
     const { announcements } = await import('../../shared/schema.js');
-    const feedItems = await db.select().from(announcements)
+    const feedItems = await db.select({
+      id: announcements.id,
+      title: announcements.title,
+      description: announcements.description,
+      category: announcements.category,
+      budget_value_cents: announcements.budget_value_cents,
+      budget_min_cents: announcements.budget_min_cents,
+      budget_max_cents: announcements.budget_max_cents,
+      currency: announcements.currency,
+      location_raw: announcements.location_raw,
+      city: announcements.city,
+      country: announcements.country,
+      remote_allowed: announcements.remote_allowed,
+      user_id: announcements.user_id,
+      client_id: announcements.client_id,
+      status: announcements.status,
+      urgency: announcements.urgency,
+      deadline: announcements.deadline,
+      tags: announcements.tags,
+      skills_required: announcements.skills_required,
+      requirements: announcements.requirements,
+      is_team_mission: announcements.is_team_mission,
+      team_size: announcements.team_size,
+      created_at: announcements.created_at,
+      updated_at: announcements.updated_at
+    })
+      .from(announcements)
       .orderBy(desc(announcements.created_at))
       .limit(10);
 
@@ -302,7 +382,7 @@ router.get('/verify-sync', async (req, res) => {
 // GET /api/missions/:id - Get a specific mission with bids
 router.get('/:id', async (req, res) => {
   let missionId: string | null = null;
-  
+
   try {
     missionId = req.params.id;
     console.log('🔍 API: Récupération mission ID:', missionId);
@@ -315,7 +395,7 @@ router.get('/:id', async (req, res) => {
 
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
       console.error('❌ API: Mission ID invalide:', missionId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Mission ID invalide',
         details: 'L\'ID de mission est requis et ne peut pas être vide'
       });
@@ -325,7 +405,7 @@ router.get('/:id', async (req, res) => {
     const missionIdInt = parseInt(missionId, 10);
     if (isNaN(missionIdInt) || missionIdInt <= 0 || !Number.isInteger(missionIdInt)) {
       console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Mission ID doit être un nombre entier valide',
         received: missionId,
         details: 'L\'ID doit être un nombre entier positif'
@@ -334,14 +414,39 @@ router.get('/:id', async (req, res) => {
 
     // Use simple select() to avoid Drizzle column mapping issues
     const mission = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget_value_cents: missions.budget_value_cents,
+        budget_min_cents: missions.budget_min_cents,
+        budget_max_cents: missions.budget_max_cents,
+        currency: missions.currency,
+        location_raw: missions.location_raw,
+        city: missions.city,
+        country: missions.country,
+        remote_allowed: missions.remote_allowed,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        status: missions.status,
+        urgency: missions.urgency,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        skills_required: missions.skills_required,
+        requirements: missions.requirements,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at
+      })
       .from(missions)
       .where(eq(missions.id, missionIdInt))
       .limit(1);
 
     if (mission.length === 0) {
       console.error('❌ API: Mission non trouvée:', missionId);
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Mission non trouvée',
         missionId: missionIdInt,
         details: 'Aucune mission trouvée avec cet ID'
@@ -367,7 +472,7 @@ router.get('/:id', async (req, res) => {
     console.error('❌ API: Stack trace:', error instanceof Error ? error.stack : 'No stack');
     console.error('❌ API: Mission ID demandée:', missionId || 'undefined');
     console.error('❌ API: Type de l\'ID:', typeof missionId);
-    
+
     res.status(500).json({
       error: 'Erreur interne du serveur',
       details: error instanceof Error ? error.message : 'Erreur inconnue',
@@ -386,7 +491,7 @@ router.get('/users/:userId/missions', async (req, res) => {
 
     if (!userId || userId === 'undefined' || userId === 'null') {
       console.error('❌ Invalid user ID:', userId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'User ID invalide',
         details: 'L\'ID utilisateur est requis'
       });
@@ -395,7 +500,7 @@ router.get('/users/:userId/missions', async (req, res) => {
     const userIdInt = parseInt(userId, 10);
     if (isNaN(userIdInt) || userIdInt <= 0 || !Number.isInteger(userIdInt)) {
       console.error('❌ User ID is not a valid number:', userId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'User ID doit être un nombre entier valide',
         received: userId,
         details: 'L\'ID utilisateur doit être un nombre entier positif'
@@ -403,14 +508,39 @@ router.get('/users/:userId/missions', async (req, res) => {
     }
 
     console.log('🔍 Querying database: SELECT * FROM missions WHERE user_id =', userIdInt);
-    
+
     // Use simple select() without explicit column mapping to avoid Drizzle errors
     const userMissions = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget_value_cents: missions.budget_value_cents,
+        budget_min_cents: missions.budget_min_cents,
+        budget_max_cents: missions.budget_max_cents,
+        currency: missions.currency,
+        location_raw: missions.location_raw,
+        city: missions.city,
+        country: missions.country,
+        remote_allowed: missions.remote_allowed,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        status: missions.status,
+        urgency: missions.urgency,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        skills_required: missions.skills_required,
+        requirements: missions.requirements,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at
+      })
       .from(missions)
       .where(eq(missions.user_id, userIdInt))
       .orderBy(desc(missions.created_at));
-    
+
     console.log('📊 Query result: Found', userMissions.length, 'missions with user_id =', userIdInt);
     userMissions.forEach(mission => {
       console.log('   📋 Mission:', mission.id, '| user_id:', mission.user_id, '| title:', mission.title);
@@ -423,8 +553,8 @@ router.get('/users/:userId/missions', async (req, res) => {
       description: mission.description,
       excerpt: generateExcerpt(mission.description || '', 200),
       category: mission.category,
-      budget: mission.budget?.toString() || mission.budget_min?.toString() || '0',
-      location: mission.location,
+      budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || '0',
+      location: mission.location_raw,
       status: mission.status,
       urgency: mission.urgency,
       userId: mission.user_id?.toString(),
@@ -441,7 +571,7 @@ router.get('/users/:userId/missions', async (req, res) => {
     res.json(missionsWithBids);
   } catch (error) {
     console.error('❌ Error fetching user missions:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch user missions',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -471,14 +601,14 @@ router.get('/users/:userId/bids', async (req, res) => {
       .from(bidTable)
       .where(eq(bidTable.provider_id, userIdInt))
       .orderBy(desc(bidTable.created_at));
-    
+
     console.log('🔗 Mapping: userId =', userId, '-> provider_id filter:', userIdInt);
 
     console.log(`👤 Found ${userBids.length} bids for user ${userId}`);
     res.json(userBids);
   } catch (error) {
     console.error('❌ Error fetching user bids:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch user bids',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -524,9 +654,9 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    // Check if mission exists
+    // Check if mission exists - select only id for existence check
     const existingMission = await db
-      .select()
+      .select({ id: missions.id })
       .from(missions)
       .where(eq(missions.id, missionIdInt))
       .limit(1);
@@ -541,16 +671,19 @@ router.put('/:id', async (req, res) => {
       title: updateData.title,
       description: updateData.description,
       category: updateData.category || existingMission[0].category,
-      budget: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget,
-      location: updateData.location || existingMission[0].location,
+      budget_value_cents: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget_value_cents,
+      location_raw: updateData.location || existingMission[0].location_raw,
       urgency: updateData.urgency || existingMission[0].urgency,
       status: updateData.status || existingMission[0].status,
       updated_at: new Date(),
-      budget_min: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min,
-      budget_max: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max,
+      budget_min_cents: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min_cents,
+      budget_max_cents: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max_cents,
       deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
       tags: updateData.tags || existingMission[0].tags,
       requirements: updateData.requirements || existingMission[0].requirements,
+      currency: updateData.currency || existingMission[0].currency,
+      city: updateData.city || existingMission[0].city,
+      country: updateData.country || existingMission[0].country,
     };
 
     console.log('✏️ API: Données de mise à jour:', JSON.stringify(missionToUpdate, null, 2));
@@ -601,9 +734,9 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Mission ID doit être un nombre valide' });
     }
 
-    // Check if mission exists
+    // Check if mission exists - select only id for existence check
     const existingMission = await db
-      .select()
+      .select({ id: missions.id })
       .from(missions)
       .where(eq(missions.id, missionIdInt))
       .limit(1);
