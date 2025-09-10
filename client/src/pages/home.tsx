@@ -27,28 +27,36 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Slogan principal - VERSION PROFESSIONNELLE */}
+        {/* Slogan principal - VERSION IMPACTANTE */}
         <div className="relative text-center py-16 px-2 sm:px-0 overflow-hidden">
-          {/* Effet de fond subtil */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-indigo-50/20 to-purple-50/30 rounded-3xl blur-2xl"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/40 via-transparent to-blue-50/30 rounded-3xl transform rotate-1"></div>
-
+          {/* Effet de fond dynamique */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-500/10 to-purple-600/10 rounded-3xl blur-3xl animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/20 via-transparent to-blue-200/20 rounded-3xl transform rotate-1"></div>
+          
           {/* Contenu du slogan */}
           <div className="relative z-10">
-            {/* Titre principal professionnel */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-700 to-indigo-700 mb-6 leading-tight tracking-tight">
+            {/* Titre principal avec effet de gradient et ombre */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-emerald-700 to-blue-800 mb-6 leading-tight tracking-tight">
               Ne cherche plus<br />
-              <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+              <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-600 drop-shadow-lg animate-pulse">
                 le meilleur prix
               </span>
             </h1>
-
-            {/* Sous-titre élégant */}
+            
+            {/* Sous-titre avec animation */}
             <div className="relative inline-block">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-gray-700 via-blue-600 to-indigo-600">
-                il vient à toi !</h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-emerald-600 animate-bounce">
+                il vient à toi !
+              </h2>
+              {/* Effet de surlignage */}
+              <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-r from-emerald-300 via-blue-300 to-purple-300 rounded-full opacity-60 animate-pulse"></div>
             </div>
           </div>
+          
+          {/* Éléments décoratifs */}
+          <div className="absolute top-10 left-10 w-20 h-20 bg-emerald-400/20 rounded-full blur-xl animate-bounce"></div>
+          <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-400/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-purple-400/20 rounded-full blur-xl animate-ping"></div>
         </div>
 
         {/* Missions en cours */}
@@ -253,7 +261,7 @@ export default function Home() {
         </div>
       </div>
 
-
+      
     </div>
   );
 }

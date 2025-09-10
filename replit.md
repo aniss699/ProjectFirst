@@ -1,20 +1,9 @@
-# Swideal - Plateforme de mise en relation client-prestataire
+# SwipDEAL - Plateforme de mise en relation client-prestataire
 
 ## Overview
-Swideal est une plateforme moderne de mise en relation entre clients et prestataires, intégrant des fonctionnalités d'intelligence artificielle pour optimiser les correspondances. L'application utilise React + TypeScript pour le frontend et Node.js/Express pour le backend.
+SwipDEAL est une plateforme moderne de mise en relation entre clients et prestataires, intégrant des fonctionnalités d'intelligence artificielle pour optimiser les correspondances. L'application utilise React + TypeScript pour le frontend et Node.js/Express pour le backend.
 
 ## Recent Changes
-
-### 2025-09-10 - Deployment Fix: Missing aiEvents Schema
-- **Issue Fixed**: Résolution d'une erreur de déploiement due à l'import manquant de `aiEvents` dans le schéma
-- **Error**: `No matching export in "shared/schema.ts" for import "aiEvents" in apps/api/src/ai/learning-engine.ts`
-- **Changes**: 
-  - Ajout de la table `aiEvents` dans `shared/schema.ts` avec tous les champs requis
-  - Configuration des colonnes: id (varchar UUID), phase, provider, model_family, allow_training, input_redacted (jsonb), etc.
-  - Synchronisation du schéma avec la base de données via `npm run migrate`
-- **Files Updated**:
-  - `shared/schema.ts` - Ajout de la table aiEvents et ses types
-- **Result**: Build et déploiement fonctionnels, serveur opérationnel
 
 ### 2025-01-03 - Migration Database Connection
 - **Issue Fixed**: Résolution d'un problème de connexion à la base de données PostgreSQL locale

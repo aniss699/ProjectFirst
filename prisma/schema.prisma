@@ -62,7 +62,6 @@ model Project {
   status              ProjectStatus       @default(DRAFT)
   loc_score           Float?
   client_id           String
-  is_team_mode        Boolean             @default(false)
   created_at          DateTime            @default(now())
   updated_at          DateTime            @updatedAt
 
@@ -71,7 +70,6 @@ model Project {
   bids                Bid[]
   standardization     ProjectStandardization?
   sourcing_matches    SourcingMatch[]
-  team_requirements   TeamRequirement[]
 
   @@map("projects")
 }
@@ -116,34 +114,13 @@ model Bid {
   score_breakdown Json?
   is_leading      Boolean  @default(false)
   flagged         Boolean  @default(false)
-  team_requirement_id String?
   created_at      DateTime @default(now())
 
   // Relations
   project         Project  @relation(fields: [project_id], references: [id])
   provider        User     @relation("ProviderBids", fields: [provider_id], references: [id])
-  team_requirement TeamRequirement? @relation(fields: [team_requirement_id], references: [id])
 
   @@map("bids")
-}
-
-model TeamRequirement {
-  id                String   @id @default(cuid())
-  project_id        String
-  profession        String
-  description       String
-  required_skills   String[]
-  estimated_budget  Float?
-  estimated_days    Int?
-  min_experience    Int?     @default(0)
-  is_lead_role      Boolean  @default(false)
-  created_at        DateTime @default(now())
-
-  // Relations
-  project           Project  @relation(fields: [project_id], references: [id])
-  bids              Bid[]
-
-  @@map("team_requirements")
 }
 
 // NOUVEAU: Sources Web

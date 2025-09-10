@@ -239,12 +239,7 @@ export class MarketNotificationService {
     actionable: boolean;
     urgency: 'low' | 'medium' | 'high';
   }> {
-    const notifications: Array<{
-      type: 'surge' | 'opportunity' | 'cooling' | 'trend_change';
-      message: string;
-      actionable: boolean;
-      urgency: 'low' | 'medium' | 'high';
-    }> = [];
+    const notifications = [];
     
     // Détection de surchauffe soudaine
     if (currentHeat.heatScore >= this.heatThresholds.surge && 

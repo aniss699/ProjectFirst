@@ -60,15 +60,6 @@ if npx --yes esbuild --version >/dev/null 2>&1; then
   fi
 fi
 
-# 6.5) Build pour mode preview si nécessaire
-if [ "${PREVIEW_MODE:-}" = "true" ]; then
-  echo "🏗️ Mode Preview: build de production…"
-  if [ ! -d dist ] || [ package.json -nt dist ]; then
-    npm run build || { echo "❌ Build échoué"; exit 1; }
-  fi
-  echo "✅ Build terminé pour mode Preview"
-fi
-
 # 7) Purge processus zombies
 pkill -f "tsx.*server/index.ts" >/dev/null 2>&1 || true
 pkill -f "vite" >/dev/null 2>&1 || true

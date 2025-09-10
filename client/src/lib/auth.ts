@@ -1,8 +1,6 @@
 import type { User } from "@shared/schema";
 
-export interface AuthUser extends Omit<User, 'password'> {
-  // L'identifiant unique de l'utilisateur est toujours user.id
-}
+export interface AuthUser extends Omit<User, 'password'> {}
 
 export const authService = {
   getCurrentUser(): AuthUser | null {

@@ -7,8 +7,8 @@ channel = "stable-25_05"
 packages = ["libxcrypt"]
 
 [[ports]]
-localPort = 3001
-externalPort = 3001
+localPort = 5000
+externalPort = 80
 
 [workflows]
 runButton = "Project"
@@ -20,83 +20,34 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "SwipDEAL Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "API Server"
+args = "Start application"
 
 [[workflows.workflow]]
-name = ""
+name = "Start application"
 author = "agent"
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = ""
 
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
 [[workflows.workflow]]
-name = "Development Preview"
-author = 47315380
+name = "Restart Server"
+author = 47317274
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pkill -f \"tsx.*server/index.ts\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pkill -f \"node.*dist/index.js\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sleep 1"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "NODE_ENV=development tsx server/index.ts"
-
-[[workflows.workflow]]
-name = "Production Build"
-author = 47315380
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pkill -f \"tsx.*server/index.ts\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pkill -f \"node.*dist/index.js\" || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sleep 1"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "NODE_ENV=production npm run start"
-
-[[workflows.workflow]]
-name = "API Server"
-author = "agent"
+args = "pkill -f \"npm run dev\" || true"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-waitForPort = 3001
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "npm run build && npm run start"]
+run = ["npm", "run", "start"]

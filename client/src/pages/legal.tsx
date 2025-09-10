@@ -1,3 +1,4 @@
+
 export default function Legal() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -70,8 +71,8 @@ export default function Legal() {
             </ul>
             <p className="mt-4">
               Pour exercer ces droits, contactez-nous à l'adresse : 
-              <a href="mailto:Swipdeal2025@gmail.com" className="text-primary hover:underline ml-1">
-                Swipdeal2025@gmail.com
+              <a href="mailto:contact@appelspro.fr" className="text-primary hover:underline ml-1">
+                contact@appelspro.fr
               </a>
             </p>
           </div>
@@ -125,8 +126,8 @@ export default function Legal() {
             <p>
               Pour toute question concernant ces mentions légales ou notre politique de confidentialité, 
               vous pouvez nous contacter à l'adresse : 
-              <a href="mailto:Swipdeal2025@gmail.com" className="text-primary hover:underline ml-1">
-                Swipdeal2025@gmail.com
+              <a href="mailto:contact@appelspro.fr" className="text-primary hover:underline ml-1">
+                contact@appelspro.fr
               </a>
             </p>
           </div>

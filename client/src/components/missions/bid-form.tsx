@@ -71,7 +71,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
 
     submitBid.mutate({
       missionId,
-      providerId: user.id, // user.id = provider_id
+      providerId: user.id,
       providerName: user.name,
       price: parseFloat(formData.price),
       timeline: formData.timeline,

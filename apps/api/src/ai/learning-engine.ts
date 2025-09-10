@@ -1,11 +1,11 @@
 /**
- * Moteur d'apprentissage automatique - Swideal AI
+ * Moteur d'apprentissage automatique - SwipDEAL AI
  * Apprend des réponses de Gemini pour améliorer les suggestions futures
  */
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { aiEvents } from '../../../../shared/schema';
+import { aiEvents } from '../../../../shared/schema.js';
 import { desc, eq, and, gte } from 'drizzle-orm';
 
 interface LearningPattern {

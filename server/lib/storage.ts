@@ -1,45 +1,77 @@
-// Replit Storage service for API
-import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Google Cloud Storage service for API
+import { Storage } from '@google-cloud/storage';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Initialize GCS client
+const storage = new Storage({
+  projectId: process.env.GCP_PROJECT_ID,
+  // Cloud Run will automatically use the service account credentials
+  // No need to specify keyFilename in production
+});
 
-// Use local file system for Replit
-const UPLOAD_DIR = path.join(__dirname, '../../uploads');
+const bucket = storage.bucket(process.env.GCS_BUCKET || 'swideal-uploads');
 
-// Ensure upload directory exists
-async function ensureUploadDir() {
-  try {
-    await fs.access(UPLOAD_DIR);
-  } catch {
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  }
+export interface UploadResult {
+  filename: string;
+  url: string;
+  size: number;
+  contentType: string;
 }
 
-export async function saveFile(buffer: Buffer, filename: string): Promise<string> {
-  await ensureUploadDir();
-  const filePath = path.join(UPLOAD_DIR, filename);
-  await fs.writeFile(filePath, buffer);
-  return `/uploads/${filename}`;
+export async function uploadFile(
+  buffer: Buffer,
+  filename: string,
+  contentType: string
+): Promise<UploadResult> {
+  try {
+    const file = bucket.file(filename);
+    
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType,
+      },
+      resumable: false,
+    });
+
+    return new Promise((resolve, reject) => {
+      stream.on('error', reject);
+      stream.on('finish', async () => {
+        // Make the file public (optional - adjust based on your needs)
+        await file.makePublic();
+        
+        resolve({
+          filename,
+          url: `https://storage.googleapis.com/${bucket.name}/${filename}`,
+          size: buffer.length,
+          contentType,
+        });
+      });
+      
+      stream.end(buffer);
+    });
+  } catch (error) {
+    console.error('Error uploading file to GCS:', error);
+    throw new Error('Failed to upload file');
+  }
 }
 
 export async function deleteFile(filename: string): Promise<void> {
-  const filePath = path.join(UPLOAD_DIR, filename);
   try {
-    await fs.unlink(filePath);
+    await bucket.file(filename).delete();
   } catch (error) {
-    console.warn('File not found for deletion:', filename);
+    console.error('Error deleting file from GCS:', error);
+    throw new Error('Failed to delete file');
   }
 }
 
-export async function listFiles(): Promise<string[]> {
-  await ensureUploadDir();
+export async function getSignedUrl(filename: string, expires: number = 3600): Promise<string> {
   try {
-    const files = await fs.readdir(UPLOAD_DIR);
-    return files.map(file => `/uploads/${file}`);
-  } catch {
-    return [];
+    const [url] = await bucket.file(filename).getSignedUrl({
+      action: 'read',
+      expires: Date.now() + expires * 1000,
+    });
+    return url;
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    throw new Error('Failed to generate signed URL');
   }
 }

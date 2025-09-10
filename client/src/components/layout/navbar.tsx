@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText } from 'lucide-react';
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -115,14 +115,13 @@ export default function Navbar() {
                 </div>
                 <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </div>
-              <div className="flex flex-col items-start justify-center mobile-brand-text ml-1">
-                <span className="text-base sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title">
+              <div className="flex flex-col items-start justify-center mobile-brand-text">
+                <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title">
                   SWIDEAL
                 </span>
-                <span className="text-[0.6rem] sm:text-sm font-semibold tracking-wide leading-none mt-0.5 mobile-brand-subtitle">
-                  <span className="text-gray-900">Le meilleur </span>
-                  <span className="text-emerald-600">deal</span>
-                  <span className="text-gray-900"> vient à toi</span>
+                <span className="text-xs sm:text-sm font-semibold tracking-wide leading-none mt-0.5 mobile-brand-subtitle">
+                  <span className="text-gray-900">Le meilleur prix </span>
+                  <span className="text-emerald-600">vient à toi</span>
                 </span>
                 <span className="text-xs text-gray-500 hidden lg:block font-medium leading-none mt-1 mobile-brand-description">
                   IA • Missions • Talents
@@ -138,10 +137,11 @@ export default function Navbar() {
             {location !== ROUTES.HOME && (
               <Sheet open={showQuickCreator} onOpenChange={setShowQuickCreator}>
                 <SheetTrigger asChild>
-                  <Button size="sm" className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
                     <Plus className="w-4 h-4 mr-1 xl:mr-2" />
                     <span className="hidden xl:inline">Nouvelle mission</span>
                     <span className="hidden lg:inline xl:hidden">Mission</span>
+                    <span className="lg:hidden text-xs">Créer</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-[400px] sm:w-[500px]">
@@ -190,15 +190,6 @@ export default function Navbar() {
                   >
                     Messages
                   </button>
-                  <Button variant="ghost" onClick={() => setLocation('/marketplace')}>
-                    Marketplace
-                  </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/missions')}>
-                    Mes Missions
-                  </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/create-mission')}>
-                    Créer Mission
-                  </Button>
                 </div>
 
                 {/* User Dropdown */}
@@ -233,15 +224,6 @@ export default function Navbar() {
                         Tableau de bord
                       </button>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <button
-                        onClick={() => handleNavigation('/favorites')}
-                        className="flex items-center w-full"
-                      >
-                        <Heart className="w-4 h-4 mr-2" />
-                        Mes favoris
-                      </button>
-                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="lg:hidden">
                       <button
                         onClick={() => handleNavigation('/missions')}
@@ -259,28 +241,6 @@ export default function Navbar() {
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Messages
                       </button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLocation('/missions')}
-                        className="justify-start"
-                      >
-                        <Briefcase className="mr-2 h-4 w-4" />
-                        Mes missions
-                      </Button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLocation('/mes-demandes')}
-                        className="justify-start"
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Mes demandes
-                      </Button>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
@@ -410,7 +370,7 @@ export default function Navbar() {
                         <Briefcase className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Services</span>
                       </button>
-
+                      
                       <button
                         onClick={() => {
                           handleNavigation('/notre-concept');
@@ -441,8 +401,8 @@ export default function Navbar() {
                         <Brain className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-left">Hub IA</span>
                       </button>
-
-
+                      
+                      
                     </div>
                   </div>
 
@@ -460,14 +420,8 @@ export default function Navbar() {
                         <MobileNavLink href="/missions" icon={Briefcase}>
                           Mes Missions
                         </MobileNavLink>
-                        <MobileNavLink href="/mes-demandes" icon={FileText}>
-                          Mes demandes
-                        </MobileNavLink>
                         <MobileNavLink href="/messages" icon={MessageSquare}>
                           Messages
-                        </MobileNavLink>
-                        <MobileNavLink href="/favorites" icon={Heart}>
-                          Mes favoris
                         </MobileNavLink>
                       </div>
                     )}

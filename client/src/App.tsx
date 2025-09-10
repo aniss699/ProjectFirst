@@ -10,6 +10,8 @@ import { queryClient } from '@/lib/queryClient';
 
 // Lazy load pages for better performance
 const Home = React.lazy(() => import('@/pages/home'));
+const Marketplace = React.lazy(() => import('@/pages/marketplace'));
+const Missions = React.lazy(() => import('@/pages/missions'));
 const CreateMission = React.lazy(() => import('@/pages/create-mission'));
 const Profile = React.lazy(() => import('@/pages/profile'));
 const Dashboard = React.lazy(() => import('@/pages/dashboard'));
@@ -37,11 +39,6 @@ const GroupRequestPage = React.lazy(() => import('@/pages/services/GroupRequestP
 const IaHumanPage = React.lazy(() => import('@/pages/services/IaHumanPage'));
 const OpportunitiesPage = React.lazy(() => import('@/pages/services/OpportunitiesPage'));
 
-// Lazy load the new Favorites page
-const Favorites = React.lazy(() => import('@/pages/favorites'));
-
-// Lazy load the edit mission page
-const EditMission = React.lazy(() => import('@/pages/edit-mission'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -57,7 +54,7 @@ function App() {
     console.log('📍 URL actuelle:', window.location.href);
     console.log('🔧 User Agent:', navigator.userAgent);
     console.log('📱 Viewport:', window.innerWidth + 'x' + window.innerHeight);
-
+    
     // Test de connectivité API
     fetch('/api/health')
       .then(res => res.json())
@@ -76,9 +73,9 @@ function App() {
                 <Suspense fallback={<LoadingSpinner />}>
                   <Switch>
                     <Route path="/" component={Home} />
+                    <Route path="/marketplace" component={Marketplace} />
+                    <Route path="/missions" component={Missions} />
                     <Route path="/create-mission" component={CreateMission} />
-                    {/* Route for editing missions */}
-                    <Route path="/missions/edit/:missionId" component={EditMission} />
                     <Route path="/profile" component={Profile} />
                     <Route path="/dashboard" component={Dashboard} />
                     <Route path="/messages" component={Messages} />
@@ -116,8 +113,6 @@ function App() {
                     <Route path="/admin/feed-metrics" component={AdminFeedMetrics} />
                     <Route path="/test-feedback" component={FeedbackButtonsTest} />
                     <Route path="/login" component={LoginPage} />
-                    {/* Added route for Favorites */}
-                    <Route path="/favorites" component={Favorites} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

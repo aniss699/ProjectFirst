@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,12 +27,6 @@ import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/use-auth';
-import { GeoSearch } from '@/components/location/geo-search';
-import { useQueryClient } from '@tanstack/react-query';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
@@ -41,15 +36,11 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
+  const [currentStep, setCurrentStep] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
-  const [isSubmitting, setIsSubmitting] = useState(false); // State pour le bouton de soumission
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
@@ -78,44 +69,73 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     needsLocation: false,
     dynamicFields: {} as Record<string, string | number | boolean>
   });
-
+  
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
+  const progress = ((currentStep + 1) / 5) * 100;
 
-  // Function to create the mission via API - Simplifié
+  // Fonction pour créer la mission via l'API
   const createMission = async () => {
-    // Vérifier que les champs obligatoires sont remplis
-    if (!projectData.title.trim() || !projectData.description.trim()) {
+    if (!projectData.title || !projectData.description) {
       toast({
-        title: 'Champs manquants',
-        description: 'Le titre et la description sont obligatoires.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: 'Connexion requise',
-        description: 'Veuillez vous connecter pour créer une mission.',
+        title: 'Champs requis',
+        description: 'Veuillez remplir au moins le titre et la description',
         variant: 'destructive',
       });
       return;
     }
 
     setIsCreating(true);
-
+    
     try {
+      // Mapper les catégories vers les valeurs acceptées par l'API
+      const categoryMapping: Record<string, string> = {
+        'web-dev': 'developpement',
+        'mobile-dev': 'mobile', 
+        'design': 'design',
+        'marketing': 'marketing',
+        'consulting': 'conseil',
+        'lawyer': 'conseil',
+        'doctor': 'services',
+        'coach': 'services',
+        'celebrity': 'services',
+        'ai-ml': 'ai',
+        'writing': 'redaction',
+        'video': 'multimedia',
+        'data': 'data',
+        'photography': 'photo',
+        'translation': 'traduction'
+      };
+
+      // Formater le budget
+      const budgetText = projectData.budget || '2000';
+      const budgetFormatted = budgetText.includes('-') ? budgetText : `${budgetText}`;
+
+      // Formater les champs dynamiques pour la description
+      const dynamicFieldsText = Object.keys(projectData.dynamicFields).length > 0 
+        ? Object.entries(projectData.dynamicFields)
+            .filter(([key, value]) => value !== '' && value !== null && value !== undefined)
+            .map(([key, value]) => {
+              const field = getCategoryDynamicFields(selectedCategory).find(f => f.id === key);
+              return field ? `${field.label}: ${value}` : null;
+            })
+            .filter(Boolean)
+            .join('\n')
+        : '';
+
       const missionData = {
         title: projectData.title,
-        description: projectData.description,
-        category: selectedCategory || null,
-        budget: projectData.budget ? parseInt(projectData.budget) : null,
-        location: projectData.location.address || null,
-        user_id: user.id
+        description: projectData.description + 
+          (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
+          (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
+        category: selectedCategory, // Utiliser la vraie catégorie au lieu du mapping obsolète
+        budget: budgetFormatted,
+        location: 'Remote',
+        clientId: 'user_1', // ID utilisateur temporaire
+        clientName: 'Utilisateur',
+        dynamicFields: projectData.dynamicFields
       };
 
       const response = await fetch('/api/missions', {
@@ -128,95 +148,39 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Mission créée avec succès:', result);
-
-        toast({ 
-          title: 'Mission créée !', 
-          description: 'Votre mission a été publiée avec succès.' 
+        toast({
+          title: 'Mission créée avec succès !',
+          description: 'Votre projet a été publié et est maintenant visible par les prestataires',
         });
-
-        // Invalider le cache des missions pour forcer le rechargement
-        queryClient.invalidateQueries({ queryKey: ['missions'] });
-
-        // Rediriger vers les missions
+        
+        // Rediriger vers la page des missions
         setLocation('/missions');
-        onComplete?.(result);
+        
+        // Appeler le callback s'il existe
+        onComplete?.({
+          userType,
+          serviceType,
+          selectedCategory,
+          projectData,
+          missionId: result.id
+        });
       } else {
         const error = await response.json();
-        throw new Error(error.error || 'Erreur lors de la création de la mission');
+        toast({
+          title: 'Erreur lors de la création',
+          description: error.message || 'Une erreur est survenue lors de la création de la mission',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Erreur création mission:', error);
       toast({
-        title: 'Erreur de création',
-        description: (error as Error).message || 'Impossible de créer la mission. Vérifiez votre connexion.',
+        title: 'Erreur de connexion',
+        description: 'Impossible de créer la mission. Vérifiez votre connexion.',
         variant: 'destructive',
       });
     } finally {
       setIsCreating(false);
-    }
-  };
-
-  // --- Nouvelle fonction handleSubmitMission modifiée ---
-  const handleSubmitMission = async (values: any) => {
-    if (!user) {
-      toast({
-        title: "Connexion requise",
-        description: "Veuillez vous connecter pour créer une mission",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Ensure proper data formatting before sending
-      const formattedData = {
-        title: values.title,
-        description: values.description,
-        category: values.category || 'developpement',
-        budget: values.budget ? parseInt(values.budget.toString()) : null,
-        location: values.location || null,
-        urgency: values.urgency || 'medium',
-        requirements: values.requirements || null,
-        tags: values.tags || [],
-        deadline: values.deadline ? new Date(values.deadline).toISOString() : null,
-      };
-
-      console.log('🚀 Sending formatted data:', formattedData);
-
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Erreur serveur:', result);
-        throw new Error(result.error || 'Erreur lors de la création de la mission');
-      }
-
-      console.log('Mission créée avec succès:', result);
-
-      toast({
-        title: "Mission créée !",
-        description: "Votre mission a été publiée avec succès",
-      });
-
-      onComplete?.(result);
-    } catch (error) {
-      console.error('Erreur création mission:', error);
-      toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de créer la mission. Veuillez réessayer.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -236,7 +200,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
   // Fonction pour rendre les champs dynamiques
   const renderDynamicFields = (categoryId: string) => {
     const fields = getCategoryDynamicFields(categoryId);
-
+    
     if (fields.length === 0) return null;
 
     const handleFieldChange = (fieldId: string, value: string | number | boolean) => {
@@ -357,62 +321,6 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
-  // Étape -1 (Niveau 0): Présentation de Swideal
-  const renderStepMinus1 = () => (
-    <div className="text-center space-y-3 max-w-3xl mx-auto">
-      <div className="space-y-3 animate-fade-in">
-        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm border border-gray-200">
-          <div className="text-center mb-3">
-            <p className="text-base md:text-lg text-gray-900 font-semibold mb-1">
-              <span className="text-blue-600">Swideal</span> place le client au cœur du modèle.
-            </p>
-            <p className="text-sm text-gray-600">
-              Notre approche repose sur deux leviers puissants :
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-blue-500">
-              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
-                <span className="inline-block w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">1</span>
-                L'enchère inversée
-              </h3>
-              <p className="text-xs md:text-sm text-gray-700 leading-snug">
-                Le client décrit son besoin et les prestataires rivalisent pour offrir le meilleur deal.
-              </p>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-3 border-l-3 border-green-500 text-center">
-              <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-1 flex items-center justify-center">
-                <span className="inline-block w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center mr-2 font-bold">2</span>
-                La mise en relation stratégique
-              </h3>
-              <p className="text-xs md:text-sm text-gray-700 leading-snug">
-                Connectez-vous directement à la bonne personne grâce aux réseaux et connaissances partagées.
-                <br />
-                Toi aussi, valorise ton réseau
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-xs md:text-sm text-gray-800 leading-snug text-center">
-              <strong>Swideal</strong> transforme la mise en relation en véritable <strong>art du deal</strong>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <Button 
-        onClick={() => setCurrentStep(0)}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200"
-        size="lg"
-      >
-        🚀 Démarrer
-      </Button>
-    </div>
-  );
-
   // Étape 0: Choix du type d'utilisateur
   const renderStep0 = () => (
     <div className="text-center space-y-3">
@@ -424,7 +332,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           Publiez votre projet et recevez des propositions de <span className="text-green-600 font-semibold">prestataires</span> qualifiés
         </p>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto progressive-flow-grid">
         <Card 
           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1 group card-shine progressive-flow-card ${
@@ -571,7 +479,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     // Choisir les catégories appropriées selon le type de service
     const categoriesToShow = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const categoryLabel = serviceType === 'mise-en-relation' ? 'expert' : 'projet';
-
+    
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -635,7 +543,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     const categoriesToSearch = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const selectedCat = categoriesToSearch.find(cat => cat.id === selectedCategory);
     const projectLabel = serviceType === 'mise-en-relation' ? 'demande de contact' : 'projet';
-
+    
     return (
       <div className="space-y-3">
         <div className="text-center space-y-2 animate-fade-in">
@@ -648,18 +556,6 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
         </div>
 
         <div className="space-y-6 max-w-2xl mx-auto progressive-flow-form">
-          {/* Switch Mode Équipe */}
-          <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <Switch
-              id="team-mode"
-              checked={isTeamMode}
-              onCheckedChange={setIsTeamMode}
-            />
-            <Label htmlFor="team-mode" className="text-blue-900 font-medium">
-              🤝 Mode équipe - Diviser le projet en plusieurs spécialités
-            </Label>
-          </div>
-
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -731,11 +627,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Euro className="w-4 h-4 inline mr-1" />
-                {serviceType === 'mise-en-relation' ? 'Budget consultation (optionnel)' : 'Budget indicatif (optionnel)'}
+                {serviceType === 'mise-en-relation' ? 'Budget consultation' : 'Budget indicatif'}
               </label>
               <Input
-                type="number"
-                placeholder="Ex: 5000"
+                placeholder={serviceType === 'mise-en-relation' ? "Ex: 200 - 500 €/heure" : "Ex: 5 000 - 10 000 €"}
                 value={projectData.budget}
                 onChange={(e) => setProjectData(prev => ({ ...prev, budget: e.target.value }))}
               />
@@ -744,7 +639,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Délai souhaité (optionnel)
+                Délai souhaité
               </label>
               <Input
                 placeholder="Ex: 2-3 mois"
@@ -757,7 +652,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Exigences spécifiques (optionnel)
+                Exigences spécifiques
               </label>
               <TextSuggestionButton
                 currentText={projectData.requirements}
@@ -798,13 +693,13 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               description={projectData.description}
               category={selectedCategory}
               onPriceSuggestion={(priceSuggestion) => {
-                const suggestedBudget = priceSuggestion.maxPrice.toString();
+                const suggestedBudget = `${priceSuggestion.minPrice} - ${priceSuggestion.maxPrice} €`;
                 setProjectData(prev => ({ ...prev, budget: suggestedBudget }));
                 setAiSuggestions({ type: 'pricing', data: priceSuggestion });
                 setShowFeedbackButtons(true);
               }}
             />
-
+            
             {/* Boutons feedback IA */}
             {showFeedbackButtons && aiSuggestions && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
@@ -847,21 +742,12 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             </Button>
 
             <Button 
-              onClick={createMission}
-              disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none min-w-[200px]"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
+              disabled={!projectData.title || !projectData.description}
+              onClick={() => setCurrentStep(4)}
             >
-              {isCreating ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                  Création en cours...
-                </div>
-              ) : (
-                <>
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Créer ma mission
-                </>
-              )}
+              <ChevronRight className="w-4 h-4 mr-2" />
+              Étape suivante
             </Button>
           </div>
         </div>
@@ -869,58 +755,197 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
+  // Étape 4: Géolocalisation
+  const renderStep4 = () => {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2 animate-fade-in">
+          <h2 className="text-2xl font-bold text-gray-900 animate-bounce-in progressive-flow-title">
+            Localisation du projet
+          </h2>
+          <p className="text-gray-600 animate-slide-up progressive-flow-description">
+            Indiquez si votre projet nécessite une intervention sur site ou peut être réalisé à distance
+          </p>
+        </div>
 
-  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Choix: Projet sur site ou à distance */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card 
+              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                !projectData.needsLocation ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-green-50/30'
+              }`}
+              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: false }))}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-green-600" />
+                </div>
+                <h3 className="font-semibold mb-2">Travail à distance</h3>
+                <p className="text-sm text-gray-600">
+                  Le prestataire peut travailler depuis n'importe où
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                projectData.needsLocation ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-blue-50/30'
+              }`}
+              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: true }))}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold mb-2">Intervention sur site</h3>
+                <p className="text-sm text-gray-600">
+                  Le prestataire doit se déplacer à une adresse spécifique
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Carte interactive si intervention sur site */}
+          {projectData.needsLocation && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Où se situe votre projet ?
+              </h3>
+              
+              <InteractiveMap
+                center={projectData.location.lat && projectData.location.lng 
+                  ? [projectData.location.lat, projectData.location.lng] 
+                  : [48.8566, 2.3522]
+                }
+                radius={projectData.location.radius}
+                onLocationSelect={(lat, lng, address) => {
+                  setProjectData(prev => ({
+                    ...prev,
+                    location: {
+                      ...prev.location,
+                      lat,
+                      lng,
+                      address
+                    }
+                  }));
+                }}
+                showProviders={true}
+                className="h-96"
+              />
+              
+              {projectData.location.address && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Adresse sélectionnée: {projectData.location.address}
+                  </p>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Rayon de recherche (km)
+                </label>
+                <select 
+                  value={projectData.location.radius}
+                  onChange={(e) => setProjectData(prev => ({
+                    ...prev,
+                    location: { ...prev.location, radius: parseInt(e.target.value) }
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value={5}>5 km</option>
+                  <option value={10}>10 km</option>
+                  <option value={20}>20 km</option>
+                  <option value={50}>50 km</option>
+                  <option value={100}>100 km</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-center gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setCurrentStep(3)}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+          <Button 
+            onClick={createMission}
+            disabled={isCreating || !projectData.title || !projectData.description || 
+              (projectData.needsLocation && (!projectData.location.lat || !projectData.location.lng))}
+            className="min-w-[200px]"
+          >
+            {isCreating ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                Création en cours...
+              </div>
+            ) : (
+              <>
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Créer ma mission
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const steps = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {steps[currentStep + 1]()}
+          {steps[currentStep]()}
         </div>
-
-        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
-        {currentStep >= 0 && (
-          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 4
-              </span>
-              <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 4) * 100)}%
-              </span>
-            </div>
-
-            {/* Barre de progression avec gradient et animation */}
-            <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
-              >
-                {/* Effet de brillance */}
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
-              </div>
-            </div>
-
-            {/* Points d'étapes réduits */}
-            <div className="flex justify-between mt-2">
-              {[1, 2, 3, 4].map((step) => (
-                <div key={step} className="flex flex-col items-center">
-                  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    step <= currentStep + 1 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
-                      : 'bg-gray-300'
-                  }`}></div>
-                  <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
-                  }`}>
-                    {step}
-                  </span>
-                </div>
-              ))}
+        
+        {/* Bloc de progression compact sous le contenu */}
+        <div className="bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Étape {currentStep + 1} sur 5
+            </span>
+            <span className="text-sm font-semibold text-blue-600">
+              {Math.round(progress)}%
+            </span>
+          </div>
+          
+          {/* Barre de progression avec gradient et animation */}
+          <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
+              style={{ width: `${progress}%` }}
+            >
+              {/* Effet de brillance */}
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
             </div>
           </div>
-        )}
+          
+          {/* Points d'étapes réduits */}
+          <div className="flex justify-between mt-2">
+            {[1, 2, 3, 4, 5].map((step) => (
+              <div key={step} className="flex flex-col items-center">
+                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  step <= currentStep + 1 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
+                    : 'bg-gray-300'
+                }`}></div>
+                <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
+                  step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
+                }`}>
+                  {step}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

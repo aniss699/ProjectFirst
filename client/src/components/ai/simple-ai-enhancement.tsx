@@ -11,14 +11,6 @@ interface PriceSuggestion {
   averagePrice: number;
   factors: string[];
   confidence: number;
-  baseCalculation?: {
-    basePrice: number;
-    complexityFactor: number;
-    marketAdjustment: number;
-    sampleSize: number;
-    keywordsFound?: number;
-    descriptionLength?: number;
-  };
 }
 
 interface SimpleAIEnhancementProps {
@@ -86,24 +78,11 @@ export function SimpleAIEnhancement({
     };
 
     const multiplier = categoryMultipliers[category as keyof typeof categoryMultipliers] || categoryMultipliers['services'];
-    
-    // Calcul du facteur de complexité basé sur la description
-    const descriptionWords = description.toLowerCase().split(' ');
-    const complexKeywords = ['complexe', 'avancé', 'personnalisé', 'sur-mesure', 'intégration', 'api', 'base de données', 'responsive', 'mobile'];
-    const complexityKeywordCount = complexKeywords.filter(keyword => 
-      descriptionWords.some(word => word.includes(keyword))
-    ).length;
-    
-    const lengthFactor = Math.min(description.length / 150, 1.5); // Facteur basé sur la longueur
-    const keywordFactor = Math.min(complexityKeywordCount * 0.2, 1.0); // Facteur basé sur les mots-clés
-    const complexityFactor = 1 + (lengthFactor * 0.3) + (keywordFactor * 0.4);
-    
-    const basePrice = multiplier.base;
-    const marketAdjustment = 1.1; // 10% d'ajustement marché français
-    const adjustedBasePrice = basePrice * complexityFactor * marketAdjustment;
+    const complexityFactor = Math.min(description.length / 100, 2); // Plus de description = plus complexe
+    const basPrice = multiplier.base * (1 + complexityFactor * 0.3);
 
-    const minPrice = Math.round(adjustedBasePrice * multiplier.min);
-    const maxPrice = Math.round(adjustedBasePrice * multiplier.max);
+    const minPrice = Math.round(basPrice * multiplier.min);
+    const maxPrice = Math.round(basPrice * multiplier.max);
     const averagePrice = Math.round((minPrice + maxPrice) / 2);
 
     const result = {
@@ -111,18 +90,10 @@ export function SimpleAIEnhancement({
       maxPrice,
       averagePrice,
       factors: multiplier.factors || ['Analyse complexité', 'Marché local', 'Standards secteur'],
-      confidence: 0.82 + Math.random() * 0.15, // Entre 82% et 97%
-      baseCalculation: {
-        basePrice: basePrice,
-        complexityFactor: complexityFactor,
-        marketAdjustment: marketAdjustment,
-        sampleSize: Math.floor(200 + Math.random() * 150), // Simulation d'échantillon
-        keywordsFound: complexityKeywordCount,
-        descriptionLength: description.length
-      }
+      confidence: 0.82 + Math.random() * 0.15 // Entre 82% et 97%
     };
     
-    console.log('Prix suggéré avec détails:', result);
+    console.log('Prix suggéré:', result);
     return result;
   };
 
@@ -178,67 +149,14 @@ export function SimpleAIEnhancement({
             </div>
             
             {priceSuggestion.factors && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-2">Facteurs analysés :</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {priceSuggestion.factors.map((factor, index) => (
-                      <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
-                        {factor}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Nouvelle section d'explication du calcul */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                    <span className="mr-2">🧮</span>
-                    Comment ce prix a été calculé
-                  </h4>
-                  <div className="text-sm text-blue-800 space-y-2">
-                    <div className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span>
-                        <strong>Prix de base :</strong> {priceSuggestion.baseCalculation?.basePrice?.toLocaleString('fr-FR') || 'N/A'}€ 
-                        (tarif moyen pour la catégorie "{category}")
-                      </span>
-                    </div>
-                    
-                    {priceSuggestion.baseCalculation?.complexityFactor && (
-                      <div className="flex items-start">
-                        <span className="inline-block w-2 h-2 bg-orange-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                        <span>
-                          <strong>Ajustement complexité :</strong> x{priceSuggestion.baseCalculation.complexityFactor.toFixed(2)} 
-                          (analyse du contenu et des exigences techniques)
-                        </span>
-                      </div>
-                    )}
-                    
-                    {priceSuggestion.baseCalculation?.marketAdjustment && (
-                      <div className="flex items-start">
-                        <span className="inline-block w-2 h-2 bg-green-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                        <span>
-                          <strong>Facteur marché :</strong> x{priceSuggestion.baseCalculation.marketAdjustment.toFixed(2)} 
-                          (demande et concurrence actuelles)
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-purple-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span>
-                        <strong>Fourchette finale :</strong> Calcul algorithmique basé sur {priceSuggestion.baseCalculation?.sampleSize || '200+'} projets similaires
-                      </span>
-                    </div>
-                    
-                    <div className="mt-3 p-3 bg-white/60 rounded border-l-4 border-blue-400">
-                      <p className="text-xs italic">
-                        💡 <strong>Méthodologie :</strong> Notre IA analyse la description, identifie les mots-clés techniques, 
-                        évalue la complexité et applique des coefficients basés sur les données du marché français pour cette catégorie.
-                      </p>
-                    </div>
-                  </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Facteurs analysés :</h4>
+                <div className="flex flex-wrap gap-2">
+                  {priceSuggestion.factors.map((factor, index) => (
+                    <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
+                      {factor}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             )}
