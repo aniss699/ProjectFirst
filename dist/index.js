@@ -39,7 +39,7 @@ __export(schema_exports, {
 import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-var missionStatusEnum, currencyCodeEnum, urgencyLevelEnum, users, missions, bids, announcements, insertMissionSchema, selectMissionSchema, insertBidSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoriteSchema, aiEvents, feedFeedback, feedSeen, favorites, projects;
+var missionStatusEnum, currencyCodeEnum, urgencyLevelEnum, users, missions, bids, announcements, aiEvents, feedFeedback, feedSeen, favorites, insertMissionSchema, selectMissionSchema, insertBidSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoriteSchema, projects;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -175,27 +175,6 @@ var init_schema = __esm({
       updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
       synced_at: timestamp("synced_at", { withTimezone: true }).defaultNow()
     });
-    insertMissionSchema = createInsertSchema(missions, {
-      title: z.string().min(3).max(500),
-      description: z.string().min(10),
-      budget_value_cents: z.number().int().positive().optional(),
-      budget_min_cents: z.number().int().positive().optional(),
-      budget_max_cents: z.number().int().positive().optional(),
-      team_size: z.number().int().positive().default(1),
-      deadline: z.string().datetime().optional()
-    });
-    selectMissionSchema = createSelectSchema(missions);
-    insertBidSchema = createInsertSchema(bids, {
-      amount_cents: z.number().int().positive(),
-      timeline_days: z.number().int().positive(),
-      message: z.string().min(10)
-    });
-    insertFeedFeedbackSchema = createInsertSchema(feedFeedback, {
-      action: z.enum(["view", "click", "apply", "save", "skip"]),
-      dwell_ms: z.number().int().positive().optional()
-    });
-    insertFeedSeenSchema = createInsertSchema(feedSeen);
-    insertFavoriteSchema = createInsertSchema(favorites);
     aiEvents = pgTable("ai_events", {
       id: serial("id").primaryKey(),
       phase: text("phase").notNull(),
@@ -229,6 +208,27 @@ var init_schema = __esm({
       announcement_id: integer("announcement_id").notNull().references(() => announcements.id, { onDelete: "cascade" }),
       created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
     });
+    insertMissionSchema = createInsertSchema(missions, {
+      title: z.string().min(3).max(500),
+      description: z.string().min(10),
+      budget_value_cents: z.number().int().positive().optional(),
+      budget_min_cents: z.number().int().positive().optional(),
+      budget_max_cents: z.number().int().positive().optional(),
+      team_size: z.number().int().positive().default(1),
+      deadline: z.string().datetime().optional()
+    });
+    selectMissionSchema = createSelectSchema(missions);
+    insertBidSchema = createInsertSchema(bids, {
+      amount_cents: z.number().int().positive(),
+      timeline_days: z.number().int().positive(),
+      message: z.string().min(10)
+    });
+    insertFeedFeedbackSchema = createInsertSchema(feedFeedback, {
+      action: z.enum(["view", "click", "apply", "save", "skip"]),
+      dwell_ms: z.number().int().positive().optional()
+    });
+    insertFeedSeenSchema = createInsertSchema(feedSeen);
+    insertFavoriteSchema = createInsertSchema(favorites);
     projects = missions;
   }
 });
