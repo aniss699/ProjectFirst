@@ -636,11 +636,13 @@ router.get('/users/:userId/bids', async (req, res) => {
       return res.status(400).json({ error: 'User ID doit être un nombre' });
     }
 
-    const userBids = await db
-      .select()
-      .from(bidTable)
-      .where(eq(bidTable.provider_id, userIdInt))
-      .orderBy(desc(bidTable.created_at));
+    // TODO: Query user bids when bids table exists
+    // const userBids = await db
+    //   .select()
+    //   .from(bidTable)
+    //   .where(eq(bidTable.provider_id, userIdInt))
+    //   .orderBy(desc(bidTable.created_at));
+    const userBids = []; // Placeholder until bids table is created
 
     console.log('🔗 Mapping: userId =', userId, '-> provider_id filter:', userIdInt);
 
@@ -784,9 +786,9 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Mission non trouvée' });
     }
 
-    // Delete associated bids first
-    await db.delete(bidTable).where(eq(bidTable.mission_id, missionIdInt));
-    console.log('✅ API: Offres supprimées pour mission:', missionId);
+    // TODO: Delete associated bids first when bids table exists
+    // await db.delete(bidTable).where(eq(bidTable.mission_id, missionIdInt));
+    // console.log('✅ API: Offres supprimées pour mission:', missionId);
 
     // Delete the mission
     const deletedMission = await db

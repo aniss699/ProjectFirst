@@ -37,6 +37,19 @@ export const users = pgTable('users', {
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
 });
 
+export const bids = pgTable('bids', {
+  id: serial('id').primaryKey(),
+  mission_id: integer('mission_id').references(() => missions.id).notNull(),
+  provider_id: integer('provider_id').notNull(),
+  amount_cents: integer('amount_cents').notNull(),
+  currency: varchar('currency', { length: 3 }).default('EUR'),
+  message: text('message'),
+  delivery_days: integer('delivery_days'),
+  status: varchar('status', { length: 20 }).default('pending'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
 export const missions = pgTable('missions', {
   id: serial('id').primaryKey(),
 
