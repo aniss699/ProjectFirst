@@ -90,8 +90,42 @@ async function initializeDatabase() {
         type TEXT DEFAULT 'info',
         priority INTEGER DEFAULT 1,
         is_active BOOLEAN DEFAULT true,
+        status TEXT DEFAULT 'active',
+        category TEXT,
+        budget INTEGER,
+        location TEXT,
+        user_id INTEGER REFERENCES users(id),
+        sponsored BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feed_feedback (
+        id SERIAL PRIMARY KEY,
+        announcement_id INTEGER REFERENCES announcements(id) NOT NULL,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        feedback_type TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feed_seen (
+        id SERIAL PRIMARY KEY,
+        announcement_id INTEGER REFERENCES announcements(id) NOT NULL,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        seen_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        announcement_id INTEGER REFERENCES announcements(id) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `);
 

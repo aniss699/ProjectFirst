@@ -152,59 +152,62 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   })
 }));
 
-export interface Announcement {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  budget?: number;
-  location?: string;
-  created_at: string;
-  updated_at: string;
-  user_id: number;
-  status: string;
-}
-
-export interface FeedFeedback {
-  id: number;
-  announcement_id: number;
-  user_id: number;
-  feedback_type: 'like' | 'dislike' | 'interested' | 'not_relevant';
-  created_at: string;
-}
-
-export interface FeedSeen {
-  id: number;
-  announcement_id: number;
-  user_id: number;
-  seen_at: string;
-}
-
-export interface InsertFeedFeedbackSchema {
-  announcement_id: number;
-  user_id: number;
-  feedback_type: 'like' | 'dislike' | 'interested' | 'not_relevant';
-}
-
-export interface InsertFeedSeenSchema {
-  announcement_id: number;
-  user_id: number;
-}
-
-export interface Favorites {
-  id: number;
-  user_id: number;
-  announcement_id: number;
-  created_at: string;
-}
+// Types are now inferred from the schema via InferSelectModel in shared/index.ts
+// This removes duplication and ensures type consistency
 
 // Zod schemas for validation
+export const insertUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  role: z.enum(['CLIENT', 'PRO']),
+  rating_mean: z.string().optional(),
+  rating_count: z.number().int().min(0).optional(),
+  profile_data: z.any().optional()
+});
+
+export const insertMissionSchema = z.object({
+  user_id: z.number().int().positive(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  location: z.string().optional(),
+  budget_min: z.number().int().min(0).optional(),
+  budget_max: z.number().int().min(0).optional(),
+  budget_value_cents: z.number().int().min(0).optional(),
+  urgency: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  status: z.enum(['draft', 'open', 'published', 'assigned', 'completed', 'cancelled']).optional(),
+  quality_target: z.enum(['basic', 'standard', 'premium', 'luxury']).optional()
+});
+
+export const insertBidSchema = z.object({
+  mission_id: z.number().int().positive(),
+  provider_id: z.number().int().positive(),
+  amount: z.string(),
+  timeline_days: z.number().int().min(1).optional(),
+  message: z.string().optional(),
+  score_breakdown: z.any().optional(),
+  is_leading: z.boolean().optional(),
+  status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).optional()
+});
+
+export const insertAnnouncementSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  type: z.enum(['info', 'warning', 'error', 'success']).optional(),
+  priority: z.number().int().min(1).optional(),
+  is_active: z.boolean().optional(),
+  status: z.enum(['active', 'completed', 'cancelled', 'draft']).optional(),
+  category: z.string().optional(),
+  budget: z.number().int().min(0).optional(),
+  location: z.string().optional(),
+  user_id: z.number().int().positive().optional(),
+  sponsored: z.boolean().optional()
+});
+
 export const insertFeedFeedbackSchema = z.object({
   announcement_id: z.number().int().positive(),
   user_id: z.number().int().positive(),
-  feedback_type: z.enum(['like', 'dislike', 'interested', 'not_relevant']),
-  action: z.enum(['save', 'skip', 'open', 'view']).optional(),
-  dwell_ms: z.number().int().min(0).optional()
+  feedback_type: z.enum(['like', 'dislike', 'interested', 'not_relevant'])
 });
 
 export const insertFeedSeenSchema = z.object({
