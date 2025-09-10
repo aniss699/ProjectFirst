@@ -175,7 +175,35 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
-    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    
+    // Select only existing columns from database
+    const allMissions = await db
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget: missions.budget,
+        budget_min: missions.budget_min,
+        budget_max: missions.budget_max,
+        location: missions.location,
+        urgency: missions.urgency,
+        status: missions.status,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        requirements: missions.requirements,
+        skills_required: missions.skills_required,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        remote_allowed: missions.remote_allowed
+      })
+      .from(missions)
+      .orderBy(desc(missions.created_at));
+    
     console.log(`📋 Found ${allMissions.length} missions in database`);
 
     // Transform missions to include required fields for MissionWithBids type
@@ -284,25 +312,59 @@ router.get('/:id', async (req, res) => {
 
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
       console.error('❌ API: Mission ID invalide:', missionId);
-      return res.status(400).json({ error: 'Mission ID invalide' });
+      return res.status(400).json({ 
+        error: 'Mission ID invalide',
+        details: 'L\'ID de mission est requis et ne peut pas être vide'
+      });
     }
 
-    // Convert missionId to integer for database query
+    // Convert missionId to integer for database query with better validation
     const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt) || missionIdInt <= 0) {
+    if (isNaN(missionIdInt) || missionIdInt <= 0 || !Number.isInteger(missionIdInt)) {
       console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
-      return res.status(400).json({ error: 'Mission ID doit être un nombre valide' });
+      return res.status(400).json({ 
+        error: 'Mission ID doit être un nombre entier valide',
+        received: missionId,
+        details: 'L\'ID doit être un nombre entier positif'
+      });
     }
 
+    // Select only existing columns from database
     const mission = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget: missions.budget,
+        budget_min: missions.budget_min,
+        budget_max: missions.budget_max,
+        location: missions.location,
+        urgency: missions.urgency,
+        status: missions.status,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        requirements: missions.requirements,
+        skills_required: missions.skills_required,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        remote_allowed: missions.remote_allowed
+      })
       .from(missions)
       .where(eq(missions.id, missionIdInt))
       .limit(1);
 
     if (mission.length === 0) {
       console.error('❌ API: Mission non trouvée:', missionId);
-      return res.status(404).json({ error: 'Mission non trouvée' });
+      return res.status(404).json({ 
+        error: 'Mission non trouvée',
+        missionId: missionIdInt,
+        details: 'Aucune mission trouvée avec cet ID'
+      });
     }
 
     // Fix: bids table uses project_id, not missionId
@@ -343,19 +405,49 @@ router.get('/users/:userId/missions', async (req, res) => {
 
     if (!userId || userId === 'undefined' || userId === 'null') {
       console.error('❌ Invalid user ID:', userId);
-      return res.status(400).json({ error: 'User ID invalide' });
+      return res.status(400).json({ 
+        error: 'User ID invalide',
+        details: 'L\'ID utilisateur est requis'
+      });
     }
 
     const userIdInt = parseInt(userId, 10);
-    if (isNaN(userIdInt)) {
+    if (isNaN(userIdInt) || userIdInt <= 0 || !Number.isInteger(userIdInt)) {
       console.error('❌ User ID is not a valid number:', userId);
-      return res.status(400).json({ error: 'User ID doit être un nombre' });
+      return res.status(400).json({ 
+        error: 'User ID doit être un nombre entier valide',
+        received: userId,
+        details: 'L\'ID utilisateur doit être un nombre entier positif'
+      });
     }
 
     console.log('🔍 Querying database: SELECT * FROM missions WHERE user_id =', userIdInt);
     
+    // Select only existing columns from database
     const userMissions = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        category: missions.category,
+        budget: missions.budget,
+        budget_min: missions.budget_min,
+        budget_max: missions.budget_max,
+        location: missions.location,
+        urgency: missions.urgency,
+        status: missions.status,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        requirements: missions.requirements,
+        skills_required: missions.skills_required,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        remote_allowed: missions.remote_allowed
+      })
       .from(missions)
       .where(eq(missions.user_id, userIdInt))
       .orderBy(desc(missions.created_at));
