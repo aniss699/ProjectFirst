@@ -136,8 +136,8 @@ export function getSkillSuggestions(role: "client" | "provider", keywords: strin
       level: (skillMapping[keyword] || 3) as 1|2|3|4|5
     }));
 }
-// Utilitaires pour la gestion des mots-clés
 
+// Utilitaires supplémentaires pour la gestion des mots-clés
 export function extractKeywords(text: string): string[] {
   if (!text) return [];
   

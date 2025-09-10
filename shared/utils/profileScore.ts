@@ -97,8 +97,8 @@ export function getMissingElements(p: Partial<AnyProfile>): Array<{
     return priorityOrder[b.priority] - priorityOrder[a.priority];
   });
 }
-// Utilitaires pour le calcul de score de profil
 
+// Utilitaires supplémentaires pour le calcul de score de profil
 export interface ProfileScoreFactors {
   completeness: number;
   activity: number;

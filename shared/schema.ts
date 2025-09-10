@@ -47,7 +47,13 @@ export const bids = pgTable('bids', {
 export const announcements = pgTable('announcements', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
-
+  content: text('content').notNull(),
+  type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
+  priority: integer('priority').default(1),
+  is_active: boolean('is_active').default(true),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
 
 // Relations entre les tables
 export const usersRelations = relations(users, ({ many }) => ({
@@ -73,11 +79,3 @@ export const bidsRelations = relations(bids, ({ one }) => ({
     references: [users.id]
   })
 }));
-
-  content: text('content').notNull(),
-  type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
-  priority: integer('priority').default(1),
-  is_active: boolean('is_active').default(true),
-  created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow()
-});
