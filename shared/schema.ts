@@ -1,5 +1,5 @@
 
-import { pgTable, serial, varchar, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 // ============================================
 // SCHÉMA SIMPLIFIÉ ET HARMONISÉ
@@ -49,5 +49,30 @@ export type NewUser = typeof users.$inferInsert;
 export type Mission = typeof missions.$inferSelect;
 export type NewMission = typeof missions.$inferInsert;
 
+// Table des événements AI (logs des interactions IA)
+export const aiEvents = pgTable('ai_events', {
+  id: varchar('id').primaryKey(),
+  phase: varchar('phase', { length: 50 }).notNull(),
+  provider: varchar('provider', { length: 100 }).notNull(),
+  model_family: varchar('model_family', { length: 50 }).notNull(),
+  model_name: varchar('model_name', { length: 100 }).notNull(),
+  allow_training: boolean('allow_training').notNull(),
+  input_redacted: jsonb('input_redacted'),
+  output: jsonb('output'),
+  confidence: varchar('confidence'),
+  tokens: integer('tokens'),
+  latency_ms: integer('latency_ms'),
+  provenance: varchar('provenance', { length: 100 }).notNull(),
+  prompt_hash: varchar('prompt_hash', { length: 64 }).notNull(),
+  accepted: boolean('accepted'),
+  rating: integer('rating'),
+  edits: text('edits'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
 export type Offer = typeof offers.$inferSelect;
 export type NewOffer = typeof offers.$inferInsert;
+
+export type AiEvent = typeof aiEvents.$inferSelect;
+export type NewAiEvent = typeof aiEvents.$inferInsert;
