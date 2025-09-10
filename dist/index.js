@@ -2128,8 +2128,8 @@ router.post("/", async (req, res) => {
       title: missionData.title,
       description: missionData.description,
       category: missionData.category || "developpement",
-      budget: missionData.budget ? parseInt(missionData.budget) : null,
-      location: missionData.location || null,
+      budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
+      location_raw: missionData.location || null,
       urgency: missionData.urgency || "medium",
       status: missionData.status || "published",
       created_at: /* @__PURE__ */ new Date(),
@@ -2138,15 +2138,18 @@ router.post("/", async (req, res) => {
       client_id: missionData.userId ? parseInt(missionData.userId) : null,
       // Pour compatibilité
       // Map additional fields properly
-      budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : missionData.budget ? parseInt(missionData.budget) : null,
-      budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : missionData.budget ? parseInt(missionData.budget) : null,
+      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : missionData.budget ? parseInt(missionData.budget) : null,
+      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : missionData.budget ? parseInt(missionData.budget) : null,
       deadline: missionData.deadline ? new Date(missionData.deadline) : null,
       tags: missionData.tags || [],
       requirements: missionData.requirements || null,
       skills_required: missionData.skills_required || [],
       is_team_mission: missionData.is_team_mission || false,
       team_size: missionData.team_size || 1,
-      remote_allowed: missionData.remote_allowed !== void 0 ? missionData.remote_allowed : true
+      remote_allowed: missionData.remote_allowed !== void 0 ? missionData.remote_allowed : true,
+      currency: missionData.currency || "USD",
+      city: missionData.city || null,
+      country: missionData.country || null
     };
     console.log("\u{1F4E4} Inserting mission with data:", JSON.stringify(missionToInsert, null, 2));
     console.log("\u{1F4E4} Attempting to insert mission with data:", JSON.stringify(missionToInsert, null, 2));
@@ -2174,8 +2177,8 @@ router.post("/", async (req, res) => {
           title: insertedMission.title,
           description: insertedMission.description,
           category: insertedMission.category || "general",
-          budget: insertedMission.budget?.toString() || insertedMission.budget_min?.toString() || "0",
-          location: insertedMission.location || "Remote",
+          budget: insertedMission.budget_value_cents?.toString() || insertedMission.budget_min_cents?.toString() || "0",
+          location: insertedMission.location_raw || "Remote",
           status: insertedMission.status || "open",
           clientId: insertedMission.user_id?.toString() || insertedMission.client_id?.toString() || "1",
           clientName: "Client",
@@ -2202,7 +2205,32 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all missions...");
-    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    const allMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).orderBy(desc(missions.created_at));
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mission,
@@ -2243,7 +2271,7 @@ router.get("/health", async (req, res) => {
 router.get("/debug", async (req, res) => {
   try {
     console.log("\u{1F50D} Mission debug endpoint called");
-    const testQuery = await db.select().from(missions).limit(1);
+    const testQuery = await db.select({ id: missions.id }).from(missions).limit(1);
     const dbInfo = {
       status: "connected",
       sampleMissions: testQuery.length,
@@ -2264,9 +2292,59 @@ router.get("/debug", async (req, res) => {
 router.get("/verify-sync", async (req, res) => {
   try {
     console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
-    const recentMissions = await db.select().from(missions).orderBy(desc(missions.created_at)).limit(5);
+    const recentMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).orderBy(desc(missions.created_at)).limit(5);
     const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const feedItems = await db.select().from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const feedItems = await db.select({
+      id: announcements2.id,
+      title: announcements2.title,
+      description: announcements2.description,
+      category: announcements2.category,
+      budget_value_cents: announcements2.budget_value_cents,
+      budget_min_cents: announcements2.budget_min_cents,
+      budget_max_cents: announcements2.budget_max_cents,
+      currency: announcements2.currency,
+      location_raw: announcements2.location_raw,
+      city: announcements2.city,
+      country: announcements2.country,
+      remote_allowed: announcements2.remote_allowed,
+      user_id: announcements2.user_id,
+      client_id: announcements2.client_id,
+      status: announcements2.status,
+      urgency: announcements2.urgency,
+      deadline: announcements2.deadline,
+      tags: announcements2.tags,
+      skills_required: announcements2.skills_required,
+      requirements: announcements2.requirements,
+      is_team_mission: announcements2.is_team_mission,
+      team_size: announcements2.team_size,
+      created_at: announcements2.created_at,
+      updated_at: announcements2.updated_at
+    }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
     const syncStatus = {
       totalMissions: recentMissions.length,
       totalFeedItems: feedItems.length,
@@ -2319,7 +2397,32 @@ router.get("/:id", async (req, res) => {
         details: "L'ID doit \xEAtre un nombre entier positif"
       });
     }
-    const mission = await db.select().from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
+    const mission = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (mission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId);
       return res.status(404).json({
@@ -2371,7 +2474,32 @@ router.get("/users/:userId/missions", async (req, res) => {
       });
     }
     console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
-    const userMissions = await db.select().from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+    const userMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      budget_min_cents: missions.budget_min_cents,
+      budget_max_cents: missions.budget_max_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
     console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
     userMissions.forEach((mission) => {
       console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
@@ -2382,8 +2510,8 @@ router.get("/users/:userId/missions", async (req, res) => {
       description: mission.description,
       excerpt: generateExcerpt(mission.description || "", 200),
       category: mission.category,
-      budget: mission.budget?.toString() || mission.budget_min?.toString() || "0",
-      location: mission.location,
+      budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || "0",
+      location: mission.location_raw,
       status: mission.status,
       urgency: mission.urgency,
       userId: mission.user_id?.toString(),
@@ -2462,7 +2590,7 @@ router.put("/:id", async (req, res) => {
         field: "description"
       });
     }
-    const existingMission = await db.select().from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
+    const existingMission = await db.select({ id: missions.id }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (existingMission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e pour modification:", missionId);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
@@ -2471,16 +2599,19 @@ router.put("/:id", async (req, res) => {
       title: updateData.title,
       description: updateData.description,
       category: updateData.category || existingMission[0].category,
-      budget: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget,
-      location: updateData.location || existingMission[0].location,
+      budget_value_cents: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget_value_cents,
+      location_raw: updateData.location || existingMission[0].location_raw,
       urgency: updateData.urgency || existingMission[0].urgency,
       status: updateData.status || existingMission[0].status,
       updated_at: /* @__PURE__ */ new Date(),
-      budget_min: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min,
-      budget_max: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max,
+      budget_min_cents: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min_cents,
+      budget_max_cents: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max_cents,
       deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
       tags: updateData.tags || existingMission[0].tags,
-      requirements: updateData.requirements || existingMission[0].requirements
+      requirements: updateData.requirements || existingMission[0].requirements,
+      currency: updateData.currency || existingMission[0].currency,
+      city: updateData.city || existingMission[0].city,
+      country: updateData.country || existingMission[0].country
     };
     console.log("\u270F\uFE0F API: Donn\xE9es de mise \xE0 jour:", JSON.stringify(missionToUpdate, null, 2));
     const updatedMission = await db.update(missions).set(missionToUpdate).where(eq2(missions.id, missionIdInt)).returning();
@@ -2514,7 +2645,7 @@ router.delete("/:id", async (req, res) => {
       console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
       return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
     }
-    const existingMission = await db.select().from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
+    const existingMission = await db.select({ id: missions.id }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (existingMission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e pour suppression:", missionId);
       return res.status(404).json({ error: "Mission non trouv\xE9e" });
