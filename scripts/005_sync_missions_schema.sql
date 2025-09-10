@@ -133,6 +133,34 @@ BEGIN
         RAISE NOTICE 'Colonne deadline ajoutée à la table missions';
     END IF;
 
+    -- Ajouter la colonne latitude si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'latitude') THEN
+        ALTER TABLE missions ADD COLUMN latitude DECIMAL(10, 8);
+        RAISE NOTICE 'Colonne latitude ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne longitude si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'longitude') THEN
+        ALTER TABLE missions ADD COLUMN longitude DECIMAL(11, 8);
+        RAISE NOTICE 'Colonne longitude ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne provider_id si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'provider_id') THEN
+        ALTER TABLE missions ADD COLUMN provider_id INTEGER REFERENCES users(id);
+        RAISE NOTICE 'Colonne provider_id ajoutée à la table missions';
+    END IF;
+
+    -- Ajouter la colonne excerpt si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'missions' AND column_name = 'excerpt') THEN
+        ALTER TABLE missions ADD COLUMN excerpt TEXT;
+        RAISE NOTICE 'Colonne excerpt ajoutée à la table missions';
+    END IF;
+
     -- Supprimer les anciennes colonnes budget_min_cents et budget_max_cents si elles existent
     IF EXISTS (SELECT 1 FROM information_schema.columns 
                WHERE table_name = 'missions' AND column_name = 'budget_min_cents') THEN

@@ -78,6 +78,9 @@ class MissionFlowVerifier {
         location: 'Paris, France', // Fallback pour l'ancienne colonne
         city: 'Paris',
         country: 'France',
+        postal_code: '75001', // Ajouté pour test
+        latitude: 48.8566, // Ajouté pour test
+        longitude: 2.3522, // Ajouté pour test
         remote_allowed: true,
         client_id: 1,
         urgency: 'medium',
