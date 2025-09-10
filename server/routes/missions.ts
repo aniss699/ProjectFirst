@@ -87,8 +87,6 @@ router.post('/', async (req, res) => {
       category: missionData.category || 'developpement',
       // Budget handling - ensure consistency
       budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
-      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : null,
-      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : null,
       currency: missionData.currency || 'EUR',
       // Location fields
       location_raw: missionData.location || null,
@@ -162,7 +160,7 @@ router.post('/', async (req, res) => {
           title: insertedMission.title,
           description: insertedMission.description,
           category: insertedMission.category || 'developpement',
-          budget: insertedMission.budget_value_cents?.toString() || insertedMission.budget_min_cents?.toString() || '0',
+          budget: insertedMission.budget_value_cents?.toString() || '0',
           location: insertedMission.location_raw || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
           clientId: insertedMission.user_id?.toString() || '1',
@@ -234,7 +232,7 @@ router.get('/', async (req, res) => {
       clientName: 'Client anonyme', // Default client name
       bids: [], // Empty bids array for now
       // Ensure budget consistency
-      budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || '0',
+      budget: mission.budget_value_cents?.toString() || '0',
       // Ensure location consistency
       location: mission.location_raw || mission.city || 'Remote'
     }));
@@ -533,8 +531,6 @@ router.get('/users/:userId/missions', async (req, res) => {
         description: missions.description,
         category: missions.category,
         budget_value_cents: missions.budget_value_cents,
-        budget_min_cents: missions.budget_min_cents,
-        budget_max_cents: missions.budget_max_cents,
         currency: missions.currency,
         location_raw: missions.location_raw,
         city: missions.city,
@@ -572,9 +568,7 @@ router.get('/users/:userId/missions', async (req, res) => {
       category: mission.category,
       // Budget - maintain consistency with database values
       budget_value_cents: mission.budget_value_cents,
-      budget_min_cents: mission.budget_min_cents,
-      budget_max_cents: mission.budget_max_cents,
-      budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || '0',
+      budget: mission.budget_value_cents?.toString() || '0',
       currency: mission.currency,
       // Location - full structure
       location_raw: mission.location_raw,
@@ -603,7 +597,6 @@ router.get('/users/:userId/missions', async (req, res) => {
       tags: mission.tags || [],
       skills_required: mission.skills_required || [],
       requirements: mission.requirements,
-      deliverables: mission.deliverables || [],
       bids: [] // We'll populate this separately if needed
     }));
 
@@ -711,13 +704,11 @@ router.put('/:id', async (req, res) => {
       title: updateData.title,
       description: updateData.description,
       category: updateData.category || existingMission[0].category,
-      budget_value_cents: updateData.budget ? parseInt(updateData.budget) : existingMission[0].budget_value_cents,
-      location_raw: updateData.location || existingMission[0].location_raw,
-      urgency: updateData.urgency || existingMission[0].urgency,
-      status: updateData.status || existingMission[0].status,
+      budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
+      location_raw: updateData.location || null,
+      urgency: updateData.urgency || 'medium',
+      status: updateData.status || 'published',
       updated_at: new Date(),
-      budget_min_cents: updateData.budget_min ? parseInt(updateData.budget_min) : existingMission[0].budget_min_cents,
-      budget_max_cents: updateData.budget_max ? parseInt(updateData.budget_max) : existingMission[0].budget_max_cents,
       deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
       tags: updateData.tags || existingMission[0].tags,
       requirements: updateData.requirements || existingMission[0].requirements,
