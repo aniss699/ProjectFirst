@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { MissionWithBids, Bid } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
 import { formatBudget, formatDate, getCategoryById } from '@/lib/categories';
 import { BidForm } from './bid-form';
@@ -56,7 +55,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
 
   // Fetch mission data avec gestion d'erreur améliorée
-  const { data: mission, isLoading, error } = useQuery<MissionWithBids>({
+  const { data: mission, isLoading, error } = useQuery<any>({
     queryKey: ['mission-detail', missionId],
     queryFn: async () => {
       if (!missionId) {
@@ -159,7 +158,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           <DialogDescription>Détails de la mission</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col min-h-0 max-h-[90vh]"></div>
+        <div className="flex flex-col min-h-0 max-h-[90vh]">
 
         {/* Header Mobile/Desktop */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
@@ -342,7 +341,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                             missionDescription={mission.description}
                             missionBudget={parseFloat(mission.budget || '0')}
                             missionCategory={mission.category}
-                            currentBid={{}}
+                            currentBid={{ price: 0, timeline: '', proposal: '' }}
                             providerProfile={{
                               rating: 4.5,
                               completedProjects: 25,
@@ -402,7 +401,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {sortedBids.map((bid: Bid, index: number) => (
+                      {sortedBids.map((bid: any, index: number) => (
                         <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
 
                           {/* Header offre */}
@@ -530,8 +529,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                         ))}
                       </div>
                     </div>
-                      </div>
-                    </div>
+                  </div>
                 </TabsContent>
               )}
             </div>
