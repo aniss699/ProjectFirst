@@ -322,14 +322,8 @@ export function buildMissionDetailResponse(
 }
 
 function formatBudgetDisplay(mission: Mission): string {
-  if (mission.budget_type === 'range' && mission.budget_min_cents && mission.budget_max_cents) {
-    return `${mission.budget_min_cents / 100} - ${mission.budget_max_cents / 100}€`;
-  }
-  if (mission.budget_type === 'fixed' && mission.budget_value_cents) {
+  if (mission.budget_value_cents) {
     return `${mission.budget_value_cents / 100}€`;
-  }
-  if (mission.budget_type === 'negotiable') {
-    return 'À négocier';
   }
   return 'Budget non spécifié';
 }

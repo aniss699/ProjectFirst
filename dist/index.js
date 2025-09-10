@@ -4586,16 +4586,14 @@ router9.get("/price-benchmark", async (req, res) => {
       }
     }
     const prices = await db4.select({
-      budget_min: announcements.budget_min,
-      budget_max: announcements.budget_max
+      budget_value_cents: announcements.budget_value_cents
     }).from(announcements).where(and2(
       eq6(announcements.category, category),
       eq6(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
-      if (p.budget_min) budgetValues.push(parseFloat(p.budget_min));
-      if (p.budget_max) budgetValues.push(parseFloat(p.budget_max));
+      if (p.budget_value_cents) budgetValues.push(p.budget_value_cents / 100);
     });
     if (budgetValues.length === 0) {
       return res.json({ median: 0, p25: 0, p75: 0 });

@@ -52,8 +52,7 @@ export const missions = pgTable('missions', {
   // Budget (centimes)
   budget_type: text('budget_type').notNull().default('fixed'), // 'fixed' | 'range' | 'negotiable'
   budget_value_cents: integer('budget_value_cents'),
-  budget_min_cents: integer('budget_min_cents'),
-  budget_max_cents: integer('budget_max_cents'),
+  
   currency: currencyCodeEnum('currency').notNull().default('EUR'),
 
   // Localisation

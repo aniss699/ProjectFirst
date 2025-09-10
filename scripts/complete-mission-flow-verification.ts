@@ -1,4 +1,3 @@
-
 import { eq, desc } from 'drizzle-orm';
 import { db } from '../server/database.js';
 import { missions, announcements, bids } from '../shared/schema.js';
@@ -39,7 +38,7 @@ class MissionFlowVerifier {
 
   private async step1_DatabaseConnection(): Promise<void> {
     const step = this.addStep('DATABASE_CONNECTION', 'running', 'Test de connexion à la base de données...');
-    
+
     try {
       const testQuery = await db.select({ count: missions.id }).from(missions).limit(1);
       step.status = 'success';
@@ -54,11 +53,11 @@ class MissionFlowVerifier {
 
   private async step2_CreateMission(): Promise<void> {
     const step = this.addStep('CREATE_MISSION', 'running', 'Création d\'une mission de test...');
-    
+
     try {
       // Vérifier quelles colonnes existent dans la table missions
       const existingColumns = await this.getExistingColumns('missions');
-      
+
       // Données de base obligatoires
       const baseMissionData = {
         title: `Mission Test ${Date.now()}`,
@@ -100,7 +99,7 @@ class MissionFlowVerifier {
       console.log('📝 Données à insérer:', Object.keys(testMissionData));
 
       const result = await db.insert(missions).values(testMissionData).returning();
-      
+
       if (!result || result.length === 0) {
         throw new Error('Aucune mission retournée après insertion');
       }
@@ -125,7 +124,7 @@ class MissionFlowVerifier {
         WHERE table_name = '${tableName}' 
         ORDER BY ordinal_position
       `;
-      
+
       const result = await db.execute(query);
       return result.rows.map(row => row.column_name);
     } catch (error) {
@@ -137,7 +136,7 @@ class MissionFlowVerifier {
 
   private async step3_VerifyDatabaseStorage(): Promise<void> {
     const step = this.addStep('VERIFY_DB_STORAGE', 'running', 'Vérification du stockage en base...');
-    
+
     try {
       if (!this.testMissionId) {
         throw new Error('Pas de mission ID disponible');
@@ -154,11 +153,11 @@ class MissionFlowVerifier {
       }
 
       const mission = storedMission[0];
-      
+
       // Vérifications des champs obligatoires
       const requiredFields = ['title', 'description', 'category', 'status'];
       const missingFields = requiredFields.filter(field => !mission[field as keyof typeof mission]);
-      
+
       if (missingFields.length > 0) {
         throw new Error(`Champs manquants: ${missingFields.join(', ')}`);
       }
@@ -183,7 +182,7 @@ class MissionFlowVerifier {
 
   private async step4_VerifyAPIEndpoints(): Promise<void> {
     const step = this.addStep('VERIFY_API_ENDPOINTS', 'running', 'Test des endpoints API...');
-    
+
     try {
       if (!this.testMissionId) {
         throw new Error('Pas de mission ID disponible');
@@ -194,7 +193,7 @@ class MissionFlowVerifier {
       if (!getAllResponse.ok) {
         throw new Error(`GET /api/missions failed: ${getAllResponse.status}`);
       }
-      
+
       const allMissions = await getAllResponse.json();
       if (!Array.isArray(allMissions)) {
         throw new Error('GET /api/missions ne retourne pas un array');
@@ -205,7 +204,7 @@ class MissionFlowVerifier {
       if (!getOneResponse.ok) {
         throw new Error(`GET /api/missions/${this.testMissionId} failed: ${getOneResponse.status}`);
       }
-      
+
       const mission = await getOneResponse.json();
       if (!mission.id || mission.id !== this.testMissionId) {
         throw new Error('Mission récupérée incorrecte');
@@ -214,7 +213,7 @@ class MissionFlowVerifier {
       // Vérifier structure de réponse
       const expectedFields = ['id', 'title', 'description', 'category', 'budget', 'bids'];
       const missingApiFields = expectedFields.filter(field => !(field in mission));
-      
+
       if (missingApiFields.length > 0) {
         throw new Error(`Champs API manquants: ${missingApiFields.join(', ')}`);
       }
@@ -235,7 +234,7 @@ class MissionFlowVerifier {
 
   private async step5_VerifyFeedSynchronization(): Promise<void> {
     const step = this.addStep('VERIFY_FEED_SYNC', 'running', 'Vérification synchronisation feed...');
-    
+
     try {
       if (!this.testMissionId) {
         throw new Error('Pas de mission ID disponible');
@@ -254,14 +253,14 @@ class MissionFlowVerifier {
 
       // Synchronisation manuelle avec le feed (adaptative selon colonnes disponibles)
       const missionData = mission[0];
-      
+
       // Budget adaptatif selon les colonnes disponibles
       const budgetValue = missionData.budget_value_cents || missionData.budget || 0;
       const budgetDisplay = budgetValue > 0 ? `${Math.round(budgetValue / 100)}€` : 'Budget non défini';
-      
+
       // Location adaptative
       const locationDisplay = missionData.location_raw || missionData.location || missionData.city || 'Remote';
-      
+
       const announcementData = {
         id: missionData.id,
         title: missionData.title,
@@ -292,7 +291,7 @@ class MissionFlowVerifier {
 
       // Vérifier dans le feed
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const feedItem = await db
         .select()
         .from(announcements)
@@ -319,7 +318,7 @@ class MissionFlowVerifier {
 
   private async step6_VerifyMarketplaceDisplay(): Promise<void> {
     const step = this.addStep('VERIFY_MARKETPLACE', 'running', 'Test affichage marketplace...');
-    
+
     try {
       // Test API marketplace
       const marketplaceResponse = await fetch('http://localhost:5000/api/missions');
@@ -337,7 +336,7 @@ class MissionFlowVerifier {
       // Vérifier les champs essentiels pour l'affichage
       const displayFields = ['title', 'description', 'budget', 'category', 'location'];
       const missingDisplayFields = displayFields.filter(field => !foundInMarketplace[field]);
-      
+
       if (missingDisplayFields.length > 0) {
         console.warn(`Champs d'affichage manquants: ${missingDisplayFields.join(', ')}`);
       }
@@ -358,7 +357,7 @@ class MissionFlowVerifier {
 
   private async step7_VerifyBidsSystem(): Promise<void> {
     const step = this.addStep('VERIFY_BIDS_SYSTEM', 'running', 'Test système d\'offres...');
-    
+
     try {
       if (!this.testMissionId) {
         throw new Error('Pas de mission ID disponible');
@@ -376,7 +375,7 @@ class MissionFlowVerifier {
       };
 
       const bidResult = await db.insert(bids).values(bidData).returning();
-      
+
       if (!bidResult || bidResult.length === 0) {
         throw new Error('Erreur création offre de test');
       }
@@ -408,7 +407,7 @@ class MissionFlowVerifier {
 
   private async step8_VerifyDataConsistency(): Promise<void> {
     const step = this.addStep('VERIFY_DATA_CONSISTENCY', 'running', 'Vérification cohérence des données...');
-    
+
     try {
       if (!this.testMissionId) {
         throw new Error('Pas de mission ID disponible');
@@ -459,7 +458,7 @@ class MissionFlowVerifier {
 
   private async step9_CleanupTestData(): Promise<void> {
     const step = this.addStep('CLEANUP_TEST_DATA', 'running', 'Nettoyage des données de test...');
-    
+
     try {
       if (!this.testMissionId) {
         step.status = 'success';
@@ -469,10 +468,10 @@ class MissionFlowVerifier {
 
       // Supprimer les offres de test
       await db.delete(bids).where(eq(bids.project_id, this.testMissionId));
-      
+
       // Supprimer de announcements
       await db.delete(announcements).where(eq(announcements.id, this.testMissionId));
-      
+
       // Supprimer la mission de test
       await db.delete(missions).where(eq(missions.id, this.testMissionId));
 
@@ -488,10 +487,10 @@ class MissionFlowVerifier {
   private addStep(name: string, status: 'running' | 'success' | 'error', message: string): TestStep {
     const step: TestStep = { name, status, message };
     this.steps.push(step);
-    
+
     const statusIcon = status === 'running' ? '🔄' : status === 'success' ? '✅' : '❌';
     console.log(`${statusIcon} ${name}: ${message}`);
-    
+
     return step;
   }
 

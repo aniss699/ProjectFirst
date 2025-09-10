@@ -49,6 +49,19 @@ BEGIN
     SET budget_value_cents = budget * 100 
     WHERE budget_value_cents IS NULL AND budget IS NOT NULL;
 
+    -- Supprimer les anciennes colonnes budget_min_cents et budget_max_cents si elles existent
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'missions' AND column_name = 'budget_min_cents') THEN
+        ALTER TABLE missions DROP COLUMN budget_min_cents;
+        RAISE NOTICE 'Colonne budget_min_cents supprimée de la table missions';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'missions' AND column_name = 'budget_max_cents') THEN
+        ALTER TABLE missions DROP COLUMN budget_max_cents;
+        RAISE NOTICE 'Colonne budget_max_cents supprimée de la table missions';
+    END IF;
+
     -- Vérifier les colonnes de budget
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'missions' AND column_name = 'budget_type') THEN
