@@ -150,7 +150,15 @@ console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
 app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
 // Route projects supprimée - remplacée par missions
-app.use('/api/projects', () => { throw new Error('Projects API is deprecated and has been replaced by Missions API'); });
+app.use('/api/projects', (req, res) => {
+  console.log(`⚠️ Deprecated projects API called: ${req.method} ${req.originalUrl}`);
+  res.status(410).json({
+    error: 'API Deprecated',
+    message: 'Projects API has been replaced by Missions API',
+    migration_guide: 'Use /api/missions instead of /api/projects',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Apply rate limiting to AI routes
 app.use('/api/ai/monitoring', monitoringRateLimit, aiMonitoringRoutes);
@@ -312,15 +320,34 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Global error handler
 app.use((error: any, req: any, res: any, next: any) => {
-  console.error('🚨 Global error handler:', error);
-  console.error('🚨 Request URL:', req.url);
-  console.error('🚨 Request method:', req.method);
-  console.error('🚨 Request body:', req.body);
+  console.error('🚨 Global error handler:', {
+    error: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    headers: req.headers,
+    timestamp: new Date().toISOString()
+  });
+
+  // Log to event logger if available
+  try {
+    const { eventLogger } = require('../apps/api/src/monitoring/event-logger.js');
+    eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
+      error_type: 'server_error',
+      error_message: error.message,
+      endpoint: req.originalUrl,
+      method: req.method
+    });
+  } catch (logError) {
+    console.warn('Could not log error event:', logError.message);
+  }
 
   res.status(500).json({
     error: 'Internal server error',
     details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    request_id: req.headers['x-request-id'] || 'unknown'
   });
 });
 

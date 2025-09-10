@@ -51,6 +51,38 @@ export class EventLogger {
   }
 
   /**
+   * Log d'événement d'erreur système
+   */
+  logErrorEvent(
+    error: Error,
+    userId: string,
+    sessionId: string,
+    context: any = {}
+  ): void {
+    const event: EventData = {
+      event_type: 'click', // Using existing type for error tracking
+      user_id: userId,
+      timestamp: new Date().toISOString(),
+      session_id: sessionId,
+      metadata: {
+        error_type: 'system_error',
+        error_message: error.message,
+        error_stack: error.stack,
+        context: context,
+        severity: 'high'
+      }
+    };
+
+    this.addToBuffer(event);
+    console.log('🚨 [ERROR_LOGGED]', JSON.stringify({
+      error: error.message,
+      user: userId,
+      session: sessionId,
+      timestamp: event.timestamp
+    }));
+  }
+
+  /**
    * Log d'événement utilisateur générique
    */
   logUserEvent(
