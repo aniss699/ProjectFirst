@@ -153,13 +153,13 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] h-[90vh] max-w-4xl p-0 gap-0 bg-gray-50 overflow-hidden rounded-xl max-h-screen">
+      <DialogContent className="w-[95vw] h-[90vh] max-w-4xl p-0 gap-0 bg-gray-50 rounded-xl overflow-hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>{mission.title}</DialogTitle>
           <DialogDescription>Détails de la mission</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col h-full min-h-0">
+        <div className="flex flex-col h-full">
 
         {/* Header Mobile/Desktop */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
@@ -249,11 +249,12 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             </TabsList>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden min-h-0">
+            <div className="flex-1 overflow-hidden">
 
               {/* Overview Tab */}
-              <TabsContent value="overview" className="m-0 h-full overflow-y-auto">
-                <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
+              <TabsContent value="overview" className="m-0 h-full">
+                <div className="h-full overflow-y-auto">
+                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
 
                   {/* Description */}
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
@@ -382,12 +383,14 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                       </div>
                     </div>
                   )}
+                    </div>
                   </div>
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent value="bids" className="m-0 h-full overflow-y-auto">
-                <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
+              <TabsContent value="bids" className="m-0 h-full">
+                <div className="h-full overflow-y-auto">
+                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
 
                   {sortedBids.length === 0 ? (
                     <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
@@ -478,13 +481,15 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                       ))}
                     </div>
                   )}
+                    </div>
                   </div>
               </TabsContent>
 
               {/* Team Tab */}
               {isTeamMission && (
-                <TabsContent value="team" className="m-0 h-full overflow-y-auto">
-                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
+                <TabsContent value="team" className="m-0 h-full">
+                  <div className="h-full overflow-y-auto">
+                    <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
                     <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
                       <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
                         <Target className="w-5 h-5" />
@@ -525,6 +530,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                         ))}
                       </div>
                     </div>
+                      </div>
                     </div>
                 </TabsContent>
               )}
