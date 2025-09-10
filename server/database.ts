@@ -17,12 +17,31 @@ const pool = new Pool({
 
 // Handle pool errors
 pool.on('error', (err) => {
-  console.error('Database pool error:', err);
+  console.error('❌ Database pool error:', {
+    message: err.message,
+    code: (err as any).code,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  });
 });
 
-pool.on('connect', () => {
+pool.on('connect', (client) => {
   console.log('✅ Database connection established');
 });
+
+// Test connection on startup
+async function testConnection() {
+  try {
+    const result = await pool.query('SELECT NOW() as current_time');
+    console.log('✅ Database connection test successful:', result.rows[0]);
+  } catch (error) {
+    console.error('❌ Database connection test failed:', {
+      message: (error as Error).message,
+      code: (error as any).code,
+      detail: (error as any).detail
+    });
+  }
+}
 
 // Create drizzle database instance
 export const db = drizzle(pool);
@@ -174,6 +193,7 @@ async function initializeDatabase() {
 
 // Initialize on import
 initializeDatabase();
+testConnection();
 
 // Log database configuration
 console.log('🔗 Database connection established:', {

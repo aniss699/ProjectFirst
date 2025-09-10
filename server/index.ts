@@ -332,27 +332,31 @@ app.use((error: any, req: any, res: any, next: any) => {
     url: req.url,
     method: req.method,
     body: req.body,
-    headers: req.headers,
+    query: req.query,
+    params: req.params,
     timestamp: new Date().toISOString()
   });
 
   // Log to event logger if available
-  try {
-    const eventLoggerModule = await import('../apps/api/src/monitoring/event-logger.js');
-    eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
-      error_type: 'server_error',
-      error_message: error.message,
-      endpoint: req.originalUrl,
-      method: req.method
-    });
-  } catch (logError) {
-    console.warn('Could not log error event:', logError instanceof Error ? logError.message : 'Unknown error');
-  }
+  Promise.resolve().then(async () => {
+    try {
+      const eventLoggerModule = await import('../apps/api/src/monitoring/event-logger.js');
+      eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || 'unknown', {
+        error_type: 'server_error',
+        error_message: error.message,
+        endpoint: req.originalUrl,
+        method: req.method
+      });
+    } catch (logError) {
+      console.warn('Could not log error event:', logError instanceof Error ? logError.message : 'Unknown error');
+    }
+  });
 
   if (!res.headersSent) {
     res.status(500).json({
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       timestamp: new Date().toISOString(),
       request_id: req.headers['x-request-id'] || 'unknown'
     });
