@@ -2202,29 +2202,7 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all missions...");
-    const allMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget: missions.budget,
-      budget_min: missions.budget_min,
-      budget_max: missions.budget_max,
-      location: missions.location,
-      urgency: missions.urgency,
-      status: missions.status,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      requirements: missions.requirements,
-      skills_required: missions.skills_required,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      remote_allowed: missions.remote_allowed
-    }).from(missions).orderBy(desc(missions.created_at));
+    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mission,
@@ -2240,6 +2218,26 @@ router.get("/", async (req, res) => {
   } catch (error) {
     console.error("\u274C Error fetching missions:", error);
     res.status(500).json({ error: "Failed to fetch missions" });
+  }
+});
+router.get("/health", async (req, res) => {
+  try {
+    console.log("\u{1F3E5} Mission health check endpoint called");
+    const healthInfo = {
+      status: "healthy",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "missions-api",
+      environment: process.env.NODE_ENV || "development"
+    };
+    console.log("\u{1F3E5} Health check passed:", healthInfo);
+    res.json(healthInfo);
+  } catch (error) {
+    console.error("\u274C Health check failed:", error);
+    res.status(500).json({
+      status: "unhealthy",
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
   }
 });
 router.get("/debug", async (req, res) => {
@@ -2301,7 +2299,7 @@ router.get("/:id", async (req, res) => {
   try {
     missionId = req.params.id;
     console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
-    if (missionId === "debug" || missionId === "verify-sync") {
+    if (missionId === "debug" || missionId === "verify-sync" || missionId === "health") {
       console.log("\u26A0\uFE0F API: Endpoint sp\xE9cial d\xE9tect\xE9, ignor\xE9 dans cette route:", missionId);
       return res.status(404).json({ error: "Endpoint non trouv\xE9" });
     }
@@ -2321,29 +2319,7 @@ router.get("/:id", async (req, res) => {
         details: "L'ID doit \xEAtre un nombre entier positif"
       });
     }
-    const mission = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget: missions.budget,
-      budget_min: missions.budget_min,
-      budget_max: missions.budget_max,
-      location: missions.location,
-      urgency: missions.urgency,
-      status: missions.status,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      requirements: missions.requirements,
-      skills_required: missions.skills_required,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      remote_allowed: missions.remote_allowed
-    }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
+    const mission = await db.select().from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (mission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId);
       return res.status(404).json({
@@ -2395,29 +2371,7 @@ router.get("/users/:userId/missions", async (req, res) => {
       });
     }
     console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
-    const userMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget: missions.budget,
-      budget_min: missions.budget_min,
-      budget_max: missions.budget_max,
-      location: missions.location,
-      urgency: missions.urgency,
-      status: missions.status,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      requirements: missions.requirements,
-      skills_required: missions.skills_required,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      remote_allowed: missions.remote_allowed
-    }).from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+    const userMissions = await db.select().from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
     console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
     userMissions.forEach((mission) => {
       console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
