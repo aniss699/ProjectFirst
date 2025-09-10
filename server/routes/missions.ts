@@ -467,7 +467,7 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Fix: bids table uses project_id, not missionId
+    // Fix: bids table uses project_id, not mission_id
     const bids = await db
       .select()
       .from(bidTable)
