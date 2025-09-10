@@ -150,6 +150,19 @@ args = "echo \"\""
 task = "shell.exec"
 args = "echo \"4. ✅ Test terminé - Vérifiez les résultats ci-dessus\""
 
+[[workflows.workflow]]
+name = "Test Cohérence Données"
+author = 47315380
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"🔍 Test de cohérence des données...\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "tsx scripts/test-data-consistency.ts"
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]

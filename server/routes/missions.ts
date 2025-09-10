@@ -80,31 +80,38 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Prepare mission data with proper field mapping
+    // Prepare mission data with proper field mapping and validation
     const missionToInsert = {
       title: missionData.title,
       description: missionData.description,
       category: missionData.category || 'developpement',
+      // Budget handling - ensure consistency
       budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
-      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : (missionData.budget ? parseInt(missionData.budget) : null),
-      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : (missionData.budget ? parseInt(missionData.budget) : null),
+      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : null,
+      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : null,
+      currency: missionData.currency || 'EUR',
+      // Location fields
       location_raw: missionData.location || null,
+      city: missionData.city || null,
+      country: missionData.country || 'France',
+      remote_allowed: missionData.remote_allowed !== undefined ? missionData.remote_allowed : true,
+      // Status and timing
       urgency: missionData.urgency || 'medium',
       status: missionData.status || 'published',
-      created_at: new Date(),
-      updated_at: new Date(),
+      deadline: missionData.deadline ? new Date(missionData.deadline) : null,
+      // User relationships - ensure consistency
       user_id: missionData.userId ? parseInt(missionData.userId) : null,
       client_id: missionData.userId ? parseInt(missionData.userId) : null,
-      deadline: missionData.deadline ? new Date(missionData.deadline) : null,
-      tags: missionData.tags || [],
-      requirements: missionData.requirements || null,
-      skills_required: missionData.skills_required || [],
+      // Team configuration
       is_team_mission: missionData.is_team_mission || false,
       team_size: missionData.team_size || 1,
-      remote_allowed: missionData.remote_allowed !== undefined ? missionData.remote_allowed : true,
-      currency: missionData.currency || 'USD',
-      city: missionData.city || null,
-      country: missionData.country || null,
+      // Metadata
+      tags: missionData.tags || [],
+      skills_required: missionData.skills_required || missionData.skillsRequired || [],
+      requirements: missionData.requirements || null,
+      // Timestamps
+      created_at: new Date(),
+      updated_at: new Date(),
     };
 
     console.log('📤 Inserting mission with data:', JSON.stringify(missionToInsert, null, 2));
@@ -225,7 +232,11 @@ router.get('/', async (req, res) => {
       excerpt: generateExcerpt(mission.description || '', 200),
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       clientName: 'Client anonyme', // Default client name
-      bids: [] // Empty bids array for now
+      bids: [], // Empty bids array for now
+      // Ensure budget consistency
+      budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || '0',
+      // Ensure location consistency
+      location: mission.location_raw || mission.city || 'Remote'
     }));
 
     console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
@@ -551,24 +562,48 @@ router.get('/users/:userId/missions', async (req, res) => {
       console.log('   📋 Mission:', mission.id, '| user_id:', mission.user_id, '| title:', mission.title);
     });
 
-    // Transform missions to match frontend interface
+    // Transform missions to match frontend interface with full consistency
     const missionsWithBids = userMissions.map(mission => ({
+      // Core fields - ensure exact mapping
       id: mission.id,
       title: mission.title,
       description: mission.description,
       excerpt: generateExcerpt(mission.description || '', 200),
       category: mission.category,
+      // Budget - maintain consistency with database values
+      budget_value_cents: mission.budget_value_cents,
+      budget_min_cents: mission.budget_min_cents,
+      budget_max_cents: mission.budget_max_cents,
       budget: mission.budget_value_cents?.toString() || mission.budget_min_cents?.toString() || '0',
-      location: mission.location_raw,
+      currency: mission.currency,
+      // Location - full structure
+      location_raw: mission.location_raw,
+      location: mission.location_raw || mission.city || 'Remote',
+      city: mission.city,
+      country: mission.country,
+      remote_allowed: mission.remote_allowed,
+      // Status and metadata
       status: mission.status,
       urgency: mission.urgency,
+      // User relationships - preserve exact values
+      user_id: mission.user_id,
+      client_id: mission.client_id,
       userId: mission.user_id?.toString(),
       userName: 'Moi', // Since it's the user's own missions
+      // Team configuration
+      is_team_mission: mission.is_team_mission,
+      team_size: mission.team_size,
+      // Timestamps - consistent formatting
+      created_at: mission.created_at,
+      updated_at: mission.updated_at,
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       updatedAt: mission.updated_at?.toISOString(),
       deadline: mission.deadline?.toISOString(),
+      // Arrays and metadata
       tags: mission.tags || [],
+      skills_required: mission.skills_required || [],
       requirements: mission.requirements,
+      deliverables: mission.deliverables || [],
       bids: [] // We'll populate this separately if needed
     }));
 
