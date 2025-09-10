@@ -275,7 +275,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     }
   };
 
-  
+
 
   // Animation d'entrée pour chaque étape
   useEffect(() => {
@@ -285,7 +285,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     return () => clearTimeout(timer);
   }, [currentStep]);
 
-  
+
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
@@ -717,8 +717,6 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             )}
           </div>
 
-          
-
           {/* Intégration IA Enhancement */}
           <div className="mt-6">
             <SimpleAIEnhancement
@@ -777,7 +775,15 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <Button 
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
               disabled={!projectData.title.trim() || !projectData.description.trim()}
-              onClick={() => setCurrentStep(4)}
+              onClick={() => {
+                // Si le mode équipe est activé, on passe directement à la soumission
+                // Sinon, on passe à l'étape localisation (qui est maintenant intégrée à l'étape 3)
+                if (isTeamMode) {
+                  createMission(); // Appel direct pour le mode équipe
+                } else {
+                  setCurrentStep(4); // Passer à la nouvelle étape 4 (qui était avant la localisation)
+                }
+              }}
             >
               <ChevronRight className="w-4 h-4 mr-2" />
               Étape suivante
@@ -788,148 +794,8 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
-  // Étape 4: Géolocalisation
-  const renderStep4 = () => {
-    return (
-      <div className="space-y-6">
-        <div className="text-center space-y-2 animate-fade-in">
-          <h2 className="text-2xl font-bold text-gray-900 animate-bounce-in progressive-flow-title">
-            Localisation du projet
-          </h2>
-          <p className="text-gray-600 animate-slide-up progressive-flow-description">
-            Indiquez si votre projet nécessite une intervention sur site ou peut être réalisé à distance
-          </p>
-        </div>
 
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Choix: Projet sur site ou à distance */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card 
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                !projectData.needsLocation ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-green-50/30'
-              }`}
-              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: false }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Travail à distance</h3>
-                <p className="text-sm text-gray-600">
-                  Le prestataire peut travailler depuis n'importe où
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                projectData.needsLocation ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-blue-50/30'
-              }`}
-              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: true }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Intervention sur site</h3>
-                <p className="text-sm text-gray-600">
-                  Le prestataire doit se déplacer à une adresse spécifique
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Carte interactive si intervention sur site */}
-          {projectData.needsLocation && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Où se situe votre projet ?
-              </h3>
-
-              <InteractiveMap
-                center={projectData.location.lat && projectData.location.lng 
-                  ? [projectData.location.lat, projectData.location.lng] 
-                  : [48.8566, 2.3522]
-                }
-                radius={projectData.location.radius}
-                onLocationSelect={(lat, lng, address) => {
-                  setProjectData(prev => ({
-                    ...prev,
-                    location: {
-                      ...prev.location,
-                      lat,
-                      lng,
-                      address
-                    }
-                  }));
-                }}
-                showProviders={true}
-                className="h-96"
-              />
-
-              {projectData.location.address && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Adresse sélectionnée: {projectData.location.address}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Rayon de recherche (km)
-                </label>
-                <select 
-                  value={projectData.location.radius}
-                  onChange={(e) => setProjectData(prev => ({
-                    ...prev,
-                    location: { ...prev.location, radius: parseInt(e.target.value) }
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={20}>20 km</option>
-                  <option value={50}>50 km</option>
-                  <option value={100}>100 km</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={() => setCurrentStep(3)}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Retour
-          </Button>
-          <Button 
-            onClick={createMission}
-            disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
-            className="min-w-[200px]"
-          >
-            {isCreating ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                Création en cours...
-              </div>
-            ) : (
-              <>
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Créer ma mission
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
