@@ -1,3 +1,4 @@
+
 import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, pgEnum } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -169,36 +170,6 @@ export const announcements = pgTable('announcements', {
 });
 
 // ============================================
-// SCHEMAS ZOD
-// ============================================
-
-export const insertMissionSchema = createInsertSchema(missions, {
-  title: z.string().min(3).max(500),
-  description: z.string().min(10),
-  budget_value_cents: z.number().int().positive().optional(),
-  budget_min_cents: z.number().int().positive().optional(),
-  budget_max_cents: z.number().int().positive().optional(),
-  team_size: z.number().int().positive().default(1),
-  deadline: z.string().datetime().optional()
-});
-
-export const selectMissionSchema = createSelectSchema(missions);
-
-export const insertBidSchema = createInsertSchema(bids, {
-  amount_cents: z.number().int().positive(),
-  timeline_days: z.number().int().positive(),
-  message: z.string().min(10)
-});
-
-export const insertFeedFeedbackSchema = createInsertSchema(feedFeedback, {
-  action: z.enum(['view', 'click', 'apply', 'save', 'skip']),
-  dwell_ms: z.number().int().positive().optional()
-});
-
-export const insertFeedSeenSchema = createInsertSchema(feedSeen);
-export const insertFavoriteSchema = createInsertSchema(favorites);
-
-// ============================================
 // TABLES FEED & AI EVENTS
 // ============================================
 
@@ -237,6 +208,36 @@ export const favorites = pgTable('favorites', {
   announcement_id: integer('announcement_id').notNull().references(() => announcements.id, { onDelete: 'cascade' }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
+
+// ============================================
+// SCHEMAS ZOD (APRÈS LES TABLES)
+// ============================================
+
+export const insertMissionSchema = createInsertSchema(missions, {
+  title: z.string().min(3).max(500),
+  description: z.string().min(10),
+  budget_value_cents: z.number().int().positive().optional(),
+  budget_min_cents: z.number().int().positive().optional(),
+  budget_max_cents: z.number().int().positive().optional(),
+  team_size: z.number().int().positive().default(1),
+  deadline: z.string().datetime().optional()
+});
+
+export const selectMissionSchema = createSelectSchema(missions);
+
+export const insertBidSchema = createInsertSchema(bids, {
+  amount_cents: z.number().int().positive(),
+  timeline_days: z.number().int().positive(),
+  message: z.string().min(10)
+});
+
+export const insertFeedFeedbackSchema = createInsertSchema(feedFeedback, {
+  action: z.enum(['view', 'click', 'apply', 'save', 'skip']),
+  dwell_ms: z.number().int().positive().optional()
+});
+
+export const insertFeedSeenSchema = createInsertSchema(feedSeen);
+export const insertFavoriteSchema = createInsertSchema(favorites);
 
 // ============================================
 // TYPES TYPESCRIPT
