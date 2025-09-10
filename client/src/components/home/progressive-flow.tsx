@@ -152,9 +152,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
         }
       } else {
         // Mode mission simple
-        const budgetFormatted = typeof projectData.budget === 'string' 
-          ? projectData.budget 
-          : projectData.budget?.toString() || '';
+        const budgetFormatted = projectData.budget ? projectData.budget.toString() : '';
 
         const dynamicFieldsText = projectData.dynamicFields && Object.keys(projectData.dynamicFields).length > 0
           ? Object.entries(projectData.dynamicFields)
@@ -212,7 +210,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
       console.error('Erreur création mission:', error);
       toast({
         title: 'Erreur de création',
-        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
+        description: (error as Error).message || 'Impossible de créer la mission. Vérifiez votre connexion.',
         variant: 'destructive',
       });
     } finally {
@@ -797,7 +795,8 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
                 {serviceType === 'mise-en-relation' ? 'Budget consultation (optionnel)' : 'Budget indicatif (optionnel)'}
               </label>
               <Input
-                placeholder={serviceType === 'mise-en-relation' ? "Ex: 200 - 500 €/heure" : "Ex: 5 000 - 10 000 €"}
+                type="number"
+                placeholder="Ex: 5000"
                 value={projectData.budget}
                 onChange={(e) => setProjectData(prev => ({ ...prev, budget: e.target.value }))}
               />
@@ -860,7 +859,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
               description={projectData.description}
               category={selectedCategory}
               onPriceSuggestion={(priceSuggestion) => {
-                const suggestedBudget = `${priceSuggestion.minPrice} - ${priceSuggestion.maxPrice} €`;
+                const suggestedBudget = priceSuggestion.maxPrice.toString();
                 setProjectData(prev => ({ ...prev, budget: suggestedBudget }));
                 setAiSuggestions({ type: 'pricing', data: priceSuggestion });
                 setShowFeedbackButtons(true);
@@ -909,12 +908,21 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             </Button>
 
             <Button 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
-              disabled={!projectData.title.trim() || !projectData.description.trim()}
-              onClick={() => setCurrentStep(4)}
+              onClick={createMission}
+              disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none min-w-[200px]"
             >
-              <ChevronRight className="w-4 h-4 mr-2" />
-              Étape suivante
+              {isCreating ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  Création en cours...
+                </div>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Créer ma mission
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -922,148 +930,8 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
     );
   };
 
-  // Étape 4: Géolocalisation
-  const renderStep4 = () => {
-    return (
-      <div className="space-y-6">
-        <div className="text-center space-y-2 animate-fade-in">
-          <h2 className="text-2xl font-bold text-gray-900 animate-bounce-in progressive-flow-title">
-            Localisation du projet
-          </h2>
-          <p className="text-gray-600 animate-slide-up progressive-flow-description">
-            Indiquez si votre projet nécessite une intervention sur site ou peut être réalisé à distance
-          </p>
-        </div>
 
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Choix: Projet sur site ou à distance */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card 
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                !projectData.needsLocation ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-green-50/30'
-              }`}
-              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: false }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Travail à distance</h3>
-                <p className="text-sm text-gray-600">
-                  Le prestataire peut travailler depuis n'importe où
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                projectData.needsLocation ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-blue-50/30'
-              }`}
-              onClick={() => setProjectData(prev => ({ ...prev, needsLocation: true }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Intervention sur site</h3>
-                <p className="text-sm text-gray-600">
-                  Le prestataire doit se déplacer à une adresse spécifique
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Carte interactive si intervention sur site */}
-          {projectData.needsLocation && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Où se situe votre projet ?
-              </h3>
-
-              <InteractiveMap
-                center={projectData.location.lat && projectData.location.lng 
-                  ? [projectData.location.lat, projectData.location.lng] 
-                  : [48.8566, 2.3522]
-                }
-                radius={projectData.location.radius}
-                onLocationSelect={(lat, lng, address) => {
-                  setProjectData(prev => ({
-                    ...prev,
-                    location: {
-                      ...prev.location,
-                      lat,
-                      lng,
-                      address
-                    }
-                  }));
-                }}
-                showProviders={true}
-                className="h-96"
-              />
-
-              {projectData.location.address && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Adresse sélectionnée: {projectData.location.address}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Rayon de recherche (km)
-                </label>
-                <select 
-                  value={projectData.location.radius}
-                  onChange={(e) => setProjectData(prev => ({
-                    ...prev,
-                    location: { ...prev.location, radius: parseInt(e.target.value) }
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={20}>20 km</option>
-                  <option value={50}>50 km</option>
-                  <option value={100}>100 km</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={() => setCurrentStep(3)}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Retour
-          </Button>
-          <Button 
-            onClick={createMission}
-            disabled={isCreating || !projectData.title.trim() || !projectData.description.trim()}
-            className="min-w-[200px]"
-          >
-            {isCreating ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                Création en cours...
-              </div>
-            ) : (
-              <>
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Créer ma mission
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3, renderStep4];
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
@@ -1077,10 +945,10 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 5
+                Étape {currentStep + 1} sur 4
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 5) * 100)}%
+                {Math.round(((currentStep + 1) / 4) * 100)}%
               </span>
             </div>
 
@@ -1088,7 +956,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 5) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
@@ -1097,7 +965,7 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
             {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
-              {[1, 2, 3, 4, 5].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     step <= currentStep + 1 
