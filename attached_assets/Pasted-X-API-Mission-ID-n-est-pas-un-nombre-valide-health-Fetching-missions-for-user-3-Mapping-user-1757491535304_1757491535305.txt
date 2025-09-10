@@ -1,0 +1,44 @@
+X API: Mission ID n'est pas un nombre valide: health & Fetching missions for user: 3
+• Mapping: userId = 3 →> user_id filter: 3
+• Querying database: SELECT * FROM missions WHERE user_id = 3
+X Error fetching user missions: TypeError: Cannot convert undefine d or null to object
+at Function.entries (<anonymous>)
+at orderSelectedFields (file:///home/runner/workspace/node_modu
+les/drizzle-orm/utils.js:53:17)
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils
+•js: 63:22
+at Array. reduce (<anonymous>)
+at orderSelectedFields (file:///home/runner/workspace/node_modu
+les/drizzle-orm/utils.js:53:33)
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-co
+re/query-builders/select.js:684:26
+at Object.startActiveSpan (file:///home/runner/workspace/node_m
+odules/drizzle-orm/tracing.js:8:14)
+at PgSelectBase._prepare (file:///home/runner/workspace/node_mo
+dules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-co
+re/query-builders/select.js:708:19
+at Object.startActiveSpan (file:///home/runner/workspace/node_m
+odules/drizzle-orm/tracing.js:8:14)
+& Fetching missions for user: 3
+• Mapping: userId = 3 →> user_id filter: 3
+Querying database: SELECT * FROM missions WHERE user_id = 3
+X Error fetching user missions: TypeError: Cannot convert undefine d or null to object
+at Function.entries (<anonymous>)
+at orderSelectedFields (file:///home/runner/workspace/node_modu
+les/drizzle-orm/utils.js:53:17)
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils
+•js: 63:22
+at Array. reduce (<anonymous>)
+at orderSelectedFields (file:///home/runner/workspace/node_modu
+les/drizzle-orm/utils.js:53:33)
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-co
+re/query-builders/select.js: 684:26
+at Object.startActiveSpan (file:///home/runner/workspace/node_m
+odules/drizzle-orm/tracing.js:8:14)
+at PgSelectBase._prepare (file:///home/runner/workspace/node_mo
+dules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-co
+re/query-builders/select.js:708:19
+at Object.startActiveSpan (file:///home/runner/workspace/node_m
+odules/drizzle-orm/tracing.js:8:14)

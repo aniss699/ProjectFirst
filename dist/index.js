@@ -2202,7 +2202,29 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     console.log("\u{1F4CB} Fetching all missions...");
-    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    const allMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget: missions.budget,
+      budget_min: missions.budget_min,
+      budget_max: missions.budget_max,
+      location: missions.location,
+      urgency: missions.urgency,
+      status: missions.status,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      requirements: missions.requirements,
+      skills_required: missions.skills_required,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      remote_allowed: missions.remote_allowed
+    }).from(missions).orderBy(desc(missions.created_at));
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mission,
@@ -2285,17 +2307,50 @@ router.get("/:id", async (req, res) => {
     }
     if (!missionId || missionId === "undefined" || missionId === "null") {
       console.error("\u274C API: Mission ID invalide:", missionId);
-      return res.status(400).json({ error: "Mission ID invalide" });
+      return res.status(400).json({
+        error: "Mission ID invalide",
+        details: "L'ID de mission est requis et ne peut pas \xEAtre vide"
+      });
     }
     const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt) || missionIdInt <= 0) {
+    if (isNaN(missionIdInt) || missionIdInt <= 0 || !Number.isInteger(missionIdInt)) {
       console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
-      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre valide" });
+      return res.status(400).json({
+        error: "Mission ID doit \xEAtre un nombre entier valide",
+        received: missionId,
+        details: "L'ID doit \xEAtre un nombre entier positif"
+      });
     }
-    const mission = await db.select().from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
+    const mission = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget: missions.budget,
+      budget_min: missions.budget_min,
+      budget_max: missions.budget_max,
+      location: missions.location,
+      urgency: missions.urgency,
+      status: missions.status,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      requirements: missions.requirements,
+      skills_required: missions.skills_required,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      remote_allowed: missions.remote_allowed
+    }).from(missions).where(eq2(missions.id, missionIdInt)).limit(1);
     if (mission.length === 0) {
       console.error("\u274C API: Mission non trouv\xE9e:", missionId);
-      return res.status(404).json({ error: "Mission non trouv\xE9e" });
+      return res.status(404).json({
+        error: "Mission non trouv\xE9e",
+        missionId: missionIdInt,
+        details: "Aucune mission trouv\xE9e avec cet ID"
+      });
     }
     const bids2 = await db.select().from(bids).where(eq2(bids.project_id, missionIdInt));
     const result = {
@@ -2325,15 +2380,44 @@ router.get("/users/:userId/missions", async (req, res) => {
     console.log("\u{1F517} Mapping: userId =", userId, "-> user_id filter:", userId);
     if (!userId || userId === "undefined" || userId === "null") {
       console.error("\u274C Invalid user ID:", userId);
-      return res.status(400).json({ error: "User ID invalide" });
+      return res.status(400).json({
+        error: "User ID invalide",
+        details: "L'ID utilisateur est requis"
+      });
     }
     const userIdInt = parseInt(userId, 10);
-    if (isNaN(userIdInt)) {
+    if (isNaN(userIdInt) || userIdInt <= 0 || !Number.isInteger(userIdInt)) {
       console.error("\u274C User ID is not a valid number:", userId);
-      return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
+      return res.status(400).json({
+        error: "User ID doit \xEAtre un nombre entier valide",
+        received: userId,
+        details: "L'ID utilisateur doit \xEAtre un nombre entier positif"
+      });
     }
     console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
-    const userMissions = await db.select().from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+    const userMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget: missions.budget,
+      budget_min: missions.budget_min,
+      budget_max: missions.budget_max,
+      location: missions.location,
+      urgency: missions.urgency,
+      status: missions.status,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      requirements: missions.requirements,
+      skills_required: missions.skills_required,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      remote_allowed: missions.remote_allowed
+    }).from(missions).where(eq2(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
     console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
     userMissions.forEach((mission) => {
       console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
