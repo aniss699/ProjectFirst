@@ -79,3 +79,53 @@ export const bidsRelations = relations(bids, ({ one }) => ({
     references: [users.id]
   })
 }));
+
+export interface Announcement {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  budget?: number;
+  location?: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  status: string;
+}
+
+export interface FeedFeedback {
+  id: number;
+  announcement_id: number;
+  user_id: number;
+  feedback_type: 'like' | 'dislike' | 'interested' | 'not_relevant';
+  created_at: string;
+}
+
+export interface FeedSeen {
+  id: number;
+  announcement_id: number;
+  user_id: number;
+  seen_at: string;
+}
+
+export interface InsertFeedFeedbackSchema {
+  announcement_id: number;
+  user_id: number;
+  feedback_type: 'like' | 'dislike' | 'interested' | 'not_relevant';
+}
+
+export interface InsertFeedSeenSchema {
+  announcement_id: number;
+  user_id: number;
+}
+
+export interface Favorites {
+  id: number;
+  user_id: number;
+  announcement_id: number;
+  created_at: string;
+}
+
+// Export types that might be used elsewhere
+export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
+export type AnnouncementStatus = 'active' | 'completed' | 'cancelled' | 'draft';
