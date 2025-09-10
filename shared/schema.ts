@@ -1,5 +1,6 @@
 import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { z } from 'zod';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -51,8 +52,36 @@ export const announcements = pgTable('announcements', {
   type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
   priority: integer('priority').default(1),
   is_active: boolean('is_active').default(true),
+  status: text('status').$type<'active' | 'completed' | 'cancelled' | 'draft'>().default('active'),
+  category: text('category'),
+  budget: integer('budget'),
+  location: text('location'),
+  user_id: integer('user_id').references(() => users.id),
+  sponsored: boolean('sponsored').default(false),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const feedFeedback = pgTable('feed_feedback', {
+  id: serial('id').primaryKey(),
+  announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  feedback_type: text('feedback_type').$type<'like' | 'dislike' | 'interested' | 'not_relevant'>().notNull(),
+  created_at: timestamp('created_at').defaultNow()
+});
+
+export const feedSeen = pgTable('feed_seen', {
+  id: serial('id').primaryKey(),
+  announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  seen_at: timestamp('seen_at').defaultNow()
+});
+
+export const favorites = pgTable('favorites', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  announcement_id: integer('announcement_id').references(() => announcements.id).notNull(),
+  created_at: timestamp('created_at').defaultNow()
 });
 
 // Relations entre les tables
@@ -76,6 +105,49 @@ export const bidsRelations = relations(bids, ({ one }) => ({
   }),
   provider: one(users, {
     fields: [bids.provider_id],
+    references: [users.id]
+  })
+}));
+
+export const announcementsRelations = relations(announcements, ({ one, many }) => ({
+  user: one(users, {
+    fields: [announcements.user_id],
+    references: [users.id]
+  }),
+  feedbacks: many(feedFeedback),
+  seenBy: many(feedSeen),
+  favorites: many(favorites)
+}));
+
+export const feedFeedbackRelations = relations(feedFeedback, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [feedFeedback.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [feedFeedback.user_id],
+    references: [users.id]
+  })
+}));
+
+export const feedSeenRelations = relations(feedSeen, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [feedSeen.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [feedSeen.user_id],
+    references: [users.id]
+  })
+}));
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [favorites.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [favorites.user_id],
     references: [users.id]
   })
 }));
@@ -125,6 +197,25 @@ export interface Favorites {
   announcement_id: number;
   created_at: string;
 }
+
+// Zod schemas for validation
+export const insertFeedFeedbackSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive(),
+  feedback_type: z.enum(['like', 'dislike', 'interested', 'not_relevant']),
+  action: z.enum(['save', 'skip', 'open', 'view']).optional(),
+  dwell_ms: z.number().int().min(0).optional()
+});
+
+export const insertFeedSeenSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive()
+});
+
+export const insertFavoritesSchema = z.object({
+  user_id: z.number().int().positive(),
+  announcement_id: z.number().int().positive()
+});
 
 // Export types that might be used elsewhere
 export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
