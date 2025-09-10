@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { eq, desc } from 'drizzle-orm';
 import { db } from '../database.js';
@@ -12,7 +11,7 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
   const truncated = description.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(' ');
-  
+
   if (lastSpace > maxLength * 0.6) {
     return truncated.substring(0, lastSpace).trim() + '...';
   }

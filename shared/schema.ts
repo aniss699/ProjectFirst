@@ -1,4 +1,3 @@
-
 import { pgTable, serial, varchar, timestamp, text, integer, decimal, boolean, jsonb, pgEnum } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -40,27 +39,27 @@ export const users = pgTable('users', {
 // Table missions simplifiée avec seulement les colonnes existantes
 export const missions = pgTable('missions', {
   id: serial('id').primaryKey(),
-  
+
   // Contenu de base
   title: text('title').notNull(),
   description: text('description').notNull(),
-  
+
   // Catégorisation basique
   category: text('category').notNull().default('developpement'),
-  
+
   // Budget simplifié (en centimes pour EUR)
   budget: integer('budget').default(0), // Budget en centimes
   currency: text('currency').default('EUR'),
-  
+
   // Localisation basique
   location: text('location'),
-  
+
   // Relations essentielles
   user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  
+
   // Statut
   status: text('status').notNull().default('published'),
-  
+
   // Audit
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
@@ -70,46 +69,46 @@ export const bids = pgTable('bids', {
   id: serial('id').primaryKey(),
   mission_id: integer('mission_id').notNull().references(() => missions.id, { onDelete: 'cascade' }),
   provider_id: integer('provider_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  
+
   // Proposition
   amount_cents: integer('amount_cents').notNull(),
   currency: text('currency').notNull().default('EUR'),
   timeline_days: integer('timeline_days').notNull(),
   message: text('message').notNull(),
-  
+
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 
 // Table announcements pour le feed (structure simple)
 export const announcements = pgTable('announcements', {
   id: integer('id').primaryKey(), // = mission.id
-  
+
   // Contenu feed
   title: text('title').notNull(),
   description: text('description').notNull(),
   excerpt: text('excerpt').notNull(),
-  
+
   // Catégorisation
   category: text('category').notNull(),
-  
+
   // Budget affichage
   budget_display: text('budget_display').notNull(),
   budget_value: integer('budget_value').default(0),
   currency: text('currency').default('EUR'),
-  
+
   // Localisation
   location_display: text('location_display'),
-  
+
   // Client
   client_id: integer('client_id').notNull(),
   client_display_name: text('client_display_name').notNull(),
-  
+
   // Stats
   bids_count: integer('bids_count').default(0),
-  
+
   // Status
   status: text('status').notNull().default('active'),
-  
+
   // Audit
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
