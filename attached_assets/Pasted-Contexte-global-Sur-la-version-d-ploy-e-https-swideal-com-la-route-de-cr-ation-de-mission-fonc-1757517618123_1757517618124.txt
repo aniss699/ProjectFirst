@@ -1,0 +1,88 @@
+Contexte global
+- Sur la version déployée (https://swideal.com) la route de création de mission fonctionne côté serveur (pas d’erreur visible côté client) mais :
+  • parfois aucun id n’est renvoyé à la fin du processus,
+  • la mission créée n’apparaît sur aucune page (listing / marketplace / recherche).
+- Analyse initiale : import dynamique défaillant (MissionCreator), imports manquants (db / missions), logs insuffisants, pas de validation d’entrée, absence de réponse ID, possibles problèmes d’indexation asynchrone, cache/CDN ou DB multi-environnements.
+
+Objectif
+Fournir et appliquer une **solution robuste et définitive** qui garantit :
+1. La création de mission écrit dans la bonne base de données,
+2. Le client reçoit toujours une réponse explicite contenant l’ID (201 { id }),
+3. La mission apparaît immédiatement en listing public si approprié (ou documenter le workflow si indexation async),
+4. Les erreurs sont traçables (logs structurés), et il existe des tests et un plan de rollback.
+
+Livrables attendus (format requis)
+- PR / commit patch complet appliqué sur la branche de déploiement (ou instructions `git apply`), contenant :
+  1) Controller / handler remplacé (Node/Express + pg) qui :
+     - fait une validation stricte d’entrée,
+     - insère en transaction et commit,
+     - renvoie `201 { ok: true, id }` en cas de succès,
+     - logge à chaque étape (info/debug/warn/error) avec request_id,
+     - fallback si MissionCreator import échoue (insert direct).
+  2) Migration SQL (ou script) : s’assurer que la table `missions` a les colonnes recommandées (id, title, description, excerpt, category, owner_id, published, visible, status, created_at, updated_at).
+  3) Script de reindexation / commande pour forcer indexation si service search existant (Algolia/Meilisearch/Elastic).
+  4) Tests automatisés : 2 tests E2E (création -> réponse 201 + id ; création -> listing visible).
+  5) Documentation de déploiement + checklist rollback + health checks (endpoints / job queue length).
+  6) Logs d’exécution d’un test reproduit (curl outputs, SQL select verifying creation, worker logs if needed).
+- Si nécessaire, patch équivalent pour Prisma / TypeORM / Rails / Django (indiquer explicitement le fichier modifié pour chaque stack détecté).
+
+Tâches détaillées à exécuter (ordre à suivre)
+A. Reproduire & capturer
+  1. Reproduire une création test via curl (ex : title="Debug Final", category="health") et coller request/response bruts.
+  2. Vérifier logs serveur en même temps (timestamp) pour l’operation create (BEGIN / INSERT / COMMIT / ROLLBACK).
+  3. Vérifier DB après création : `SELECT * FROM missions WHERE created_at > now()-interval '10 minutes' ORDER BY created_at DESC LIMIT 5;`
+
+B. Appliquer le correctif code (Node/Express + pg)
+  - Remplacer le handler POST /api/missions par le code transactionnel suivant (ou appliquer le patch fourni):
+    • validation d’entrée (title, description, category minimums),
+    • insertion SQL `RETURNING id`,
+    • commit, logs structurés avec request_id,
+    • réponse 201 { ok: true, id }.
+  - Si import dynamique de MissionCreator nécessaire, enrober par try/catch ; en cas d’échec, écrire en DB directement et logguer l’import failure.
+
+C. Migration / Schéma
+  - Exécuter `ALTER TABLE IF NOT EXISTS missions ADD COLUMN IF NOT EXISTS excerpt TEXT;`
+  - Vérifier existence des colonnes recommandées. Si table manquante, créer table avec schéma minimal.
+  - Versionner la migration et inclure dans la PR.
+
+D. Indexation / Search
+  - Rechercher intégrations de search (`git grep -n "algolia\|meilisearch\|elasticsearch\|indexMission\|syncToSearch"`).
+  - Si indexation async existante : s’assurer que la création renvoie l’ID et envoie un job d’indexation en background ; en cas d’échec d’index job, ne pas rollback la creation DB mais alerter (log + metrics).
+  - Fournir script `reindex_missions.js --id <id>` et commande pour relancer l’indexation.
+
+E. Cache / CDN
+  - Vérifier headers `cache-control` / `surrogate-key` du listing.
+  - Mettre en place invalidation du cache à la création : une requête purge/invalidate ciblée (ex : purge sur key contenant mission id ou ensemble de tags) et tester.
+
+F. Environnements & Config
+  - Vérifier que tous les services (API creation, API listing, workers) pointent vers la même DATABASE_URL. Exécuter et fournir `env | grep -i DATABASE` sur l’instance prod.
+  - Si plusieurs DB existent (staging/prod), corriger les env vars ou documenter lequel doit être utilisé.
+
+G. Tests & CI
+  - Ajouter 2 tests E2E dans la suite CI (ou script test local) :
+    1) POST /api/missions -> assert status 201 & body.id present & row exists in DB.
+    2) After creation -> GET /api/missions (listing) contains created id OR GET /api/missions/<id> returns the mission.
+  - Exécuter tests et fournir résultats.
+
+H. Observability & Monitoring
+  - Ajouter metrics / alerts :
+    • compteur d’échecs d’indexation,
+    • temps moyen de création mission,
+    • longueur de la queue de jobs.
+  - Hook logs vers Sentry/LogDNA/Datadog (ou simplement stdout structured JSON si pas d’outils).
+
+I. Rollout plan & rollback
+  - Déployer le patch sur une **staging** identique en infra; exécuter tests E2E.
+  - Déployer en canary (5% traffic) si possible puis full production.
+  - Rollback plan : revert commit + run DB backfill script if required (documenter commandes `git revert <sha>` et `psql` scripts).
+
+Résultats attendus & sign-off
+- Après application : une création via le front ou curl renvoie systématiquement `201 { ok: true, id: <number> }`, la ligne existe dans la table `missions`, et la mission est visible via GET listing (ou index job a été lancé et existe dans queue).
+- Fournir dans la PR : logs d’un run end-to-end (curl request/response), la sortie SQL prouvant l’insert, et la sortie du test E2E.
+
+Notes d’implémentation / précautions
+- Ne pas exposer de données sensibles dans les logs (PII). Logger request_id, owner_id, tailles et statut, mais pas le body complet en prod.
+- En cas d’index job fail, alerter mais ne rollback pas la création DB.
+- Versionner migrations et inclure dans PR.
+
+Merci — applique ces changements, fournis la PR/commit et les outputs demandés (curl responses, SQL select, tests CI). Si tu détectes un ORM différent (Prisma/TypeORM/Sequelize) je veux le patch équivalent dans la PR (je peux générer le code Prisma/TS/ORM automatiquement).
