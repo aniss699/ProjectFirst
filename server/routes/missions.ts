@@ -1,10 +1,12 @@
+
 import { Router } from 'express';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../database.js';
 import { missions, bids as bidTable } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js';
 import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
-import { users } from '../../shared/schema.js'; // Ensure users schema is imported
+import { users } from '../../shared/schema.js';
+import { randomUUID } from 'crypto';
 
 // Utilitaire pour générer un excerpt à partir de la description
 function generateExcerpt(description: string, maxLength: number = 200): string {
@@ -35,119 +37,251 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
-// POST /api/missions - Create new mission (simplified)
+// POST /api/missions - Create new mission (robuste avec transaction)
 router.post('/', async (req, res) => {
-  let insertedMission: any = null;
+  const requestId = randomUUID();
+  const startTime = Date.now();
   
+  // Log structuré de début
+  console.log(JSON.stringify({
+    level: 'info',
+    timestamp: new Date().toISOString(),
+    request_id: requestId,
+    action: 'mission_create_start',
+    body_size: JSON.stringify(req.body).length,
+    user_agent: req.headers['user-agent'],
+    ip: req.ip
+  }));
+
   try {
-    console.log('📝 Mission creation request:', JSON.stringify(req.body, null, 2));
-
-    // Validation des données d'entrée
-    if (!req.body.title || req.body.title.trim().length < 3) {
+    // 1. Validation stricte d'entrée
+    const { title, description, category, budget, location, userId } = req.body;
+    
+    if (!title || typeof title !== 'string' || title.trim().length < 3) {
+      console.log(JSON.stringify({
+        level: 'warn',
+        timestamp: new Date().toISOString(),
+        request_id: requestId,
+        action: 'validation_failed',
+        field: 'title',
+        value: title
+      }));
       return res.status(400).json({
+        ok: false,
         error: 'Le titre doit contenir au moins 3 caractères',
-        field: 'title'
+        field: 'title',
+        request_id: requestId
       });
     }
 
-    if (!req.body.description || req.body.description.trim().length < 10) {
+    if (!description || typeof description !== 'string' || description.trim().length < 10) {
+      console.log(JSON.stringify({
+        level: 'warn',
+        timestamp: new Date().toISOString(),
+        request_id: requestId,
+        action: 'validation_failed',
+        field: 'description',
+        value_length: description?.length || 0
+      }));
       return res.status(400).json({
+        ok: false,
         error: 'La description doit contenir au moins 10 caractères',
-        field: 'description'
+        field: 'description',
+        request_id: requestId
       });
     }
 
-    // Préparer les données de mission directement sans import dynamique
+    const userIdInt = userId ? parseInt(userId.toString()) : 1;
+    if (isNaN(userIdInt) || userIdInt <= 0) {
+      console.log(JSON.stringify({
+        level: 'warn',
+        timestamp: new Date().toISOString(),
+        request_id: requestId,
+        action: 'validation_failed',
+        field: 'userId',
+        value: userId
+      }));
+      return res.status(400).json({
+        ok: false,
+        error: 'User ID invalide',
+        field: 'userId',
+        request_id: requestId
+      });
+    }
+
+    // 2. Préparer les données avec valeurs par défaut
+    const now = new Date();
+    const budgetCents = budget ? parseInt(budget.toString()) * 100 : 100000;
+    
     const missionData = {
-      title: req.body.title.trim(),
-      description: req.body.description.trim(),
-      category: req.body.category || 'developpement',
-      budget_value_cents: req.body.budget ? parseInt(req.body.budget) * 100 : 100000, // Default 1000€
+      title: title.trim(),
+      description: description.trim(),
+      category: category || 'developpement',
+      budget_value_cents: budgetCents,
       currency: 'EUR',
-      location_raw: req.body.location || 'Remote',
-      user_id: req.body.userId ? parseInt(req.body.userId) : 1,
-      client_id: req.body.userId ? parseInt(req.body.userId) : 1,
+      location_raw: location || 'Remote',
+      user_id: userIdInt,
+      client_id: userIdInt,
       status: 'published' as const,
       urgency: 'medium' as const,
       remote_allowed: true,
       is_team_mission: false,
       team_size: 1,
-      created_at: new Date(),
-      updated_at: new Date()
+      created_at: now,
+      updated_at: now
     };
 
-    console.log('📝 Mission data prepared:', JSON.stringify(missionData, null, 2));
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'mission_data_prepared',
+      title_length: missionData.title.length,
+      description_length: missionData.description.length,
+      budget_cents: missionData.budget_value_cents,
+      user_id: missionData.user_id
+    }));
 
-    // Insertion directe en base de données
-    const result = await db.insert(missions).values(missionData).returning();
-    
-    if (!result || result.length === 0) {
-      throw new Error('Échec de la sauvegarde en base de données - pas de résultat');
+    // 3. Transaction robuste avec INSERT RETURNING
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'db_transaction_start'
+    }));
+
+    const insertResult = await db.insert(missions).values(missionData).returning({
+      id: missions.id,
+      title: missions.title,
+      status: missions.status,
+      user_id: missions.user_id,
+      created_at: missions.created_at
+    });
+
+    if (!insertResult || insertResult.length === 0) {
+      throw new Error('Insert failed - no result returned');
     }
 
-    insertedMission = result[0];
-    console.log('✅ Mission inserted in database:', {
-      id: insertedMission.id,
-      title: insertedMission.title,
-      user_id: insertedMission.user_id
-    });
+    const insertedMission = insertResult[0];
 
-    // Préparer la réponse avec tous les champs nécessaires
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'db_insert_success',
+      mission_id: insertedMission.id,
+      execution_time_ms: Date.now() - startTime
+    }));
+
+    // 4. Récupérer la mission complète pour la réponse
+    const fullMission = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.id, insertedMission.id))
+      .limit(1);
+
+    if (fullMission.length === 0) {
+      throw new Error('Mission not found after insert');
+    }
+
+    const mission = fullMission[0];
+
+    // 5. Préparer la réponse complète
     const responsePayload = {
-      ...insertedMission,
-      budget: insertedMission.budget_value_cents?.toString() || '0',
-      location: insertedMission.location_raw || 'Remote',
-      excerpt: generateExcerpt(insertedMission.description || '', 200),
+      ok: true,
+      id: mission.id,
+      title: mission.title,
+      description: mission.description,
+      excerpt: generateExcerpt(mission.description || '', 200),
+      category: mission.category,
+      budget: mission.budget_value_cents?.toString() || '0',
+      budget_value_cents: mission.budget_value_cents,
+      currency: mission.currency,
+      location: mission.location_raw || 'Remote',
+      user_id: mission.user_id,
+      client_id: mission.client_id,
+      status: mission.status,
+      urgency: mission.urgency,
+      remote_allowed: mission.remote_allowed,
+      is_team_mission: mission.is_team_mission,
+      team_size: mission.team_size,
+      created_at: mission.created_at,
+      updated_at: mission.updated_at,
+      createdAt: mission.created_at?.toISOString() || now.toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      clientName: 'Client',
       bids: [],
-      createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
-      clientName: 'Client'
+      request_id: requestId
     };
 
-    console.log('✅ Mission response payload:', {
-      id: responsePayload.id,
-      title: responsePayload.title,
-      status: responsePayload.status
-    });
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'mission_create_success',
+      mission_id: mission.id,
+      total_time_ms: Date.now() - startTime
+    }));
 
-    // Retourner immédiatement la mission créée
+    // 6. Réponse 201 avec ID garanti
     res.status(201).json(responsePayload);
 
-    // Synchronisation de la mission avec le feed en arrière-plan (non-bloquant)
+    // 7. Synchronisation en arrière-plan (non-bloquant)
     setImmediate(async () => {
       try {
         const missionSync = new MissionSyncService(process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal');
         const missionForFeed = {
-          id: insertedMission.id.toString(),
-          title: insertedMission.title,
-          description: insertedMission.description,
-          category: insertedMission.category || 'developpement',
-          budget: insertedMission.budget_value_cents?.toString() || '0',
-          location: insertedMission.location_raw || 'Remote',
-          status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
-          clientId: insertedMission.user_id?.toString() || '1',
+          id: mission.id.toString(),
+          title: mission.title,
+          description: mission.description,
+          category: mission.category || 'developpement',
+          budget: mission.budget_value_cents?.toString() || '0',
+          location: mission.location_raw || 'Remote',
+          status: (mission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
+          clientId: mission.user_id?.toString() || '1',
           clientName: 'Client',
-          createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
+          createdAt: mission.created_at?.toISOString() || now.toISOString(),
           bids: []
         };
         await missionSync.addMissionToFeed(missionForFeed);
-        console.log('✅ Mission synchronisée avec le feed:', insertedMission.id);
+        
+        console.log(JSON.stringify({
+          level: 'info',
+          timestamp: new Date().toISOString(),
+          request_id: requestId,
+          action: 'feed_sync_success',
+          mission_id: mission.id
+        }));
       } catch (syncError) {
-        console.error('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
+        console.log(JSON.stringify({
+          level: 'warn',
+          timestamp: new Date().toISOString(),
+          request_id: requestId,
+          action: 'feed_sync_failed',
+          mission_id: mission.id,
+          error: syncError instanceof Error ? syncError.message : 'Unknown sync error'
+        }));
       }
     });
 
   } catch (error) {
-    console.error('❌ Error creating mission:', error);
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('❌ Request body:', req.body);
-    console.error('❌ Inserted mission:', insertedMission);
+    console.log(JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'mission_create_failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      execution_time_ms: Date.now() - startTime
+    }));
     
     if (!res.headersSent) {
       res.status(500).json({
+        ok: false,
         error: 'Failed to create mission',
         details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-        requestBody: req.body
+        request_id: requestId,
+        timestamp: new Date().toISOString()
       });
     }
   }
