@@ -1,0 +1,30 @@
+Tu es l’assistant technique qui m’aide à corriger et industrialiser le backend d’une marketplace de missions.
+Je te fournis le contexte et je veux que tu génères les livrables listés. Priorise la sécurité (auth server-side), la cohérence des types (cents pour montants), la normalisation (camelCase côté API, snake_case côté BDD), et la performance (index, GIN, tsvector).
+
+Contexte technique / règles globales
+	•	Base de données : PostgreSQL (si PostGIS disponible, utiliser geometry Point pour géo).
+	•	Backend Node/TypeScript (Drizzle or plain queries possible).
+	•	Format monétaire : stocker en cents entiers (INTEGER) + currency (ISO 4217, ex. “EUR”).
+	•	Dates : timestamptz en base, API retourne ISO 8601 UTC (toISOString() côté serveur).
+	•	Nommage : API JSON en camelCase, DB en snake_case. Mapper proprement via ORM.
+	•	Auth : ne jamais prendre userId depuis le front ; utiliser l’ID du token/session côté serveur.
+	•	Statuts : utiliser un ENUM SQL (draft,published,awarded,in_progress,completed,cancelled,expired).
+	•	Localisation : garder location_raw + {city, postal_code, country, lat, lon}.
+	•	Tags & skills : stocker en TEXT[] + index GIN ; prévoir tsvector pour recherche plein-texte.
+	•	Bids : ne pas renvoyer la liste complète par défaut — fournir bidsSummary et endpoint paginé GET /missions/:id/bids.
+
+Livrables attendus (réponds en français, code + explications courtes)
+	1.	Migration SQL complète pour créer la table missions (avec type enum, contraintes CHECK, trigger updated_at, indexes recommandés — B-tree, GIN, tsvector).
+	2.	Fonction d’upsert SQL pour la table announcements (feed), INSERT ... ON CONFLICT (id) DO UPDATE ... + schéma announcements.
+	3.	Schéma TypeScript (Drizzle / ou interface) corrigé et propre (sans typos) : noms, types, références FK.
+	4.	Zod schema (ou équivalent) pour valider le payload POST /api/missions côté serveur.
+	5.	Fonction TypeScript normalizeMission(raw, authUserId) : transformation sûre et complète, qui :
+	•	parse/valide les champs (budget -> cents, min/max, deadline date),
+	•	applique règles métier (budget_min <= budget_max), team_size >=1 si is_team_mission,
+	•	force user_id = authUserId, client_id = authUserId par défaut,
+	•	renvoie l’objet prêt pour insertion (vernaculaire DB snake_case ou Drizzle-friendly).
+	6.	Shape de réponse GET /api/missions/:id recommandé (JSON example) avec bidsSummary, permissions (canEdit, canApply), budget object (type fixed|range|negotiable), client réduit (id, displayName), location normalisée, excerpt.
+	7.	Snippet JS/TS pour la sync -> Feed (buildMissionForFeed) incluant excerpt, budgetValueCents, bidsCount, lowestBidCents, searchText et règles d’idempotence.
+	8.	Checklist de migration & tests automatisés (unit + integration) à exécuter (exemples de tests).
+	9.	Recommandations infra / perf / sécurité résumées (indexation, full-text, sanitisation XSS, rate limiting, audit logs, privacy).
+	10.	Exemples concrets : un sample POST payload (frontend), la sortie normalizeMission(...) et la réponse GET /api/missions/:id correspondante.

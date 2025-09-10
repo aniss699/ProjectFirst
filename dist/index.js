@@ -1911,11 +1911,15 @@ router.post("/", async (req, res) => {
       client_id: missionData.userId ? parseInt(missionData.userId) : null,
       // Pour compatibilité
       // Map additional fields properly
-      budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
-      budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
+      budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : missionData.budget ? parseInt(missionData.budget) : null,
+      budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : missionData.budget ? parseInt(missionData.budget) : null,
       deadline: missionData.deadline ? new Date(missionData.deadline) : null,
       tags: missionData.tags || [],
-      requirements: missionData.requirements || null
+      requirements: missionData.requirements || null,
+      skills_required: missionData.skills_required || [],
+      is_team_mission: missionData.is_team_mission || false,
+      team_size: missionData.team_size || 1,
+      remote_allowed: missionData.remote_allowed !== void 0 ? missionData.remote_allowed : true
     };
     console.log("\u{1F4E4} Inserting mission with data:", JSON.stringify(missionToInsert, null, 2));
     console.log("\u{1F4E4} Attempting to insert mission with data:", JSON.stringify(missionToInsert, null, 2));
@@ -1943,10 +1947,10 @@ router.post("/", async (req, res) => {
           title: insertedMission.title,
           description: insertedMission.description,
           category: insertedMission.category || "general",
-          budget: insertedMission.budget_min?.toString() || "0",
+          budget: insertedMission.budget?.toString() || insertedMission.budget_min?.toString() || "0",
           location: insertedMission.location || "Remote",
           status: insertedMission.status || "open",
-          clientId: insertedMission.user_id?.toString() || "1",
+          clientId: insertedMission.user_id?.toString() || insertedMission.client_id?.toString() || "1",
           clientName: "Client",
           createdAt: insertedMission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
           bids: []
