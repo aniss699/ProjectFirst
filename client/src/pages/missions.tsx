@@ -47,15 +47,10 @@ export default function MissionsPage() {
   const [offerMessage, setOfferMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Récupérer toutes les missions publiques
-  const { data: missions = [], isLoading, refetch } = useQuery<Mission[]>({
-    queryKey: ['missions'],
-    queryFn: async () => {
-      const response = await fetch('/api/missions');
-      if (!response.ok) throw new Error('Erreur lors du chargement des missions');
-      return response.json();
-    }
-  });
+  // API missions supprimée - désactiver la fonctionnalité
+  const missions: Mission[] = [];
+  const isLoading = false;
+  const refetch = () => Promise.resolve();
 
   // Récupérer les offres pour une mission sélectionnée
   const { data: offers = [] } = useQuery<Offer[]>({
@@ -186,12 +181,13 @@ export default function MissionsPage() {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="mt-2 text-gray-600">Chargement des missions...</p>
           </div>
-        ) : filteredMissions.length === 0 ? (
+        ) : (
           <Card className="text-center py-8">
             <CardContent>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune mission trouvée</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Fonctionnalité missions désactivée</h3>
               <p className="text-gray-600">
-                {searchQuery ? 'Aucune mission ne correspond à votre recherche.' : 'Aucune mission n\'est disponible pour le moment.'}
+                La fonctionnalité missions a été temporairement désactivée. 
+                Consultez les autres services disponibles sur la plateforme.
               </p>
             </CardContent>
           </Card>

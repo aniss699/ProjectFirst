@@ -56,16 +56,10 @@ export default function MyMissionsPage() {
     location: ''
   });
 
-  // Récupérer les missions de l'utilisateur connecté
-  const { data: missions = [], isLoading, refetch } = useQuery<Mission[]>({
-    queryKey: ['my-missions'],
-    queryFn: async () => {
-      const response = await fetch('/api/missions/my');
-      if (!response.ok) throw new Error('Erreur lors du chargement de vos missions');
-      return response.json();
-    },
-    enabled: !!user
-  });
+  // API missions supprimée - désactiver la fonctionnalité
+  const missions: Mission[] = [];
+  const isLoading = false;
+  const refetch = () => Promise.resolve();
 
   // Récupérer les offres pour une mission spécifique
   const getOffersQuery = (missionId: number) => useQuery<Offer[]>({
@@ -320,7 +314,7 @@ export default function MyMissionsPage() {
                     ) : (
                       <>
                         <p className="text-gray-700 mb-4">{mission.description}</p>
-                        
+
                         <div className="flex flex-wrap gap-2 mb-4">
                           {mission.category && (
                             <Badge variant="secondary">{mission.category}</Badge>
