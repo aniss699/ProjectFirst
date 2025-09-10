@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../database.js';
 import { missions, bids as bidTable } from '../../shared/schema.js';
-import { MissionSyncService } from '../services/mission-sync.js'; // Import MissionSyncService
+import { MissionSyncService } from '../services/mission-sync.js';
+import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
 
 // Utilitaire pour générer un excerpt à partir de la description
 function generateExcerpt(description: string, maxLength: number = 200): string {
@@ -85,13 +86,15 @@ router.post('/', async (req, res) => {
       description: missionData.description,
       category: missionData.category || 'developpement',
       budget_value_cents: missionData.budget ? parseInt(missionData.budget) : null,
+      budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : (missionData.budget ? parseInt(missionData.budget) : null),
+      budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : (missionData.budget ? parseInt(missionData.budget) : null),
       location_raw: missionData.location || null,
       urgency: missionData.urgency || 'medium',
       status: missionData.status || 'published',
       created_at: new Date(),
       updated_at: new Date(),
       user_id: missionData.userId ? parseInt(missionData.userId) : null,
-      client_id: missionData.userId ? parseInt(missionData.userId) : null, // Pour compatibilité
+      client_id: missionData.userId ? parseInt(missionData.userId) : null
       // Map additional fields properly
       budget_min_cents: missionData.budget_min ? parseInt(missionData.budget_min) : (missionData.budget ? parseInt(missionData.budget) : null),
       budget_max_cents: missionData.budget_max ? parseInt(missionData.budget_max) : (missionData.budget ? parseInt(missionData.budget) : null),
@@ -127,6 +130,15 @@ router.post('/', async (req, res) => {
       const savedMission = await db.select().from(missions).where(eq(missions.id, insertedMission.id)).limit(1);
       console.log('🔍 Verification - Mission in DB:', savedMission.length > 0 ? 'Found' : 'NOT FOUND');
 
+      // Validate data consistency
+      const validationResult = DataConsistencyValidator.validateAPIToDatabase(missionToInsert, insertedMission);
+      if (!validationResult.isValid) {
+        console.warn('⚠️ Data consistency issues detected:', validationResult.errors);
+      }
+      if (validationResult.warnings.length > 0) {
+        console.warn('⚠️ Data consistency warnings:', validationResult.warnings);
+      }
+
       res.status(201).json(insertedMission);
     } catch (error) {
       console.error('❌ Database insertion failed:', error);
@@ -145,11 +157,11 @@ router.post('/', async (req, res) => {
           id: insertedMission.id.toString(),
           title: insertedMission.title,
           description: insertedMission.description,
-          category: insertedMission.category || 'general',
+          category: insertedMission.category || 'developpement',
           budget: insertedMission.budget_value_cents?.toString() || insertedMission.budget_min_cents?.toString() || '0',
           location: insertedMission.location_raw || 'Remote',
           status: (insertedMission.status as 'open' | 'in_progress' | 'completed' | 'closed') || 'open',
-          clientId: insertedMission.user_id?.toString() || insertedMission.client_id?.toString() || '1',
+          clientId: insertedMission.user_id?.toString() || '1',
           clientName: 'Client',
           createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
           bids: []
