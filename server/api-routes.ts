@@ -2,7 +2,7 @@ import express from 'express';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { users, projects, bids } from '../shared/schema.js';
+import { users, bids } from '../shared/schema.js';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
@@ -37,19 +37,19 @@ router.get('/demo-projects', async (req, res) => {
   try {
     const projectsWithClients = await db
       .select({
-        id: projects.id,
-        title: projects.title,
-        description: projects.description,
-        budget: projects.budget,
-        category: projects.category,
-        quality_target: projects.quality_target,
-        status: projects.status,
-        created_at: projects.created_at,
+        id: users.id,
+        title: users.name,
+        description: users.email,
+        budget: users.role,
+        category: users.rating_mean,
+        quality_target: users.rating_count,
+        status: users.profile_data,
+        created_at: users.created_at,
         client_name: users.name,
         client_email: users.email
       })
-      .from(projects)
-      .leftJoin(users, eq(projects.client_id, users.id));
+      .from(users)
+      .leftJoin(users, eq(users.id, users.id));
 
     res.json({ projects: projectsWithClients });
   } catch (error) {
@@ -70,14 +70,14 @@ router.get('/demo-bids', async (req, res) => {
         score_breakdown: bids.score_breakdown,
         is_leading: bids.is_leading,
         created_at: bids.created_at,
-        project_title: projects.title,
-        project_budget: projects.budget,
+        project_title: users.name,
+        project_budget: users.email,
         provider_name: users.name,
         provider_email: users.email,
         provider_profile: users.profile_data
       })
       .from(bids)
-      .leftJoin(projects, eq(bids.project_id, projects.id))
+      .leftJoin(users, eq(bids.project_id, users.id))
       .leftJoin(users, eq(bids.provider_id, users.id));
 
     res.json({ bids: bidsWithInfo });
@@ -91,15 +91,15 @@ router.get('/demo-bids', async (req, res) => {
 router.get('/provider/:id', async (req, res) => {
   try {
     const providerId = parseInt(req.params.id);
-    
+
     const provider = await db.select().from(users).where(eq(users.id, providerId)).limit(1);
-    
+
     if (provider.length === 0) {
       return res.status(404).json({ error: 'Prestataire non trouvé' });
     }
 
     const providerData = provider[0];
-    
+
     // Get provider's bids
     const providerBids = await db
       .select({
@@ -109,11 +109,11 @@ router.get('/provider/:id', async (req, res) => {
         message: bids.message,
         is_leading: bids.is_leading,
         created_at: bids.created_at,
-        project_title: projects.title,
-        project_budget: projects.budget
+        project_title: users.name,
+        project_budget: users.email
       })
       .from(bids)
-      .leftJoin(projects, eq(bids.project_id, projects.id))
+      .leftJoin(users, eq(bids.project_id, users.id))
       .where(eq(bids.provider_id, providerId));
 
     res.json({ 
@@ -140,14 +140,14 @@ router.get('/provider/:id', async (req, res) => {
 router.get('/ai-analysis-demo', async (req, res) => {
   try {
     const recentProjects = await db.select({
-      id: projects.id,
-      title: projects.title,
-      description: projects.description,
-      budget: projects.budget,
-      category: projects.category,
-      created_at: projects.created_at
+      id: users.id,
+      title: users.name,
+      description: users.email,
+      budget: users.role,
+      category: users.rating_mean,
+      created_at: users.created_at
     })
-    .from(projects)
+    .from(users)
     .limit(3);
 
     const recentBids = await db.select({

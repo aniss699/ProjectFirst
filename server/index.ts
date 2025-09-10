@@ -26,7 +26,7 @@ console.log('🔗 Using Replit PostgreSQL connection');
 const missionSyncService = new MissionSyncService(databaseUrl);
 
 // Create a pool instance for health checks with timeout
-const pool = new Pool({ 
+const pool = new Pool({
   connectionString: databaseUrl,
   connectionTimeoutMillis: 5000,  // 5 second timeout
   idleTimeoutMillis: 10000,       // 10 second idle timeout
@@ -109,7 +109,7 @@ app.set('trust proxy', true);
 
 // CORS configuration - optimized for Replit
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? ['https://swideal.com', 'https://www.swideal.com', /\.replit\.app$/]
     : true,
   credentials: true,
@@ -123,7 +123,7 @@ app.use(express.json());
 import authRoutes from './auth-routes.js';
 // Import missions routes here
 import missionsRoutes from './routes/missions.js';
-import projectRoutes from './routes/projects.js';
+// Import projects supprimé - remplacé par missions
 import apiRoutes from './api-routes.js';
 import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
 import aiRoutes from './routes/ai-routes.js';
@@ -149,12 +149,13 @@ app.use('/api/missions', missionsRoutes);
 console.log('📋 Registering other API routes...');
 app.use('/api', apiRoutes);
 app.use('/api', missionsRoutes); // Pour les routes /api/users/:userId/missions
-app.use('/api/projects', projectRoutes);
+// Route projects supprimée - remplacée par missions
+app.use('/api/projects', () => { throw new Error('Projects API is deprecated and has been replaced by Missions API'); });
 
 // Apply rate limiting to AI routes
 app.use('/api/ai/monitoring', monitoringRateLimit, aiMonitoringRoutes);
 app.use('/api/ai/suggest-pricing', strictAiRateLimit);  // Endpoint coûteux
-app.use('/api/ai/enhance-description', strictAiRateLimit);  // Endpoint coûteux  
+app.use('/api/ai/enhance-description', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai/analyze-quality', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai/enhance-text', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai', aiRateLimit, aiRoutes);  // Rate limiting général pour les autres routes IA
@@ -179,8 +180,8 @@ app.get('/api/health', async (req, res) => {
     // Test database connection
     await pool.query('SELECT 1');
 
-    res.status(200).json({ 
-      status: 'ok', 
+    res.status(200).json({
+      status: 'ok',
       message: 'SwipDEAL API is running',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -189,8 +190,8 @@ app.get('/api/health', async (req, res) => {
     });
   } catch (error) {
     console.error('Health check database error:', error);
-    res.status(503).json({ 
-      status: 'error', 
+    res.status(503).json({
+      status: 'error',
       message: 'Database connection failed',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -215,7 +216,7 @@ app.get('/api/debug/missions', (req, res) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'swideal-api',
