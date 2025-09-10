@@ -37,33 +37,85 @@ const router = Router();
 
 // POST /api/missions - Create new mission (simplified)
 router.post('/', async (req, res) => {
+  let insertedMission: any = null;
+  
   try {
-    const { MissionCreator } = await import('../services/mission-creator.js');
-    
-    console.log('📝 Mission creation request:', req.body);
+    console.log('📝 Mission creation request:', JSON.stringify(req.body, null, 2));
 
-    // Utiliser le service de création simplifié
-    const missionData = await MissionCreator.createSimpleMission({
-      title: req.body.title,
-      description: req.body.description,
-      category: req.body.category,
-      budget: req.body.budget ? parseInt(req.body.budget) : undefined,
-      location: req.body.location,
-      userId: req.body.userId ? parseInt(req.body.userId) : 1 // Fallback temporaire
+    // Validation des données d'entrée
+    if (!req.body.title || req.body.title.trim().length < 3) {
+      return res.status(400).json({
+        error: 'Le titre doit contenir au moins 3 caractères',
+        field: 'title'
+      });
+    }
+
+    if (!req.body.description || req.body.description.trim().length < 10) {
+      return res.status(400).json({
+        error: 'La description doit contenir au moins 10 caractères',
+        field: 'description'
+      });
+    }
+
+    // Préparer les données de mission directement sans import dynamique
+    const missionData = {
+      title: req.body.title.trim(),
+      description: req.body.description.trim(),
+      category: req.body.category || 'developpement',
+      budget_value_cents: req.body.budget ? parseInt(req.body.budget) * 100 : 100000, // Default 1000€
+      currency: 'EUR',
+      location_raw: req.body.location || 'Remote',
+      user_id: req.body.userId ? parseInt(req.body.userId) : 1,
+      client_id: req.body.userId ? parseInt(req.body.userId) : 1,
+      status: 'published' as const,
+      urgency: 'medium' as const,
+      remote_allowed: true,
+      is_team_mission: false,
+      team_size: 1,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    console.log('📝 Mission data prepared:', JSON.stringify(missionData, null, 2));
+
+    // Insertion directe en base de données
+    const result = await db.insert(missions).values(missionData).returning();
+    
+    if (!result || result.length === 0) {
+      throw new Error('Échec de la sauvegarde en base de données - pas de résultat');
+    }
+
+    insertedMission = result[0];
+    console.log('✅ Mission inserted in database:', {
+      id: insertedMission.id,
+      title: insertedMission.title,
+      user_id: insertedMission.user_id
     });
 
-    // Sauvegarder en base
-    const insertedMission = await MissionCreator.saveMission(missionData);
+    // Préparer la réponse avec tous les champs nécessaires
+    const responsePayload = {
+      ...insertedMission,
+      budget: insertedMission.budget_value_cents?.toString() || '0',
+      location: insertedMission.location_raw || 'Remote',
+      excerpt: generateExcerpt(insertedMission.description || '', 200),
+      bids: [],
+      createdAt: insertedMission.created_at?.toISOString() || new Date().toISOString(),
+      clientName: 'Client'
+    };
 
-    console.log('✅ Mission created successfully:', insertedMission.id);
-    res.status(201).json(insertedMission);
+    console.log('✅ Mission response payload:', {
+      id: responsePayload.id,
+      title: responsePayload.title,
+      status: responsePayload.status
+    });
+
+    // Retourner immédiatement la mission créée
+    res.status(201).json(responsePayload);
 
     // Synchronisation de la mission avec le feed en arrière-plan (non-bloquant)
     setImmediate(async () => {
       try {
-        // Utilisation du service de synchronisation des missions
         const missionSync = new MissionSyncService(process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal');
-        // Conversion de la mission base de données vers le type Mission du feed
         const missionForFeed = {
           id: insertedMission.id.toString(),
           title: insertedMission.title,
@@ -78,7 +130,7 @@ router.post('/', async (req, res) => {
           bids: []
         };
         await missionSync.addMissionToFeed(missionForFeed);
-        console.log('✅ Mission synchronisée avec le feed');
+        console.log('✅ Mission synchronisée avec le feed:', insertedMission.id);
       } catch (syncError) {
         console.error('⚠️ Erreur synchronisation feed (non-bloquant):', syncError);
       }
@@ -87,11 +139,15 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('❌ Error creating mission:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    // Check if headers have already been sent to prevent double response
+    console.error('❌ Request body:', req.body);
+    console.error('❌ Inserted mission:', insertedMission);
+    
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Failed to create mission',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+        requestBody: req.body
       });
     }
   }

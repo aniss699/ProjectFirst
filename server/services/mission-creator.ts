@@ -1,4 +1,7 @@
 
+import { db } from '../database.js';
+import { missions } from '../../shared/schema.js';
+
 export interface SimpleMissionInput {
   title: string;
   description: string;
