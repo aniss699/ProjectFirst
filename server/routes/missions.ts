@@ -176,31 +176,9 @@ router.get('/', async (req, res) => {
   try {
     console.log('📋 Fetching all missions...');
     
-    // Select only existing columns from database
+    // Use simple select() to avoid Drizzle column mapping issues
     const allMissions = await db
-      .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget: missions.budget,
-        budget_min: missions.budget_min,
-        budget_max: missions.budget_max,
-        location: missions.location,
-        urgency: missions.urgency,
-        status: missions.status,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        requirements: missions.requirements,
-        skills_required: missions.skills_required,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        remote_allowed: missions.remote_allowed
-      })
+      .select()
       .from(missions)
       .orderBy(desc(missions.created_at));
     
@@ -220,6 +198,31 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('❌ Error fetching missions:', error);
     res.status(500).json({ error: 'Failed to fetch missions' });
+  }
+});
+
+// GET /api/missions/health - Health check endpoint (must be before /:id route)
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🏥 Mission health check endpoint called');
+    
+    // Simple health check
+    const healthInfo = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'missions-api',
+      environment: process.env.NODE_ENV || 'development'
+    };
+
+    console.log('🏥 Health check passed:', healthInfo);
+    res.json(healthInfo);
+  } catch (error) {
+    console.error('❌ Health check failed:', error);
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -305,7 +308,7 @@ router.get('/:id', async (req, res) => {
     console.log('🔍 API: Récupération mission ID:', missionId);
 
     // Skip validation for special endpoints that should be handled elsewhere
-    if (missionId === 'debug' || missionId === 'verify-sync') {
+    if (missionId === 'debug' || missionId === 'verify-sync' || missionId === 'health') {
       console.log('⚠️ API: Endpoint spécial détecté, ignoré dans cette route:', missionId);
       return res.status(404).json({ error: 'Endpoint non trouvé' });
     }
@@ -329,31 +332,9 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Select only existing columns from database
+    // Use simple select() to avoid Drizzle column mapping issues
     const mission = await db
-      .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget: missions.budget,
-        budget_min: missions.budget_min,
-        budget_max: missions.budget_max,
-        location: missions.location,
-        urgency: missions.urgency,
-        status: missions.status,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        requirements: missions.requirements,
-        skills_required: missions.skills_required,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        remote_allowed: missions.remote_allowed
-      })
+      .select()
       .from(missions)
       .where(eq(missions.id, missionIdInt))
       .limit(1);
@@ -423,31 +404,9 @@ router.get('/users/:userId/missions', async (req, res) => {
 
     console.log('🔍 Querying database: SELECT * FROM missions WHERE user_id =', userIdInt);
     
-    // Select only existing columns from database
+    // Use simple select() without explicit column mapping to avoid Drizzle errors
     const userMissions = await db
-      .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget: missions.budget,
-        budget_min: missions.budget_min,
-        budget_max: missions.budget_max,
-        location: missions.location,
-        urgency: missions.urgency,
-        status: missions.status,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        requirements: missions.requirements,
-        skills_required: missions.skills_required,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        remote_allowed: missions.remote_allowed
-      })
+      .select()
       .from(missions)
       .where(eq(missions.user_id, userIdInt))
       .orderBy(desc(missions.created_at));
