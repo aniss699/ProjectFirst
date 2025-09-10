@@ -64,6 +64,7 @@ router.post('/', async (req, res) => {
       created_at: new Date(),
       updated_at: new Date(),
       user_id: missionData.userId ? parseInt(missionData.userId) : null,
+      client_id: missionData.userId ? parseInt(missionData.userId) : null, // Pour compatibilité
       // Map additional fields properly
       budget_min: missionData.budget_min ? parseInt(missionData.budget_min) : null,
       budget_max: missionData.budget_max ? parseInt(missionData.budget_max) : null,
@@ -243,6 +244,12 @@ router.get('/:id', async (req, res) => {
     missionId = req.params.id;
     console.log('🔍 API: Récupération mission ID:', missionId);
 
+    // Skip validation for special endpoints that should be handled elsewhere
+    if (missionId === 'debug' || missionId === 'verify-sync') {
+      console.log('⚠️ API: Endpoint spécial détecté, ignoré dans cette route:', missionId);
+      return res.status(404).json({ error: 'Endpoint non trouvé' });
+    }
+
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
       console.error('❌ API: Mission ID invalide:', missionId);
       return res.status(400).json({ error: 'Mission ID invalide' });
@@ -250,9 +257,9 @@ router.get('/:id', async (req, res) => {
 
     // Convert missionId to integer for database query
     const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt)) {
+    if (isNaN(missionIdInt) || missionIdInt <= 0) {
       console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
-      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+      return res.status(400).json({ error: 'Mission ID doit être un nombre valide' });
     }
 
     const mission = await db
@@ -401,15 +408,20 @@ router.put('/:id', async (req, res) => {
     console.log('✏️ API: Modification mission ID:', missionId);
     console.log('✏️ API: Données reçues:', JSON.stringify(updateData, null, 2));
 
+    // Skip special endpoints
+    if (missionId === 'debug' || missionId === 'verify-sync') {
+      return res.status(404).json({ error: 'Endpoint non trouvé' });
+    }
+
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
       console.error('❌ API: Mission ID invalide:', missionId);
       return res.status(400).json({ error: 'Mission ID invalide' });
     }
 
     const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt)) {
+    if (isNaN(missionIdInt) || missionIdInt <= 0) {
       console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
-      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+      return res.status(400).json({ error: 'Mission ID doit être un nombre valide' });
     }
 
     // Validate required fields
@@ -487,6 +499,11 @@ router.delete('/:id', async (req, res) => {
     const missionId = req.params.id;
     console.log('🗑️ API: Suppression mission ID:', missionId);
 
+    // Skip special endpoints
+    if (missionId === 'debug' || missionId === 'verify-sync') {
+      return res.status(404).json({ error: 'Endpoint non trouvé' });
+    }
+
     if (!missionId || missionId === 'undefined' || missionId === 'null') {
       console.error('❌ API: Mission ID invalide:', missionId);
       return res.status(400).json({ error: 'Mission ID invalide' });
@@ -494,9 +511,9 @@ router.delete('/:id', async (req, res) => {
 
     // Convert missionId to integer for database query
     const missionIdInt = parseInt(missionId, 10);
-    if (isNaN(missionIdInt)) {
+    if (isNaN(missionIdInt) || missionIdInt <= 0) {
       console.error('❌ API: Mission ID n\'est pas un nombre valide:', missionId);
-      return res.status(400).json({ error: 'Mission ID doit être un nombre' });
+      return res.status(400).json({ error: 'Mission ID doit être un nombre valide' });
     }
 
     // Check if mission exists

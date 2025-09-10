@@ -373,10 +373,12 @@ export const missions = pgTable('missions', {
   title: text('title').notNull(),
   description: text('description').notNull(),
   category: text('category'),
+  budget: integer('budget'), // Budget simple
   budget_min: integer('budget_min'),
   budget_max: integer('budget_max'),
   location: text('location'),
-  user_id: integer('user_id').references(() => users.id),
+  user_id: integer('user_id').references(() => users.id), // Créateur de la mission
+  client_id: integer('client_id').references(() => users.id), // Alias pour compatibilité
   provider_id: integer('provider_id').references(() => users.id),
   status: text('status').default('published'),
   created_at: timestamp('created_at').defaultNow(),
@@ -387,6 +389,8 @@ export const missions = pgTable('missions', {
   team_size: integer('team_size').default(1),
   urgency: text('urgency'),
   remote_allowed: boolean('remote_allowed').default(true),
+  tags: text('tags').array(),
+  requirements: text('requirements'),
 });
 
 // Types for missions
