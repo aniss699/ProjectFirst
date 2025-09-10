@@ -129,6 +129,29 @@ async function initializeDatabase() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_events (
+        id TEXT PRIMARY KEY,
+        phase TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        model_family TEXT NOT NULL,
+        model_name TEXT NOT NULL,
+        allow_training BOOLEAN NOT NULL,
+        input_redacted JSONB,
+        output JSONB,
+        confidence TEXT,
+        tokens INTEGER,
+        latency_ms INTEGER,
+        provenance TEXT NOT NULL,
+        prompt_hash TEXT,
+        accepted BOOLEAN,
+        rating INTEGER,
+        edits JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);

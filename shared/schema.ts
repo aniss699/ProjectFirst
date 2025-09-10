@@ -220,6 +220,50 @@ export const insertFavoritesSchema = z.object({
   announcement_id: z.number().int().positive()
 });
 
+export const aiEvents = pgTable('ai_events', {
+  id: text('id').primaryKey(),
+  phase: text('phase').$type<'pricing' | 'brief_enhance' | 'matching' | 'scoring'>().notNull(),
+  provider: text('provider').notNull(),
+  model_family: text('model_family').$type<'gemini' | 'openai' | 'local' | 'other'>().notNull(),
+  model_name: text('model_name').notNull(),
+  allow_training: boolean('allow_training').notNull(),
+  input_redacted: jsonb('input_redacted'),
+  output: jsonb('output'),
+  confidence: text('confidence'),
+  tokens: integer('tokens'),
+  latency_ms: integer('latency_ms'),
+  provenance: text('provenance').$type<'auto' | 'human_validated' | 'ab_test_winner'>().notNull(),
+  prompt_hash: text('prompt_hash'),
+  accepted: boolean('accepted'),
+  rating: integer('rating'),
+  edits: jsonb('edits'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const aiEventsRelations = relations(aiEvents, ({ one }) => ({
+  // Pas de relations directes pour l'instant
+}));
+
+export const insertAiEventSchema = z.object({
+  id: z.string(),
+  phase: z.enum(['pricing', 'brief_enhance', 'matching', 'scoring']),
+  provider: z.string(),
+  model_family: z.enum(['gemini', 'openai', 'local', 'other']),
+  model_name: z.string(),
+  allow_training: z.boolean(),
+  input_redacted: z.any().optional(),
+  output: z.any().optional(),
+  confidence: z.string().optional(),
+  tokens: z.number().int().optional(),
+  latency_ms: z.number().int().optional(),
+  provenance: z.enum(['auto', 'human_validated', 'ab_test_winner']),
+  prompt_hash: z.string().optional(),
+  accepted: z.boolean().optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  edits: z.any().optional()
+});
+
 // Export types that might be used elsewhere
 export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
 export type AnnouncementStatus = 'active' | 'completed' | 'cancelled' | 'draft';
