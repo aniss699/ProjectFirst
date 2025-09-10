@@ -2067,6 +2067,25 @@ import cors from "cors";
 import { Router } from "express";
 import { eq as eq2, desc } from "drizzle-orm";
 init_schema();
+function generateExcerpt(description, maxLength = 200) {
+  if (!description || description.length <= maxLength) {
+    return description || "";
+  }
+  const truncated = description.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf("."),
+    truncated.lastIndexOf("!"),
+    truncated.lastIndexOf("?")
+  );
+  if (lastSentenceEnd > maxLength * 0.6) {
+    return truncated.substring(0, lastSentenceEnd + 1).trim();
+  }
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + "...";
+  }
+  return truncated.trim() + "...";
+}
 var router = Router();
 router.post("/", async (req, res) => {
   try {
@@ -2187,6 +2206,7 @@ router.get("/", async (req, res) => {
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mission,
+      excerpt: generateExcerpt(mission.description || "", 200),
       createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
       clientName: "Client anonyme",
       // Default client name
@@ -2280,6 +2300,7 @@ router.get("/:id", async (req, res) => {
     const bids2 = await db.select().from(bids).where(eq2(bids.project_id, missionIdInt));
     const result = {
       ...mission[0],
+      excerpt: generateExcerpt(mission[0].description || "", 200),
       bids: bids2 || []
     };
     console.log("\u2705 API: Mission trouv\xE9e:", result.title, "avec", result.bids.length, "offres");
@@ -2321,6 +2342,7 @@ router.get("/users/:userId/missions", async (req, res) => {
       id: mission.id,
       title: mission.title,
       description: mission.description,
+      excerpt: generateExcerpt(mission.description || "", 200),
       category: mission.category,
       budget: mission.budget?.toString() || mission.budget_min?.toString() || "0",
       location: mission.location,
@@ -2482,11 +2504,30 @@ var missions_default = router;
 import { Router as Router2 } from "express";
 import { eq as eq3, desc as desc2 } from "drizzle-orm";
 init_schema();
+function generateExcerpt2(description, maxLength = 200) {
+  if (!description || description.length <= maxLength) {
+    return description || "";
+  }
+  const truncated = description.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf("."),
+    truncated.lastIndexOf("!"),
+    truncated.lastIndexOf("?")
+  );
+  if (lastSentenceEnd > maxLength * 0.6) {
+    return truncated.substring(0, lastSentenceEnd + 1).trim();
+  }
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + "...";
+  }
+  return truncated.trim() + "...";
+}
 var router2 = Router2();
-router2.get("/users/:userId/projects", async (req, res) => {
+router2.get("/users/:userId/missions", async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log("\u{1F464} Fetching projects for user:", userId);
+    console.log("\u{1F464} Fetching missions for user:", userId);
     if (!userId || userId === "undefined" || userId === "null") {
       console.error("\u274C Invalid user ID:", userId);
       return res.status(400).json({ error: "User ID invalide" });
@@ -2496,44 +2537,87 @@ router2.get("/users/:userId/projects", async (req, res) => {
       console.error("\u274C User ID is not a valid number:", userId);
       return res.status(400).json({ error: "User ID doit \xEAtre un nombre" });
     }
-    console.log("\u{1F50D} Querying database: SELECT * FROM projects WHERE client_id =", userIdInt);
-    const userProjects = await db.select().from(projects).where(eq3(projects.client_id, userIdInt)).orderBy(desc2(projects.created_at));
-    console.log("\u{1F4CA} Query result: Found", userProjects.length, "projects with client_id =", userIdInt);
-    userProjects.forEach((project) => {
-      console.log("   \u{1F4CB} Project:", project.id, "| client_id:", project.client_id, "| title:", project.title);
+    console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE client_id =", userIdInt);
+    const userMissions = await db.select().from(missions).where(eq3(missions.client_id, userIdInt)).orderBy(desc2(missions.created_at));
+    console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with client_id =", userIdInt);
+    userMissions.forEach((mission) => {
+      console.log("   \u{1F4CB} Mission:", mission.id, "| client_id:", mission.client_id, "| title:", mission.title);
     });
-    console.log(`\u{1F464} Found ${userProjects.length} projects for user ${userId}`);
-    res.json(userProjects);
+    const missionsWithExcerpt = userMissions.map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      description: mission.description,
+      excerpt: generateExcerpt2(mission.description || "", 200),
+      category: mission.category,
+      budget: mission.budget?.toString() || mission.budget_min?.toString() || "0",
+      location: mission.location,
+      status: mission.status,
+      urgency: mission.urgency,
+      userId: mission.user_id?.toString(),
+      userName: "Moi",
+      // Placeholder, should be fetched or passed
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      deadline: mission.deadline?.toISOString(),
+      tags: mission.tags || [],
+      requirements: mission.requirements,
+      bids: []
+      // Placeholder, bids are fetched separately if needed
+    }));
+    console.log(`\u{1F464} Found ${missionsWithExcerpt.length} missions for user ${userId}`);
+    res.json(missionsWithExcerpt);
   } catch (error) {
-    console.error("\u274C Error fetching user projects:", error);
+    console.error("\u274C Error fetching user missions:", error);
     res.status(500).json({
-      error: "Failed to fetch user projects",
+      error: "Failed to fetch user missions",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
 router2.get("/:id", async (req, res) => {
   try {
-    const projectId = req.params.id;
-    console.log("\u{1F50D} API: R\xE9cup\xE9ration project ID:", projectId);
-    if (!projectId || projectId === "undefined" || projectId === "null") {
-      console.error("\u274C API: Project ID invalide:", projectId);
-      return res.status(400).json({ error: "Project ID invalide" });
+    const missionId = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration mission ID:", missionId);
+    if (!missionId || missionId === "undefined" || missionId === "null") {
+      console.error("\u274C API: Mission ID invalide:", missionId);
+      return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const projectIdInt = parseInt(projectId, 10);
-    if (isNaN(projectIdInt)) {
-      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
-      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre" });
     }
-    const project = await db.select().from(projects).where(eq3(projects.id, projectIdInt)).limit(1);
-    if (project.length === 0) {
-      console.error("\u274C API: Project non trouv\xE9:", projectId);
-      return res.status(404).json({ error: "Project non trouv\xE9" });
+    const missionResult = await db.select().from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+    if (missionResult.length === 0) {
+      console.error("\u274C API: Mission non trouv\xE9e:", missionId);
+      return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    console.log("\u2705 API: Project trouv\xE9:", project[0].title);
-    res.json(project[0]);
+    const mission = missionResult[0];
+    console.log("\u2705 API: Mission trouv\xE9e:", mission.title);
+    const missionWithExcerpt = {
+      id: mission.id,
+      title: mission.title,
+      description: mission.description,
+      excerpt: generateExcerpt2(mission.description || "", 200),
+      category: mission.category,
+      budget: mission.budget?.toString() || mission.budget_min?.toString() || "0",
+      location: mission.location,
+      status: mission.status,
+      urgency: mission.urgency,
+      userId: mission.user_id?.toString(),
+      userName: "Moi",
+      // Placeholder
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      deadline: mission.deadline?.toISOString(),
+      tags: mission.tags || [],
+      requirements: mission.requirements,
+      bids: []
+      // Placeholder, potentially fetch bids here too if needed
+    };
+    res.json(missionWithExcerpt);
   } catch (error) {
-    console.error("\u274C API: Erreur r\xE9cup\xE9ration project:", error);
+    console.error("\u274C API: Erreur r\xE9cup\xE9ration mission:", error);
     res.status(500).json({
       error: "Erreur interne du serveur",
       details: error instanceof Error ? error.message : "Erreur inconnue"
@@ -2542,19 +2626,19 @@ router2.get("/:id", async (req, res) => {
 });
 router2.get("/:id/bids", async (req, res) => {
   try {
-    const projectId = req.params.id;
-    console.log("\u{1F50D} API: R\xE9cup\xE9ration bids pour project ID:", projectId);
-    if (!projectId || projectId === "undefined" || projectId === "null") {
-      console.error("\u274C API: Project ID invalide:", projectId);
-      return res.status(400).json({ error: "Project ID invalide" });
+    const missionId = req.params.id;
+    console.log("\u{1F50D} API: R\xE9cup\xE9ration bids pour mission ID:", missionId);
+    if (!missionId || missionId === "undefined" || missionId === "null") {
+      console.error("\u274C API: Mission ID invalide:", missionId);
+      return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const projectIdInt = parseInt(projectId, 10);
-    if (isNaN(projectIdInt)) {
-      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
-      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre" });
     }
-    const bids2 = await db.select().from(bids).where(eq3(bids.project_id, projectIdInt));
-    console.log("\u2705 API: Trouv\xE9", bids2.length, "bids pour project", projectId);
+    const bids2 = await db.select().from(bids).where(eq3(bids.mission_id, missionIdInt));
+    console.log("\u2705 API: Trouv\xE9", bids2.length, "bids pour mission", missionId);
     res.json(bids2);
   } catch (error) {
     console.error("\u274C API: Erreur r\xE9cup\xE9ration bids:", error);
@@ -2566,32 +2650,32 @@ router2.get("/:id/bids", async (req, res) => {
 });
 router2.delete("/:id", async (req, res) => {
   try {
-    const projectId = req.params.id;
-    console.log("\u{1F5D1}\uFE0F API: Suppression project ID:", projectId);
-    if (!projectId || projectId === "undefined" || projectId === "null") {
-      console.error("\u274C API: Project ID invalide:", projectId);
-      return res.status(400).json({ error: "Project ID invalide" });
+    const missionId = req.params.id;
+    console.log("\u{1F5D1}\uFE0F API: Suppression mission ID:", missionId);
+    if (!missionId || missionId === "undefined" || missionId === "null") {
+      console.error("\u274C API: Mission ID invalide:", missionId);
+      return res.status(400).json({ error: "Mission ID invalide" });
     }
-    const projectIdInt = parseInt(projectId, 10);
-    if (isNaN(projectIdInt)) {
-      console.error("\u274C API: Project ID n'est pas un nombre valide:", projectId);
-      return res.status(400).json({ error: "Project ID doit \xEAtre un nombre" });
+    const missionIdInt = parseInt(missionId, 10);
+    if (isNaN(missionIdInt)) {
+      console.error("\u274C API: Mission ID n'est pas un nombre valide:", missionId);
+      return res.status(400).json({ error: "Mission ID doit \xEAtre un nombre" });
     }
-    const existingProject = await db.select().from(projects).where(eq3(projects.id, projectIdInt)).limit(1);
-    if (existingProject.length === 0) {
-      console.error("\u274C API: Project non trouv\xE9 pour suppression:", projectId);
-      return res.status(404).json({ error: "Project non trouv\xE9" });
+    const existingMission = await db.select().from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+    if (existingMission.length === 0) {
+      console.error("\u274C API: Mission non trouv\xE9e pour suppression:", missionId);
+      return res.status(404).json({ error: "Mission non trouv\xE9e" });
     }
-    await db.delete(bids).where(eq3(bids.project_id, projectIdInt));
-    console.log("\u2705 API: Bids supprim\xE9s pour project:", projectId);
-    const deletedProject = await db.delete(projects).where(eq3(projects.id, projectIdInt)).returning();
-    if (deletedProject.length === 0) {
-      throw new Error("\xC9chec de la suppression du project");
+    await db.delete(bids).where(eq3(bids.mission_id, missionIdInt));
+    console.log("\u2705 API: Bids supprim\xE9s pour mission:", missionId);
+    const deletedMission = await db.delete(missions).where(eq3(missions.id, missionIdInt)).returning();
+    if (deletedMission.length === 0) {
+      throw new Error("\xC9chec de la suppression de la mission");
     }
-    console.log("\u2705 API: Project supprim\xE9 avec succ\xE8s:", projectId);
-    res.json({ message: "Project supprim\xE9 avec succ\xE8s", project: deletedProject[0] });
+    console.log("\u2705 API: Mission supprim\xE9e avec succ\xE8s:", missionId);
+    res.json({ message: "Mission supprim\xE9e avec succ\xE8s", mission: deletedMission[0] });
   } catch (error) {
-    console.error("\u274C API: Erreur suppression project:", error);
+    console.error("\u274C API: Erreur suppression mission:", error);
     res.status(500).json({
       error: "Erreur interne du serveur",
       details: error instanceof Error ? error.message : "Erreur inconnue"
