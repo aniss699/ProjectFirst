@@ -85,126 +85,65 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
 
   const progress = ((currentStep + 2) / 6) * 100; // 6 étapes au total maintenant (niveau 0 + 5 étapes)
 
-  // Function to create the mission via API
+  // Function to create the mission via API - Simplifié
   const createMission = async () => {
+    // Vérifier que les champs obligatoires sont remplis
+    if (!projectData.title.trim() || !projectData.description.trim()) {
+      toast({
+        title: 'Champs manquants',
+        description: 'Le titre et la description sont obligatoires.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: 'Connexion requise',
+        description: 'Veuillez vous connecter pour créer une mission.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsCreating(true);
 
     try {
-      if (isTeamMode) {
-        // Analyser les besoins d'équipe
-        const response = await fetch('/api/team/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description: projectData.description,
-            title: projectData.title,
-            category: selectedCategory,
-            budget: projectData.budget
-          })
+      const missionData = {
+        title: projectData.title,
+        description: projectData.description,
+        category: selectedCategory || null,
+        budget: projectData.budget ? parseInt(projectData.budget) : null,
+        location: projectData.location.address || null,
+        user_id: user.id
+      };
+
+      const response = await fetch('/api/missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(missionData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Mission créée avec succès:', result);
+
+        toast({ 
+          title: 'Mission créée !', 
+          description: 'Votre mission a été publiée avec succès.' 
         });
 
-        if (response.ok) {
-          const analysis = await response.json();
+        // Invalider le cache des missions pour forcer le rechargement
+        queryClient.invalidateQueries({ queryKey: ['missions'] });
 
-          // Créer le projet avec l'équipe analysée
-          const createResponse = await fetch('/api/team/create-project', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectData: {
-                title: projectData.title,
-                description: projectData.description,
-                category: selectedCategory,
-                budget: projectData.budget,
-                location: projectData.needsLocation ? projectData.location.address : 'Remote',
-                isTeamMode: true
-              },
-              teamRequirements: analysis.professions
-            })
-          });
-
-          if (createResponse.ok) {
-            const result = await createResponse.json();
-            toast({
-              title: 'Projet équipe créé !',
-              description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
-            });
-
-            // Invalider le cache des missions pour forcer le rechargement
-            queryClient.invalidateQueries({ queryKey: ['missions'] });
-
-            // Rediriger vers les missions
-            setLocation('/missions');
-            onComplete?.({
-              userType,
-              serviceType,
-              selectedCategory,
-              projectData,
-              projectId: result.project.id
-            });
-          } else {
-            const error = await createResponse.json();
-            throw new Error(error.error || 'Erreur lors de la création du projet');
-          }
-        } else {
-          const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de l\'analyse d\'équipe');
-        }
+        // Rediriger vers les missions
+        setLocation('/missions');
+        onComplete?.(result);
       } else {
-        // Mode mission simple
-        const budgetFormatted = projectData.budget ? projectData.budget.toString() : '';
-
-        const dynamicFieldsText = projectData.dynamicFields && Object.keys(projectData.dynamicFields).length > 0
-          ? Object.entries(projectData.dynamicFields)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join('\n')
-          : '';
-
-        const missionData = {
-          title: projectData.title,
-          description: projectData.description + 
-            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : '') +
-            (dynamicFieldsText ? `\n\nInformations spécifiques:\n${dynamicFieldsText}` : ''),
-          category: selectedCategory,
-          budget: budgetFormatted,
-          location: projectData.needsLocation ? projectData.location.address : 'Remote',
-          userId: user?.id?.toString() || null,
-          clientName: user?.name || 'Utilisateur'
-        };
-
-        const response = await fetch('/api/missions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(missionData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Mission créée avec succès:', result);
-
-          toast({ 
-            title: 'Mission créée !', 
-            description: 'Votre mission a été publiée avec succès.' 
-          });
-
-          // Invalider le cache des missions pour forcer le rechargement
-          queryClient.invalidateQueries({ queryKey: ['missions'] });
-
-          // Rediriger vers les missions
-          setLocation('/missions');
-          onComplete?.({
-            userType,
-            serviceType,
-            selectedCategory,
-            projectData,
-            missionId: result.id
-          });
-        } else {
-          const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de la création de la mission');
-        }
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors de la création de la mission');
       }
     } catch (error) {
       console.error('Erreur création mission:', error);
