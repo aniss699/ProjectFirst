@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ProgressiveFlow } from '@/components/home/progressive-flow';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/use-auth';
 import { z } from 'zod';
 
 // Complete mission form schema
@@ -22,6 +23,7 @@ export default function CreateMission() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Mock navigate function, replace with your actual navigation hook if different
   const navigate = (path: string) => setLocation(path);
@@ -31,9 +33,21 @@ export default function CreateMission() {
       setIsLoading(true);
       setError(null);
 
+      // Vérifier que l'utilisateur est connecté
+      if (!user || !user.id) {
+        throw new Error('Vous devez être connecté pour créer une mission');
+      }
+
       // Validate data before sending
       const validatedData = missionFormSchema.parse(values);
-      console.log('🚀 Frontend: Submitting validated mission data:', JSON.stringify(validatedData, null, 2));
+      
+      // Ajouter l'ID utilisateur aux données
+      const missionDataWithUser = {
+        ...validatedData,
+        userId: user.id
+      };
+      
+      console.log('🚀 Frontend: Submitting validated mission data with user:', JSON.stringify(missionDataWithUser, null, 2));
 
       // Test API connectivity first
       try {
@@ -50,7 +64,7 @@ export default function CreateMission() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(validatedData),
+        body: JSON.stringify(missionDataWithUser),
       });
 
       console.log('📡 Frontend: Response status:', response.status);

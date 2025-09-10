@@ -39,9 +39,12 @@ type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
 
 interface ProgressiveFlowProps {
   onComplete?: (data: any) => void;
+  onSubmit?: (data: any) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
+export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError }: ProgressiveFlowProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
@@ -167,6 +170,14 @@ export function ProgressiveFlow({ onComplete }: ProgressiveFlowProps) {
           clientName: user?.name || 'Utilisateur'
         };
 
+        // Si onSubmit est fourni (depuis create-mission.tsx), l'utiliser
+        if (onSubmit) {
+          console.log('🔄 Utilisation de onSubmit fourni par create-mission.tsx');
+          await onSubmit(missionData);
+          return; // onSubmit gère la redirection et les messages
+        }
+
+        // Sinon, comportement par défaut (appel API direct)
         const response = await fetch('/api/missions', {
           method: 'POST',
           headers: {

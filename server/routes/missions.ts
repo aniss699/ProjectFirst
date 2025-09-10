@@ -416,8 +416,6 @@ router.get('/verify-sync', asyncHandler(async (req, res) => {
       description: missions.description,
       category: missions.category,
       budget_value_cents: missions.budget_value_cents,
-      budget_min_cents: missions.budget_min_cents,
-      budget_max_cents: missions.budget_max_cents,
       currency: missions.currency,
       location_raw: missions.location_raw,
       postal_code: missions.postal_code, // Include postal_code
@@ -450,8 +448,6 @@ router.get('/verify-sync', asyncHandler(async (req, res) => {
       description: announcements.description,
       category: announcements.category,
       budget_value_cents: announcements.budget_value_cents,
-      budget_min_cents: announcements.budget_min_cents,
-      budget_max_cents: announcements.budget_max_cents,
       currency: announcements.currency,
       location_raw: announcements.location_raw,
       postal_code: announcements.postal_code, // Assuming announcements table also has postal_code
