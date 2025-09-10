@@ -43,7 +43,6 @@ export const missions = pgTable('missions', {
   // Contenu
   title: text('title').notNull(),
   description: text('description').notNull(),
-  excerpt: text('excerpt'), // Generated column
 
   // Catégorisation
   category: text('category').notNull().default('developpement'),
