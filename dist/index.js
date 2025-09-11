@@ -3089,32 +3089,10 @@ var router2 = Router();
 router2.post("/", asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
-  console.log(JSON.stringify({
-    level: "info",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    request_id: requestId,
-    action: "mission_create_start",
-    body_size: JSON.stringify(req.body).length,
-    user_agent: req.headers["user-agent"],
-    ip: req.ip
-  }));
+  console.log(`\u{1F680} Creating mission - Request ID: ${requestId}`);
   const { title, description, category, budget, location, userId, postal_code } = req.body;
-  console.log(JSON.stringify({
-    level: "info",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    request_id: requestId,
-    action: "mission_data_received",
-    data: { title, description, category, budget, location, postal_code, userId }
-  }));
   if (!title || typeof title !== "string" || title.trim().length < 3) {
-    console.log(JSON.stringify({
-      level: "warn",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "validation_failed",
-      field: "title",
-      value: title
-    }));
+    console.log(`\u274C Validation failed - title: ${title}`);
     return res.status(400).json({
       ok: false,
       error: "Le titre doit contenir au moins 3 caract\xE8res",
@@ -3123,14 +3101,7 @@ router2.post("/", asyncHandler(async (req, res) => {
     });
   }
   if (!description || typeof description !== "string" || description.trim().length < 10) {
-    console.log(JSON.stringify({
-      level: "warn",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "validation_failed",
-      field: "description",
-      value_length: description?.length || 0
-    }));
+    console.log(`\u274C Validation failed - description length: ${description?.length || 0}`);
     return res.status(400).json({
       ok: false,
       error: "La description doit contenir au moins 10 caract\xE8res",
@@ -3140,14 +3111,7 @@ router2.post("/", asyncHandler(async (req, res) => {
   }
   const userIdInt = userId ? parseInt(userId.toString()) : 1;
   if (isNaN(userIdInt) || userIdInt <= 0) {
-    console.log(JSON.stringify({
-      level: "warn",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "validation_failed",
-      field: "userId",
-      value: userId
-    }));
+    console.log(`\u274C Validation failed - userId: ${userId}`);
     return res.status(400).json({
       ok: false,
       error: "User ID invalide",
@@ -3301,48 +3265,99 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
   });
 }));
 router2.get("/", asyncHandler(async (req, res) => {
-  console.log("\u{1F4CB} Fetching all missions...");
-  const allMissions = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    postal_code: missions.postal_code,
-    // Include postal_code
-    city: missions.city,
-    country: missions.country,
-    user_id: missions.user_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at,
-    remote_allowed: missions.remote_allowed,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements
-  }).from(missions).orderBy(desc(missions.created_at));
-  console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
-  const missionsWithBids = allMissions.map((mission) => ({
-    ...mission,
-    excerpt: generateExcerpt(mission.description || "", 200),
-    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-    clientName: "Client anonyme",
-    // Default client name
-    bids: [],
-    // Empty bids array for now
-    // Ensure budget consistency
-    budget: mission.budget_value_cents?.toString() || "0",
-    // Ensure location consistency, prioritize postal_code if available
-    location: mission.location_raw || mission.postal_code || mission.city || "Remote"
+  const requestId = randomUUID();
+  const startTime = Date.now();
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "missions_list_start"
   }));
-  console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
-  res.json(missionsWithBids);
+  try {
+    const allMissions = await db.select().from(missions).where(eq3(missions.status, "published")).orderBy(desc(missions.created_at)).limit(50);
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "missions_query_success",
+      count: allMissions.length,
+      execution_time_ms: Date.now() - startTime
+    }));
+    const missionsWithBids = allMissions.map((mission) => {
+      try {
+        return {
+          id: mission.id,
+          title: mission.title || "Mission sans titre",
+          description: mission.description || "",
+          excerpt: generateExcerpt(mission.description || "", 200),
+          category: mission.category || "general",
+          // Budget handling
+          budget_value_cents: mission.budget_value_cents || 0,
+          budget: mission.budget_value_cents?.toString() || "0",
+          currency: mission.currency || "EUR",
+          // Location handling 
+          location_raw: mission.location_raw,
+          postal_code: mission.postal_code,
+          city: mission.city,
+          country: mission.country || "France",
+          location: mission.location_raw || mission.postal_code || mission.city || "Remote",
+          remote_allowed: mission.remote_allowed !== false,
+          // User and status
+          user_id: mission.user_id,
+          client_id: mission.client_id || mission.user_id,
+          clientName: "Client anonyme",
+          status: mission.status || "published",
+          urgency: mission.urgency || "medium",
+          // Timestamps
+          created_at: mission.created_at,
+          updated_at: mission.updated_at,
+          createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+          updatedAt: mission.updated_at?.toISOString(),
+          // Team info
+          is_team_mission: mission.is_team_mission || false,
+          team_size: mission.team_size || 1,
+          // Additional fields
+          deadline: mission.deadline?.toISOString(),
+          tags: mission.tags || [],
+          skills_required: mission.skills_required || [],
+          requirements: mission.requirements,
+          // Bids (empty for list view)
+          bids: []
+        };
+      } catch (transformError) {
+        console.error("\u274C Error transforming mission:", mission.id, transformError);
+        return null;
+      }
+    }).filter(Boolean);
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "missions_list_success",
+      returned_count: missionsWithBids.length,
+      total_time_ms: Date.now() - startTime
+    }));
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "missions_list_error",
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : void 0,
+      execution_time_ms: Date.now() - startTime
+    }));
+    res.status(500).json({
+      ok: false,
+      error: "Internal server error",
+      details: "An error occurred",
+      error_type: "server_error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      debug_mode: process.env.NODE_ENV === "development"
+    });
+  }
 }));
 router2.get("/health", asyncHandler(async (req, res) => {
   const startTime = Date.now();
