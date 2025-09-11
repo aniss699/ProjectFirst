@@ -5,48 +5,33 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useMissionCreation } from '@/hooks/use-mission-creation';
-import { z } from 'zod';
-
-// Complete mission form schema
-const missionFormSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
-  category: z.string().min(1, "La catégorie est requise"),
-  budget: z.union([z.string(), z.number()]).optional(),
-  location: z.string().optional(),
-  urgency: z.enum(['low', 'medium', 'high']).default('medium'),
-  requirements: z.string().optional(),
-  tags: z.array(z.string()).default([]),
-  deadline: z.union([z.string(), z.date()]).optional(),
-});
+import { useToast } from '@/hooks/use-toast';
+// Validation simplifiée - délégation au service centralisé
 
 export default function CreateMission() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { createMission, isLoading, error, clearError } = useMissionCreation();
+  const { toast } = useToast();
 
   // Mock navigate function, replace with your actual navigation hook if different
   const navigate = (path: string) => setLocation(path);
 
-  const handleSubmit = async (values: z.infer<typeof missionFormSchema>) => {
+  const handleSubmit = async (values: any) => {
     try {
       clearError();
+      console.log('🚀 CreateMission: Submitting via centralized service');
 
-      // Validate data
-      const validatedData = missionFormSchema.parse(values);
-      
-      console.log('🚀 CreateMission: Submitting data via hook');
-
-      // Use centralized service
-      const result = await createMission(validatedData);
+      // Utiliser service centralisé (validation incluse)
+      const result = await createMission(values);
 
       if (result.ok) {
         console.log('✅ CreateMission: Mission created successfully');
         setLocation('/missions');
       }
-      // Error is handled by the hook automatically
-    } catch (validationError) {
-      console.error('❌ CreateMission: Validation error:', validationError);
+      // L'erreur est gérée automatiquement par le hook
+    } catch (error) {
+      console.error('❌ CreateMission: Submission error:', error);
     }
   };
 
@@ -72,12 +57,17 @@ export default function CreateMission() {
           <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/30 via-purple-100/20 to-blue-100/25 rounded-3xl blur-xl transform rotate-1 scale-102"></div>
           <div className="relative z-10">
             <ProgressiveFlow 
-              onSubmit={handleSubmit} // Pass handleSubmit to the form
+              onSubmit={handleSubmit} 
               isLoading={isLoading}
               error={error}
               onComplete={(data) => {
-                console.log('Données du projet:', data);
-                // Redirection handled by handleSubmit on success
+                console.log('✅ Projet créé:', data);
+                // Amélioration UX : feedback visuel de succès
+                toast({
+                  title: "Mission créée !",
+                  description: `"${data.title}" a été publiée avec succès`,
+                  variant: "default"
+                });
               }}
             />
           </div>

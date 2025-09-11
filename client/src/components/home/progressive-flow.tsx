@@ -24,7 +24,6 @@ import {
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useMissionCreation } from '@/hooks/use-mission-creation';
-import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, connectionCategories, getCategoryDynamicFields, type DynamicField } from '@/lib/categories';
 import { SimpleAIEnhancement } from '@/components/ai/simple-ai-enhancement';
@@ -60,7 +59,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   const isCreating = externalLoading !== undefined ? externalLoading : hookLoading;
   const currentError = externalError !== undefined ? externalError : hookError;
   const [clickedCard, setClickedCard] = useState<string | null>(null);
-  const { toast } = useToast();
   const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
   const [userType, setUserType] = useState<UserType>(null);
   const [serviceType, setServiceType] = useState<ServiceType>(null);
@@ -86,56 +84,46 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   const progress = ((currentStep + 2) / 5) * 100; // 5 niveaux au total maintenant (niveau -1 + 4 étapes)
 
-  // Nouvelle fonction utilisant le hook centralisé
+  // Fonction simplifiée utilisant le hook centralisé
   const handleMissionCreation = async () => {
-    try {
-      // Préparer les données
-      const missionData = {
-        title: projectData.title,
-        description: projectData.description,
-        category: selectedCategory,
-        budget: projectData.budget,
-        location: projectData.needsLocation ? projectData.location.address : 'Remote',
-        urgency: 'medium', // Default value, should be configurable if needed
-        requirements: projectData.requirements,
-        isTeamMode
-      };
+    const missionData = {
+      title: projectData.title,
+      description: projectData.description,
+      category: selectedCategory,
+      budget: projectData.budget,
+      location: projectData.needsLocation ? projectData.location.address : 'Remote',
+      urgency: 'medium' as const,
+      requirements: projectData.requirements,
+      isTeamMode
+    };
 
-      console.log('🚀 Progressive Flow: Creating mission with hook');
+    console.log('🚀 Progressive Flow: Creating mission with hook');
 
-      // Utiliser le hook approprié
-      const result = isTeamMode 
-        ? await createTeamProject({ ...missionData, teamSize: projectData.teamSize || 3, requirements: projectData.teamRequirements }) // Pass team-specific data
-        : await createMission(missionData);
+    // Utiliser le hook approprié
+    const result = isTeamMode 
+      ? await createTeamProject(missionData)
+      : await createMission(missionData);
 
-      if (result.ok) {
-        console.log('✅ Progressive Flow: Mission created via hook:', result);
-
-        // Callback externe (pour create-mission.tsx)
-        if (onSubmit) {
-          onSubmit(missionData);
-          return; // Laisser le parent gérer la redirection
-        }
-
-        // Callback interne
-        if (onComplete) {
-          onComplete({ ...result.mission, isTeamMode, teamRequirements: result.teamRequirements }); // Pass team requirements from result
-        }
-
-        // Redirection par défaut
-        setLocation('/missions');
-      } else {
-        throw new Error(result.error || 'Erreur création mission');
+    if (result.ok) {
+      console.log('✅ Progressive Flow: Mission created successfully');
+      
+      // Callback externe a priorité (pour create-mission.tsx)
+      if (onSubmit) {
+        onSubmit(missionData);
+        return;
       }
-    } catch (error) {
-      console.error('❌ Progressive Flow: Creation error:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de créer la mission. Veuillez réessayer.',
-        variant: 'destructive',
-      });
-      throw error; // Re-throw to be caught by handleSubmit
+
+      // Callback interne
+      if (onComplete) {
+        onComplete({ ...result.mission, isTeamMode });
+      }
+
+      // Redirection par défaut
+      setLocation('/missions');
     }
+    
+    // L'erreur est gérée automatiquement par le hook
+    return result;
   };
 
   const handleSubmit = async () => {

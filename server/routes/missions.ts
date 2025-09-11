@@ -40,6 +40,49 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
+// GET /api/missions/health - Health check endpoint
+router.get('/health', asyncHandler(async (req, res) => {
+  const startTime = Date.now();
+  console.log('🏥 Mission health check endpoint called');
+
+  try {
+    // Test database connectivity
+    const dbTest = await db.select({ count: sql`COUNT(*)` }).from(missions).limit(1);
+    const dbConnected = dbTest.length > 0;
+
+    // Calculate response time
+    const responseTime = Date.now() - startTime;
+
+    const healthInfo = {
+      status: 'healthy',
+      message: 'Missions API is operational',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: dbConnected ? 'connected' : 'disconnected',
+      response_time_ms: responseTime,
+      uptime_seconds: Math.floor(process.uptime()),
+      memory_usage: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    };
+
+    console.log('🏥 Health check passed:', healthInfo);
+    res.status(200).json(healthInfo);
+  } catch (error) {
+    console.error('🏥 Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      message: 'Missions API is not operational',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      response_time_ms: Date.now() - startTime
+    });
+  }
+}));
+
 // POST /api/missions - Create new mission (optimized)
 router.post('/', asyncHandler(async (req, res) => {
   const requestId = randomUUID();
@@ -246,7 +289,7 @@ router.post('/', asyncHandler(async (req, res) => {
 router.get('/', asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
-  
+
   console.log(JSON.stringify({
     level: 'info',
     timestamp: new Date().toISOString(),
@@ -281,43 +324,43 @@ router.get('/', asyncHandler(async (req, res) => {
           description: mission.description || '',
           excerpt: generateExcerpt(mission.description || '', 200),
           category: mission.category || 'general',
-          
+
           // Budget handling
           budget_value_cents: mission.budget_value_cents || 0,
           budget: mission.budget_value_cents?.toString() || '0',
           currency: mission.currency || 'EUR',
-          
-          // Location handling 
+
+          // Location handling
           location_raw: mission.location_raw,
           postal_code: mission.postal_code,
           city: mission.city,
           country: mission.country || 'France',
           location: mission.location_raw || mission.postal_code || mission.city || 'Remote',
           remote_allowed: mission.remote_allowed !== false,
-          
+
           // User and status
           user_id: mission.user_id,
           client_id: mission.client_id || mission.user_id,
           clientName: 'Client anonyme',
           status: mission.status || 'published',
           urgency: mission.urgency || 'medium',
-          
+
           // Timestamps
           created_at: mission.created_at,
           updated_at: mission.updated_at,
           createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
           updatedAt: mission.updated_at?.toISOString(),
-          
+
           // Team info
           is_team_mission: mission.is_team_mission || false,
           team_size: mission.team_size || 1,
-          
+
           // Additional fields
           deadline: mission.deadline?.toISOString(),
           tags: mission.tags || [],
           skills_required: mission.skills_required || [],
           requirements: mission.requirements,
-          
+
           // Bids (empty for list view)
           bids: []
         };
@@ -356,49 +399,6 @@ router.get('/', asyncHandler(async (req, res) => {
       timestamp: new Date().toISOString(),
       request_id: requestId,
       debug_mode: process.env.NODE_ENV === 'development'
-    });
-  }
-}));
-
-// GET /api/missions/health - Health check endpoint (must be before /:id route)
-router.get('/health', asyncHandler(async (req, res) => {
-  const startTime = Date.now();
-  console.log('🏥 Mission health check endpoint called');
-
-  try {
-    // Test database connectivity
-    const dbTest = await db.select({ count: sql`COUNT(*)` }).from(missions).limit(1);
-    const dbConnected = dbTest.length > 0;
-
-    // Calculate response time
-    const responseTime = Date.now() - startTime;
-
-    const healthInfo = {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'missions-api',
-      environment: process.env.NODE_ENV || 'development',
-      database: dbConnected ? 'connected' : 'disconnected',
-      response_time_ms: responseTime,
-      uptime_seconds: Math.floor(process.uptime()),
-      memory_usage: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-      }
-    };
-
-    console.log('🏥 Health check passed:', healthInfo);
-    res.status(200).json(healthInfo);
-  } catch (error) {
-    console.error('🏥 Health check failed:', error);
-    res.status(503).json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      service: 'missions-api',
-      environment: process.env.NODE_ENV || 'development',
-      database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      response_time_ms: Date.now() - startTime
     });
   }
 }));
