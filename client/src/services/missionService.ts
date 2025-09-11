@@ -134,11 +134,12 @@ class MissionService {
       description: input.description.trim(),
       category: input.category || 'developpement',
       budget: budgetValue,
-      location: input.location?.trim() || undefined,
-      userId: 1, // Sera remplacé par l'auth
+      location: input.location?.trim() || 'Remote',
+      userId: (input as any).userId || 1, // Sera fourni par le hook
       urgency: input.urgency || 'medium',
       requirements: input.requirements?.trim() || undefined,
-      isTeamMode: input.isTeamMode || false
+      isTeamMode: input.isTeamMode || false,
+      postal_code: input.needsLocation && input.location?.length === 5 ? input.location : undefined
     };
   }
 
@@ -207,6 +208,17 @@ class MissionService {
     } catch (error) {
       console.error(`❌ Error fetching mission ${id}:`, error);
       return null;
+    }
+  }
+
+  // Méthode de test pour vérifier le bon fonctionnement
+  static async testConnection(): Promise<boolean> {
+    try {
+      const response = await fetch('/api/missions/health');
+      return response.ok;
+    } catch (error) {
+      console.error('❌ Connection test failed:', error);
+      return false;
     }
   }
 }

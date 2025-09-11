@@ -45,7 +45,7 @@ router.post('/', asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
 
-  console.log(`🚀 Creating mission - Request ID: ${requestId}`);
+  // console.log(`🚀 Creating mission - Request ID: ${requestId}`); // Reduced logging
 
   // 1. Validation et extraction des données
   const { title, description, category, budget, location, userId, postal_code } = req.body;
@@ -116,18 +116,8 @@ router.post('/', asyncHandler(async (req, res) => {
     updated_at: now
   };
 
-  console.log(JSON.stringify({
-    level: 'info',
-    timestamp: new Date().toISOString(),
-    request_id: requestId,
-    action: 'mission_data_prepared',
-    title_length: newMission.title.length,
-    description_length: newMission.description.length,
-    budget_cents: newMission.budget_value_cents,
-    user_id: newMission.user_id,
-    location: newMission.location_raw,
-    postal_code: newMission.postal_code,
-  }));
+  // Simplified logging for performance
+  console.log(`📝 Mission prepared: ${newMission.title.substring(0, 30)}...`);
 
   // 3. Transaction robuste avec INSERT RETURNING
   console.log(JSON.stringify({
