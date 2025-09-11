@@ -40,42 +40,19 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
-// POST /api/missions - Create new mission (robuste avec transaction)
+// POST /api/missions - Create new mission (optimized)
 router.post('/', asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
 
-  // Log structuré de début
-  console.log(JSON.stringify({
-    level: 'info',
-    timestamp: new Date().toISOString(),
-    request_id: requestId,
-    action: 'mission_create_start',
-    body_size: JSON.stringify(req.body).length,
-    user_agent: req.headers['user-agent'],
-    ip: req.ip
-  }));
+  console.log(`🚀 Creating mission - Request ID: ${requestId}`);
 
-  // 1. Validation stricte d'entrée
+  // 1. Validation et extraction des données
   const { title, description, category, budget, location, userId, postal_code } = req.body;
 
-  console.log(JSON.stringify({
-    level: 'info',
-    timestamp: new Date().toISOString(),
-    request_id: requestId,
-    action: 'mission_data_received',
-    data: { title, description, category, budget, location, postal_code, userId }
-  }));
-
+  // Validation rapide
   if (!title || typeof title !== 'string' || title.trim().length < 3) {
-    console.log(JSON.stringify({
-      level: 'warn',
-      timestamp: new Date().toISOString(),
-      request_id: requestId,
-      action: 'validation_failed',
-      field: 'title',
-      value: title
-    }));
+    console.log(`❌ Validation failed - title: ${title}`);
     return res.status(400).json({
       ok: false,
       error: 'Le titre doit contenir au moins 3 caractères',
@@ -85,14 +62,7 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 
   if (!description || typeof description !== 'string' || description.trim().length < 10) {
-    console.log(JSON.stringify({
-      level: 'warn',
-      timestamp: new Date().toISOString(),
-      request_id: requestId,
-      action: 'validation_failed',
-      field: 'description',
-      value_length: description?.length || 0
-    }));
+    console.log(`❌ Validation failed - description length: ${description?.length || 0}`);
     return res.status(400).json({
       ok: false,
       error: 'La description doit contenir au moins 10 caractères',
@@ -103,14 +73,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
   const userIdInt = userId ? parseInt(userId.toString()) : 1;
   if (isNaN(userIdInt) || userIdInt <= 0) {
-    console.log(JSON.stringify({
-      level: 'warn',
-      timestamp: new Date().toISOString(),
-      request_id: requestId,
-      action: 'validation_failed',
-      field: 'userId',
-      value: userId
-    }));
+    console.log(`❌ Validation failed - userId: ${userId}`);
     return res.status(400).json({
       ok: false,
       error: 'User ID invalide',
@@ -289,56 +252,122 @@ router.post('/', asyncHandler(async (req, res) => {
   });
 }));
 
-// GET /api/missions - Get all missions with bids
+// GET /api/missions - Get all missions with bids (simplified)
 router.get('/', asyncHandler(async (req, res) => {
-  console.log('📋 Fetching all missions...');
-
-  // Use specific columns that exist in the database
-  const allMissions = await db
-    .select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code, // Include postal_code
-      city: missions.city,
-      country: missions.country,
-      user_id: missions.user_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      remote_allowed: missions.remote_allowed,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements
-    })
-    .from(missions)
-    .orderBy(desc(missions.created_at));
-
-  console.log(`📋 Found ${allMissions.length} missions in database`);
-
-  // Transform missions to include required fields for MissionWithBids type
-  const missionsWithBids = allMissions.map(mission => ({
-    ...mission,
-    excerpt: generateExcerpt(mission.description || '', 200),
-    createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
-    clientName: 'Client anonyme', // Default client name
-    bids: [], // Empty bids array for now
-    // Ensure budget consistency
-    budget: mission.budget_value_cents?.toString() || '0',
-    // Ensure location consistency, prioritize postal_code if available
-    location: mission.location_raw || mission.postal_code || mission.city || 'Remote'
+  const requestId = randomUUID();
+  const startTime = Date.now();
+  
+  console.log(JSON.stringify({
+    level: 'info',
+    timestamp: new Date().toISOString(),
+    request_id: requestId,
+    action: 'missions_list_start'
   }));
 
-  console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
-  res.json(missionsWithBids);
+  try {
+    // Simplified query with error handling
+    const allMissions = await db
+      .select()
+      .from(missions)
+      .where(eq(missions.status, 'published'))
+      .orderBy(desc(missions.created_at))
+      .limit(50); // Limite pour éviter surcharge
+
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'missions_query_success',
+      count: allMissions.length,
+      execution_time_ms: Date.now() - startTime
+    }));
+
+    // Transform missions safely
+    const missionsWithBids = allMissions.map(mission => {
+      try {
+        return {
+          id: mission.id,
+          title: mission.title || 'Mission sans titre',
+          description: mission.description || '',
+          excerpt: generateExcerpt(mission.description || '', 200),
+          category: mission.category || 'general',
+          
+          // Budget handling
+          budget_value_cents: mission.budget_value_cents || 0,
+          budget: mission.budget_value_cents?.toString() || '0',
+          currency: mission.currency || 'EUR',
+          
+          // Location handling 
+          location_raw: mission.location_raw,
+          postal_code: mission.postal_code,
+          city: mission.city,
+          country: mission.country || 'France',
+          location: mission.location_raw || mission.postal_code || mission.city || 'Remote',
+          remote_allowed: mission.remote_allowed !== false,
+          
+          // User and status
+          user_id: mission.user_id,
+          client_id: mission.client_id || mission.user_id,
+          clientName: 'Client anonyme',
+          status: mission.status || 'published',
+          urgency: mission.urgency || 'medium',
+          
+          // Timestamps
+          created_at: mission.created_at,
+          updated_at: mission.updated_at,
+          createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
+          updatedAt: mission.updated_at?.toISOString(),
+          
+          // Team info
+          is_team_mission: mission.is_team_mission || false,
+          team_size: mission.team_size || 1,
+          
+          // Additional fields
+          deadline: mission.deadline?.toISOString(),
+          tags: mission.tags || [],
+          skills_required: mission.skills_required || [],
+          requirements: mission.requirements,
+          
+          // Bids (empty for list view)
+          bids: []
+        };
+      } catch (transformError) {
+        console.error('❌ Error transforming mission:', mission.id, transformError);
+        return null;
+      }
+    }).filter(Boolean); // Remove null entries
+
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'missions_list_success',
+      returned_count: missionsWithBids.length,
+      total_time_ms: Date.now() - startTime
+    }));
+
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error(JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'missions_list_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      execution_time_ms: Date.now() - startTime
+    }));
+
+    res.status(500).json({
+      ok: false,
+      error: 'Internal server error',
+      details: 'An error occurred',
+      error_type: 'server_error',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      debug_mode: process.env.NODE_ENV === 'development'
+    });
+  }
 }));
 
 // GET /api/missions/health - Health check endpoint (must be before /:id route)

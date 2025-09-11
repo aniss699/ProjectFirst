@@ -1,35 +1,38 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Users, 
-  Zap, 
-  ChevronRight, 
-  ChevronLeft,
-  FileText,
+  ArrowRight, 
+  ArrowLeft,
+  CheckCircle,
+  Lightbulb,
   Target,
   Euro,
-  Calendar,
   MapPin,
-  PlusCircle
+  Clock,
+  Users,
+  Sparkles,
+  Zap,
+  Brain,
+  Rocket
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { useMissionCreation } from '@/hooks/use-mission-creation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, connectionCategories, getCategoryDynamicFields, type DynamicField } from '@/lib/categories';
 import { SimpleAIEnhancement } from '@/components/ai/simple-ai-enhancement';
 import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/use-auth';
 import { GeoSearch } from '@/components/location/geo-search';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TeamRequirement } from '../../../shared/schema';
@@ -45,25 +48,18 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError }: ProgressiveFlowProps) {
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
-  const [isCreating, setIsCreating] = useState(false);
+  const { createMission, createTeamProject, isLoading: hookLoading, error: hookError } = useMissionCreation();
+  const [currentStep, setCurrentStep] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Use external loading/error if provided, otherwise use hook's
+  const isCreating = externalLoading !== undefined ? externalLoading : hookLoading;
+  const currentError = externalError !== undefined ? externalError : hookError;
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
   const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
-  const [isSubmitting, setIsSubmitting] = useState(false); // State pour le bouton de soumission
-
-  // Function to get Lucide icon component from icon name
-  const getIcon = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[
-      iconName.split('-').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join('')
-    ];
-    return IconComponent || LucideIcons.Briefcase;
-  };
   const [userType, setUserType] = useState<UserType>(null);
   const [serviceType, setServiceType] = useState<ServiceType>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -88,206 +84,76 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   const progress = ((currentStep + 2) / 5) * 100; // 5 niveaux au total maintenant (niveau -1 + 4 étapes)
 
-  // Function to create the mission via API
-  const createMission = async () => {
-    setIsCreating(true);
-
+  // Nouvelle fonction utilisant le hook centralisé
+  const handleMissionCreation = async () => {
     try {
-      if (isTeamMode) {
-        // Analyser les besoins d'équipe
-        const response = await fetch('/api/team/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description: projectData.description,
-            title: projectData.title,
-            category: selectedCategory,
-            budget: projectData.budget
-          })
-        });
-
-        if (response.ok) {
-          const analysis = await response.json();
-
-          // Créer le projet avec l'équipe analysée
-          const createResponse = await fetch('/api/team/create-project', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectData: {
-                title: projectData.title,
-                description: projectData.description,
-                category: selectedCategory,
-                budget: projectData.budget,
-                location: projectData.needsLocation ? projectData.location.address : 'Remote',
-                isTeamMode: true
-              },
-              teamRequirements: analysis.professions
-            })
-          });
-
-          if (createResponse.ok) {
-            const result = await createResponse.json();
-            toast({
-              title: 'Projet équipe créé !',
-              description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
-            });
-
-            // Invalider le cache des missions pour forcer le rechargement
-            queryClient.invalidateQueries({ queryKey: ['missions'] });
-
-            // Rediriger vers les missions
-            setLocation('/missions');
-            onComplete?.({
-              userType,
-              serviceType,
-              selectedCategory,
-              projectData,
-              projectId: result.project.id
-            });
-          } else {
-            const error = await createResponse.json();
-            throw new Error(error.error || 'Erreur lors de la création du projet');
-          }
-        } else {
-          const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de l\'analyse d\'équipe');
-        }
-      } else {
-        // Mode mission simple
-        const budgetFormatted = typeof projectData.budget === 'string' 
-          ? projectData.budget 
-          : projectData.budget?.toString() || '';
-
-        const missionData = {
-          title: projectData.title,
-          description: projectData.description + 
-            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : ''),
-          category: selectedCategory,
-          budget: budgetFormatted,
-          location: projectData.needsLocation ? projectData.location.address : 'Remote',
-          userId: user?.id?.toString() || null,
-          clientName: user?.name || 'Utilisateur'
-        };
-
-        // Si onSubmit est fourni (depuis create-mission.tsx), l'utiliser
-        if (onSubmit) {
-          console.log('🔄 Utilisation de onSubmit fourni par create-mission.tsx');
-          await onSubmit(missionData);
-          return; // onSubmit gère la redirection et les messages
-        }
-
-        // Sinon, comportement par défaut (appel API direct)
-        const response = await fetch('/api/missions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(missionData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Mission créée avec succès:', result);
-
-          toast({ 
-            title: 'Mission créée !', 
-            description: 'Votre mission a été publiée avec succès.' 
-          });
-
-          // Invalider le cache des missions pour forcer le rechargement
-          queryClient.invalidateQueries({ queryKey: ['missions'] });
-
-          // Rediriger vers les missions
-          setLocation('/missions');
-          onComplete?.({
-            userType,
-            serviceType,
-            selectedCategory,
-            projectData,
-            missionId: result.id
-          });
-        } else {
-          const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de la création de la mission');
-        }
-      }
-    } catch (error) {
-      console.error('Erreur création mission:', error);
-      toast({
-        title: 'Erreur de création',
-        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // --- Nouvelle fonction handleSubmitMission modifiée ---
-  const handleSubmitMission = async (values: any) => {
-    if (!user) {
-      toast({
-        title: "Connexion requise",
-        description: "Veuillez vous connecter pour créer une mission",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Ensure proper data formatting before sending
-      const formattedData = {
-        title: values.title,
-        description: values.description,
-        category: values.category || 'developpement',
-        budget: values.budget ? parseInt(values.budget.toString()) : null,
-        location: values.location || null,
-        urgency: values.urgency || 'medium',
-        requirements: values.requirements || null,
-        tags: values.tags || [],
-        deadline: values.deadline ? new Date(values.deadline).toISOString() : null,
+      // Préparer les données
+      const missionData = {
+        title: projectData.title,
+        description: projectData.description,
+        category: selectedCategory,
+        budget: projectData.budget,
+        location: projectData.needsLocation ? projectData.location.address : 'Remote',
+        urgency: 'medium', // Default value, should be configurable if needed
+        requirements: projectData.requirements,
+        isTeamMode
       };
 
-      console.log('🚀 Sending formatted data:', formattedData);
+      console.log('🚀 Progressive Flow: Creating mission with hook');
 
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
+      // Utiliser le hook approprié
+      const result = isTeamMode 
+        ? await createTeamProject({ ...missionData, teamSize: projectData.teamSize || 3, requirements: projectData.teamRequirements }) // Pass team-specific data
+        : await createMission(missionData);
 
-      const result = await response.json();
+      if (result.ok) {
+        console.log('✅ Progressive Flow: Mission created via hook:', result);
 
-      if (!response.ok) {
-        console.error('Erreur serveur:', result);
-        throw new Error(result.error || 'Erreur lors de la création de la mission');
+        // Callback externe (pour create-mission.tsx)
+        if (onSubmit) {
+          onSubmit(missionData);
+          return; // Laisser le parent gérer la redirection
+        }
+
+        // Callback interne
+        if (onComplete) {
+          onComplete({ ...result.mission, isTeamMode, teamRequirements: result.teamRequirements }); // Pass team requirements from result
+        }
+
+        // Redirection par défaut
+        setLocation('/missions');
+      } else {
+        throw new Error(result.error || 'Erreur création mission');
       }
-
-      console.log('Mission créée avec succès:', result);
-
-      toast({
-        title: "Mission créée !",
-        description: "Votre mission a été publiée avec succès",
-      });
-
-      onComplete?.(result);
     } catch (error) {
-      console.error('Erreur création mission:', error);
+      console.error('❌ Progressive Flow: Creation error:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de créer la mission. Veuillez réessayer.",
-        variant: "destructive"
+        title: 'Erreur',
+        description: error.message || 'Impossible de créer la mission. Veuillez réessayer.',
+        variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
+      throw error; // Re-throw to be caught by handleSubmit
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      await handleMissionCreation();
+    } catch (error) {
+      console.error('Erreur lors de la création:', error);
+      // L'erreur est déjà gérée par le hook
+    }
+  };
 
+  // Function to get Lucide icon component from icon name
+  const getIcon = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[
+      iconName.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join('')
+    ];
+    return IconComponent || LucideIcons.Briefcase;
+  };
 
   // Animation d'entrée pour chaque étape
   useEffect(() => {
@@ -296,8 +162,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     }, 100);
     return () => clearTimeout(timer);
   }, [currentStep]);
-
-
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
@@ -781,7 +645,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <MapPin className="w-5 h-5 mr-2 text-blue-600" />
               Localisation
             </h3>
-            
+
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <input
@@ -796,7 +660,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                   À distance
                 </label>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -858,7 +722,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                 !projectData.description.trim() ||
                 (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
               }
-              onClick={createMission}
+              onClick={handleSubmit}
               loading={isCreating}
             >
               {isCreating ? (

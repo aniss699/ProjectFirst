@@ -4,6 +4,7 @@ import { ProgressiveFlow } from '@/components/home/progressive-flow';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
+import { useMissionCreation } from '@/hooks/use-mission-creation';
 import { z } from 'zod';
 
 // Complete mission form schema
@@ -21,79 +22,31 @@ const missionFormSchema = z.object({
 
 export default function CreateMission() {
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { createMission, isLoading, error, clearError } = useMissionCreation();
 
   // Mock navigate function, replace with your actual navigation hook if different
   const navigate = (path: string) => setLocation(path);
 
   const handleSubmit = async (values: z.infer<typeof missionFormSchema>) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      clearError();
 
-      // Vérifier que l'utilisateur est connecté
-      if (!user || !user.id) {
-        throw new Error('Vous devez être connecté pour créer une mission');
-      }
-
-      // Validate data before sending
+      // Validate data
       const validatedData = missionFormSchema.parse(values);
       
-      // Ajouter l'ID utilisateur aux données
-      const missionDataWithUser = {
-        ...validatedData,
-        userId: user.id
-      };
-      
-      console.log('🚀 Frontend: Submitting validated mission data with user:', JSON.stringify(missionDataWithUser, null, 2));
+      console.log('🚀 CreateMission: Submitting data via hook');
 
-      // Test API connectivity first
-      try {
-        const healthCheck = await fetch('/api/health');
-        if (!healthCheck.ok) {
-          throw new Error('Service temporairement indisponible');
-        }
-      } catch (e) {
-        throw new Error('Impossible de contacter le serveur');
+      // Use centralized service
+      const result = await createMission(validatedData);
+
+      if (result.ok) {
+        console.log('✅ CreateMission: Mission created successfully');
+        setLocation('/missions');
       }
-
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(missionDataWithUser),
-      });
-
-      console.log('📡 Frontend: Response status:', response.status);
-      console.log('📡 Frontend: Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const responseText = await response.text();
-      console.log('📡 Frontend: Raw response:', responseText);
-
-      if (!response.ok) {
-        let errorMessage = 'Échec de la création de mission';
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.error || errorData.details || errorMessage;
-        } catch (e) {
-          errorMessage = responseText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const mission = JSON.parse(responseText);
-      console.log('✅ Frontend: Mission created successfully:', mission);
-
-      // Redirect to missions page or show success
-      navigate('/missions');
-    } catch (error) {
-      console.error('❌ Frontend: Error creating mission:', error);
-      setError(error instanceof Error ? error.message : 'Échec de la création de mission. Veuillez réessayer.');
-    } finally {
-      setIsLoading(false);
+      // Error is handled by the hook automatically
+    } catch (validationError) {
+      console.error('❌ CreateMission: Validation error:', validationError);
     }
   };
 
