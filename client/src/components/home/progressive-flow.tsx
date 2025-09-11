@@ -19,7 +19,9 @@ import {
   Sparkles,
   Zap,
   Brain,
-  Rocket
+  Rocket,
+  ChevronLeft,
+  Calendar
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
@@ -35,7 +37,7 @@ import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GeoSearch } from '@/components/location/geo-search';
-import { useQueryClient } from '@tanstack/react-query';
+import { queryClient } from '@tanstack/react-query';
 import type { TeamRequirement } from '../../../shared/schema';
 
 type UserType = 'client' | 'prestataire' | null;
@@ -83,47 +85,65 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const progress = ((currentStep + 2) / 5) * 100; // 5 niveaux au total maintenant (niveau -1 + 4 étapes)
+  const updateFormData = (newData: Partial<typeof projectData>) => {
+    setProjectData(prev => ({ ...prev, ...newData }));
+  };
 
-  // Fonction simplifiée utilisant le hook centralisé
   const handleMissionCreation = async () => {
+    // Validation finale simple
+    if (!projectData.title?.trim() || projectData.title.trim().length < 3) {
+      toast({
+        title: "Titre requis",
+        description: "Le titre doit contenir au moins 3 caractères",
+        variant: "destructive"
+      });
+      return { ok: false, error: "Titre invalide" };
+    }
+
+    if (!projectData.description?.trim() || projectData.description.trim().length < 10) {
+      toast({
+        title: "Description requise",
+        description: "La description doit contenir au moins 10 caractères",
+        variant: "destructive"
+      });
+      return { ok: false, error: "Description invalide" };
+    }
+
+    // Données avec valeurs par défaut optimales
     const missionData = {
-      title: projectData.title,
-      description: projectData.description,
-      category: selectedCategory,
-      budget: projectData.budget,
-      location: projectData.needsLocation ? projectData.location.address : 'Remote',
-      urgency: 'medium' as const,
-      requirements: projectData.requirements,
-      isTeamMode
+      title: projectData.title.trim(),
+      description: projectData.description.trim(),
+      category: projectData.category || 'developpement',
+      budget: parseInt(projectData.budget) || 1000,
+      location: projectData.location.address || 'Remote', // Utiliser l'adresse du lieu ou 'Remote'
+      isTeamMode: projectData.isTeamMode,
+      requirements: projectData.requirements?.trim()
     };
 
-    console.log('🚀 Progressive Flow: Creating mission with hook');
+    console.log('🚀 Mission création simplifiée:', missionData);
 
-    // Utiliser le hook approprié
-    const result = isTeamMode 
+    // Création via le hook centralisé
+    const result = isTeamMode
       ? await createTeamProject(missionData)
       : await createMission(missionData);
 
-    if (result.ok) {
-      console.log('✅ Progressive Flow: Mission created successfully');
-      
-      // Callback externe a priorité (pour create-mission.tsx)
+
+    if (result.ok && result.id) {
+      // Success toast géré par le hook
+      console.log('✅ Mission créée avec ID:', result.id);
+
+      // Callback personnalisé si fourni
       if (onSubmit) {
-        onSubmit(missionData);
-        return;
+        onSubmit(result);
+      } else {
+        // Redirection par défaut vers Mes Missions
+        setLocation('/missions');
       }
-
-      // Callback interne
-      if (onComplete) {
-        onComplete({ ...result.mission, isTeamMode });
-      }
-
-      // Redirection par défaut
-      setLocation('/missions');
+    } else {
+      // L'erreur est déjà affichée par le hook useMissionCreation ou le hook useToast
+      console.error('Erreur lors de la création de la mission:', result.error);
     }
-    
-    // L'erreur est gérée automatiquement par le hook
+
     return result;
   };
 
@@ -131,8 +151,12 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     try {
       await handleMissionCreation();
     } catch (error) {
-      console.error('Erreur lors de la création:', error);
-      // L'erreur est déjà gérée par le hook
+      console.error('Erreur inattendue lors de la soumission:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue est survenue. Veuillez réessayer.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -707,10 +731,11 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             </Button>
 
             <Button 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
               disabled={
                 !projectData.title.trim() || 
                 !projectData.description.trim() ||
+                !projectData.category ||
                 (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
               }
               onClick={handleSubmit}
@@ -735,13 +760,56 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   };
 
 
-  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
+  // Configuration des étapes simplifiées
+  const steps = [
+    {
+      id: 0,
+      title: "Comprendre Swideal",
+      description: "Découvrir l'art du deal",
+      icon: "lightbulb",
+      fields: []
+    },
+    {
+      id: 1,
+      title: "Votre Mission",
+      description: "Titre et description",
+      icon: "briefcase",
+      fields: ['title', 'description', 'category']
+    },
+    {
+      id: 2,
+      title: "Finaliser",
+      description: "Budget, lieu et publication",
+      icon: "rocket",
+      fields: ['budget', 'location', 'isTeamMode']
+    }
+  ];
+
+  // Validation simplifiée
+  const isStepValid = (stepIndex: number): boolean => {
+    switch (stepIndex) {
+      case 0: return true; // Page d'introduction
+      case 1: 
+        return projectData.title.length >= 3 && 
+               projectData.description.length >= 10 && 
+               projectData.category.length > 0;
+      case 2:
+        // Le budget et la localisation sont optionnels, donc l'étape est toujours valide
+        return true; 
+      default: 
+        return false;
+    }
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {steps[currentStep + 1]()}
+          {currentStep === -1 && renderStepMinus1()}
+          {currentStep === 0 && renderStep0()}
+          {currentStep === 1 && renderStep1()}
+          {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
         </div>
 
         {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
@@ -749,10 +817,10 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 4
+                Étape {currentStep + 1} sur 3
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 4) * 100)}%
+                {Math.round(((currentStep + 1) / 3) * 100)}%
               </span>
             </div>
 
@@ -760,7 +828,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / 3) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
@@ -769,7 +837,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
             {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     step <= currentStep + 1 
