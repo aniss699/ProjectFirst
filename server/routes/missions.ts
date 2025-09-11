@@ -115,7 +115,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
   // 2. Préparer les données avec valeurs par défaut intelligentes
   const budgetCents = budget ? Math.max(parseInt(budget.toString()) * 100, 1000) : 100000;
-  
+
   const missionData = {
     title: title.trim(),
     description: description.trim() + (requirements ? `\n\nExigences: ${requirements}` : ''),
@@ -168,68 +168,86 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 }));
 
-// GET /api/missions - Get all missions (simplified and robust)
-router.get('/', asyncHandler(async (req, res) => {
-  const startTime = Date.now();
-  console.log('📥 GET /api/missions - Fetching published missions');
-
+// GET /api/missions - Récupérer toutes les missions publiques
+router.get('/', async (req, res) => {
   try {
-    // Simple, robust query
-    const allMissions = await db
-      .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget_value_cents: missions.budget_value_cents,
-        currency: missions.currency,
-        location_raw: missions.location_raw,
-        postal_code: missions.postal_code,
-        user_id: missions.user_id,
-        status: missions.status,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at,
-        urgency: missions.urgency,
-        remote_allowed: missions.remote_allowed
-      })
-      .from(missions)
-      .where(eq(missions.status, 'published'))
-      .orderBy(desc(missions.created_at))
-      .limit(50);
+    console.log('🔍 Fetching missions for marketplace');
 
-    // Simple transformation
-    const formattedMissions = allMissions.map(mission => ({
+    // Vérifier la connexion à la base
+    if (!db) {
+      console.error('❌ Database connection not available');
+      return res.status(500).json({
+        ok: false,
+        error: 'Base de données non disponible',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Récupérer toutes les missions actives (non supprimées)
+    const missions = await db.query(`
+      SELECT 
+        id,
+        title,
+        description,
+        category,
+        budget_min,
+        budget_max,
+        location,
+        urgency,
+        skills_required,
+        is_team_mission,
+        remote_allowed,
+        user_id,
+        created_at,
+        updated_at,
+        deadline,
+        status
+      FROM missions 
+      WHERE status = 'active' OR status IS NULL
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
+
+    console.log(`✅ Found ${missions?.length || 0} missions`);
+
+    // Formater les missions pour l'affichage
+    const formattedMissions = (missions || []).map(mission => ({
       id: mission.id,
-      title: mission.title || 'Mission sans titre',
-      description: mission.description || '',
-      excerpt: generateExcerpt(mission.description || '', 200),
-      category: mission.category || 'developpement',
-      budget: mission.budget_value_cents?.toString() || '0',
-      budget_value_cents: mission.budget_value_cents || 0,
-      currency: mission.currency || 'EUR',
-      location: mission.location_raw || mission.postal_code || 'Remote',
-      user_id: mission.user_id,
-      clientName: 'Client',
-      status: mission.status || 'published',
+      title: mission.title || 'Titre non défini',
+      description: mission.description || 'Description non disponible',
+      category: mission.category || 'general',
+      budget: mission.budget_min && mission.budget_max ? 
+        `${mission.budget_min} - ${mission.budget_max} €` : 
+        mission.budget_min ? `${mission.budget_min} €` : 'À négocier',
+      location: mission.location || 'Remote',
       urgency: mission.urgency || 'medium',
-      remote_allowed: mission.remote_allowed !== false,
-      created_at: mission.created_at,
-      createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
-      bids: []
+      skills: Array.isArray(mission.skills_required) ? mission.skills_required : 
+              typeof mission.skills_required === 'string' ? JSON.parse(mission.skills_required || '[]') : [],
+      isTeamMission: mission.is_team_mission || false,
+      remoteAllowed: mission.remote_allowed !== false,
+      userId: mission.user_id,
+      createdAt: mission.created_at,
+      updatedAt: mission.updated_at,
+      deadline: mission.deadline,
+      status: mission.status || 'active'
     }));
 
-    console.log(`✅ Missions fetched: ${formattedMissions.length} items (${Date.now() - startTime}ms)`);
-    res.json(formattedMissions);
+    res.json({
+      ok: true,
+      missions: formattedMissions,
+      count: formattedMissions.length
+    });
 
   } catch (error) {
-    console.error('❌ GET /api/missions error:', error);
+    console.error('❌ Error fetching missions:', error);
     res.status(500).json({
       ok: false,
       error: 'Erreur lors de la récupération des missions',
+      details: error instanceof Error ? error.message : 'Erreur inconnue',
       timestamp: new Date().toISOString()
     });
   }
-}));
+});
 
 // GET /api/missions/debug - Diagnostic endpoint (must be before /:id route)
 router.get('/debug', asyncHandler(async (req, res) => {

@@ -95,7 +95,7 @@ function App() {
                     <Route path="/services/groupe" component={GroupRequestPage} />
                     <Route path="/services/ia" component={IaHumanPage} />
                     <Route path="/services/opportunites" component={OpportunitiesPage} />
-                    <Route path="/notre-concept" component={NotreConcept} />
+                    <Route path="/notre-concept" component={NotreConceptPage} />
                     <Route path="/legal" component={Legal} />
                     <Route path="/sitemap" component={Sitemap} />
                     <Route path="/features" component={Features} />

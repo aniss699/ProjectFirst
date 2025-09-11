@@ -166,12 +166,17 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[
-      iconName.split('-').map(word => 
+    try {
+      const iconKey = iconName.split('-').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
-      ).join('')
-    ];
-    return IconComponent || Briefcase;
+      ).join('');
+      
+      const IconComponent = (LucideIcons as any)[iconKey];
+      return IconComponent || Briefcase;
+    } catch (error) {
+      console.warn('Icon not found:', iconName);
+      return Briefcase;
+    }
   };
 
   // Animation d'entrée pour chaque étape
