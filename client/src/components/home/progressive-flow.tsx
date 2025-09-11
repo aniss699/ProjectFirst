@@ -21,8 +21,10 @@ import {
   Brain,
   Rocket,
   ChevronLeft,
-  Calendar
+  Calendar,
+  Briefcase
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useMissionCreation } from '@/hooks/use-mission-creation';
@@ -72,6 +74,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     budget: '',
     timeline: '',
     requirements: '',
+    category: '',
+    isTeamMode: false,
     location: {
       address: '',
       lat: null as number | null,
@@ -167,7 +171,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join('')
     ];
-    return IconComponent || LucideIcons.Briefcase;
+    return IconComponent || Briefcase;
   };
 
   // Animation d'entrée pour chaque étape
@@ -413,6 +417,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             } ${clickedCard === category.id ? 'scale-95 ring-4 ring-blue-400 bg-blue-100 animate-pulse-glow' : ''}`}
             onClick={() => {
               setSelectedCategory(category.id);
+              setProjectData(prev => ({ ...prev, category: category.id }));
               setClickedCard(category.id);
               setTimeout(() => {
                 setCurrentStep(3);
@@ -474,7 +479,10 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <Switch
               id="team-mode"
               checked={isTeamMode}
-              onCheckedChange={setIsTeamMode}
+              onCheckedChange={(checked) => {
+                setIsTeamMode(checked);
+                setProjectData(prev => ({ ...prev, isTeamMode: checked }));
+              }}
             />
             <Label htmlFor="team-mode" className="text-blue-900 font-medium">
               🤝 Mode équipe - Diviser le projet en plusieurs spécialités
@@ -760,42 +768,55 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   };
 
 
-  // Configuration des étapes simplifiées
+  // Configuration des étapes restaurées à 5
   const steps = [
     {
-      id: 0,
-      title: "Comprendre Swideal",
-      description: "Découvrir l'art du deal",
+      id: -1,
+      title: "Présentation",
+      description: "Découvrir Swideal",
       icon: "lightbulb",
       fields: []
     },
     {
+      id: 0,
+      title: "Profil",
+      description: "Client ou Prestataire",
+      icon: "users",
+      fields: ['userType']
+    },
+    {
       id: 1,
-      title: "Votre Mission",
-      description: "Titre et description",
-      icon: "briefcase",
-      fields: ['title', 'description', 'category']
+      title: "Service",
+      description: "Type de service",
+      icon: "zap",
+      fields: ['serviceType']
     },
     {
       id: 2,
-      title: "Finaliser",
-      description: "Budget, lieu et publication",
-      icon: "rocket",
-      fields: ['budget', 'location', 'isTeamMode']
+      title: "Catégorie",
+      description: "Domaine d'expertise",
+      icon: "target",
+      fields: ['category']
+    },
+    {
+      id: 3,
+      title: "Description",
+      description: "Détails du projet",
+      icon: "briefcase",
+      fields: ['title', 'description', 'budget', 'location']
     }
   ];
 
-  // Validation simplifiée
+  // Validation pour 5 étapes
   const isStepValid = (stepIndex: number): boolean => {
     switch (stepIndex) {
-      case 0: return true; // Page d'introduction
-      case 1: 
+      case -1: return true; // Présentation
+      case 0: return userType !== null; // Profil sélectionné
+      case 1: return serviceType !== null; // Service sélectionné
+      case 2: return selectedCategory !== ''; // Catégorie sélectionnée
+      case 3: 
         return projectData.title.length >= 3 && 
-               projectData.description.length >= 10 && 
-               projectData.category.length > 0;
-      case 2:
-        // Le budget et la localisation sont optionnels, donc l'étape est toujours valide
-        return true; 
+               projectData.description.length >= 10; // Description complète
       default: 
         return false;
     }
@@ -812,15 +833,15 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           {currentStep === 3 && renderStep3()}
         </div>
 
-        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
+        {/* Bloc de progression pour 5 étapes - masqué pour la présentation */}
         {currentStep >= 0 && (
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 3
+                Étape {currentStep + 1} sur 4
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 3) * 100)}%
+                {Math.round(((currentStep + 1) / 4) * 100)}%
               </span>
             </div>
 
@@ -828,16 +849,16 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 3) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
               </div>
             </div>
 
-            {/* Points d'étapes réduits */}
+            {/* Points d'étapes pour 4 étapes (sans la présentation) */}
             <div className="flex justify-between mt-2">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     step <= currentStep + 1 
