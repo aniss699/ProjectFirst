@@ -78,14 +78,14 @@ setImmediate(async () => {
 // Remove in-memory missions storage - using database only
 
 // Initialize global variables safely
-if (!global.projectStandardizations) {
-  global.projectStandardizations = new Map();
+if (!(global as any).projectStandardizations) {
+  (global as any).projectStandardizations = new Map();
 }
-if (!global.aiEnhancementCache) {
-  global.aiEnhancementCache = new Map();
+if (!(global as any).aiEnhancementCache) {
+  (global as any).aiEnhancementCache = new Map();
 }
-if (!global.performanceMetrics) {
-  global.performanceMetrics = new Map();
+if (!(global as any).performanceMetrics) {
+  (global as any).performanceMetrics = new Map();
 }
 
 // Log Gemini AI configuration for debugging
@@ -398,7 +398,7 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   setImmediate(async () => {
     try {
       const eventLoggerModule = await import('../apps/api/src/monitoring/event-logger.js');
-      eventLoggerModule.eventLogger?.logUserEvent('error', req.user?.id || 'anonymous', req.sessionID || requestId, {
+      eventLoggerModule.eventLogger?.logUserEvent('click', (req as any).user?.id || 'anonymous', (req as any).sessionID || requestId, {
         error_type: errorType,
         error_message: error.message,
         endpoint: req.originalUrl,
