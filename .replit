@@ -10,10 +10,6 @@ packages = ["libxcrypt"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 34091
-externalPort = 3000
-
 [workflows]
 runButton = "Project"
 
@@ -28,7 +24,7 @@ args = "SwipDEAL Server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Server"
+args = "Start application"
 
 [[workflows.workflow]]
 name = ""
@@ -138,12 +134,12 @@ task = "shell.exec"
 args = "npm run dev"
 
 [[workflows.workflow]]
-name = "Server"
+name = "Start application"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd client && npm run dev"
+args = "npm run dev"
 waitForPort = 5000
 
 [workflows.workflow.metadata]

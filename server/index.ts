@@ -303,7 +303,7 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
 const server = createServer(app);
 
 // Start listening immediately for faster deployment
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', async () => {
   console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`📱 Frontend: http://0.0.0.0:${port}`);
   console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
@@ -311,9 +311,19 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`🔍 Process ID: ${process.pid}`);
   console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Production mode only: serving static files
-  console.log('🏭 Production mode: serving static files');
-  serveStatic(app);
+  // Setup Vite for development, static files for production
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🏭 Production mode: serving static files');
+    serveStatic(app);
+  } else {
+    console.log('🔧 Development mode: setting up Vite middleware');
+    try {
+      await setupVite(app, server);
+      console.log('✅ Vite middleware setup complete');
+    } catch (error) {
+      console.error('❌ Failed to setup Vite middleware:', error);
+    }
+  }
 });
 
 server.on('error', (err: any) => {
