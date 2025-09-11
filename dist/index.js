@@ -3086,10 +3086,44 @@ function generateExcerpt(description, maxLength = 200) {
   return truncated.trim() + "...";
 }
 var router2 = Router();
+router2.get("/health", asyncHandler(async (req, res) => {
+  const startTime = Date.now();
+  console.log("\u{1F3E5} Mission health check endpoint called");
+  try {
+    const dbTest = await db.select({ count: sql2`COUNT(*)` }).from(missions).limit(1);
+    const dbConnected = dbTest.length > 0;
+    const responseTime = Date.now() - startTime;
+    const healthInfo = {
+      status: "healthy",
+      message: "Missions API is operational",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      database: dbConnected ? "connected" : "disconnected",
+      response_time_ms: responseTime,
+      uptime_seconds: Math.floor(process.uptime()),
+      memory_usage: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    };
+    console.log("\u{1F3E5} Health check passed:", healthInfo);
+    res.status(200).json(healthInfo);
+  } catch (error) {
+    console.error("\u{1F3E5} Health check failed:", error);
+    res.status(503).json({
+      status: "unhealthy",
+      message: "Missions API is not operational",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      database: "disconnected",
+      error: error instanceof Error ? error.message : "Unknown error",
+      response_time_ms: Date.now() - startTime
+    });
+  }
+}));
 router2.post("/", asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
-  console.log(`\u{1F680} Creating mission - Request ID: ${requestId}`);
   const { title, description, category, budget, location, userId, postal_code } = req.body;
   if (!title || typeof title !== "string" || title.trim().length < 3) {
     console.log(`\u274C Validation failed - title: ${title}`);
@@ -3149,18 +3183,7 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
     created_at: now,
     updated_at: now
   };
-  console.log(JSON.stringify({
-    level: "info",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    request_id: requestId,
-    action: "mission_data_prepared",
-    title_length: newMission.title.length,
-    description_length: newMission.description.length,
-    budget_cents: newMission.budget_value_cents,
-    user_id: newMission.user_id,
-    location: newMission.location_raw,
-    postal_code: newMission.postal_code
-  }));
+  console.log(`\u{1F4DD} Mission prepared: ${newMission.title.substring(0, 30)}...`);
   console.log(JSON.stringify({
     level: "info",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -3295,7 +3318,7 @@ router2.get("/", asyncHandler(async (req, res) => {
           budget_value_cents: mission.budget_value_cents || 0,
           budget: mission.budget_value_cents?.toString() || "0",
           currency: mission.currency || "EUR",
-          // Location handling 
+          // Location handling
           location_raw: mission.location_raw,
           postal_code: mission.postal_code,
           city: mission.city,
@@ -3356,41 +3379,6 @@ router2.get("/", asyncHandler(async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
       debug_mode: process.env.NODE_ENV === "development"
-    });
-  }
-}));
-router2.get("/health", asyncHandler(async (req, res) => {
-  const startTime = Date.now();
-  console.log("\u{1F3E5} Mission health check endpoint called");
-  try {
-    const dbTest = await db.select({ count: sql2`COUNT(*)` }).from(missions).limit(1);
-    const dbConnected = dbTest.length > 0;
-    const responseTime = Date.now() - startTime;
-    const healthInfo = {
-      status: "healthy",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      service: "missions-api",
-      environment: process.env.NODE_ENV || "development",
-      database: dbConnected ? "connected" : "disconnected",
-      response_time_ms: responseTime,
-      uptime_seconds: Math.floor(process.uptime()),
-      memory_usage: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-      }
-    };
-    console.log("\u{1F3E5} Health check passed:", healthInfo);
-    res.status(200).json(healthInfo);
-  } catch (error) {
-    console.error("\u{1F3E5} Health check failed:", error);
-    res.status(503).json({
-      status: "unhealthy",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      service: "missions-api",
-      environment: process.env.NODE_ENV || "development",
-      database: "disconnected",
-      error: error instanceof Error ? error.message : "Unknown error",
-      response_time_ms: Date.now() - startTime
     });
   }
 }));
