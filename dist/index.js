@@ -216,9 +216,9 @@ var init_schema = __esm({
       location: z.string().optional(),
       postal_code: z.string().optional(),
       // Added postal_code validation
-      budget_min: z.number().int().min(0).optional(),
-      budget_max: z.number().int().min(0).optional(),
+      budget: z.number().int().min(0).optional(),
       budget_value_cents: z.number().int().min(0).optional(),
+      budget_type: z.string().optional(),
       urgency: z.enum(["low", "medium", "high", "urgent"]).optional(),
       status: z.enum(["draft", "open", "published", "assigned", "completed", "cancelled"]).optional(),
       quality_target: z.enum(["basic", "standard", "premium", "luxury"]).optional()
@@ -2030,6 +2030,60 @@ var vite_config_default = defineConfig({
 // server/vite.ts
 import { nanoid } from "nanoid";
 var viteLogger = createLogger();
+async function setupVite(app2, server2) {
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: {
+      middlewareMode: true,
+      hmr: {
+        server: server2,
+        port: 5001
+      }
+    },
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    if (url.startsWith("/api/")) {
+      return next();
+    }
+    if (url.includes(".")) {
+      return next();
+    }
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({
+        "Content-Type": "text/html",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
 function serveStatic(app2) {
   const distPath = path2.resolve(import.meta.dirname, "..", "dist");
   if (!fs.existsSync(distPath)) {
@@ -6315,15 +6369,25 @@ app.get("/api/ai/gemini-diagnostic", (req, res) => {
   });
 });
 var server = createServer(app);
-server.listen(port, "0.0.0.0", () => {
+server.listen(port, "0.0.0.0", async () => {
   console.log(`\u{1F680} SwipDEAL server running on http://0.0.0.0:${port}`);
   console.log(`\u{1F4F1} Frontend: http://0.0.0.0:${port}`);
   console.log(`\u{1F527} API Health: http://0.0.0.0:${port}/api/health`);
   console.log(`\u{1F3AF} AI Provider: Gemini API Only`);
   console.log(`\u{1F50D} Process ID: ${process.pid}`);
   console.log(`\u{1F50D} Node Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log("\u{1F3ED} Production mode: serving static files");
-  serveStatic(app);
+  if (process.env.NODE_ENV === "production") {
+    console.log("\u{1F3ED} Production mode: serving static files");
+    serveStatic(app);
+  } else {
+    console.log("\u{1F527} Development mode: setting up Vite middleware");
+    try {
+      await setupVite(app, server);
+      console.log("\u2705 Vite middleware setup complete");
+    } catch (error) {
+      console.error("\u274C Failed to setup Vite middleware:", error);
+    }
+  }
 });
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
@@ -6387,7 +6451,7 @@ app.use((error, req, res, next) => {
   setImmediate(async () => {
     try {
       const eventLoggerModule = await Promise.resolve().then(() => (init_event_logger(), event_logger_exports));
-      eventLoggerModule.eventLogger?.logUserEvent("error", req.user?.id || "anonymous", req.sessionID || requestId, {
+      eventLoggerModule.eventLogger?.logUserEvent("click", req.user?.id || "anonymous", req.sessionID || requestId, {
         error_type: errorType,
         error_message: error.message,
         endpoint: req.originalUrl,
