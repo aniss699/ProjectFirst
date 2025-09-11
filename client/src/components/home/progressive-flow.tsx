@@ -1,45 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import { 
-  ArrowRight, 
-  ArrowLeft,
-  CheckCircle,
-  Lightbulb,
+  Users, 
+  Zap, 
+  ChevronRight, 
+  ChevronLeft,
+  FileText,
   Target,
   Euro,
-  MapPin,
-  Clock,
-  Users,
-  Sparkles,
-  Zap,
-  Brain,
-  Rocket,
-  ChevronLeft,
   Calendar,
-  Briefcase
+  MapPin,
+  PlusCircle
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { useMissionCreation } from '@/hooks/use-mission-creation';
-import { useToast } from '@/hooks/use-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, connectionCategories, getCategoryDynamicFields, type DynamicField } from '@/lib/categories';
 import { SimpleAIEnhancement } from '@/components/ai/simple-ai-enhancement';
 import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
 import { InteractiveMap } from '@/components/location/interactive-map';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamMissionCreator } from '@/components/missions/team-mission-creator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 import { GeoSearch } from '@/components/location/geo-search';
-import { queryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import type { TeamRequirement } from '../../../shared/schema';
 
 type UserType = 'client' | 'prestataire' | null;
@@ -53,18 +45,25 @@ interface ProgressiveFlowProps {
 }
 
 export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError }: ProgressiveFlowProps) {
-  const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { createMission, createTeamProject, isLoading: hookLoading, error: hookError } = useMissionCreation();
-  const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Use external loading/error if provided, otherwise use hook's
-  const isCreating = externalLoading !== undefined ? externalLoading : hookLoading;
-  const currentError = externalError !== undefined ? externalError : hookError;
+  const queryClient = useQueryClient();
+  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
+  const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isTeamMode, setIsTeamMode] = useState(false); // State pour le mode équipe
+  const [isSubmitting, setIsSubmitting] = useState(false); // State pour le bouton de soumission
+
+  // Function to get Lucide icon component from icon name
+  const getIcon = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[
+      iconName.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join('')
+    ];
+    return IconComponent || LucideIcons.Briefcase;
+  };
   const [userType, setUserType] = useState<UserType>(null);
   const [serviceType, setServiceType] = useState<ServiceType>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -74,8 +73,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     budget: '',
     timeline: '',
     requirements: '',
-    category: '',
-    isTeamMode: false,
     location: {
       address: '',
       lat: null as number | null,
@@ -89,95 +86,208 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   const [showFeedbackButtons, setShowFeedbackButtons] = useState(false);
   const [textSuggestionFeedback, setTextSuggestionFeedback] = useState<{[key: string]: boolean}>({});
 
-  const updateFormData = (newData: Partial<typeof projectData>) => {
-    setProjectData(prev => ({ ...prev, ...newData }));
-  };
+  const progress = ((currentStep + 2) / 5) * 100; // 5 niveaux au total maintenant (niveau -1 + 4 étapes)
 
-  const handleMissionCreation = async () => {
-    // Validation finale simple
-    if (!projectData.title?.trim() || projectData.title.trim().length < 3) {
-      toast({
-        title: "Titre requis",
-        description: "Le titre doit contenir au moins 3 caractères",
-        variant: "destructive"
-      });
-      return { ok: false, error: "Titre invalide" };
-    }
+  // Function to create the mission via API
+  const createMission = async () => {
+    setIsCreating(true);
 
-    if (!projectData.description?.trim() || projectData.description.trim().length < 10) {
-      toast({
-        title: "Description requise",
-        description: "La description doit contenir au moins 10 caractères",
-        variant: "destructive"
-      });
-      return { ok: false, error: "Description invalide" };
-    }
-
-    // Données avec valeurs par défaut optimales
-    const missionData = {
-      title: projectData.title.trim(),
-      description: projectData.description.trim(),
-      category: projectData.category || 'developpement',
-      budget: parseInt(projectData.budget) || 1000,
-      location: projectData.location.address || 'Remote', // Utiliser l'adresse du lieu ou 'Remote'
-      isTeamMode: projectData.isTeamMode,
-      requirements: projectData.requirements?.trim()
-    };
-
-    console.log('🚀 Mission création simplifiée:', missionData);
-
-    // Création via le hook centralisé
-    const result = isTeamMode
-      ? await createTeamProject(missionData)
-      : await createMission(missionData);
-
-
-    if (result.ok && result.id) {
-      // Success toast géré par le hook
-      console.log('✅ Mission créée avec ID:', result.id);
-
-      // Callback personnalisé si fourni
-      if (onSubmit) {
-        onSubmit(result);
-      } else {
-        // Redirection par défaut vers Mes Missions
-        setLocation('/missions');
-      }
-    } else {
-      // L'erreur est déjà affichée par le hook useMissionCreation ou le hook useToast
-      console.error('Erreur lors de la création de la mission:', result.error);
-    }
-
-    return result;
-  };
-
-  const handleSubmit = async () => {
     try {
-      await handleMissionCreation();
+      if (isTeamMode) {
+        // Analyser les besoins d'équipe
+        const response = await fetch('/api/team/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: projectData.description,
+            title: projectData.title,
+            category: selectedCategory,
+            budget: projectData.budget
+          })
+        });
+
+        if (response.ok) {
+          const analysis = await response.json();
+
+          // Créer le projet avec l'équipe analysée
+          const createResponse = await fetch('/api/team/create-project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectData: {
+                title: projectData.title,
+                description: projectData.description,
+                category: selectedCategory,
+                budget: projectData.budget,
+                location: projectData.needsLocation ? projectData.location.address : 'Remote',
+                isTeamMode: true
+              },
+              teamRequirements: analysis.professions
+            })
+          });
+
+          if (createResponse.ok) {
+            const result = await createResponse.json();
+            toast({
+              title: 'Projet équipe créé !',
+              description: `Votre projet a été divisé en ${result.subMissions.length} missions spécialisées.`,
+            });
+
+            // Invalider le cache des missions pour forcer le rechargement
+            queryClient.invalidateQueries({ queryKey: ['missions'] });
+
+            // Rediriger vers les missions
+            setLocation('/missions');
+            onComplete?.({
+              userType,
+              serviceType,
+              selectedCategory,
+              projectData,
+              projectId: result.project.id
+            });
+          } else {
+            const error = await createResponse.json();
+            throw new Error(error.error || 'Erreur lors de la création du projet');
+          }
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de l\'analyse d\'équipe');
+        }
+      } else {
+        // Mode mission simple
+        const budgetFormatted = typeof projectData.budget === 'string' 
+          ? projectData.budget 
+          : projectData.budget?.toString() || '';
+
+        const missionData = {
+          title: projectData.title,
+          description: projectData.description + 
+            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : ''),
+          category: selectedCategory,
+          budget: budgetFormatted,
+          location: projectData.needsLocation ? projectData.location.address : 'Remote',
+          userId: user?.id?.toString() || null,
+          clientName: user?.name || 'Utilisateur'
+        };
+
+        // Si onSubmit est fourni (depuis create-mission.tsx), l'utiliser
+        if (onSubmit) {
+          console.log('🔄 Utilisation de onSubmit fourni par create-mission.tsx');
+          await onSubmit(missionData);
+          return; // onSubmit gère la redirection et les messages
+        }
+
+        // Sinon, comportement par défaut (appel API direct)
+        const response = await fetch('/api/missions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(missionData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Mission créée avec succès:', result);
+
+          toast({ 
+            title: 'Mission créée !', 
+            description: 'Votre mission a été publiée avec succès.' 
+          });
+
+          // Invalider le cache des missions pour forcer le rechargement
+          queryClient.invalidateQueries({ queryKey: ['missions'] });
+
+          // Rediriger vers les missions
+          setLocation('/missions');
+          onComplete?.({
+            userType,
+            serviceType,
+            selectedCategory,
+            projectData,
+            missionId: result.id
+          });
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de la création de la mission');
+        }
+      }
     } catch (error) {
-      console.error('Erreur inattendue lors de la soumission:', error);
+      console.error('Erreur création mission:', error);
+      toast({
+        title: 'Erreur de création',
+        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // --- Nouvelle fonction handleSubmitMission modifiée ---
+  const handleSubmitMission = async (values: any) => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour créer une mission",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Ensure proper data formatting before sending
+      const formattedData = {
+        title: values.title,
+        description: values.description,
+        category: values.category || 'developpement',
+        budget: values.budget ? parseInt(values.budget.toString()) : null,
+        location: values.location || null,
+        urgency: values.urgency || 'medium',
+        requirements: values.requirements || null,
+        tags: values.tags || [],
+        deadline: values.deadline ? new Date(values.deadline).toISOString() : null,
+      };
+
+      console.log('🚀 Sending formatted data:', formattedData);
+
+      const response = await fetch('/api/missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Erreur serveur:', result);
+        throw new Error(result.error || 'Erreur lors de la création de la mission');
+      }
+
+      console.log('Mission créée avec succès:', result);
+
+      toast({
+        title: "Mission créée !",
+        description: "Votre mission a été publiée avec succès",
+      });
+
+      onComplete?.(result);
+    } catch (error) {
+      console.error('Erreur création mission:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur inattendue est survenue. Veuillez réessayer.",
+        description: error instanceof Error ? error.message : "Impossible de créer la mission. Veuillez réessayer.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Function to get Lucide icon component from icon name
-  const getIcon = (iconName: string) => {
-    try {
-      const iconKey = iconName.split('-').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join('');
-      
-      const IconComponent = (LucideIcons as any)[iconKey];
-      return IconComponent || Briefcase;
-    } catch (error) {
-      console.warn('Icon not found:', iconName);
-      return Briefcase;
-    }
-  };
+
 
   // Animation d'entrée pour chaque étape
   useEffect(() => {
@@ -186,6 +296,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     }, 100);
     return () => clearTimeout(timer);
   }, [currentStep]);
+
+
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
@@ -422,7 +534,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             } ${clickedCard === category.id ? 'scale-95 ring-4 ring-blue-400 bg-blue-100 animate-pulse-glow' : ''}`}
             onClick={() => {
               setSelectedCategory(category.id);
-              setProjectData(prev => ({ ...prev, category: category.id }));
               setClickedCard(category.id);
               setTimeout(() => {
                 setCurrentStep(3);
@@ -484,10 +595,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <Switch
               id="team-mode"
               checked={isTeamMode}
-              onCheckedChange={(checked) => {
-                setIsTeamMode(checked);
-                setProjectData(prev => ({ ...prev, isTeamMode: checked }));
-              }}
+              onCheckedChange={setIsTeamMode}
             />
             <Label htmlFor="team-mode" className="text-blue-900 font-medium">
               🤝 Mode équipe - Diviser le projet en plusieurs spécialités
@@ -673,7 +781,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <MapPin className="w-5 h-5 mr-2 text-blue-600" />
               Localisation
             </h3>
-
+            
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <input
@@ -688,7 +796,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                   À distance
                 </label>
               </div>
-
+              
               <div className="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -744,14 +852,13 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             </Button>
 
             <Button 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
               disabled={
                 !projectData.title.trim() || 
                 !projectData.description.trim() ||
-                !projectData.category ||
                 (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
               }
-              onClick={handleSubmit}
+              onClick={createMission}
               loading={isCreating}
             >
               {isCreating ? (
@@ -773,72 +880,16 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   };
 
 
-  // Configuration des étapes restaurées à 5
-  const steps = [
-    {
-      id: -1,
-      title: "Présentation",
-      description: "Découvrir Swideal",
-      icon: "lightbulb",
-      fields: []
-    },
-    {
-      id: 0,
-      title: "Profil",
-      description: "Client ou Prestataire",
-      icon: "users",
-      fields: ['userType']
-    },
-    {
-      id: 1,
-      title: "Service",
-      description: "Type de service",
-      icon: "zap",
-      fields: ['serviceType']
-    },
-    {
-      id: 2,
-      title: "Catégorie",
-      description: "Domaine d'expertise",
-      icon: "target",
-      fields: ['category']
-    },
-    {
-      id: 3,
-      title: "Description",
-      description: "Détails du projet",
-      icon: "briefcase",
-      fields: ['title', 'description', 'budget', 'location']
-    }
-  ];
-
-  // Validation pour 5 étapes
-  const isStepValid = (stepIndex: number): boolean => {
-    switch (stepIndex) {
-      case -1: return true; // Présentation
-      case 0: return userType !== null; // Profil sélectionné
-      case 1: return serviceType !== null; // Service sélectionné
-      case 2: return selectedCategory !== ''; // Catégorie sélectionnée
-      case 3: 
-        return projectData.title.length >= 3 && 
-               projectData.description.length >= 10; // Description complète
-      default: 
-        return false;
-    }
-  };
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
       <div className="bg-transparent pb-24">
         <div className="px-4 relative progressive-flow-step">
-          {currentStep === -1 && renderStepMinus1()}
-          {currentStep === 0 && renderStep0()}
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
+          {steps[currentStep + 1]()}
         </div>
 
-        {/* Bloc de progression pour 5 étapes - masqué pour la présentation */}
+        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
         {currentStep >= 0 && (
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
@@ -861,7 +912,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               </div>
             </div>
 
-            {/* Points d'étapes pour 4 étapes (sans la présentation) */}
+            {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
               {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center">

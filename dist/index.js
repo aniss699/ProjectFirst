@@ -3062,6 +3062,7 @@ var auth_routes_default = router;
 import { Router } from "express";
 import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
 init_schema();
+import { randomUUID } from "crypto";
 var asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
@@ -3085,6 +3086,264 @@ function generateExcerpt(description, maxLength = 200) {
   return truncated.trim() + "...";
 }
 var router2 = Router();
+router2.post("/", asyncHandler(async (req, res) => {
+  const requestId = randomUUID();
+  const startTime = Date.now();
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_create_start",
+    body_size: JSON.stringify(req.body).length,
+    user_agent: req.headers["user-agent"],
+    ip: req.ip
+  }));
+  const { title, description, category, budget, location, userId, postal_code } = req.body;
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_data_received",
+    data: { title, description, category, budget, location, postal_code, userId }
+  }));
+  if (!title || typeof title !== "string" || title.trim().length < 3) {
+    console.log(JSON.stringify({
+      level: "warn",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "validation_failed",
+      field: "title",
+      value: title
+    }));
+    return res.status(400).json({
+      ok: false,
+      error: "Le titre doit contenir au moins 3 caract\xE8res",
+      field: "title",
+      request_id: requestId
+    });
+  }
+  if (!description || typeof description !== "string" || description.trim().length < 10) {
+    console.log(JSON.stringify({
+      level: "warn",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "validation_failed",
+      field: "description",
+      value_length: description?.length || 0
+    }));
+    return res.status(400).json({
+      ok: false,
+      error: "La description doit contenir au moins 10 caract\xE8res",
+      field: "description",
+      request_id: requestId
+    });
+  }
+  const userIdInt = userId ? parseInt(userId.toString()) : 1;
+  if (isNaN(userIdInt) || userIdInt <= 0) {
+    console.log(JSON.stringify({
+      level: "warn",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "validation_failed",
+      field: "userId",
+      value: userId
+    }));
+    return res.status(400).json({
+      ok: false,
+      error: "User ID invalide",
+      field: "userId",
+      request_id: requestId
+    });
+  }
+  const now = /* @__PURE__ */ new Date();
+  const budgetCents = budget ? parseInt(budget.toString()) * 100 : 1e5;
+  const extractCity = (locationString) => {
+    if (!locationString) return null;
+    const parts = locationString.split(",");
+    return parts.length > 1 ? parts[parts.length - 1].trim() : locationString.trim();
+  };
+  const newMission = {
+    title: title.trim(),
+    description: description.trim() + (req.body.requirements ? `
+
+Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
+    category: category || "developpement",
+    budget_value_cents: budgetCents,
+    currency: "EUR",
+    location_raw: location || null,
+    postal_code: req.body.postal_code || null,
+    // Added postal_code field
+    city: extractCity(location),
+    country: "France",
+    remote_allowed: req.body.remote_allowed !== false,
+    user_id: userIdInt,
+    client_id: userIdInt,
+    status: "published",
+    urgency: "medium",
+    is_team_mission: false,
+    team_size: 1,
+    created_at: now,
+    updated_at: now
+  };
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_data_prepared",
+    title_length: newMission.title.length,
+    description_length: newMission.description.length,
+    budget_cents: newMission.budget_value_cents,
+    user_id: newMission.user_id,
+    location: newMission.location_raw,
+    postal_code: newMission.postal_code
+  }));
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "db_transaction_start"
+  }));
+  const insertResult = await db.insert(missions).values(newMission).returning({
+    id: missions.id,
+    title: missions.title,
+    status: missions.status,
+    user_id: missions.user_id,
+    created_at: missions.created_at
+  });
+  if (!insertResult || insertResult.length === 0) {
+    throw new Error("Insert failed - no result returned");
+  }
+  const insertedMission = insertResult[0];
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "db_insert_success",
+    mission_id: insertedMission.id,
+    execution_time_ms: Date.now() - startTime
+  }));
+  const fullMission = await db.select().from(missions).where(eq3(missions.id, insertedMission.id)).limit(1);
+  if (fullMission.length === 0) {
+    throw new Error("Mission not found after insert");
+  }
+  const mission = fullMission[0];
+  const responsePayload = {
+    ok: true,
+    id: mission.id,
+    title: mission.title,
+    description: mission.description,
+    excerpt: generateExcerpt(mission.description || "", 200),
+    category: mission.category,
+    budget: mission.budget_value_cents?.toString() || "0",
+    budget_value_cents: mission.budget_value_cents,
+    currency: mission.currency,
+    location: mission.location_raw || mission.postal_code || "Remote",
+    // Use postal_code if location_raw is empty
+    user_id: mission.user_id,
+    client_id: mission.client_id,
+    status: mission.status,
+    urgency: mission.urgency,
+    remote_allowed: mission.remote_allowed,
+    is_team_mission: mission.is_team_mission,
+    team_size: mission.team_size,
+    created_at: mission.created_at,
+    updated_at: mission.updated_at,
+    createdAt: mission.created_at?.toISOString() || now.toISOString(),
+    updatedAt: mission.updated_at?.toISOString(),
+    clientName: "Client",
+    bids: [],
+    request_id: requestId
+  };
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "mission_create_success",
+    mission_id: mission.id,
+    total_time_ms: Date.now() - startTime
+  }));
+  res.status(201).json(responsePayload);
+  setImmediate(async () => {
+    try {
+      const missionSync2 = new MissionSyncService(process.env.DATABASE_URL || "postgresql://localhost:5432/swideal");
+      const missionForFeed = {
+        id: mission.id.toString(),
+        title: mission.title,
+        description: mission.description,
+        category: mission.category || "developpement",
+        budget: mission.budget_value_cents?.toString() || "0",
+        location: mission.location_raw || mission.postal_code || "Remote",
+        // Use postal_code for feed
+        status: mission.status || "open",
+        clientId: mission.user_id?.toString() || "1",
+        clientName: "Client",
+        createdAt: mission.created_at?.toISOString() || now.toISOString(),
+        bids: []
+      };
+      await missionSync2.addMissionToFeed(missionForFeed);
+      console.log(JSON.stringify({
+        level: "info",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: requestId,
+        action: "feed_sync_success",
+        mission_id: mission.id
+      }));
+    } catch (syncError) {
+      console.log(JSON.stringify({
+        level: "warn",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: requestId,
+        action: "feed_sync_failed",
+        mission_id: mission.id,
+        error: syncError instanceof Error ? syncError.message : "Unknown sync error"
+      }));
+    }
+  });
+}));
+router2.get("/", asyncHandler(async (req, res) => {
+  console.log("\u{1F4CB} Fetching all missions...");
+  const allMissions = await db.select({
+    id: missions.id,
+    title: missions.title,
+    description: missions.description,
+    category: missions.category,
+    budget_value_cents: missions.budget_value_cents,
+    currency: missions.currency,
+    location_raw: missions.location_raw,
+    postal_code: missions.postal_code,
+    // Include postal_code
+    city: missions.city,
+    country: missions.country,
+    user_id: missions.user_id,
+    status: missions.status,
+    urgency: missions.urgency,
+    created_at: missions.created_at,
+    updated_at: missions.updated_at,
+    remote_allowed: missions.remote_allowed,
+    is_team_mission: missions.is_team_mission,
+    team_size: missions.team_size,
+    deadline: missions.deadline,
+    tags: missions.tags,
+    skills_required: missions.skills_required,
+    requirements: missions.requirements
+  }).from(missions).orderBy(desc(missions.created_at));
+  console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
+  const missionsWithBids = allMissions.map((mission) => ({
+    ...mission,
+    excerpt: generateExcerpt(mission.description || "", 200),
+    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+    clientName: "Client anonyme",
+    // Default client name
+    bids: [],
+    // Empty bids array for now
+    // Ensure budget consistency
+    budget: mission.budget_value_cents?.toString() || "0",
+    // Ensure location consistency, prioritize postal_code if available
+    location: mission.location_raw || mission.postal_code || mission.city || "Remote"
+  }));
+  console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
+  res.json(missionsWithBids);
+}));
 router2.get("/health", asyncHandler(async (req, res) => {
   const startTime = Date.now();
   console.log("\u{1F3E5} Mission health check endpoint called");
@@ -3094,8 +3353,8 @@ router2.get("/health", asyncHandler(async (req, res) => {
     const responseTime = Date.now() - startTime;
     const healthInfo = {
       status: "healthy",
-      message: "Missions API is operational",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "missions-api",
       environment: process.env.NODE_ENV || "development",
       database: dbConnected ? "connected" : "disconnected",
       response_time_ms: responseTime,
@@ -3111,133 +3370,12 @@ router2.get("/health", asyncHandler(async (req, res) => {
     console.error("\u{1F3E5} Health check failed:", error);
     res.status(503).json({
       status: "unhealthy",
-      message: "Missions API is not operational",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "missions-api",
       environment: process.env.NODE_ENV || "development",
       database: "disconnected",
       error: error instanceof Error ? error.message : "Unknown error",
       response_time_ms: Date.now() - startTime
-    });
-  }
-}));
-router2.post("/", asyncHandler(async (req, res) => {
-  const startTime = Date.now();
-  console.log("\u{1F4DD} Creating new mission...");
-  const { title, description, category, budget, location, userId, isTeamMode, requirements } = req.body;
-  if (!title?.trim() || title.trim().length < 3) {
-    return res.status(400).json({
-      ok: false,
-      error: "Le titre doit contenir au moins 3 caract\xE8res"
-    });
-  }
-  if (!description?.trim() || description.trim().length < 10) {
-    return res.status(400).json({
-      ok: false,
-      error: "La description doit contenir au moins 10 caract\xE8res"
-    });
-  }
-  const userIdInt = parseInt(userId?.toString() || "1");
-  if (isNaN(userIdInt) || userIdInt <= 0) {
-    return res.status(400).json({
-      ok: false,
-      error: "User ID invalide"
-    });
-  }
-  const budgetCents = budget ? Math.max(parseInt(budget.toString()) * 100, 1e3) : 1e5;
-  const missionData = {
-    title: title.trim(),
-    description: description.trim() + (requirements ? `
-
-Exigences: ${requirements}` : ""),
-    category: category || "developpement",
-    budget_value_cents: budgetCents,
-    currency: "EUR",
-    location_raw: location || null,
-    postal_code: /^\d{5}$/.test(location) ? location : null,
-    country: "France",
-    remote_allowed: true,
-    user_id: userIdInt,
-    client_id: userIdInt,
-    status: "published",
-    urgency: "medium",
-    is_team_mission: Boolean(isTeamMode),
-    team_size: isTeamMode ? 3 : 1,
-    created_at: /* @__PURE__ */ new Date(),
-    updated_at: /* @__PURE__ */ new Date()
-  };
-  try {
-    const insertResult = await db.insert(missions).values(missionData).returning({
-      id: missions.id,
-      title: missions.title,
-      created_at: missions.created_at
-    });
-    const mission = insertResult[0];
-    console.log(`\u2705 Mission created: ID ${mission.id} (${Date.now() - startTime}ms)`);
-    res.status(201).json({
-      ok: true,
-      id: mission.id,
-      title: mission.title,
-      category: missionData.category,
-      budget: budgetCents.toString(),
-      location: missionData.location_raw || "Remote",
-      isTeamMode: Boolean(isTeamMode),
-      createdAt: mission.created_at?.toISOString()
-    });
-  } catch (error) {
-    console.error("\u274C Mission creation failed:", error);
-    res.status(500).json({
-      ok: false,
-      error: "Erreur lors de la cr\xE9ation de la mission"
-    });
-  }
-}));
-router2.get("/", asyncHandler(async (req, res) => {
-  const startTime = Date.now();
-  console.log("\u{1F4E5} GET /api/missions - Fetching published missions");
-  try {
-    const allMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code,
-      user_id: missions.user_id,
-      status: missions.status,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      urgency: missions.urgency,
-      remote_allowed: missions.remote_allowed
-    }).from(missions).where(eq3(missions.status, "published")).orderBy(desc(missions.created_at)).limit(50);
-    const formattedMissions = allMissions.map((mission) => ({
-      id: mission.id,
-      title: mission.title || "Mission sans titre",
-      description: mission.description || "",
-      excerpt: generateExcerpt(mission.description || "", 200),
-      category: mission.category || "developpement",
-      budget: mission.budget_value_cents?.toString() || "0",
-      budget_value_cents: mission.budget_value_cents || 0,
-      currency: mission.currency || "EUR",
-      location: mission.location_raw || mission.postal_code || "Remote",
-      user_id: mission.user_id,
-      clientName: "Client",
-      status: mission.status || "published",
-      urgency: mission.urgency || "medium",
-      remote_allowed: mission.remote_allowed !== false,
-      created_at: mission.created_at,
-      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-      bids: []
-    }));
-    console.log(`\u2705 Missions fetched: ${formattedMissions.length} items (${Date.now() - startTime}ms)`);
-    res.json(formattedMissions);
-  } catch (error) {
-    console.error("\u274C GET /api/missions error:", error);
-    res.status(500).json({
-      ok: false,
-      error: "Erreur lors de la r\xE9cup\xE9ration des missions",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
 }));

@@ -4,34 +4,96 @@ import { ProgressiveFlow } from '@/components/home/progressive-flow';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { useMissionCreation } from '@/hooks/use-mission-creation';
-import { useToast } from '@/hooks/use-toast';
-// Validation simplifiée - délégation au service centralisé
+import { z } from 'zod';
+
+// Complete mission form schema
+const missionFormSchema = z.object({
+  title: z.string().min(1, "Le titre est requis"),
+  description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
+  category: z.string().min(1, "La catégorie est requise"),
+  budget: z.union([z.string(), z.number()]).optional(),
+  location: z.string().optional(),
+  urgency: z.enum(['low', 'medium', 'high']).default('medium'),
+  requirements: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  deadline: z.union([z.string(), z.date()]).optional(),
+});
 
 export default function CreateMission() {
   const [, setLocation] = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { createMission, isLoading, error, clearError } = useMissionCreation();
-  const { toast } = useToast();
 
   // Mock navigate function, replace with your actual navigation hook if different
   const navigate = (path: string) => setLocation(path);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: z.infer<typeof missionFormSchema>) => {
     try {
-      clearError();
-      console.log('🚀 CreateMission: Submitting via centralized service');
+      setIsLoading(true);
+      setError(null);
 
-      // Utiliser service centralisé (validation incluse)
-      const result = await createMission(values);
-
-      if (result.ok) {
-        console.log('✅ CreateMission: Mission created successfully');
-        setLocation('/missions');
+      // Vérifier que l'utilisateur est connecté
+      if (!user || !user.id) {
+        throw new Error('Vous devez être connecté pour créer une mission');
       }
-      // L'erreur est gérée automatiquement par le hook
+
+      // Validate data before sending
+      const validatedData = missionFormSchema.parse(values);
+      
+      // Ajouter l'ID utilisateur aux données
+      const missionDataWithUser = {
+        ...validatedData,
+        userId: user.id
+      };
+      
+      console.log('🚀 Frontend: Submitting validated mission data with user:', JSON.stringify(missionDataWithUser, null, 2));
+
+      // Test API connectivity first
+      try {
+        const healthCheck = await fetch('/api/health');
+        if (!healthCheck.ok) {
+          throw new Error('Service temporairement indisponible');
+        }
+      } catch (e) {
+        throw new Error('Impossible de contacter le serveur');
+      }
+
+      const response = await fetch('/api/missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(missionDataWithUser),
+      });
+
+      console.log('📡 Frontend: Response status:', response.status);
+      console.log('📡 Frontend: Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const responseText = await response.text();
+      console.log('📡 Frontend: Raw response:', responseText);
+
+      if (!response.ok) {
+        let errorMessage = 'Échec de la création de mission';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.error || errorData.details || errorMessage;
+        } catch (e) {
+          errorMessage = responseText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const mission = JSON.parse(responseText);
+      console.log('✅ Frontend: Mission created successfully:', mission);
+
+      // Redirect to missions page or show success
+      navigate('/missions');
     } catch (error) {
-      console.error('❌ CreateMission: Submission error:', error);
+      console.error('❌ Frontend: Error creating mission:', error);
+      setError(error instanceof Error ? error.message : 'Échec de la création de mission. Veuillez réessayer.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -57,17 +119,12 @@ export default function CreateMission() {
           <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/30 via-purple-100/20 to-blue-100/25 rounded-3xl blur-xl transform rotate-1 scale-102"></div>
           <div className="relative z-10">
             <ProgressiveFlow 
-              onSubmit={handleSubmit} 
+              onSubmit={handleSubmit} // Pass handleSubmit to the form
               isLoading={isLoading}
               error={error}
               onComplete={(data) => {
-                console.log('✅ Projet créé:', data);
-                // Amélioration UX : feedback visuel de succès
-                toast({
-                  title: "Mission créée !",
-                  description: `"${data.title}" a été publiée avec succès`,
-                  variant: "default"
-                });
+                console.log('Données du projet:', data);
+                // Redirection handled by handleSubmit on success
               }}
             />
           </div>
