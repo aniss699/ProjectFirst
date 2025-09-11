@@ -24,6 +24,7 @@ import {
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useMissionCreation } from '@/hooks/use-mission-creation';
+import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES, connectionCategories, getCategoryDynamicFields, type DynamicField } from '@/lib/categories';
 import { SimpleAIEnhancement } from '@/components/ai/simple-ai-enhancement';
