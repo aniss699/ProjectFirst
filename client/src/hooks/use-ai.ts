@@ -36,7 +36,7 @@ export const useMarketInsights = (category: string) => {
     queryFn: () => aiService.getMarketInsights(category),
     enabled: !!category,
     staleTime: 15 * 60 * 1000, // 15 minutes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
   });
 };
