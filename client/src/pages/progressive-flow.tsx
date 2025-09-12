@@ -1,9 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { ProgressiveFlow } from '../components/home/progressive-flow';
 
 export function AdvancedCreateMissionPage() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -16,7 +16,7 @@ export function AdvancedCreateMissionPage() {
             Configuration détaillée avec toutes les options disponibles
           </p>
           <button
-            onClick={() => navigate('/create-mission')}
+            onClick={() => setLocation('/create-mission')}
             className="text-sm text-blue-600 hover:text-blue-800 underline"
           >
             ← Revenir au mode simplifié
