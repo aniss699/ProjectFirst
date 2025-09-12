@@ -107,28 +107,40 @@ app.use((req, res, next) => {
 // Trust proxy for Replit environment
 app.set('trust proxy', true);
 
-// CORS configuration - optimized for Replit
+// CORS configuration - security-aware for production
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow Replit domains
-    if (origin.includes('.replit.dev') || origin.includes('.replit.app') || origin.includes('.replit.co')) {
+    // In development, allow all origins
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
     
-    // Allow production domains
-    if (origin === 'https://swideal.com' || origin === 'https://www.swideal.com') {
-      return callback(null, true);
-    }
+    // Production: Only allow trusted domains
+    const allowedOrigins = [
+      'https://swideal.com',
+      'https://www.swideal.com',
+      /^https:\/\/.*\.replit\.dev$/,
+      /^https:\/\/.*\.replit\.app$/,
+      /^https:\/\/.*\.replit\.co$/
+    ];
     
-    // Allow localhost for development
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      } else {
+        return allowed.test(origin);
+      }
+    });
     
-    return callback(null, true); // Allow all in development
+    if (isAllowed) {
+      return callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS blocked request from origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -161,7 +173,7 @@ import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
 import aiRoutes from './routes/ai-routes.js';
 import aiSuggestionsRoutes from './routes/ai-suggestions-routes.js';
 import aiMissionsRoutes from './routes/ai-missions-routes.js';
-import aiOrchestratorRoutes from '../apps/api/src/routes/ai.js';
+import aiOrchestratorRoutes from '../apps/api/src/routes/ai.ts';
 import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';

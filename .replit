@@ -11,6 +11,10 @@ packages = ["libxcrypt"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 43069
+externalPort = 3000
+
 [workflows]
 runButton = "Project"
 
@@ -55,4 +59,4 @@ args = "npm run start"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["npm", "start"]
