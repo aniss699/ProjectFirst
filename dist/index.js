@@ -3063,6 +3063,180 @@ import { Router } from "express";
 import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
 init_schema();
 import { randomUUID } from "crypto";
+
+// server/validation/mission-schemas.ts
+import { z as z2 } from "zod";
+var createSimpleMissionSchema = z2.object({
+  title: z2.string().min(3, "Le titre doit contenir au moins 3 caract\xE8res").max(500, "Le titre ne peut pas d\xE9passer 500 caract\xE8res").transform((str) => str.trim()),
+  description: z2.string().min(10, "La description doit contenir au moins 10 caract\xE8res").max(5e3, "La description ne peut pas d\xE9passer 5000 caract\xE8res").transform((str) => str.trim()),
+  budget: z2.number().min(1, "Le budget doit \xEAtre sup\xE9rieur \xE0 0").optional(),
+  isTeamMode: z2.boolean().default(false)
+});
+var budgetSchema = z2.object({
+  valueCents: z2.number().int().positive().min(1e3, "Budget minimum de 10\u20AC"),
+  currency: z2.enum(["EUR", "USD", "GBP", "CHF"]).default("EUR")
+});
+var locationSchema = z2.object({
+  raw: z2.string().optional(),
+  city: z2.string().min(1).optional(),
+  postalCode: z2.string().regex(/^\d{5}$/).optional(),
+  country: z2.string().default("France"),
+  latitude: z2.number().min(-90).max(90).optional(),
+  longitude: z2.number().min(-180).max(180).optional(),
+  remoteAllowed: z2.boolean().default(true)
+});
+var teamSchema = z2.object({
+  isTeamMission: z2.boolean().default(false),
+  teamSize: z2.number().int().positive().default(1)
+}).refine((data) => !data.isTeamMission || data.teamSize > 1, {
+  message: "Une mission d'\xE9quipe doit avoir plus d'1 personne",
+  path: ["teamSize"]
+});
+var createMissionSchema = z2.object({
+  // Contenu obligatoire
+  title: z2.string().min(3, "Le titre doit contenir au moins 3 caract\xE8res").max(500, "Le titre ne peut pas d\xE9passer 500 caract\xE8res").transform((str) => str.trim()),
+  description: z2.string().min(10, "La description doit contenir au moins 10 caract\xE8res").max(5e3, "La description ne peut pas d\xE9passer 5000 caract\xE8res").transform((str) => str.trim()),
+  // Catégorisation
+  category: z2.string().min(1, "La cat\xE9gorie est requise").default("developpement"),
+  tags: z2.array(z2.string().min(1)).max(10, "Maximum 10 tags").default([]).transform((tags) => tags.map((tag) => tag.toLowerCase().trim())),
+  skillsRequired: z2.array(z2.string().min(1)).max(15, "Maximum 15 comp\xE9tences").default([]).transform((skills) => skills.map((skill) => skill.trim())),
+  // Budget (objet structuré)
+  budget: budgetSchema,
+  // Localisation
+  location: locationSchema.optional(),
+  // Équipe
+  team: teamSchema.optional(),
+  // Timing et urgence
+  urgency: z2.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  deadline: z2.string().datetime("Format de date invalide").optional().transform((str) => str ? new Date(str) : void 0),
+  // Métadonnées
+  requirements: z2.string().max(2e3, "Les exigences ne peuvent pas d\xE9passer 2000 caract\xE8res").optional().transform((str) => str?.trim()),
+  deliverables: z2.array(z2.object({
+    title: z2.string().min(1),
+    description: z2.string().optional(),
+    dueDate: z2.string().datetime().optional()
+  })).max(20, "Maximum 20 livrables").default([]),
+  // Status (draft par défaut, published si publié immédiatement)
+  status: z2.enum(["draft", "published"]).default("draft")
+});
+var updateMissionSchema = createMissionSchema.partial().extend({
+  id: z2.number().int().positive()
+});
+var searchMissionsSchema = z2.object({
+  query: z2.string().min(1).optional(),
+  category: z2.string().optional(),
+  budgetMin: z2.number().int().positive().optional(),
+  budgetMax: z2.number().int().positive().optional(),
+  location: z2.string().optional(),
+  remoteOnly: z2.boolean().default(false),
+  urgency: z2.array(z2.enum(["low", "medium", "high", "urgent"])).optional(),
+  tags: z2.array(z2.string()).optional(),
+  skills: z2.array(z2.string()).optional(),
+  sortBy: z2.enum(["recent", "budget_asc", "budget_desc", "deadline"]).default("recent"),
+  page: z2.number().int().positive().default(1),
+  limit: z2.number().int().positive().max(50).default(20)
+});
+
+// server/services/mission-creator.ts
+init_schema();
+var MissionCreator = class {
+  static async createSimpleMission(input) {
+    console.log("\u{1F3AF} Cr\xE9ation mission simplifi\xE9e avec:", input);
+    const smartDefaults = await this.generateSmartDefaults(input);
+    console.log("\u{1F9E0} Valeurs par d\xE9faut g\xE9n\xE9r\xE9es:", smartDefaults);
+    return {
+      title: input.title,
+      description: input.description,
+      category: input.category || smartDefaults.category,
+      location_raw: input.location || smartDefaults.location,
+      urgency: "medium",
+      status: "published",
+      remote_allowed: true,
+      quality_target: "standard",
+      currency: "EUR",
+      budget_value_cents: (input.budget || smartDefaults.budget) * 100,
+      user_id: input.userId,
+      client_id: input.userId,
+      is_team_mission: input.isTeamMode,
+      team_size: input.isTeamMode ? 2 : 1,
+      tags: smartDefaults.tags || [],
+      skills_required: smartDefaults.skills || [],
+      created_at: (/* @__PURE__ */ new Date()).toISOString(),
+      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  static async generateSmartDefaults(input) {
+    console.log("\u{1F50D} G\xE9n\xE9ration valeurs par d\xE9faut pour:", input.title);
+    const titleLower = input.title.toLowerCase();
+    const descriptionLower = input.description.toLowerCase();
+    const text2 = (titleLower + " " + descriptionLower).toLowerCase();
+    let category = "developpement";
+    let location = "Remote";
+    let budget = input.budget || 2e3;
+    let tags = [];
+    let skills = [];
+    if (text2.includes("web") || text2.includes("site") || text2.includes("react") || text2.includes("javascript")) {
+      category = "web-development";
+      budget = input.budget || 3e3;
+      tags = ["web", "frontend"];
+      skills = ["JavaScript", "HTML", "CSS"];
+    } else if (text2.includes("mobile") || text2.includes("app") || text2.includes("android") || text2.includes("ios")) {
+      category = "mobile-development";
+      budget = input.budget || 5e3;
+      tags = ["mobile", "app"];
+      skills = ["React Native", "Mobile Development"];
+    } else if (text2.includes("design") || text2.includes("ui") || text2.includes("ux") || text2.includes("graphique")) {
+      category = "design";
+      budget = input.budget || 1500;
+      tags = ["design", "ui/ux"];
+      skills = ["Figma", "Design"];
+    } else if (text2.includes("data") || text2.includes("analyse") || text2.includes("machine learning") || text2.includes("ai")) {
+      category = "data-science";
+      budget = input.budget || 4e3;
+      tags = ["data", "analytics"];
+      skills = ["Python", "Data Analysis"];
+    }
+    if (text2.includes("paris") || text2.includes("france") || text2.includes("sur place") || text2.includes("pr\xE9sentiel")) {
+      location = "Paris, France";
+    }
+    console.log("\u2728 Valeurs par d\xE9faut g\xE9n\xE9r\xE9es:", { category, location, budget, tags, skills });
+    return { category, location, budget, tags, skills };
+  }
+  static async saveMission(missionData) {
+    console.log("\u{1F4BE} Sauvegarde mission:", missionData);
+    try {
+      const [savedMission] = await db.insert(missions).values(missionData).returning();
+      console.log("\u2705 Mission sauvegard\xE9e avec succ\xE8s:", savedMission.id);
+      return savedMission;
+    } catch (error) {
+      console.error("\u274C Erreur sauvegarde mission:", error);
+      throw new Error("Erreur lors de la sauvegarde de la mission");
+    }
+  }
+  static async createMission(missionData) {
+  }
+};
+
+// server/services/team-analysis.ts
+var TeamAnalysisService = class {
+  static async analyzeTeamRequirements(missionId) {
+    console.log("\u{1F50D} Analyse \xE9quipe pour mission:", missionId);
+    try {
+      console.log("\u2705 Analyse \xE9quipe termin\xE9e pour mission:", missionId);
+      return {
+        teamSizeRecommended: 2,
+        skillsNeeded: ["Frontend", "Backend"],
+        estimatedDuration: "4-6 semaines",
+        complexity: "medium"
+      };
+    } catch (error) {
+      console.error("\u274C Erreur analyse \xE9quipe:", error);
+      throw new Error("Erreur lors de l'analyse des besoins \xE9quipe");
+    }
+  }
+};
+
+// server/routes/missions.ts
 var asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
@@ -3086,6 +3260,55 @@ function generateExcerpt(description, maxLength = 200) {
   return truncated.trim() + "...";
 }
 var router2 = Router();
+router2.post("/simple", async (req, res) => {
+  try {
+    console.log("\u{1F680} Cr\xE9ation mission simplifi\xE9e - Donn\xE9es re\xE7ues:", req.body);
+    const validatedData = createSimpleMissionSchema.parse(req.body);
+    console.log("\u2705 Validation r\xE9ussie:", validatedData);
+    const userId = 3;
+    const missionData = await MissionCreator.createSimpleMission({
+      ...validatedData,
+      userId,
+      category: "developpement",
+      // Valeur par défaut
+      location: "Remote",
+      // Valeur par défaut
+      is_team_mission: validatedData.isTeamMode
+    });
+    console.log("\u{1F4DD} Donn\xE9es mission pr\xE9par\xE9es:", missionData);
+    const result = await MissionCreator.saveMission(missionData);
+    console.log("\u{1F4BE} Mission sauvegard\xE9e avec ID:", result.id);
+    if (validatedData.isTeamMode) {
+      try {
+        if (TeamAnalysisService && typeof TeamAnalysisService.analyzeTeamRequirements === "function") {
+          await TeamAnalysisService.analyzeTeamRequirements(result.id);
+          console.log("\u{1F50D} Analyse \xE9quipe d\xE9clench\xE9e pour mission:", result.id);
+        } else {
+          console.log("\u26A0\uFE0F Service d'analyse \xE9quipe non disponible ou m\xE9thode non trouv\xE9e.");
+        }
+      } catch (error) {
+        console.log("\u26A0\uFE0F Erreur lors du d\xE9clenchement de l'analyse \xE9quipe:", error.message);
+      }
+    }
+    res.json({
+      ok: true,
+      data: result,
+      message: "Mission cr\xE9\xE9e avec succ\xE8s"
+    });
+  } catch (error) {
+    console.error("\u274C Erreur cr\xE9ation mission simplifi\xE9e:", error);
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        error: "Donn\xE9es invalides",
+        details: error.errors
+      });
+    }
+    res.status(500).json({
+      error: "Erreur lors de la cr\xE9ation de la mission",
+      message: error.message
+    });
+  }
+});
 router2.post("/", asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
@@ -4400,25 +4623,25 @@ var ai_monitoring_routes_default = router4;
 
 // server/routes/ai-routes.ts
 import { Router as Router3 } from "express";
-import { z as z2 } from "zod";
+import { z as z3 } from "zod";
 var router5 = Router3();
-var priceSuggestionSchema = z2.object({
-  title: z2.string().min(5, "Titre trop court"),
-  description: z2.string().min(10, "Description trop courte"),
-  category: z2.string().min(1, "Cat\xE9gorie requise")
+var priceSuggestionSchema = z3.object({
+  title: z3.string().min(5, "Titre trop court"),
+  description: z3.string().min(10, "Description trop courte"),
+  category: z3.string().min(1, "Cat\xE9gorie requise")
 });
-var enhanceDescriptionSchema = z2.object({
-  description: z2.string().min(5, "Description trop courte"),
-  category: z2.string().min(1, "Cat\xE9gorie requise"),
-  additionalInfo: z2.string().optional()
+var enhanceDescriptionSchema = z3.object({
+  description: z3.string().min(5, "Description trop courte"),
+  category: z3.string().min(1, "Cat\xE9gorie requise"),
+  additionalInfo: z3.string().optional()
 });
-var analyzeQualitySchema = z2.object({
-  description: z2.string().min(5, "Description trop courte")
+var analyzeQualitySchema = z3.object({
+  description: z3.string().min(5, "Description trop courte")
 });
-var enhanceTextSchema = z2.object({
-  text: z2.string().min(1, "Texte requis"),
-  fieldType: z2.enum(["title", "description", "requirements"]),
-  category: z2.string().optional()
+var enhanceTextSchema = z3.object({
+  text: z3.string().min(1, "Texte requis"),
+  fieldType: z3.enum(["title", "description", "requirements"]),
+  category: z3.string().optional()
 });
 router5.post("/suggest-pricing", async (req, res) => {
   try {
@@ -4436,7 +4659,7 @@ router5.post("/suggest-pricing", async (req, res) => {
       message: "Suggestion de prix g\xE9n\xE9r\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -4466,7 +4689,7 @@ router5.post("/enhance-description", async (req, res) => {
       message: "Description am\xE9lior\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -4492,7 +4715,7 @@ router5.post("/analyze-quality", async (req, res) => {
       message: "Analyse de qualit\xE9 effectu\xE9e avec succ\xE8s"
     });
   } catch (error) {
-    if (error instanceof z2.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -4623,21 +4846,21 @@ var ai_routes_default = router5;
 
 // server/routes/ai-suggestions-routes.ts
 import { Router as Router4 } from "express";
-import { z as z3 } from "zod";
+import { z as z4 } from "zod";
 var router6 = Router4();
-var assistantSuggestionsSchema = z3.object({
-  page: z3.string(),
-  userContext: z3.object({
-    isClient: z3.boolean().optional(),
-    isProvider: z3.boolean().optional(),
-    missions: z3.number().optional(),
-    completedProjects: z3.number().optional(),
-    completeness: z3.number().optional(),
-    hasContent: z3.object({
-      bio: z3.boolean().optional(),
-      headline: z3.boolean().optional(),
-      skills: z3.boolean().optional(),
-      portfolio: z3.boolean().optional()
+var assistantSuggestionsSchema = z4.object({
+  page: z4.string(),
+  userContext: z4.object({
+    isClient: z4.boolean().optional(),
+    isProvider: z4.boolean().optional(),
+    missions: z4.number().optional(),
+    completedProjects: z4.number().optional(),
+    completeness: z4.number().optional(),
+    hasContent: z4.object({
+      bio: z4.boolean().optional(),
+      headline: z4.boolean().optional(),
+      skills: z4.boolean().optional(),
+      portfolio: z4.boolean().optional()
     }).optional()
   }).optional()
 });
@@ -4754,7 +4977,7 @@ router6.post("/assistant-suggestions", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z3.ZodError) {
+    if (error instanceof z4.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -4782,17 +5005,17 @@ var ai_suggestions_routes_default = router6;
 
 // server/routes/ai-missions-routes.ts
 import { Router as Router5 } from "express";
-import { z as z4 } from "zod";
+import { z as z5 } from "zod";
 var router7 = Router5();
-var missionSuggestionSchema = z4.object({
-  title: z4.string().min(3, "Titre trop court"),
-  description: z4.string().min(10, "Description trop courte"),
-  category: z4.string().min(1, "Cat\xE9gorie requise"),
-  budget_min: z4.number().optional(),
-  budget_max: z4.number().optional(),
-  deadline_ts: z4.string().optional(),
-  geo_required: z4.boolean().optional(),
-  onsite_radius_km: z4.number().optional()
+var missionSuggestionSchema = z5.object({
+  title: z5.string().min(3, "Titre trop court"),
+  description: z5.string().min(10, "Description trop courte"),
+  category: z5.string().min(1, "Cat\xE9gorie requise"),
+  budget_min: z5.number().optional(),
+  budget_max: z5.number().optional(),
+  deadline_ts: z5.string().optional(),
+  geo_required: z5.boolean().optional(),
+  onsite_radius_km: z5.number().optional()
 });
 router7.post("/suggest", async (req, res) => {
   try {
@@ -4878,7 +5101,7 @@ router7.post("/suggest", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z5.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -5223,7 +5446,7 @@ var FeedRanker = class {
 };
 
 // server/routes/feed-routes.ts
-import { z as z5 } from "zod";
+import { z as z6 } from "zod";
 var router9 = express4.Router();
 var connection = neon(process.env.DATABASE_URL);
 var db5 = drizzle5(connection);
@@ -5291,7 +5514,7 @@ router9.post("/feedback", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Erreur enregistrement feedback:", error);
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z6.ZodError) {
       return res.status(400).json({ error: "Donn\xE9es invalides", details: error.errors });
     }
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
@@ -6027,32 +6250,32 @@ var ai_learning_routes_default = router14;
 
 // server/routes/team-routes.ts
 import { Router as Router10 } from "express";
-import { z as z6 } from "zod";
+import { z as z7 } from "zod";
 var router15 = Router10();
-var teamAnalysisSchema = z6.object({
-  description: z6.string().min(10),
-  title: z6.string().min(3),
-  category: z6.string().min(2),
-  budget: z6.union([z6.string(), z6.number()])
+var teamAnalysisSchema = z7.object({
+  description: z7.string().min(10),
+  title: z7.string().min(3),
+  category: z7.string().min(2),
+  budget: z7.union([z7.string(), z7.number()])
 });
-var teamProjectSchema = z6.object({
-  projectData: z6.object({
-    title: z6.string().min(3),
-    description: z6.string().min(10),
-    category: z6.string().min(2),
-    budget: z6.union([z6.string(), z6.number()]),
-    location: z6.string().optional(),
-    isTeamMode: z6.boolean()
+var teamProjectSchema = z7.object({
+  projectData: z7.object({
+    title: z7.string().min(3),
+    description: z7.string().min(10),
+    category: z7.string().min(2),
+    budget: z7.union([z7.string(), z7.number()]),
+    location: z7.string().optional(),
+    isTeamMode: z7.boolean()
   }),
-  teamRequirements: z6.array(z6.object({
-    profession: z6.string(),
-    description: z6.string(),
-    required_skills: z6.array(z6.string()),
-    estimated_budget: z6.number(),
-    estimated_days: z6.number(),
-    min_experience: z6.number(),
-    is_lead_role: z6.boolean(),
-    importance: z6.enum(["high", "medium", "low"])
+  teamRequirements: z7.array(z7.object({
+    profession: z7.string(),
+    description: z7.string(),
+    required_skills: z7.array(z7.string()),
+    estimated_budget: z7.number(),
+    estimated_days: z7.number(),
+    min_experience: z7.number(),
+    is_lead_role: z7.boolean(),
+    importance: z7.enum(["high", "medium", "low"])
   }))
 });
 router15.post("/analyze", async (req, res) => {
