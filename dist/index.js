@@ -3569,8 +3569,7 @@ router2.get("/:id", asyncHandler(async (req, res) => {
 }));
 router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
   const userId = req.params.userId;
-  console.log("\u{1F464} Fetching missions for user:", userId);
-  console.log("\u{1F517} Mapping: userId =", userId, "-> user_id filter:", userId);
+  console.log("\u{1F464} Fetching missions with bids for user:", userId);
   if (!userId || userId === "undefined" || userId === "null") {
     console.error("\u274C Invalid user ID:", userId);
     return res.status(400).json({
@@ -3587,82 +3586,167 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       details: "L'ID utilisateur doit \xEAtre un nombre entier positif"
     });
   }
-  console.log("\u{1F50D} Querying database: SELECT * FROM missions WHERE user_id =", userIdInt);
-  const userMissions = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    postal_code: missions.postal_code,
-    // Include postal_code
-    city: missions.city,
-    country: missions.country,
-    remote_allowed: missions.remote_allowed,
-    user_id: missions.user_id,
-    client_id: missions.client_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at
-  }).from(missions).where(eq3(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
-  console.log("\u{1F4CA} Query result: Found", userMissions.length, "missions with user_id =", userIdInt);
-  userMissions.forEach((mission) => {
-    console.log("   \u{1F4CB} Mission:", mission.id, "| user_id:", mission.user_id, "| title:", mission.title);
-  });
-  const missionsWithBids = userMissions.map((mission) => ({
-    // Core fields - ensure exact mapping
-    id: mission.id,
-    title: mission.title,
-    description: mission.description,
-    excerpt: generateExcerpt(mission.description || "", 200),
-    category: mission.category,
-    // Budget - maintain consistency with database values
-    budget_value_cents: mission.budget_value_cents,
-    budget: mission.budget_value_cents?.toString() || "0",
-    currency: mission.currency,
-    // Location - full structure, prioritize postal_code
-    location_raw: mission.location_raw,
-    location: mission.location_raw || mission.postal_code || mission.city || "Remote",
-    postal_code: mission.postal_code,
-    city: mission.city,
-    country: mission.country,
-    remote_allowed: mission.remote_allowed,
-    // Status and metadata
-    status: mission.status,
-    urgency: mission.urgency,
-    // User relationships - preserve exact values
-    user_id: mission.user_id,
-    client_id: mission.client_id,
-    userId: mission.user_id?.toString(),
-    clientName: "Moi",
-    // Consistent with API format
-    // Team configuration
-    is_team_mission: mission.is_team_mission,
-    team_size: mission.team_size,
-    // Timestamps - consistent formatting
-    created_at: mission.created_at,
-    updated_at: mission.updated_at,
-    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-    updatedAt: mission.updated_at?.toISOString(),
-    deadline: mission.deadline?.toISOString(),
-    // Arrays and metadata
-    tags: mission.tags || [],
-    skills_required: mission.skills_required || [],
-    requirements: mission.requirements,
-    bids: []
-    // We'll populate this separately if needed
-  }));
-  console.log(`\u{1F464} Found ${missionsWithBids.length} missions for user ${userId}`);
-  res.json(missionsWithBids);
+  console.log("\u{1F50D} Optimized query: Fetching missions with bids in single JOIN query");
+  try {
+    const missionsWithBidsData = await db.select({
+      // Mission fields
+      mission_id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      postal_code: missions.postal_code,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      mission_created_at: missions.created_at,
+      mission_updated_at: missions.updated_at,
+      // Bid fields (null if no bids)
+      bid_id: bids.id,
+      bid_amount: bids.amount,
+      bid_timeline_days: bids.timeline_days,
+      bid_message: bids.message,
+      bid_status: bids.status,
+      bid_created_at: bids.created_at,
+      provider_id: bids.provider_id
+    }).from(missions).leftJoin(bids, eq3(missions.id, bids.mission_id)).where(eq3(missions.user_id, userIdInt)).orderBy(desc(missions.created_at), desc(bids.created_at));
+    console.log("\u{1F4CA} JOIN query result: Found", missionsWithBidsData.length, "mission-bid combinations");
+    const missionMap = /* @__PURE__ */ new Map();
+    missionsWithBidsData.forEach((row) => {
+      const missionId = row.mission_id;
+      if (!missionMap.has(missionId)) {
+        missionMap.set(missionId, {
+          // Core fields
+          id: row.mission_id,
+          title: row.title,
+          description: row.description,
+          excerpt: generateExcerpt(row.description || "", 200),
+          category: row.category,
+          // Budget
+          budget_value_cents: row.budget_value_cents,
+          budget: row.budget_value_cents?.toString() || "0",
+          currency: row.currency,
+          // Location
+          location_raw: row.location_raw,
+          location: row.location_raw || row.postal_code || row.city || "Remote",
+          postal_code: row.postal_code,
+          city: row.city,
+          country: row.country,
+          remote_allowed: row.remote_allowed,
+          // Status
+          status: row.status,
+          urgency: row.urgency,
+          // User relationships
+          user_id: row.user_id,
+          client_id: row.client_id,
+          userId: row.user_id?.toString(),
+          clientName: "Moi",
+          // Team
+          is_team_mission: row.is_team_mission,
+          team_size: row.team_size,
+          // Timestamps
+          created_at: row.mission_created_at,
+          updated_at: row.mission_updated_at,
+          createdAt: row.mission_created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+          updatedAt: row.mission_updated_at?.toISOString(),
+          deadline: row.deadline?.toISOString(),
+          // Arrays
+          tags: row.tags || [],
+          skills_required: row.skills_required || [],
+          requirements: row.requirements,
+          bids: []
+        });
+      }
+      if (row.bid_id) {
+        missionMap.get(missionId).bids.push({
+          id: row.bid_id,
+          amount: row.bid_amount,
+          timeline_days: row.bid_timeline_days,
+          message: row.bid_message,
+          status: row.bid_status,
+          created_at: row.bid_created_at,
+          provider_id: row.provider_id
+        });
+      }
+    });
+    const missionsWithBids = Array.from(missionMap.values());
+    console.log(`\u2705 OPTIMIZED: Found ${missionsWithBids.length} missions for user ${userId}`);
+    console.log(`\u2705 PERFORMANCE: Eliminated N+1 queries - used single JOIN instead of ${missionsWithBids.length + 1} separate queries`);
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error("\u274C Error in optimized missions+bids query:", error);
+    const userMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      postal_code: missions.postal_code,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).where(eq3(missions.user_id, userIdInt)).orderBy(desc(missions.created_at));
+    const fallbackMissions = userMissions.map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      description: mission.description,
+      excerpt: generateExcerpt(mission.description || "", 200),
+      category: mission.category,
+      budget_value_cents: mission.budget_value_cents,
+      budget: mission.budget_value_cents?.toString() || "0",
+      currency: mission.currency,
+      location_raw: mission.location_raw,
+      location: mission.location_raw || mission.postal_code || mission.city || "Remote",
+      postal_code: mission.postal_code,
+      city: mission.city,
+      country: mission.country,
+      remote_allowed: mission.remote_allowed,
+      status: mission.status,
+      urgency: mission.urgency,
+      user_id: mission.user_id,
+      client_id: mission.client_id,
+      userId: mission.user_id?.toString(),
+      clientName: "Moi",
+      is_team_mission: mission.is_team_mission,
+      team_size: mission.team_size,
+      created_at: mission.created_at,
+      updated_at: mission.updated_at,
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      deadline: mission.deadline?.toISOString(),
+      tags: mission.tags || [],
+      skills_required: mission.skills_required || [],
+      requirements: mission.requirements,
+      bids: []
+    }));
+    res.json(fallbackMissions);
+  }
 }));
 router2.get("/users/:userId/bids", asyncHandler(async (req, res) => {
   const userId = req.params.userId;
