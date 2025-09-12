@@ -29,8 +29,11 @@ export const aiRateLimit = rateLimit({
   
   // Skip certains endpoints moins critiques
   skip: (req: Request) => {
-    // Ne pas limiter les endpoints de health check
-    return req.originalUrl.includes('/health');
+    // Ne pas limiter les endpoints de health check et les requêtes de base
+    return req.originalUrl.includes('/health') || 
+           req.originalUrl === '/api' || 
+           req.originalUrl.includes('/healthz') ||
+           req.method === 'HEAD';
   },
   
   // Handler personnalisé pour les dépassements de limite

@@ -153,6 +153,16 @@ import teamRoutes from './routes/team-routes.js';
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
 
+// Add basic API endpoint for health checks (before rate limiting)
+app.all('/api', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'SwipDEAL API',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
 // Mount routes
 // Register missions routes first
 console.log('📋 Registering missions routes...');
