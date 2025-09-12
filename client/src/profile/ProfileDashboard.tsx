@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { 
   User, 
   Edit, 
@@ -12,7 +11,8 @@ import {
   MapPin,
   Briefcase,
   Award,
-  Clock
+  Clock,
+  Lightbulb
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import { useProfile } from './useProfile';
 import { getCompletenessLevel, getMissingElements } from '../../shared/utils/profileScore';
 
 export function ProfileDashboard() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { profile, loading, error } = useProfile();
 
   if (loading) {
@@ -64,14 +64,14 @@ export function ProfileDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">Mon Profil</h1>
             <div className="flex space-x-3">
               <Button
-                onClick={() => navigate('/profil/:userId')}
+                onClick={() => setLocation('/profil/:userId')}
                 variant="outline"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Aperçu public
               </Button>
               <Button
-                onClick={() => navigate('/profil/editer')}
+                onClick={() => setLocation('/profil/editer')}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -94,7 +94,7 @@ export function ProfileDashboard() {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              
+
               <div className="flex-1 space-y-4">
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 mb-3">
@@ -115,7 +115,7 @@ export function ProfileDashboard() {
                       )}
                     </Badge>
                   </div>
-                  
+
                   {profile.headline && (
                     <p className="text-xl text-gray-600 mb-4">{profile.headline}</p>
                   )}
@@ -178,7 +178,7 @@ export function ProfileDashboard() {
                     {completenessInfo.level}
                   </Badge>
                 </div>
-                
+
                 <Progress 
                   value={completeness} 
                   className={`h-3 ${
@@ -189,14 +189,14 @@ export function ProfileDashboard() {
                     '[&>div]:bg-red-500'
                   }`}
                 />
-                
+
                 <p className="text-gray-600 text-sm">
                   {completenessInfo.description}
                 </p>
 
                 {completeness < 90 && (
                   <Button 
-                    onClick={() => navigate('/profil/editer')}
+                    onClick={() => setLocation('/profil/editer')}
                     className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     <Edit className="h-4 w-4 mr-2" />
@@ -218,19 +218,19 @@ export function ProfileDashboard() {
                   <span className="text-sm text-gray-600">Mots-clés</span>
                   <span className="font-semibold">{profile.keywords?.length || 0}</span>
                 </div>
-                
+
                 {profile.role === 'provider' && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Compétences</span>
                     <span className="font-semibold">{profile.skills?.length || 0}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Portfolio</span>
                   <span className="font-semibold">{profile.portfolio?.length || 0}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Certifications</span>
                   <span className="font-semibold">{profile.certifications?.length || 0}</span>
@@ -271,12 +271,12 @@ export function ProfileDashboard() {
                   </div>
                 ))}
               </div>
-              
+
               {missingElements.length > 6 && (
                 <div className="mt-4 text-center">
                   <Button 
                     variant="outline"
-                    onClick={() => navigate('/profil/editer')}
+                    onClick={() => setLocation('/profil/editer')}
                   >
                     Voir tous les éléments manquants ({missingElements.length})
                   </Button>
