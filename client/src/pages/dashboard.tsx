@@ -29,7 +29,7 @@ import {
   Brain
 } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { QuickMissionCreator } from '@/components/missions/quick-mission-creator';
+
 import { AnalyticsDashboard } from '@/components/dashboard/analytics-dashboard';
 import { IntelligentDashboard } from '../components/ai/intelligent-dashboard';
 import { AINegotiator } from '../components/ai/ai-negotiator';
@@ -118,12 +118,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Widget création rapide pour les clients */}
-        {user.type === 'client' && (
-          <div className="mb-8">
-            <QuickMissionCreator compact={true} />
-          </div>
-        )}
+        
 
         {/* Content based on user type */}
         {user.type === 'client' ? (

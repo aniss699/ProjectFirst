@@ -4,15 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, Brain, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription
-} from "@/components/ui/sheet";
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +19,6 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [showQuickCreator, setShowQuickCreator] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -136,42 +127,13 @@ export default function Navbar() {
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop quick mission creator button */}
             {location !== ROUTES.HOME && (
-              <Sheet open={showQuickCreator} onOpenChange={setShowQuickCreator}>
-                <SheetTrigger asChild>
-                  <Button size="sm" className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
-                    <Plus className="w-4 h-4 mr-1 xl:mr-2" />
-                    <span className="hidden xl:inline">Nouvelle mission</span>
-                    <span className="hidden lg:inline xl:hidden">Mission</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="w-[400px] sm:w-[500px]">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-blue-600" />
-                      Création rapide avec IA
-                    </SheetTitle>
-                    <SheetDescription>
-                      Créez votre mission en quelques clics grâce à notre assistant IA intelligent.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <div className="space-y-4">
-                      <p className="text-sm text-gray-600">
-                        Créez votre mission avec notre assistant intelligent
-                      </p>
-                      <Button
-                        onClick={() => {
-                          setShowQuickCreator(false);
-                          handleNavigation('/create-mission');
-                        }}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                      >
-                        Commencer la création
-                      </Button>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <div className="hidden sm:flex">
+                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                  <Plus className="w-4 h-4 mr-1 xl:mr-2" />
+                  <span className="hidden xl:inline">Nouvelle mission</span>
+                  <span className="hidden lg:inline xl:hidden">Mission</span>
+                </Button>
+              </div>
             )}
 
             {user ? (
@@ -315,211 +277,206 @@ export default function Navbar() {
             )}
 
             {/* Mobile Menu */}
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2">
-                  <Menu className="w-6 h-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="w-[75vw] max-w-xs p-0 flex flex-col"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Menu de navigation</SheetTitle>
-                  <SheetDescription>
-                    Menu principal de navigation pour mobile
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div className="flex flex-col h-full relative">
-                  {/* Indicateur de swipe */}
-                  <div className="mobile-nav-swipe-indicator"></div>
-
-                  {/* Header avec recherche */}
-                  <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="relative">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 shadow-sm">
-                          <img
-                            src="/swideal-logo.png"
-                            alt="Swideal Logo"
-                            className="w-full h-full object-cover brightness-0 invert"
-                          />
-                        </div>
-                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-lg font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                          SWIDEAL
-                        </span>
-                        <span className="text-xs text-gray-500 font-medium">
-                          Navigation
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Barre de recherche mobile */}
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        inputMode="none"
-                        autoComplete="off"
-                        className="mobile-nav-search w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions rapides - disposition verticale */}
-                  <div className="px-4 py-3 bg-gray-50 border-b">
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => {
-                          handleNavigation('/feed');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Smartphone className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Flux</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleNavigation('/available-providers');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Users className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Prestataires</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleNavigation('/services');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Briefcase className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Services</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleNavigation('/notre-concept');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Sparkles className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Notre concept</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleNavigation('/marketplace');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Target className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Missions</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleNavigation('/ai-hub');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <Brain className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-left">Hub IA</span>
-                      </button>
-
-
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    {/* Mon espace (si connecté) */}
-                    {user && (
-                      <div className="mobile-nav-category px-2 mb-4">
-                        <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mon Espace</h3>
-                        <MobileNavLink href="/dashboard" icon={BarChart3}>
-                          Dashboard
-                        </MobileNavLink>
-                        <MobileNavLink href="/profile" icon={User}>
-                          Mon Profil
-                        </MobileNavLink>
-                        <MobileNavLink href="/missions" icon={Briefcase}>
-                          Mes Missions
-                        </MobileNavLink>
-                        <MobileNavLink href="/mes-demandes" icon={FileText}>
-                          Mes demandes
-                        </MobileNavLink>
-                        <MobileNavLink href="/messages" icon={MessageSquare}>
-                          Messages
-                        </MobileNavLink>
-                        <MobileNavLink href="/favorites" icon={Heart}>
-                          Mes favoris
-                        </MobileNavLink>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Mobile quick mission creator button */}
-                  <div className="mt-6 px-4">
-                    <Button
-                      onClick={() => {
-                        handleNavigation('/create-mission');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      size="sm"
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nouvelle mission
-                    </Button>
-                  </div>
-
-                  {/* Authentication buttons for mobile */}
-                  {!user && (
-                    <div className="px-4 py-4 border-t border-gray-200 mt-6">
-                        <div className="space-y-3">
-                          <Button
-                            onClick={() => {
-                              handleNavigation('/login');
-                              setIsMobileMenuOpen(false);
-                            }}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            Se connecter
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              handleAuthClick('register');
-                              setIsMobileMenuOpen(false);
-                            }}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            Créer un compte
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <div className="flex sm:hidden">
+              <Button variant="ghost" size="sm" className="p-2" onClick={() => setIsMobileMenuOpen(true)}>
+                <Menu className="w-6 h-6" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Sheet (Conditionally rendered based on isMobileMenuOpen) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-[75vw] max-w-xs transform transition-transform duration-300 ease-in-out bg-white shadow-xl flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} md:hidden`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="flex flex-col h-full relative">
+          {/* Indicateur de swipe */}
+          <div className="mobile-nav-swipe-indicator"></div>
+
+          {/* Header avec recherche */}
+          <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="relative">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 shadow-sm">
+                  <img
+                    src="/swideal-logo.png"
+                    alt="Swideal Logo"
+                    className="w-full h-full object-cover brightness-0 invert"
+                  />
+                </div>
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                  SWIDEAL
+                </span>
+                <span className="text-xs text-gray-500 font-medium">
+                  Navigation
+                </span>
+              </div>
+            </div>
+
+            {/* Barre de recherche mobile */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                inputMode="none"
+                autoComplete="off"
+                className="mobile-nav-search w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Actions rapides - disposition verticale */}
+          <div className="px-4 py-3 bg-gray-50 border-b">
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => {
+                  handleNavigation('/feed');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Smartphone className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Flux</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleNavigation('/available-providers');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Prestataires</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleNavigation('/services');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Briefcase className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Services</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleNavigation('/notre-concept');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Notre concept</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleNavigation('/marketplace');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Target className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Missions</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleNavigation('/ai-hub');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Brain className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-left">Hub IA</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            {/* Mon espace (si connecté) */}
+            {user && (
+              <div className="mobile-nav-category px-2 mb-4">
+                <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mon Espace</h3>
+                <MobileNavLink href="/dashboard" icon={BarChart3}>
+                  Dashboard
+                </MobileNavLink>
+                <MobileNavLink href="/profile" icon={User}>
+                  Mon Profil
+                </MobileNavLink>
+                <MobileNavLink href="/missions" icon={Briefcase}>
+                  Mes Missions
+                </MobileNavLink>
+                <MobileNavLink href="/mes-demandes" icon={FileText}>
+                  Mes demandes
+                </MobileNavLink>
+                <MobileNavLink href="/messages" icon={MessageSquare}>
+                  Messages
+                </MobileNavLink>
+                <MobileNavLink href="/favorites" icon={Heart}>
+                  Mes favoris
+                </MobileNavLink>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile quick mission creator button */}
+          <div className="mt-6 px-4">
+            <Button
+              onClick={() => {
+                handleNavigation('/create-mission');
+                setIsMobileMenuOpen(false);
+              }}
+              size="sm"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle mission
+            </Button>
+          </div>
+
+          {/* Authentication buttons for mobile */}
+          {!user && (
+            <div className="px-4 py-4 border-t border-gray-200 mt-6">
+              <div className="space-y-3">
+                <Button
+                  onClick={() => {
+                    handleNavigation('/login');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Se connecter
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleAuthClick('register');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Créer un compte
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
 
       <AuthModal
         isOpen={isAuthModalOpen}
