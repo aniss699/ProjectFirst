@@ -6100,7 +6100,7 @@ var aiRateLimit = rateLimit({
   },
   // Skip certains endpoints moins critiques
   skip: (req) => {
-    return req.originalUrl.includes("/health");
+    return req.originalUrl.includes("/health") || req.originalUrl === "/api" || req.originalUrl.includes("/healthz") || req.method === "HEAD";
   },
   // Handler personnalisé pour les dépassements de limite
   handler: (req, res) => {
@@ -6254,6 +6254,14 @@ app.use("/api/auth", (req, res, next) => {
   console.log(`\u{1F510} Auth request: ${req.method} ${req.path}`, { body: req.body.email ? { email: req.body.email } : {} });
   next();
 }, auth_routes_default);
+app.all("/api", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "SwipDEAL API",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    version: "1.0.0"
+  });
+});
 console.log("\u{1F4CB} Registering missions routes...");
 app.use("/api/missions", (req, res, next) => {
   console.log(`\u{1F4CB} Mission request: ${req.method} ${req.path}`, {
