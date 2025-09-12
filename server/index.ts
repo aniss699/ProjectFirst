@@ -170,7 +170,6 @@ import missionsRoutes from './routes/missions.js';
 // Import projects supprimé - remplacé par missions
 import apiRoutes from './api-routes.js';
 import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
-import aiRoutes from './routes/ai-routes.js';
 import aiSuggestionsRoutes from './routes/ai-suggestions-routes.js';
 import aiMissionsRoutes from './routes/ai-missions-routes.js';
 import aiOrchestratorRoutes from '../apps/api/src/routes/ai.ts';
@@ -225,7 +224,7 @@ app.use('/api/ai/suggest-pricing', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai/enhance-description', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai/analyze-quality', strictAiRateLimit);  // Endpoint coûteux
 app.use('/api/ai/enhance-text', strictAiRateLimit);  // Endpoint coûteux
-app.use('/api/ai', aiRateLimit, aiRoutes);  // Rate limiting général pour les autres routes IA
+// aiRoutes supprimés - routes IA gérées par modules spécialisés
 app.use('/api/ai', aiRateLimit, aiSuggestionsRoutes);
 app.use('/api/ai/missions', aiRateLimit, aiMissionsRoutes);
 app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe

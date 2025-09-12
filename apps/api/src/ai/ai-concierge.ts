@@ -267,7 +267,7 @@ class AIConciergeEngine {
     const techTerms = ['web', 'mobile', 'app', 'site', 'api', 'database', 'ai', 'ml', 'react', 'node'];
     const businessTerms = ['ecommerce', 'crm', 'erp', 'marketplace', 'saas', 'b2b', 'b2c'];
     
-    const entities = [];
+    const entities: Array<{type: string, value: string}> = [];
     const lowerText = text.toLowerCase();
     
     techTerms.forEach(term => {
@@ -307,7 +307,7 @@ class AIConciergeEngine {
   }
 
   private generateObjectives(intentions: any): string[] {
-    const objectives = [];
+    const objectives: string[] = [];
     
     if (intentions.primaryGoal) {
       objectives.push(intentions.primaryGoal);
@@ -406,7 +406,7 @@ class AIConciergeEngine {
   }
 
   private extractSecondaryGoals(input: string): string[] {
-    const goals = [];
+    const goals: string[] = [];
     if (input.includes('mobile')) goals.push('Compatibilité mobile');
     if (input.includes('sécur')) goals.push('Sécurité renforcée');
     if (input.includes('performance')) goals.push('Optimisation performance');
@@ -414,7 +414,7 @@ class AIConciergeEngine {
   }
 
   private extractUserNeeds(input: string): string[] {
-    const needs = [];
+    const needs: string[] = [];
     if (input.includes('facile') || input.includes('simple')) {
       needs.push('Interface intuitive');
     }
@@ -425,7 +425,7 @@ class AIConciergeEngine {
   }
 
   private extractBusinessObjectives(input: string): string[] {
-    const objectives = [];
+    const objectives: string[] = [];
     if (input.includes('vente') || input.includes('revenue')) {
       objectives.push('Augmentation des revenus');
     }
@@ -436,7 +436,7 @@ class AIConciergeEngine {
   }
 
   private extractConstraints(input: string): string[] {
-    const constraints = [];
+    const constraints: string[] = [];
     if (input.includes('budget') || input.includes('coût')) {
       constraints.push('Contraintes budgétaires');
     }
@@ -540,7 +540,7 @@ class AIConciergeEngine {
   }
 
   private identifyTechnicalRisks(brief: any): string[] {
-    const risks = [];
+    const risks: string[] = [];
     if (brief.technicalRequirements.length === 0) {
       risks.push('Spécifications techniques incomplètes');
     }
@@ -551,7 +551,7 @@ class AIConciergeEngine {
   }
 
   private identifyBusinessRisks(brief: any, context: ConciergeContext): string[] {
-    const risks = [];
+    const risks: string[] = [];
     if (!brief.successCriteria || brief.successCriteria.length === 0) {
       risks.push('Critères de succès non définis');
     }
@@ -568,7 +568,7 @@ class AIConciergeEngine {
   }
 
   private generateContextualQuestions(briefData: any): string[] {
-    const questions = [];
+    const questions: string[] = [];
     
     // Questions sur l'intégration
     if (briefData.existingSystems) {

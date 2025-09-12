@@ -89,7 +89,7 @@ export class GeminiClient {
         );
       } catch (error) {
         console.error('🚨 Gemini API request failed:', error);
-        throw new Error(`Gemini API failed: ${error.message}`);
+        throw new Error(`Gemini API failed: ${(error as Error).message}`);
       }
     }
 
@@ -147,7 +147,7 @@ export class GeminiClient {
         success: false,
         latency,
         fromCache: false,
-        error: error.message
+        error: (error as Error).message
       };
     }
   }

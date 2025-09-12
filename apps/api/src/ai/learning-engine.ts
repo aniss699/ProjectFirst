@@ -20,6 +20,9 @@ interface LearningPattern {
   gemini_analysis?: any; // Added for consistency with the change
   improvement_factors?: string[]; // Added for consistency with the change
   semantic_keywords?: string[]; // Added for consistency with the change
+  interaction_type?: string; // Added to fix LSP error on line 460
+  quality_metrics?: any; // Added to fix LSP error on line 462
+  meta_analysis?: any; // Added for completeness
 }
 
 interface LearningInsight {
@@ -270,7 +273,7 @@ export class AILearningEngine {
     const similar: Array<LearningPattern & { similarity: number }> = [];
     const inputWords = inputPattern.split(' ');
 
-    for (const [key, pattern] of this.patterns) {
+    for (const [key, pattern] of Array.from(this.patterns.entries())) {
       if (!key.startsWith(fieldType)) continue;
 
       const patternWords = pattern.input_pattern.split(' ');
@@ -298,7 +301,7 @@ export class AILearningEngine {
     // Analyser les patterns par catégorie
     const categoryStats = new Map<string, { count: number, avgConfidence: number }>();
 
-    for (const pattern of this.patterns.values()) {
+    for (const pattern of Array.from(this.patterns.values())) {
       const cat = pattern.context_category;
       if (categoryStats.has(cat)) {
         const stats = categoryStats.get(cat)!;
@@ -310,7 +313,7 @@ export class AILearningEngine {
     }
 
     // Générer des insights
-    for (const [category, stats] of categoryStats) {
+    for (const [category, stats] of Array.from(categoryStats.entries())) {
       if (stats.count > 5 && stats.avgConfidence > 0.7) {
         this.insights.push({
           pattern_type: 'enhancement',
@@ -415,7 +418,7 @@ export class AILearningEngine {
    * Apprentissage universel pour TOUTES les interactions Gemini
    */
   async learnFromGeminiInteraction(
-    interactionType: 'prediction' | 'pricing' | 'matching' | 'analysis' | 'enhancement',
+    interactionType: 'prediction' | 'pricing' | 'matching' | 'analysis' | 'enhancement' | 'scoring',
     inputData: any,
     geminiResponse: any,
     finalResult: any,
@@ -625,7 +628,7 @@ export class AILearningEngine {
       .filter(word => word.length > 3)
       .filter(word => !['dans', 'avec', 'pour', 'sans', 'plus', 'cette', 'tous'].includes(word));
     
-    return [...new Set(words)].slice(0, 10);
+    return Array.from(new Set(words)).slice(0, 10);
   }
 
   /**
@@ -723,10 +726,10 @@ export class AILearningEngine {
       insights_generated: this.insights.length,
       high_confidence_patterns: Array.from(this.patterns.values())
         .filter(p => p.confidence_score > 0.8).length,
-      categories_learned: [...new Set(Array.from(this.patterns.values())
-        .map(p => p.context_category))].length,
-      interaction_types: [...new Set(Array.from(this.patterns.values())
-        .map(p => (p as any).interaction_type || 'unknown'))],
+      categories_learned: Array.from(new Set(Array.from(this.patterns.values())
+        .map(p => p.context_category))).length,
+      interaction_types: Array.from(new Set(Array.from(this.patterns.values())
+        .map(p => (p as any).interaction_type || 'unknown'))),
       gemini_contributions: Array.from(this.patterns.values())
         .filter(p => (p as any).gemini_analysis).length,
       avg_confidence: Array.from(this.patterns.values())

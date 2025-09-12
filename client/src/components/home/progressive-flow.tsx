@@ -19,8 +19,8 @@ import {
   MapPin,
   PlusCircle
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import { CATEGORIES, connectionCategories, getCategoryDynamicFields, type DynamicField } from '@/lib/categories';
+// Removed unused import * as LucideIcons from 'lucide-react';
+import { CATEGORIES, connectionCategories } from '@/lib/categories';
 import { SimpleAIEnhancement } from '@/components/ai/simple-ai-enhancement';
 import { TextSuggestionButton } from '@/components/ai/text-suggestion-button';
 import { AIFeedbackButtons } from '@/components/ai/feedback-buttons';
@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { GeoSearch } from '@/components/location/geo-search';
 import { useQueryClient } from '@tanstack/react-query';
-import type { TeamRequirement } from '../../../shared/schema';
+import type { TeamRequirement } from '@shared/schema';
 
 type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
@@ -57,12 +57,20 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[
-      iconName.split('-').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join('')
-    ];
-    return IconComponent || LucideIcons.Briefcase;
+    // Simple icon mapping for most common icons
+    const iconMap: {[key: string]: any} = {
+      'Hammer': Target,
+      'Home': Target,
+      'Baby': Target,
+      'BookOpen': FileText,
+      'Heart': Target,
+      'Car': Target,
+      'ChefHat': Target,
+      'Calendar': Calendar,
+      'Camera': Target,
+      'Briefcase': Target
+    };
+    return iconMap[iconName] || Target;
   };
   const [userType, setUserType] = useState<UserType>(null);
   const [serviceType, setServiceType] = useState<ServiceType>(null);
@@ -157,7 +165,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         // Mode mission simple
         const budgetFormatted = typeof projectData.budget === 'string' 
           ? projectData.budget 
-          : projectData.budget?.toString() || '';
+          : (projectData.budget as string | number)?.toString() || '';
 
         const missionData = {
           title: projectData.title,
@@ -216,7 +224,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
       console.error('Erreur création mission:', error);
       toast({
         title: 'Erreur de création',
-        description: error.message || 'Impossible de créer la mission. Vérifiez votre connexion.',
+        description: (error as Error).message || 'Impossible de créer la mission. Vérifiez votre connexion.',
         variant: 'destructive',
       });
     } finally {
@@ -858,12 +866,11 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <Button 
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none"
               disabled={
-                !projectData.title.trim() || 
+                isCreating || !projectData.title.trim() || 
                 !projectData.description.trim() ||
                 (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
               }
               onClick={createMission}
-              loading={isCreating}
             >
               {isCreating ? (
                 <>

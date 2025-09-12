@@ -140,8 +140,8 @@ export class StandardizationEngine {
    */
   private analyzeTechnicalComplexity(text: string) {
     let complexityScore = 0;
-    let detectedTechnologies = [];
-    let architectureIndicators = [];
+    let detectedTechnologies: string[] = [];
+    let architectureIndicators: string[] = [];
 
     // Détection des technologies
     const techPatterns = {
@@ -397,7 +397,7 @@ export class StandardizationEngine {
    * Génération de critères d'acceptation intelligents
    */
   private generateAcceptanceCriteria(projectData: ProjectData, analysis: any): string[] {
-    const criteria = [];
+    const criteria: string[] = [];
     
     // Critères de base
     criteria.push('Livrable conforme aux spécifications détaillées');
@@ -1077,7 +1077,7 @@ export class StandardizationEngine {
   }
 
   private extractStandardizedConstraints(projectData: ProjectData, analysis: any): string[] {
-    const constraints = [];
+    const constraints: string[] = [];
     const text = `${projectData.title} ${projectData.description}`.toLowerCase();
     
     // Contraintes temporelles
@@ -1117,7 +1117,7 @@ export class StandardizationEngine {
   }
 
   private generatePricingReasoning(complexity: number, businessValue: number, marketPosition: string): string[] {
-    const reasoning = [];
+    const reasoning: string[] = [];
     
     reasoning.push(`Complexité technique: ${complexity}/10 points`);
     reasoning.push(`Valeur business: ${businessValue}/10 points`);

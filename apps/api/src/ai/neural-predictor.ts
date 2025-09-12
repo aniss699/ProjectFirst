@@ -214,8 +214,20 @@ class NeuralPredictionEngine {
     };
   }
 
-  private generateNeuralInsights(factors: any, probability: number) {
-    const insights = [];
+  private generateNeuralInsights(factors: any, probability: number): Array<{
+    type: string;
+    message: string;
+    confidence: number;
+    impact: 'positive' | 'negative' | 'neutral';
+    suggestion?: string;
+  }> {
+    const insights: Array<{
+      type: string;
+      message: string;
+      confidence: number;
+      impact: 'positive' | 'negative' | 'neutral';
+      suggestion?: string;
+    }> = [];
 
     if (probability > 0.9) {
       insights.push({
@@ -257,8 +269,18 @@ class NeuralPredictionEngine {
     return insights;
   }
 
-  private generateOptimizationSuggestions(factors: any, request: NeuralPredictionRequest) {
-    const suggestions = [];
+  private generateOptimizationSuggestions(factors: any, request: NeuralPredictionRequest): Array<{
+    type: 'budget' | 'timeline' | 'scope' | 'market_timing';
+    suggestion: string;
+    impact_score: number;
+    implementation_effort: 'low' | 'medium' | 'high';
+  }> {
+    const suggestions: Array<{
+      type: 'budget' | 'timeline' | 'scope' | 'market_timing';
+      suggestion: string;
+      impact_score: number;
+      implementation_effort: 'low' | 'medium' | 'high';
+    }> = [];
 
     if (factors.budget_realism < 0.6) {
       suggestions.push({
@@ -311,12 +333,12 @@ class NeuralPredictionEngine {
 
     const key_competitors_count = Math.round(competition_level * 20 + Math.random() * 5);
 
-    const winning_factors = [];
+    const winning_factors: string[] = [];
     if (budget > 5000) winning_factors.push('Budget généreux permettant qualité premium');
     if (request.mission.urgency === 'low') winning_factors.push('Délais confortables attractifs');
     if (category.includes('development')) winning_factors.push('Forte demande développement');
 
-    const threats = [];
+    const threats: string[] = [];
     if (level === 'extreme') threats.push('Saturation marché - risque de guerre des prix');
     if (budget < 2000) threats.push('Budget serré favorise les low-cost');
     if (request.mission.urgency === 'high') threats.push('Urgence limite le pool de candidats');
@@ -338,7 +360,7 @@ class NeuralPredictionEngine {
     else if (budget > 5000) position = 'standard-plus';
     else if (budget < 1500) position = 'budget';
 
-    const competitive_advantage = [];
+    const competitive_advantage: string[] = [];
     if (factors.technical_clarity > 0.8) competitive_advantage.push('Spécifications claires');
     if (factors.budget_realism > 0.8) competitive_advantage.push('Budget réaliste');
     if (factors.timeline_feasibility > 0.8) competitive_advantage.push('Délais raisonnables');

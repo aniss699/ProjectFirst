@@ -36,14 +36,22 @@ export class AIConfig {
   readonly mlApiUrl: string;
 
   private constructor() {
-    // Configuration Gemini
+    // Configuration Gemini - Graceful degradation without API key
+    const hasGeminiKey = !!process.env.GEMINI_API_KEY;
     this.gemini = {
-      enabled: !!process.env.GEMINI_API_KEY,
-      apiKey: process.env.GEMINI_API_KEY,
+      enabled: hasGeminiKey,
+      apiKey: hasGeminiKey ? process.env.GEMINI_API_KEY : undefined,
       model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
       timeout: parseInt(process.env.GEMINI_TIMEOUT || '30000'),
       retries: parseInt(process.env.GEMINI_RETRIES || '3')
     };
+
+    // Log Gemini configuration status
+    if (!hasGeminiKey) {
+      console.log('⚠️  Gemini API disabled: GEMINI_API_KEY not found - using fallback mode');
+    } else {
+      console.log('✅ Gemini API enabled and configured');
+    }
 
     // Configuration Cache
     this.cache = {
