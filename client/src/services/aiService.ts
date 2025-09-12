@@ -66,6 +66,17 @@ export interface AIAnalysisResult {
   };
 }
 
+// Interface for the analyzeWithAI method response
+export interface BriefAnalysisResponse {
+  qualityScore: number;
+  improvements: string[];
+  detectedSkills: string[];
+  estimatedComplexity: string;
+  price_suggested_med?: number;
+  delay_suggested_days?: number;
+  optimizedDescription?: string | null;
+}
+
 export interface QuickAnalysisRequest {
   description: string;
   title?: string;
@@ -111,7 +122,7 @@ export interface PriceAnalysisRequest {
 }
 
 export const aiService = {
-  async analyzeWithAI(data: { title: string; description: string; category?: string }) {
+  async analyzeWithAI(data: { title: string; description: string; category?: string }): Promise<BriefAnalysisResponse> {
     const cacheKey = getCacheKey('/ai/analyze', data);
     const cached = getCachedData(cacheKey);
 

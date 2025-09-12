@@ -1,16 +1,16 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { aiService } from '@/services/aiService';
+import { aiService, type BriefAnalysisResponse } from '@/services/aiService';
 
 // Hook pour l'analyse IA avec cache
 export const useAIAnalysis = (data: { title: string; description: string; category?: string }) => {
-  return useQuery({
+  return useQuery<BriefAnalysisResponse>({
     queryKey: ['ai-analysis', data],
     queryFn: () => aiService.analyzeWithAI(data),
     enabled: !!(data.title && data.description && data.description.length > 10),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (changed from deprecated cacheTime)
     refetchOnWindowFocus: false,
     retry: 2,
   });
