@@ -22,7 +22,7 @@ const missionFormSchema = z.object({
 export default function CreateMission() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  
+
   // Utilisation de l'architecture centralisée pour éliminer la duplication
   const { fetchCall, isLoading, error } = useFetchCall();
 
@@ -37,13 +37,13 @@ export default function CreateMission() {
 
     // Validate data before sending
     const validatedData = missionFormSchema.parse(values);
-    
+
     // Ajouter l'ID utilisateur aux données
     const missionDataWithUser = {
       ...validatedData,
       userId: user.id
     };
-    
+
     console.log('🚀 Frontend: Submitting validated mission data with user:', JSON.stringify(missionDataWithUser, null, 2));
 
     // Test API connectivity first
