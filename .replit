@@ -36,18 +36,6 @@ task = "workflow.run"
 args = "Start application"
 
 [[workflows.workflow]]
-name = "Run"
-author = "agent"
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = " Npm run build"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow]]
 name = "Start application"
 author = "agent"
 
@@ -119,4 +107,4 @@ args = "npm run start"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["npm", "start"]

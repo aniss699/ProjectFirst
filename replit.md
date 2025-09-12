@@ -55,6 +55,12 @@ SwipDEAL est une plateforme moderne de mise en relation entre clients et prestat
 - Dev server: tsx pour hot reload
 - Port: 5000 (frontend et API)
 
+## Deployment Configuration
+- **Type**: autoscale (pour les applications web stateless)
+- **Build**: `npm run build` (compile frontend avec Vite + backend avec esbuild)
+- **Run**: `npm start` (démarre en mode production NODE_ENV=production)
+- **Production URL**: Disponible après publication sur `<app-name>.replit.app`
+
 ## Database Tables
 - `users`: Utilisateurs (clients, prestataires, admins)
 - `projects`: Projets postés par les clients
