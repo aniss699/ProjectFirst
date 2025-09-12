@@ -6548,7 +6548,19 @@ app.use((req, res, next) => {
 });
 app.set("trust proxy", true);
 app.use(cors({
-  origin: ["https://swideal.com", "https://www.swideal.com", /\.replit\.app$/],
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (origin.includes(".replit.dev") || origin.includes(".replit.app") || origin.includes(".replit.co")) {
+      return callback(null, true);
+    }
+    if (origin === "https://swideal.com" || origin === "https://www.swideal.com") {
+      return callback(null, true);
+    }
+    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
