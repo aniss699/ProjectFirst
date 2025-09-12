@@ -22,16 +22,6 @@ export interface ScoringFactors {
   urgencyLevel: 'low' | 'medium' | 'high';
 }
 
-export interface ScoringResult {
-  totalScore: number;
-  breakdown: Record<keyof ScoringWeights, number>;
-  explanations: string[];
-  confidence: number;
-  recommendations: string[];
-  anomalies?: string[];
-  marketInsights?: any;
-}
-
 // Interface pour les options de scoring, incluant les nouveaux paramètres IA
 export interface ScoringOptions {
   boostNewProviders?: boolean;
@@ -57,6 +47,9 @@ export interface ScoringResult {
   };
   explanations: string[];
   confidence: number;
+  recommendations?: string[];
+  anomalies?: string[];
+  marketInsights?: any;
   aiEnhancements?: {
     brief_quality_boost: number;
     richness_boost: number;
