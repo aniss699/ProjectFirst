@@ -12,7 +12,6 @@ import {
   Star,
   Settings,
   CheckCircle,
-  Brain,
   Lightbulb,
   Sparkles,
   Wand2,
@@ -20,7 +19,7 @@ import {
   TrendingUp,
   Eye,
   EyeOff,
-  Zap // Import Zap icon
+  Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,7 +154,7 @@ export function ProfileWizard() {
         title: 'Profil mis à jour',
         description: 'Votre profil a été mis à jour avec succès.',
       });
-      navigate('/profil');
+      setLocation('/profile');
     } catch (error) {
       toast({
         title: 'Erreur',
@@ -186,7 +185,7 @@ export function ProfileWizard() {
             <h1 className="text-3xl font-bold text-gray-900">Modifier mon profil</h1>
             <Button
               variant="outline"
-              onClick={() => navigate('/profil')}
+              onClick={() => setLocation('/profile')}
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Retour
