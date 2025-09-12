@@ -12,7 +12,7 @@ import { queryClient } from '@/lib/queryClient';
 const Home = React.lazy(() => import('@/pages/home'));
 const Marketplace = React.lazy(() => import('@/pages/marketplace'));
 const Missions = React.lazy(() => import('@/pages/missions'));
-const CreateMission = React.lazy(() => import('@/pages/create-mission'));
+const CreateMissionPage = React.lazy(() => import('@/pages/create-mission'));
 const Profile = React.lazy(() => import('@/pages/profile'));
 const Dashboard = React.lazy(() => import('@/pages/dashboard'));
 const Messages = React.lazy(() => import('@/pages/messages'));
@@ -43,10 +43,13 @@ const OpportunitiesPage = React.lazy(() => import('@/pages/services/Opportunitie
 const Favorites = React.lazy(() => import('@/pages/favorites'));
 
 // Lazy load the edit mission page
-const EditMission = React.lazy(() => import('@/pages/edit-mission'));
+const EditMissionPage = React.lazy(() => import('@/pages/edit-mission'));
 
 // Lazy load the mes demandes page
 const MesDemandes = React.lazy(() => import('@/pages/mes-demandes'));
+
+// Lazy load the advanced create mission page
+const AdvancedCreateMissionPage = React.lazy(() => import('@/pages/progressive-flow'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -83,9 +86,10 @@ function App() {
                     <Route path="/" component={Home} />
                     <Route path="/marketplace" component={Marketplace} />
                     <Route path="/missions" component={Missions} />
-                    <Route path="/create-mission" component={CreateMission} />
+                    <Route path="/create-mission" component={CreateMissionPage} />
+                    <Route path="/create-mission/advanced" component={AdvancedCreateMissionPage} />
                     {/* Route for editing missions */}
-                    <Route path="/missions/edit/:missionId" component={EditMission} />
+                    <Route path="/missions/edit/:missionId" component={EditMissionPage} />
                     <Route path="/profile" component={Profile} />
                     <Route path="/dashboard" component={Dashboard} />
                     <Route path="/messages" component={Messages} />

@@ -213,7 +213,7 @@ router.post('/', asyncHandler(async (req, res) => {
     country: 'France',
     remote_allowed: req.body.remote_allowed !== false,
     user_id: userIdInt,
-    client_id: userIdInt: 1,
+    client_id: userIdInt,
     status: 'published' as const,
     urgency: 'medium' as const,
     is_team_mission: false,
