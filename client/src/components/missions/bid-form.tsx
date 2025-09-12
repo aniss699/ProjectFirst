@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useCreateApi } from '@/hooks/useApiCall';
+import { useFormSubmit, validationHelpers } from '@/hooks/useFormSubmit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,67 +14,51 @@ interface BidFormProps {
 
 export function BidForm({ missionId, onSuccess }: BidFormProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     price: '',
     timeline: '',
     proposal: '',
   });
 
-  const submitBid = useMutation({
-    mutationFn: async (bidData: any) => {
-      const response = await apiRequest('POST', '/api/bids', bidData);
-      return response.json();
-    },
+  // Utilisation de l'architecture centralisée pour éliminer la duplication
+  const submitBid = useCreateApi('/api/bids', {
+    successMessage: '🚀 Offre envoyée avec succès !',
+    errorContext: 'Soumission d\'offre',
+    invalidateQueries: [
+      ['/api/missions', missionId],
+      ['/api/missions'],
+      ['/api/users', user?.id, 'bids']
+    ],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/missions', missionId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/missions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'bids'] });
-      toast({
-        title: 'Offre envoyée !',
-        description: 'Votre offre a été envoyée avec succès',
-      });
       setFormData({ price: '', timeline: '', proposal: '' });
       onSuccess();
     },
-    onError: (error: any) => {
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Une erreur est survenue',
-        variant: 'destructive',
-      });
+  });
+
+  // Utilisation du pattern correct avec useFormSubmit
+  const formSubmit = useFormSubmit({
+    onSubmit: async (data) => {
+      submitBid.mutate(data);
     },
+    validateBeforeSubmit: validationHelpers.validateBid,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.price || !formData.timeline || !formData.proposal) {
-      toast({
-        title: 'Champs requis',
-        description: 'Veuillez remplir tous les champs',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    // Vérification utilisateur d'abord
     if (!user) {
-      toast({
-        title: 'Connexion requise',
-        description: 'Vous devez être connecté pour postuler',
-        variant: 'destructive',
-      });
+      formSubmit.handleError(new Error('Vous devez être connecté pour postuler'), 'Authentification requise');
       return;
     }
 
-    submitBid.mutate({
+    // Utilise le système centralisé avec validation automatique
+    formSubmit.handleSubmit({
+      ...formData,
       missionId,
-      providerId: user.id, // user.id = provider_id
+      providerId: user.id,
       providerName: user.name,
       price: parseFloat(formData.price),
-      timeline: formData.timeline,
-      proposal: formData.proposal,
       rating: user.rating || '5.0',
     });
   };
@@ -107,6 +90,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
               onChange={(e) => handleInputChange('price', e.target.value)}
               className="h-11 rounded-lg border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-colors"
               required
+              data-testid="input-bid-price"
             />
           </div>
           <div className="space-y-2">
@@ -122,6 +106,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
               onChange={(e) => handleInputChange('timeline', e.target.value)}
               className="h-11 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
               required
+              data-testid="input-bid-timeline"
             />
           </div>
         </div>
@@ -138,6 +123,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
             onChange={(e) => handleInputChange('proposal', e.target.value)}
             className="min-h-[120px] rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-none transition-colors"
             required
+            data-testid="textarea-bid-proposal"
           />
         </div>
 
@@ -145,9 +131,10 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-lg text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-            disabled={submitBid.isPending}
+            disabled={submitBid.isPending || formSubmit.isSubmitting}
+            data-testid="button-submit-bid"
           >
-            {submitBid.isPending ? (
+            {(submitBid.isPending || formSubmit.isSubmitting) ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Envoi en cours...</span>

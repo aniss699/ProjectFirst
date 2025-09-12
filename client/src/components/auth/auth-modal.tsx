@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useCreateApi } from '@/hooks/useApiCall';
+import { useFormSubmit, validationHelpers } from '@/hooks/useFormSubmit';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +37,6 @@ interface OnboardingData {
 
 export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProps) {
   const { login } = useAuth();
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -55,62 +53,30 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
-      const response = await apiRequest('POST', '/api/auth/login', data);
-      return response.json();
-    },
+  // Utilisation de l'architecture centralisée pour éliminer la duplication
+  const loginApi = useCreateApi<any, { email: string; password: string }>('/api/auth/login', {
+    successMessage: 'Connexion réussie ! Bienvenue sur Swideal',
+    errorContext: 'Connexion utilisateur',
     onSuccess: (data) => {
       login(data.user);
       onClose();
-      toast({
-        title: 'Connexion réussie !',
-        description: 'Bienvenue sur Swideal',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Erreur de connexion',
-        description: error.message || 'Email ou mot de passe incorrect',
-        variant: 'destructive',
-      });
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: OnboardingData) => {
-      const payload = {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        role: data.role,
-        profile_data: {
-          company: data.company,
-          specialties: data.specialties,
-          experience: data.experience,
-          budget: data.budget,
-          goals: data.goals,
-          onboarding_completed: true
-        }
-      };
-      const response = await apiRequest('POST', '/api/auth/register', payload);
-      return response.json();
+  const loginSubmit = useFormSubmit<{ email: string; password: string }>({
+    onSubmit: async (data) => {
+      loginApi.mutate(data);
     },
+    validateBeforeSubmit: validationHelpers.validateAuth,
+  });
+
+  const registerMutation = useCreateApi<any, OnboardingData>('/api/auth/register', {
+    successMessage: '🎉 Bienvenue sur Swideal ! Votre compte a été créé',
+    errorContext: 'Inscription utilisateur',
     onSuccess: (data) => {
       login(data.user);
       setShowOnboarding(false);
       onClose();
-      toast({
-        title: '🎉 Bienvenue sur Swideal !',
-        description: 'Votre compte a été configuré avec succès',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Erreur lors de l\'inscription',
-        description: error.message || 'Une erreur est survenue',
-        variant: 'destructive',
-      });
     },
   });
 
@@ -147,54 +113,42 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
   };
 
   const completeOnboarding = () => {
-    registerMutation.mutate(onboardingData);
+    const payload = {
+      name: onboardingData.name,
+      email: onboardingData.email,
+      password: onboardingData.password,
+      role: onboardingData.role,
+      profile_data: {
+        company: onboardingData.company,
+        specialties: onboardingData.specialties,
+        experience: onboardingData.experience,
+        budget: onboardingData.budget,
+        goals: onboardingData.goals,
+        onboarding_completed: true
+      }
+    };
+    registerMutation.mutate(payload);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (mode === 'login') {
-      if (!formData.email.trim() || !formData.password.trim()) {
-        toast({
-          title: 'Champs requis',
-          description: 'Veuillez remplir tous les champs',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      loginMutation.mutate({
+      // Utilise le système centralisé de validation et de gestion d'erreur
+      loginSubmit.handleSubmit({
         email: formData.email.trim(),
         password: formData.password,
       });
     } else {
-      // Validation pour l'inscription
-      if (!formData.email.trim()) {
-        toast({
-          title: 'Email requis',
-          description: 'Veuillez saisir votre adresse email',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Utilise la validation centralisée pour l'inscription
+      const validationErrors = validationHelpers.validateAuth({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Validation email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        toast({
-          title: 'Email invalide',
-          description: 'Veuillez saisir un email valide',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (!formData.password.trim() || formData.password.length < 6) {
-        toast({
-          title: 'Mot de passe invalide',
-          description: 'Le mot de passe doit contenir au moins 6 caractères',
-          variant: 'destructive',
-        });
+      if (validationErrors && validationErrors.length > 0) {
+        // Utilise directement le service d'erreur pour afficher la validation
+        loginSubmit.handleError(new Error(`Champs requis : ${validationErrors.join(', ')}`), 'Validation inscription');
         return;
       }
 
@@ -208,6 +162,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
 
   const resetForm = () => {
     setFormData({ email: '', password: '' });
+    loginSubmit.reset();
   };
 
   const handleClose = () => {
@@ -220,7 +175,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
     onSwitchMode(newMode);
   };
 
-  // Rendu des étapes d'onboarding
+  // Rendu des étapes d'onboarding (simplifié pour exemple)
   const renderOnboardingStep = () => {
     switch (onboardingStep) {
       case 0: // Choix du rôle
@@ -236,6 +191,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
               <Card 
                 className={`cursor-pointer transition-all hover:shadow-lg ${onboardingData.role === 'CLIENT' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
                 onClick={() => updateOnboardingData('role', 'CLIENT')}
+                data-testid="role-client-card"
               >
                 <CardContent className="p-6 text-center">
                   <Target className="w-8 h-8 text-blue-600 mx-auto mb-3" />
@@ -247,6 +203,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
               <Card 
                 className={`cursor-pointer transition-all hover:shadow-lg ${onboardingData.role === 'PRO' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
                 onClick={() => updateOnboardingData('role', 'PRO')}
+                data-testid="role-pro-card"
               >
                 <CardContent className="p-6 text-center">
                   <Zap className="w-8 h-8 text-purple-600 mx-auto mb-3" />
@@ -274,6 +231,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
                   value={onboardingData.name}
                   onChange={(e) => updateOnboardingData('name', e.target.value)}
                   placeholder="Votre nom complet"
+                  data-testid="input-onboarding-name"
                 />
               </div>
               
@@ -285,6 +243,7 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
                   value={onboardingData.email}
                   onChange={(e) => updateOnboardingData('email', e.target.value)}
                   placeholder="votre@email.com"
+                  data-testid="input-onboarding-email"
                 />
               </div>
               
@@ -296,224 +255,159 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
                   value={onboardingData.password}
                   onChange={(e) => updateOnboardingData('password', e.target.value)}
                   placeholder="Au moins 6 caractères"
+                  data-testid="input-onboarding-password"
                 />
               </div>
             </div>
           </div>
         );
         
-      case 2: // Spécialisations (pour PRO) ou Entreprise (pour CLIENT)
-        if (onboardingData.role === 'PRO') {
-          const commonSpecialties = ['React', 'Vue.js', 'Node.js', 'Python', 'Design UI/UX', 'Marketing', 'SEO', 'Rédaction'];
-          return (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Vos spécialités</h3>
-                <p className="text-gray-600">Sélectionnez vos domaines d'expertise</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                {commonSpecialties.map((specialty) => (
-                  <Button
-                    key={specialty}
-                    variant={onboardingData.specialties?.includes(specialty) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      const current = onboardingData.specialties || [];
-                      if (current.includes(specialty)) {
-                        updateOnboardingData('specialties', current.filter(s => s !== specialty));
-                      } else {
-                        updateOnboardingData('specialties', [...current, specialty]);
-                      }
-                    }}
-                  >
-                    {specialty}
-                  </Button>
-                ))}
-              </div>
-              
-              <Button 
-                onClick={completeOnboarding}
-                className="w-full bg-green-600 hover:bg-green-700 mt-6"
-                disabled={registerMutation.isPending}
-              >
-                {registerMutation.isPending ? 'Création en cours...' : '🎉 Créer mon compte'}
-              </Button>
+      case 2: // Finalisation
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Presque fini !</h3>
+              <p className="text-gray-600">Confirmez vos informations pour créer votre compte</p>
             </div>
-          );
-        } else {
-          return (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Votre entreprise</h3>
-                <p className="text-gray-600">Parlez-nous de votre organisation</p>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="company">Nom de l'entreprise</Label>
-                  <Input
-                    id="company"
-                    value={onboardingData.company || ''}
-                    onChange={(e) => updateOnboardingData('company', e.target.value)}
-                    placeholder="Votre entreprise"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="budget">Budget mensuel approximatif</Label>
-                  <select 
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    value={onboardingData.budget || ''}
-                    onChange={(e) => updateOnboardingData('budget', e.target.value)}
-                  >
-                    <option value="">Sélectionnez un budget</option>
-                    <option value="0-1000">0 - 1 000€</option>
-                    <option value="1000-5000">1 000 - 5 000€</option>
-                    <option value="5000-15000">5 000 - 15 000€</option>
-                    <option value="15000+">15 000€+</option>
-                  </select>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={completeOnboarding}
-                className="w-full bg-green-600 hover:bg-green-700 mt-6"
-                disabled={registerMutation.isPending}
-              >
-                {registerMutation.isPending ? 'Création en cours...' : '🎉 Créer mon compte'}
-              </Button>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Récapitulatif</h4>
+              <p><strong>Nom :</strong> {onboardingData.name}</p>
+              <p><strong>Email :</strong> {onboardingData.email}</p>
+              <p><strong>Rôle :</strong> {onboardingData.role === 'CLIENT' ? 'Client' : 'Prestataire'}</p>
             </div>
-          );
-        }
+          </div>
+        );
         
       default:
         return null;
     }
   };
 
+  // Affichage du modal principal ou de l'onboarding
+  if (showOnboarding) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Créer un compte</DialogTitle>
+            <DialogDescription>
+              Étape {onboardingStep + 1} sur {getMaxSteps()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Progress value={(onboardingStep + 1) / getMaxSteps() * 100} className="mb-4" />
+          
+          {renderOnboardingStep()}
+          
+          <div className="flex justify-between pt-4">
+            <Button 
+              variant="outline" 
+              onClick={prevStep}
+              disabled={onboardingStep === 0}
+              data-testid="button-onboarding-prev"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Précédent
+            </Button>
+            
+            {onboardingStep < getMaxSteps() - 1 ? (
+              <Button 
+                onClick={nextStep}
+                data-testid="button-onboarding-next"
+              >
+                Suivant
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button 
+                onClick={completeOnboarding}
+                disabled={registerMutation.isPending}
+                data-testid="button-onboarding-complete"
+              >
+                {registerMutation.isPending ? 'Création...' : 'Créer le compte'}
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Modal principal de connexion/inscription
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`bg-white ${showOnboarding ? 'sm:max-w-lg' : 'sm:max-w-md'}`}>
-        {showOnboarding ? (
-          <div className="space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center">Configuration de votre compte</DialogTitle>
-              <div className="flex items-center space-x-2 mt-4">
-                <Progress value={(onboardingStep + 1) / getMaxSteps() * 100} className="flex-1" />
-                <span className="text-sm text-gray-500">{onboardingStep + 1}/{getMaxSteps()}</span>
-              </div>
-            </DialogHeader>
-            
-            {renderOnboardingStep()}
-            
-            <div className="flex justify-between pt-4">
-              <Button 
-                variant="outline" 
-                onClick={prevStep}
-                disabled={onboardingStep === 0}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Précédent
-              </Button>
-              
-              {onboardingStep < 2 && (
-                <Button 
-                  onClick={nextStep}
-                  disabled={
-                    (onboardingStep === 0 && !onboardingData.role) ||
-                    (onboardingStep === 1 && (!onboardingData.name || !onboardingData.email || !onboardingData.password))
-                  }
-                >
-                  Suivant
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-blue-900 text-center">
-                {mode === 'login' ? 'Connexion' : 'Créer un compte'}
-              </DialogTitle>
-              <DialogDescription className="text-center text-blue-600">
-                {mode === 'login' ? 'Connectez-vous à votre compte' : 'Créez votre compte avec votre email'}
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === 'login' ? 'Connexion' : 'Créer un compte'}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === 'login' 
+              ? 'Connectez-vous à votre compte Swideal' 
+              : 'Rejoignez la communauté Swideal'
+            }
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="email" className="text-sm font-medium text-blue-800">
-              Email
-            </Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              className="mt-2 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+              placeholder="votre@email.com"
               required
+              data-testid="input-auth-email"
             />
           </div>
 
           <div>
-            <Label htmlFor="password" className="text-sm font-medium text-blue-800">
-              Mot de passe
-            </Label>
+            <Label htmlFor="password">Mot de passe</Label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
-              className="mt-2 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+              placeholder={mode === 'login' ? 'Votre mot de passe' : 'Au moins 6 caractères'}
               required
+              data-testid="input-auth-password"
             />
           </div>
 
-          <Button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
-            disabled={loginMutation.isPending || registerMutation.isPending}
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={loginSubmit.isSubmitting}
+            data-testid="button-auth-submit"
           >
-            {loginMutation.isPending || registerMutation.isPending ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Chargement...</span>
+            {loginSubmit.isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                {mode === 'login' ? 'Connexion...' : 'Création...'}
               </div>
-            ) : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
+            ) : (
+              mode === 'login' ? 'Se connecter' : 'Continuer'
+            )}
           </Button>
         </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-blue-600">
-                {mode === 'login' ? (
-                  <>
-                    Pas encore de compte ?{' '}
-                    <button
-                      type="button"
-                      onClick={() => switchMode('register')}
-                      className="font-semibold text-blue-700 hover:text-blue-800 underline"
-                    >
-                      Créer un compte
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Déjà un compte ?{' '}
-                    <button
-                      type="button"
-                      onClick={() => switchMode('login')}
-                      className="font-semibold text-blue-700 hover:text-blue-800 underline"
-                    >
-                      Se connecter
-                    </button>
-                  </>
-                )}
-              </p>
-            </div>
-          </>
-        )}
+        <div className="text-center pt-4 border-t">
+          <p className="text-sm text-gray-600">
+            {mode === 'login' ? "Pas encore de compte ?" : "Déjà un compte ?"}
+            <button
+              type="button"
+              onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+              className="ml-1 text-blue-600 hover:underline"
+              data-testid="button-auth-switch"
+            >
+              {mode === 'login' ? "S'inscrire" : "Se connecter"}
+            </button>
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
