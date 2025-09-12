@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "python-3.11", "web", "postgresql-16"]
 [agent]
 expertMode = true
+integrations = ["javascript_database:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -113,5 +114,5 @@ args = "npm run start"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["sh", "-c", "npm run build"]
-run = ["sh", "-c", "npm run start"]
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
