@@ -1,6 +1,25 @@
-
 import { z } from 'zod';
 
+// Schema simplifié pour création de mission
+export const createSimpleMissionSchema = z.object({
+  title: z.string()
+    .min(3, "Le titre doit contenir au moins 3 caractères")
+    .max(500, "Le titre ne peut pas dépasser 500 caractères")
+    .transform(str => str.trim()),
+
+  description: z.string()
+    .min(10, "La description doit contenir au moins 10 caractères")
+    .max(5000, "La description ne peut pas dépasser 5000 caractères")
+    .transform(str => str.trim()),
+
+  budget: z.number()
+    .min(1, "Le budget doit être supérieur à 0")
+    .optional(),
+
+  isTeamMode: z.boolean().default(false)
+});
+
+// Schema pour la validation des missions complètes
 // ============================================
 // SCHEMAS ZOD POUR VALIDATION SERVER-SIDE
 // ============================================
@@ -38,57 +57,57 @@ export const createMissionSchema = z.object({
     .min(3, "Le titre doit contenir au moins 3 caractères")
     .max(500, "Le titre ne peut pas dépasser 500 caractères")
     .transform(str => str.trim()),
-    
+
   description: z.string()
     .min(10, "La description doit contenir au moins 10 caractères")
     .max(5000, "La description ne peut pas dépasser 5000 caractères")
     .transform(str => str.trim()),
-    
+
   // Catégorisation
   category: z.string()
     .min(1, "La catégorie est requise")
     .default('developpement'),
-    
+
   tags: z.array(z.string().min(1))
     .max(10, "Maximum 10 tags")
     .default([])
     .transform(tags => tags.map(tag => tag.toLowerCase().trim())),
-    
+
   skillsRequired: z.array(z.string().min(1))
     .max(15, "Maximum 15 compétences")
     .default([])
     .transform(skills => skills.map(skill => skill.trim())),
-    
+
   // Budget (objet structuré)
   budget: budgetSchema,
-  
+
   // Localisation
   location: locationSchema.optional(),
-  
+
   // Équipe
   team: teamSchema.optional(),
-  
+
   // Timing et urgence
   urgency: z.enum(['low', 'medium', 'high', 'urgent'])
     .default('medium'),
-    
+
   deadline: z.string()
     .datetime("Format de date invalide")
     .optional()
     .transform(str => str ? new Date(str) : undefined),
-    
+
   // Métadonnées
   requirements: z.string()
     .max(2000, "Les exigences ne peuvent pas dépasser 2000 caractères")
     .optional()
     .transform(str => str?.trim()),
-    
+
   deliverables: z.array(z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     dueDate: z.string().datetime().optional()
   })).max(20, "Maximum 20 livrables").default([]),
-  
+
   // Status (draft par défaut, published si publié immédiatement)
   status: z.enum(['draft', 'published']).default('draft')
 });

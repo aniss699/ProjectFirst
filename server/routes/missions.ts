@@ -5,6 +5,10 @@ import { missions, bids as bidTable, users } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js';
 import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod'; // Import z from zod
+import { createSimpleMissionSchema } from '../validation/mission-schemas.js'; // Import the new schema
+import { MissionCreator } from '../services/mission-creator.js'; // Import the MissionCreator service
+import { TeamAnalysisService } from '../services/team-analysis.js'; // Import the TeamAnalysisService
 
 // Error wrapper for async routes
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
@@ -39,6 +43,71 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 }
 
 const router = Router();
+
+// POST /api/missions/simple - Création simplifiée de mission
+router.post('/simple', async (req, res) => {
+  try {
+    console.log('🚀 Création mission simplifiée - Données reçues:', req.body);
+
+    // Validation avec le nouveau schema
+    const validatedData = createSimpleMissionSchema.parse(req.body);
+    console.log('✅ Validation réussie:', validatedData);
+
+    // Mock user ID pour les tests (à remplacer par l'authentification réelle)
+    const userId = 3; // ID utilisateur de test
+
+    // Utiliser le service existant avec valeurs par défaut intelligentes
+    const missionData = await MissionCreator.createSimpleMission({
+      ...validatedData,
+      userId: userId,
+      category: 'developpement', // Valeur par défaut
+      location: 'Remote', // Valeur par défaut
+      is_team_mission: validatedData.isTeamMode
+    });
+
+    console.log('📝 Données mission préparées:', missionData);
+
+    // Sauvegarder la mission
+    const result = await MissionCreator.saveMission(missionData);
+    console.log('💾 Mission sauvegardée avec ID:', result.id);
+
+    // Si mode équipe, déclencher analyse (si le service existe)
+    if (validatedData.isTeamMode) {
+      try {
+        // Ensure TeamAnalysisService is properly imported and available
+        if (TeamAnalysisService && typeof TeamAnalysisService.analyzeTeamRequirements === 'function') {
+          await TeamAnalysisService.analyzeTeamRequirements(result.id);
+          console.log('🔍 Analyse équipe déclenchée pour mission:', result.id);
+        } else {
+          console.log('⚠️ Service d\'analyse équipe non disponible ou méthode non trouvée.');
+        }
+      } catch (error) {
+        console.log('⚠️ Erreur lors du déclenchement de l\'analyse équipe:', error.message);
+      }
+    }
+
+    res.json({
+      ok: true,
+      data: result,
+      message: 'Mission créée avec succès'
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur création mission simplifiée:', error);
+
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Données invalides',
+        details: error.errors
+      });
+    }
+
+    res.status(500).json({
+      error: 'Erreur lors de la création de la mission',
+      message: error.message
+    });
+  }
+});
 
 // POST /api/missions - Create new mission (robuste avec transaction)
 router.post('/', asyncHandler(async (req, res) => {
@@ -144,7 +213,7 @@ router.post('/', asyncHandler(async (req, res) => {
     country: 'France',
     remote_allowed: req.body.remote_allowed !== false,
     user_id: userIdInt,
-    client_id: userIdInt,
+    client_id: userIdInt: 1,
     status: 'published' as const,
     urgency: 'medium' as const,
     is_team_mission: false,
@@ -686,10 +755,10 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
 
     // Group data by mission to structure the result properly
     const missionMap = new Map();
-    
+
     missionsWithBidsData.forEach(row => {
       const missionId = row.mission_id;
-      
+
       if (!missionMap.has(missionId)) {
         // Create mission entry
         missionMap.set(missionId, {
@@ -734,7 +803,7 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
           bids: []
         });
       }
-      
+
       // Add bid if it exists
       if (row.bid_id) {
         missionMap.get(missionId).bids.push({
@@ -750,10 +819,10 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
     });
 
     const missionsWithBids = Array.from(missionMap.values());
-    
+
     console.log(`✅ OPTIMIZED: Found ${missionsWithBids.length} missions for user ${userId}`);
     console.log(`✅ PERFORMANCE: Eliminated N+1 queries - used single JOIN instead of ${missionsWithBids.length + 1} separate queries`);
-    
+
     res.json(missionsWithBids);
   } catch (error) {
     console.error('❌ Error in optimized missions+bids query:', error);

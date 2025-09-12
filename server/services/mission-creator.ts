@@ -1,4 +1,3 @@
-
 import { db } from '../database.js';
 import { missions } from '../../shared/schema.js';
 
@@ -12,63 +11,103 @@ export interface SimpleMissionInput {
 }
 
 export class MissionCreator {
-  static async createSimpleMission(input: SimpleMissionInput) {
-    const {
-      title,
-      description,
-      category = 'developpement',
-      budget = 1000,
-      location = 'Remote',
-      userId
-    } = input;
+  static async createSimpleMission(input: {
+    title: string;
+    description: string;
+    budget?: number;
+    isTeamMode: boolean;
+    userId: number;
+    category?: string;
+    location?: string;
+  }) {
+    console.log('🎯 Création mission simplifiée avec:', input);
 
-    // Validation des données minimales
-    if (!title || title.trim().length < 3) {
-      throw new Error('Le titre doit contenir au moins 3 caractères');
-    }
+    // Valeurs par défaut intelligentes basées sur l'analyse du titre/description
+    const smartDefaults = await this.generateSmartDefaults(input);
+    console.log('🧠 Valeurs par défaut générées:', smartDefaults);
 
-    if (!description || description.trim().length < 10) {
-      throw new Error('La description doit contenir au moins 10 caractères');
-    }
-
-    if (!userId || userId <= 0) {
-      throw new Error('Utilisateur invalide');
-    }
-
-    // Données par défaut intelligentes
-    const missionData = {
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      budget_value_cents: budget * 100, // Conversion en centimes
-      currency: 'EUR',
-      location,
-      user_id: userId,
-      client_id: userId,
-      status: 'published' as const,
-      urgency: 'medium' as const,
+    return {
+      title: input.title,
+      description: input.description,
+      category: input.category || smartDefaults.category,
+      location_raw: input.location || smartDefaults.location,
+      urgency: 'medium',
+      status: 'published',
       remote_allowed: true,
-      is_team_mission: false,
-      team_size: 1,
-      created_at: new Date(),
-      updated_at: new Date()
+      quality_target: 'standard',
+      currency: 'EUR',
+      budget_value_cents: (input.budget || smartDefaults.budget) * 100,
+      user_id: input.userId,
+      client_id: input.userId,
+      is_team_mission: input.isTeamMode,
+      team_size: input.isTeamMode ? 2 : 1,
+      tags: smartDefaults.tags || [],
+      skills_required: smartDefaults.skills || [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
+  }
 
-    return missionData;
+  static async generateSmartDefaults(input: { title: string; description: string; budget?: number }) {
+    console.log('🔍 Génération valeurs par défaut pour:', input.title);
+
+    // Analyse simple du titre et description pour détecter la catégorie
+    const titleLower = input.title.toLowerCase();
+    const descriptionLower = input.description.toLowerCase();
+    const text = (titleLower + ' ' + descriptionLower).toLowerCase();
+
+    let category = 'developpement';
+    let location = 'Remote';
+    let budget = input.budget || 2000;
+    let tags = [];
+    let skills = [];
+
+    // Détection de catégorie basique
+    if (text.includes('web') || text.includes('site') || text.includes('react') || text.includes('javascript')) {
+      category = 'web-development';
+      budget = input.budget || 3000;
+      tags = ['web', 'frontend'];
+      skills = ['JavaScript', 'HTML', 'CSS'];
+    } else if (text.includes('mobile') || text.includes('app') || text.includes('android') || text.includes('ios')) {
+      category = 'mobile-development';
+      budget = input.budget || 5000;
+      tags = ['mobile', 'app'];
+      skills = ['React Native', 'Mobile Development'];
+    } else if (text.includes('design') || text.includes('ui') || text.includes('ux') || text.includes('graphique')) {
+      category = 'design';
+      budget = input.budget || 1500;
+      tags = ['design', 'ui/ux'];
+      skills = ['Figma', 'Design'];
+    } else if (text.includes('data') || text.includes('analyse') || text.includes('machine learning') || text.includes('ai')) {
+      category = 'data-science';
+      budget = input.budget || 4000;
+      tags = ['data', 'analytics'];
+      skills = ['Python', 'Data Analysis'];
+    }
+
+    // Détection de localisation
+    if (text.includes('paris') || text.includes('france') || text.includes('sur place') || text.includes('présentiel')) {
+      location = 'Paris, France';
+    }
+
+    console.log('✨ Valeurs par défaut générées:', { category, location, budget, tags, skills });
+
+    return { category, location, budget, tags, skills };
   }
 
   static async saveMission(missionData: any) {
-    try {
-      const result = await db.insert(missions).values(missionData).returning();
-      
-      if (!result || result.length === 0) {
-        throw new Error('Échec de la sauvegarde en base de données');
-      }
+    console.log('💾 Sauvegarde mission:', missionData);
 
-      return result[0];
+    try {
+      const [savedMission] = await db.insert(missions).values(missionData).returning();
+      console.log('✅ Mission sauvegardée avec succès:', savedMission.id);
+      return savedMission;
     } catch (error) {
       console.error('❌ Erreur sauvegarde mission:', error);
-      throw new Error(`Erreur de sauvegarde: ${error.message}`);
+      throw new Error('Erreur lors de la sauvegarde de la mission');
     }
+  }
+
+  static async createMission(missionData: any) {
   }
 }
