@@ -59,4 +59,4 @@ args = "npm run start"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "start"]
+run = ["npm", "run", "start"]
