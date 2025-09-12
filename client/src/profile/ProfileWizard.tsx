@@ -19,7 +19,8 @@ import {
   Target,
   TrendingUp,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap // Import Zap icon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -248,7 +249,7 @@ export function ProfileWizard() {
                 onClick={() => setShowAISuggestions(!showAISuggestions)}
                 className="flex items-center gap-2"
               >
-                <Brain className="h-4 w-4" />
+                <Zap className="h-4 w-4" /> {/* Changed Brain to Zap */}
                 {showAISuggestions ? (
                   <>
                     <EyeOff className="h-4 w-4" />
@@ -281,7 +282,7 @@ export function ProfileWizard() {
                         {suggestion.icon === 'Target' && <Target className="h-4 w-4 text-blue-500" />}
                         {suggestion.icon === 'TrendingUp' && <TrendingUp className="h-4 w-4 text-green-500" />}
                         {suggestion.icon === 'Sparkles' && <Sparkles className="h-4 w-4 text-purple-500" />}
-                        {!suggestion.icon && <Brain className="h-4 w-4 text-blue-500" />}
+                        {!suggestion.icon && <Zap className="h-4 w-4 text-blue-500" />} {/* Changed Brain to Zap */}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-sm text-gray-800">{suggestion.title}</p>
