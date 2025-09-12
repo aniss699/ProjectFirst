@@ -2014,7 +2014,6 @@ var vite_config_default = defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5e3,
-    allowedHosts: "all",
     hmr: {
       port: 5001,
       host: "0.0.0.0"
@@ -6550,16 +6549,29 @@ app.set("trust proxy", true);
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
-    if (origin.includes(".replit.dev") || origin.includes(".replit.app") || origin.includes(".replit.co")) {
+    if (process.env.NODE_ENV === "development" || process.env.NODE_ENV !== "production") {
       return callback(null, true);
     }
-    if (origin === "https://swideal.com" || origin === "https://www.swideal.com") {
+    const allowedOrigins = [
+      "https://swideal.com",
+      "https://www.swideal.com",
+      /^https:\/\/.*\.replit\.dev$/,
+      /^https:\/\/.*\.replit\.app$/,
+      /^https:\/\/.*\.replit\.co$/
+    ];
+    const isAllowed = allowedOrigins.some((allowed) => {
+      if (typeof allowed === "string") {
+        return origin === allowed;
+      } else {
+        return allowed.test(origin);
+      }
+    });
+    if (isAllowed) {
       return callback(null, true);
+    } else {
+      console.warn(`\u26A0\uFE0F CORS blocked request from origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
     }
-    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-      return callback(null, true);
-    }
-    return callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
