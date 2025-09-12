@@ -1,14 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { SimpleMissionCreator } from '../components/missions/simple-mission-creator';
 
 export function CreateMissionPage() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleSuccess = (missionData: any) => {
     console.log('✅ Mission créée avec succès:', missionData);
     // Rediriger vers la page des missions ou le marketplace
-    navigate('/marketplace');
+    setLocation('/marketplace');
   };
 
   const handleError = (error: any) => {
@@ -36,7 +36,7 @@ export function CreateMissionPage() {
         {/* Lien vers le mode avancé si nécessaire */}
         <div className="mt-8 text-center">
           <button
-            onClick={() => navigate('/create-mission/advanced')}
+            onClick={() => setLocation('/create-mission/advanced')}
             className="text-sm text-blue-600 hover:text-blue-800 underline"
           >
             Besoin de plus d'options ? Utiliser le mode avancé
