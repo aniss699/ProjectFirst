@@ -85,7 +85,20 @@ mode = "sequential"
 task = "shell.exec"
 args = "npm run migrate"
 
+[[workflows.workflow]]
+name = "Production Test"
+author = 47514937
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run start"
+
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["sh", "-c", "npm run build"]
+run = ["sh", "-c", "npm run start"]
