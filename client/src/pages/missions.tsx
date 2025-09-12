@@ -32,7 +32,7 @@ export default function Missions() {
         throw new Error('User ID manquant');
       }
 
-      console.log('🔍 Récupération des missions pour user.id:', user.id);
+      console.log('🔍 OPTIMIZED: Récupération des missions avec offres pour user.id:', user.id);
       
       const response = await fetch(`/api/missions/users/${user.id}/missions`);
       if (!response.ok) {
@@ -41,30 +41,10 @@ export default function Missions() {
         throw new Error(`Erreur ${response.status}: ${errorText}`);
       }
       
-      const missions = await response.json();
-      console.log('✅ Missions récupérées:', missions.length);
+      const missionsWithBids = await response.json();
+      console.log('✅ PERFORMANCE BOOST: Missions avec offres récupérées en 1 seule requête:', missionsWithBids.length);
+      console.log('✅ ELIMINATED N+1: Pas de requêtes individuelles pour les offres');
       
-      // Pour chaque mission, récupérer les offres associées
-      const missionsWithBids = await Promise.all(
-        missions.map(async (mission: Mission) => {
-          try {
-            const bidsResponse = await fetch(`/api/missions/${mission.id}`);
-            if (bidsResponse.ok) {
-              const missionWithBids = await bidsResponse.json();
-              return {
-                ...mission,
-                bids: missionWithBids.bids || []
-              };
-            }
-            return { ...mission, bids: [] };
-          } catch (error) {
-            console.error(`Erreur récupération offres mission ${mission.id}:`, error);
-            return { ...mission, bids: [] };
-          }
-        })
-      );
-      
-      console.log('✅ Missions avec offres:', missionsWithBids.length);
       return missionsWithBids;
     },
     enabled: !!user?.id,
