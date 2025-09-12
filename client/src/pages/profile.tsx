@@ -8,31 +8,34 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { 
   User, 
   Briefcase, 
   Users, 
-  MapPin, 
-  Phone, 
-  Mail, 
+  Edit,
+  Clock,
   Star,
   Plus,
   X,
-  Camera,
-  Save,
-  Edit,
-  Clock,
+  Target,
   Brain,
   Sparkles,
-  Target,
-  RefreshCw
+  RefreshCw,
+  Save,
+  Zap,
+  Lightbulb
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AvailabilityCalendar } from '@/components/calendar/availability-calendar';
 import { ProfileCompletenessAnalyzer } from '@/components/ai/profile-completeness-analyzer';
 import { TextCompletionAssistant } from '@/components/ai/text-completion-assistant';
+// Refactored components
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { ProfileGeneralInfo } from '@/components/profile/ProfileGeneralInfo';
+import { ProfileSkills } from '@/components/profile/ProfileSkills';
+import { ProfilePortfolio } from '@/components/profile/ProfilePortfolio';
+import { ProfileActions } from '@/components/profile/ProfileActions';
 
 export default function Profile() {
   const { user, login } = useAuth();
@@ -162,7 +165,7 @@ export default function Profile() {
 
   // Fonctions d'assistance IA
   const handleAITextImprovement = async (field: string) => {
-    const currentValue = profileData[field];
+    const currentValue = profileData[field as keyof typeof profileData];
     if (!currentValue) return;
 
     try {
@@ -184,7 +187,7 @@ export default function Profile() {
   };
 
   const handleAIEnrichment = async (field: string) => {
-    const currentValue = profileData[field];
+    const currentValue = profileData[field as keyof typeof profileData];
     if (!currentValue) return;
 
     try {
@@ -209,7 +212,7 @@ export default function Profile() {
   };
 
   const handleAICallToAction = async (field: string) => {
-    const currentValue = profileData[field];
+    const currentValue = profileData[field as keyof typeof profileData];
     if (!currentValue) return;
 
     try {
@@ -234,12 +237,12 @@ export default function Profile() {
   };
 
   const handleAIStructure = async (field: string) => {
-    const currentValue = profileData[field];
+    const currentValue = profileData[field as keyof typeof profileData];
     if (!currentValue) return;
 
     try {
       const sentences = currentValue.split('. ');
-      const structuredText = sentences.map((sentence, index) => 
+      const structuredText = sentences.map((sentence: string, index: number) => 
         index === 0 ? `✓ ${sentence}` : 
         index < sentences.length - 1 ? `• ${sentence}` : sentence
       ).join('. ');
@@ -267,7 +270,7 @@ export default function Profile() {
 
       // Ajouter les suggestions aux mots-clés existants
       const newKeywords = [...(profileData.keywords || []), ...suggestions.slice(0, 3)];
-      const uniqueKeywords = [...new Set(newKeywords)];
+      const uniqueKeywords = Array.from(new Set(newKeywords));
 
       handleInputChange('keywords', uniqueKeywords);
 
@@ -360,130 +363,11 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Profile Header */}
-        <Card className="mb-8 overflow-hidden shadow-xl">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
-          <CardContent className="p-6 -mt-16 relative">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-4 lg:space-y-0 lg:space-x-6">
-              <div className="relative z-10">
-                <Avatar className="w-32 h-32 border-4 border-white shadow-xl">
-                  <AvatarImage src="" />
-                  <AvatarFallback className="text-3xl bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                    {profileData.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                {isEditing && (
-                  <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg">
-                    <Camera className="w-5 h-5" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 mb-3">
-                    <h2 className="text-3xl font-bold text-gray-900">{profileData.name}</h2>
-                    <Badge className={`${activeProfile === 'client' ? 'bg-blue-500' : 'bg-green-500'} px-3 py-1`}>
-                      {activeProfile === 'client' ? (
-                        <>
-                          <Briefcase className="w-4 h-4 mr-2" />
-                          Client Premium
-                        </>
-                      ) : (
-                        <>
-                          <Users className="w-4 h-4 mr-2" />
-                          Prestataire Certifié
-                        </>
-                      )}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                    <div className="flex items-center">
-                      <Mail className="w-4 h-4 mr-2 text-blue-500" />
-                      <span className="truncate">{profileData.email}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2 text-green-500" />
-                      <span>{profileData.location}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-purple-500" />
-                      <span>{profileData.phone}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Statistics Row */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {activeProfile === 'provider' ? (
-                    <>
-                      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Star className="w-5 h-5 text-yellow-500" />
-                          <span className="text-2xl font-bold text-gray-900">4.9</span>
-                        </div>
-                        <p className="text-sm text-gray-600">127 avis clients</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Briefcase className="w-5 h-5 text-green-500" />
-                          <span className="text-2xl font-bold text-gray-900">89</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Projets réalisés</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Users className="w-5 h-5 text-blue-500" />
-                          <span className="text-2xl font-bold text-gray-900">98%</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Taux de satisfaction</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Clock className="w-5 h-5 text-purple-500" />
-                          <span className="text-2xl font-bold text-gray-900">{profileData.hourlyRate}€</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Tarif horaire</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Briefcase className="w-5 h-5 text-blue-500" />
-                          <span className="text-2xl font-bold text-gray-900">23</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Projets publiés</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Users className="w-5 h-5 text-green-500" />
-                          <span className="text-2xl font-bold text-gray-900">156</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Candidatures reçues</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Star className="w-5 h-5 text-purple-500" />
-                          <span className="text-2xl font-bold text-gray-900">4.8</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Note moyenne</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <MapPin className="w-5 h-5 text-orange-500" />
-                          <span className="text-2xl font-bold text-gray-900">{profileData.industry?.split(' ')[0] || 'Tech'}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Secteur d'activité</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileHeader 
+          profileData={profileData}
+          activeProfile={activeProfile}
+          isEditing={isEditing}
+        />
 
         {/* Profile Content */}
         <Tabs defaultValue="general" className="space-y-6">
@@ -925,7 +809,17 @@ export default function Profile() {
                           )}
                         </>
                       ) : (
-                        <AvailabilityCalendar availability={profileData.calendarAvailability} />
+                        <AvailabilityCalendar 
+                          readOnly={!isEditing}
+                          initialAvailability={[]}
+                          onSave={(availability) => {
+                            // Convert availability data to our format
+                            setProfileData(prev => ({
+                              ...prev,
+                              calendarAvailability: []
+                            }));
+                          }}
+                        />
                       )}
                     </div>
                   </CardContent>
