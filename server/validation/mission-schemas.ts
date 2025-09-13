@@ -1,5 +1,26 @@
 import { z } from 'zod';
 
+// Schema simplifié pour création de mission
+export const createSimpleMissionSchema = z.object({
+  title: z.string()
+    .min(3, "Le titre doit contenir au moins 3 caractères")
+    .max(500, "Le titre ne peut pas dépasser 500 caractères")
+    .transform(str => str.trim()),
+
+  description: z.string()
+    .min(10, "La description doit contenir au moins 10 caractères")
+    .max(5000, "La description ne peut pas dépasser 5000 caractères")
+    .transform(str => str.trim()),
+
+  budget: z.number()
+    .int("Le budget doit être un nombre entier")
+    .positive("Le budget doit être positif")
+    .min(10, "Budget minimum de 10€")
+    .max(1000000, "Budget maximum de 1 000 000€"),
+
+  isTeamMode: z.boolean().default(false)
+});
+
 // Schema pour la validation des missions complètes
 // ============================================
 // SCHEMAS ZOD POUR VALIDATION SERVER-SIDE
