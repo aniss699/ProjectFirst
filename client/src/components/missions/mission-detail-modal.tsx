@@ -19,6 +19,7 @@ import {
   MapPin,
   Calendar,
   Users,
+  User,
   Star,
   Euro,
   Briefcase,
@@ -354,15 +355,36 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                                 {bid.providerName.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <h5
-                                  className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
-                                  onClick={() => {
-                                    setSelectedProviderId(bid.providerId);
-                                    setSelectedProviderName(bid.providerName);
-                                  }}
-                                >
-                                  {bid.providerName}
-                                </h5>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h5
+                                    className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
+                                    onClick={() => {
+                                      setSelectedProviderId(bid.providerId);
+                                      setSelectedProviderName(bid.providerName);
+                                    }}
+                                  >
+                                    {bid.providerName}
+                                  </h5>
+                                  {/* Badge pour le type de candidature */}
+                                  {bid.bid_type === 'team' && (
+                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 border-purple-200">
+                                      <Users className="w-3 h-3 mr-1" />
+                                      Équipe
+                                    </Badge>
+                                  )}
+                                  {bid.bid_type === 'open_team' && (
+                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
+                                      <Users className="w-3 h-3 mr-1" />
+                                      Équipe Ouverte
+                                    </Badge>
+                                  )}
+                                  {(!bid.bid_type || bid.bid_type === 'individual') && (
+                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200">
+                                      <User className="w-3 h-3 mr-1" />
+                                      Individuel
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-1">
                                   <div className="flex items-center">
                                     {renderStars(bid.rating || '5.0')}
