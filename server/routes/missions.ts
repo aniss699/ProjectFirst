@@ -6,9 +6,7 @@ import { MissionSyncService } from '../services/mission-sync.js';
 import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
 import { randomUUID } from 'crypto';
 import { z } from 'zod'; // Import z from zod
-import { createSimpleMissionSchema } from '../validation/mission-schemas.js'; // Import the new schema
-import { MissionCreator } from '../services/mission-creator.js'; // Import the MissionCreator service
-import { TeamAnalysisService } from '../services/team-analysis.js'; // Import the TeamAnalysisService
+// Imports simplifiés après suppression de la route simple
 import { mapMission, type MissionRow, type LocationData } from '../dto/mission-dto.js'; // Import DTO mapper
 
 // Error wrapper for async routes
@@ -45,92 +43,7 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
 
 const router = Router();
 
-// POST /api/missions/simple - Création simplifiée de mission
-router.post('/simple', async (req: Request, res: Response) => {
-  try {
-    console.log('🚀 Création mission simplifiée - Données reçues:', req.body);
-
-    // Validation avec le nouveau schema
-    const validatedData = createSimpleMissionSchema.parse(req.body);
-    console.log('✅ Validation réussie:', validatedData);
-
-    // TODO: Récupérer l'utilisateur connecté depuis la session/auth
-    // Pour l'instant, vérifier si userId est fourni
-    if (!req.body.userId) {
-      return res.status(401).json({
-        error: 'Authentification requise',
-        message: 'Vous devez être connecté pour créer une mission'
-      });
-    }
-    const userId = parseInt(req.body.userId);
-
-    // Validation de sécurité : vérifier que l'utilisateur existe
-    const existingUser = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (existingUser.length === 0) {
-      console.log('⚠️ Tentative de création de mission avec userId inexistant:', userId);
-      return res.status(401).json({
-        error: 'Utilisateur non trouvé',
-        message: 'L\'utilisateur spécifié n\'existe pas'
-      });
-    }
-
-    // Utiliser le service existant avec valeurs par défaut intelligentes
-    const missionData = await MissionCreator.createSimpleMission({
-      ...validatedData,
-      userId: userId,
-      category: 'developpement', // Valeur par défaut
-      location: 'Remote', // Valeur par défaut
-      is_team_mission: validatedData.isTeamMode
-    });
-
-    console.log('📝 Données mission préparées:', missionData);
-
-    // Sauvegarder la mission
-    const result = await MissionCreator.saveMission(missionData);
-    console.log('💾 Mission sauvegardée avec ID:', result.id);
-
-    // Si mode équipe, déclencher analyse (si le service existe)
-    if (validatedData.isTeamMode) {
-      try {
-        // Ensure TeamAnalysisService is properly imported and available
-        if (TeamAnalysisService && typeof TeamAnalysisService.analyzeTeamRequirements === 'function') {
-          await TeamAnalysisService.analyzeTeamRequirements(result.id);
-          console.log('🔍 Analyse équipe déclenchée pour mission:', result.id);
-        } else {
-          console.log('⚠️ Service d\'analyse équipe non disponible ou méthode non trouvée.');
-        }
-      } catch (error: any) {
-        console.log('⚠️ Erreur lors du déclenchement de l\'analyse équipe:', error.message);
-      }
-    }
-
-    res.json({
-      ok: true,
-      data: result,
-      message: 'Mission créée avec succès'
-    });
-
-  } catch (error: any) {
-    console.error('❌ Erreur création mission simplifiée:', error);
-
-    if (error.name === 'ZodError') {
-      return res.status(400).json({
-        error: 'Données invalides',
-        details: error.errors
-      });
-    }
-
-    res.status(500).json({
-      error: 'Erreur lors de la création de la mission',
-      message: error.message
-    });
-  }
-});
+// Route simple supprimée pour éviter les conflits
 
 // POST /api/missions - Create new mission (robuste avec transaction)
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
