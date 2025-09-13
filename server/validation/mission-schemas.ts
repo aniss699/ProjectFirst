@@ -13,8 +13,10 @@ export const createSimpleMissionSchema = z.object({
     .transform(str => str.trim()),
 
   budget: z.number()
-    .min(1, "Le budget doit être supérieur à 0")
-    .optional(),
+    .int("Le budget doit être un nombre entier")
+    .positive("Le budget doit être positif")
+    .min(10, "Budget minimum de 10€")
+    .max(1000000, "Budget maximum de 1 000 000€"),
 
   isTeamMode: z.boolean().default(false)
 });
@@ -24,7 +26,7 @@ export const createSimpleMissionSchema = z.object({
 // SCHEMAS ZOD POUR VALIDATION SERVER-SIDE
 // ============================================
 
-// Budget schema simplifié avec prix unique
+// Budget schema simplifié avec prix unique obligatoire
 const budgetSchema = z.object({
   valueCents: z.number().int().positive().min(1000, "Budget minimum de 10€"),
   currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).default('EUR')
@@ -78,8 +80,12 @@ export const createMissionSchema = z.object({
     .default([])
     .transform(skills => skills.map(skill => skill.trim())),
 
-  // Budget (objet structuré)
-  budget: budgetSchema,
+  // Budget obligatoire en euros
+  budget: z.number()
+    .int("Le budget doit être un nombre entier")
+    .positive("Le budget doit être positif")
+    .min(10, "Budget minimum de 10€")
+    .max(1000000, "Budget maximum de 1 000 000€"),
 
   // Localisation
   location: locationSchema.optional(),

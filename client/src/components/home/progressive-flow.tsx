@@ -163,16 +163,12 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         }
       } else {
         // Mode mission simple
-        const budgetFormatted = typeof projectData.budget === 'string' 
-          ? projectData.budget 
-          : (projectData.budget as string | number)?.toString() || '';
-
         const missionData = {
           title: projectData.title,
           description: projectData.description + 
             (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : ''),
           category: selectedCategory,
-          budget: budgetFormatted,
+          budget: Number(projectData.budget),
           location: projectData.needsLocation ? projectData.location.address : 'Remote',
           userId: user?.id?.toString() || null,
           clientName: user?.name || 'Utilisateur'
@@ -685,13 +681,20 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Euro className="w-4 h-4 inline mr-1" />
-                {serviceType === 'mise-en-relation' ? 'Budget consultation (optionnel)' : 'Budget indicatif (optionnel)'}
+                Budget en euros *
               </label>
               <Input
-                placeholder={serviceType === 'mise-en-relation' ? "Ex: 200 - 500 €/heure" : "Ex: 5 000 - 10 000 €"}
+                type="number"
+                placeholder="Ex: 5000"
+                min="10"
+                max="1000000"
                 value={projectData.budget}
                 onChange={(e) => setProjectData(prev => ({ ...prev, budget: e.target.value }))}
+                required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Montant en euros (entre 10€ et 1 000 000€)
+              </p>
             </div>
 
             <div>
@@ -868,6 +871,10 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               disabled={
                 isCreating || !projectData.title.trim() || 
                 !projectData.description.trim() ||
+                !projectData.budget.trim() ||
+                isNaN(Number(projectData.budget)) ||
+                Number(projectData.budget) < 10 ||
+                Number(projectData.budget) > 1000000 ||
                 (projectData.needsLocation && (!projectData.location.address || projectData.location.address.length !== 5))
               }
               onClick={createMission}
