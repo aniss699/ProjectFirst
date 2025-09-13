@@ -46,6 +46,25 @@ export const missions = pgTable('missions', {
   updated_at: timestamp('updated_at').defaultNow()
 });
 
+// Table pour les équipes ouvertes (en cours de constitution)
+export const openTeams = pgTable('open_teams', {
+  id: serial('id').primaryKey(),
+  mission_id: integer('mission_id').references(() => missions.id).notNull(),
+  name: text('name').notNull(), // Nom de l'équipe
+  description: text('description'),
+  creator_id: integer('creator_id').references(() => users.id).notNull(), // Initiateur de l'équipe
+  estimated_budget: integer('estimated_budget'), // Budget estimé en centimes
+  estimated_timeline_days: integer('estimated_timeline_days'),
+  members: jsonb('members'), // Membres actuels de l'équipe
+  required_roles: jsonb('required_roles'), // Rôles recherchés
+  max_members: integer('max_members').default(5),
+  status: text('status').$type<'recruiting' | 'complete' | 'submitted' | 'cancelled'>().default('recruiting'),
+  visibility: text('visibility').$type<'public' | 'private'>().default('public'),
+  auto_accept: boolean('auto_accept').default(true), // Accepter automatiquement les candidatures
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
 export const bids = pgTable('bids', {
   id: serial('id').primaryKey(),
   mission_id: integer('mission_id').references(() => missions.id).notNull(),
@@ -56,6 +75,11 @@ export const bids = pgTable('bids', {
   score_breakdown: jsonb('score_breakdown'),
   is_leading: boolean('is_leading').default(false),
   status: text('status').$type<'pending' | 'accepted' | 'rejected' | 'withdrawn'>().default('pending'),
+  // Extensions pour les équipes
+  bid_type: text('bid_type').$type<'individual' | 'team' | 'open_team'>().default('individual'),
+  team_composition: jsonb('team_composition'), // Structure de l'équipe
+  team_lead_id: integer('team_lead_id').references(() => users.id), // Chef d'équipe
+  open_team_id: integer('open_team_id').references(() => openTeams.id), // Référence vers équipe ouverte
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
 });
@@ -113,6 +137,18 @@ export const missionsRelations = relations(missions, ({ one, many }) => ({
   bids: many(bids)
 }));
 
+export const openTeamsRelations = relations(openTeams, ({ one, many }) => ({
+  mission: one(missions, {
+    fields: [openTeams.mission_id],
+    references: [missions.id]
+  }),
+  creator: one(users, {
+    fields: [openTeams.creator_id],
+    references: [users.id]
+  }),
+  bids: many(bids)
+}));
+
 export const bidsRelations = relations(bids, ({ one }) => ({
   mission: one(missions, {
     fields: [bids.mission_id],
@@ -121,6 +157,14 @@ export const bidsRelations = relations(bids, ({ one }) => ({
   provider: one(users, {
     fields: [bids.provider_id],
     references: [users.id]
+  }),
+  teamLead: one(users, {
+    fields: [bids.team_lead_id],
+    references: [users.id]
+  }),
+  openTeam: one(openTeams, {
+    fields: [bids.open_team_id],
+    references: [openTeams.id]
   })
 }));
 
@@ -204,7 +248,28 @@ export const insertBidSchema = z.object({
   message: z.string().optional(),
   score_breakdown: z.any().optional(),
   is_leading: z.boolean().optional(),
-  status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).optional()
+  status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).optional(),
+  // Extensions pour les équipes
+  bid_type: z.enum(['individual', 'team', 'open_team']).optional(),
+  team_composition: z.any().optional(), // Structure de l'équipe
+  team_lead_id: z.number().int().positive().optional(),
+  open_team_id: z.number().int().positive().optional()
+});
+
+// Schema pour les équipes ouvertes
+export const insertOpenTeamSchema = z.object({
+  mission_id: z.number().int().positive(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  creator_id: z.number().int().positive(),
+  estimated_budget: z.number().int().positive().optional(),
+  estimated_timeline_days: z.number().int().min(1).optional(),
+  members: z.any().optional(),
+  required_roles: z.any().optional(),
+  max_members: z.number().int().min(2).max(10).optional(),
+  status: z.enum(['recruiting', 'complete', 'submitted', 'cancelled']).optional(),
+  visibility: z.enum(['public', 'private']).optional(),
+  auto_accept: z.boolean().optional()
 });
 
 export const insertAnnouncementSchema = z.object({
@@ -284,6 +349,45 @@ export const insertAiEventSchema = z.object({
 // Export types that might be used elsewhere
 export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
 export type AnnouncementStatus = 'active' | 'completed' | 'cancelled' | 'draft';
+
+// Types pour les équipes
+export interface TeamMember {
+  id?: number;
+  user_id?: number;
+  name: string;
+  role: string;
+  experience: string;
+  isLead: boolean;
+  rating?: number;
+  profile_url?: string;
+}
+
+export interface TeamComposition {
+  members: TeamMember[];
+  total_budget: number;
+  estimated_timeline: number;
+  description: string;
+}
+
+export interface OpenTeamMember {
+  user_id: number;
+  name: string;
+  role: string;
+  experience_years: number;
+  rating: number;
+  joined_at: string;
+}
+
+export interface RequiredRole {
+  title: string;
+  description: string;
+  skills: string[];
+  min_experience: number;
+  priority: 'high' | 'medium' | 'low';
+}
+
+// Types de candidatures
+export type BidType = 'individual' | 'team' | 'open_team';
 
 // Added team mission types
 export interface TeamRequirement {
