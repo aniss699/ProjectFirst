@@ -622,190 +622,6 @@ var init_event_logger = __esm({
   }
 });
 
-// apps/api/src/ai/aiOrchestrator.ts
-import { writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
-async function getPricingSuggestion(request) {
-  try {
-    const basePrice = calculateBasePrice(request.category || "general");
-    const complexity = analyzeComplexity(request.description || "");
-    const timelineMultiplier = getTimelineMultiplier(request.timeline || "");
-    const minPrice = Math.round(basePrice * complexity * 0.8);
-    const maxPrice = Math.round(basePrice * complexity * timelineMultiplier * 1.3);
-    const averagePrice = Math.round((minPrice + maxPrice) / 2);
-    return {
-      success: true,
-      pricing: {
-        minPrice,
-        maxPrice,
-        averagePrice,
-        confidence: 0.85,
-        factors: [
-          `Cat\xE9gorie: ${request.category}`,
-          `Complexit\xE9: ${complexity}x`,
-          `D\xE9lai: ${timelineMultiplier}x`
-        ]
-      },
-      analysis: {
-        category: request.category,
-        complexity_level: complexity > 1.5 ? "high" : complexity > 1 ? "medium" : "low",
-        market_position: "competitive"
-      }
-    };
-  } catch (error) {
-    console.error("Erreur getPricingSuggestion:", error);
-    throw new Error("Impossible de calculer la suggestion de prix");
-  }
-}
-async function enhanceBrief(request) {
-  try {
-    const originalDescription = request.description || "";
-    const category = request.category || "general";
-    const analysis = analyzeBriefQuality(originalDescription);
-    const improvements = generateImprovements(originalDescription, category, analysis);
-    return {
-      success: true,
-      original: {
-        title: request.title,
-        description: originalDescription,
-        word_count: originalDescription.split(" ").length
-      },
-      enhanced: {
-        title: improveTitle(request.title || "", category),
-        description: improvements.enhanced_description,
-        word_count: improvements.enhanced_description.split(" ").length
-      },
-      analysis: {
-        quality_score: analysis.score,
-        missing_elements: analysis.missing,
-        improvements_applied: improvements.changes
-      },
-      suggestions: improvements.suggestions
-    };
-  } catch (error) {
-    console.error("Erreur enhanceBrief:", error);
-    throw new Error("Impossible d'am\xE9liorer le brief");
-  }
-}
-async function logUserFeedback(phase, prompt, feedback) {
-  try {
-    const logEntry = {
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      phase,
-      prompt,
-      feedback,
-      user_session: "anonymous"
-    };
-    const logsDir = join(process.cwd(), "logs");
-    if (!existsSync(logsDir)) {
-      mkdirSync(logsDir, { recursive: true });
-    }
-    const logFile = join(logsDir, `ai-feedback-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.json`);
-    const logs = [];
-    try {
-      const existingLogs = __require(logFile);
-      logs.push(...existingLogs);
-    } catch {
-    }
-    logs.push(logEntry);
-    writeFileSync(logFile, JSON.stringify(logs, null, 2));
-    console.log(`\u2705 Feedback logged: ${phase}`);
-    return { success: true };
-  } catch (error) {
-    console.error("Erreur logUserFeedback:", error);
-    throw new Error("Impossible d'enregistrer le feedback");
-  }
-}
-function calculateBasePrice(category) {
-  const basePrices = {
-    "development": 5e3,
-    "design": 2500,
-    "marketing": 3e3,
-    "consulting": 4e3,
-    "writing": 1500,
-    "general": 3e3
-  };
-  return basePrices[category] || basePrices.general;
-}
-function analyzeComplexity(description) {
-  const complexityKeywords = [
-    "complex",
-    "advanced",
-    "enterprise",
-    "scalable",
-    "integration",
-    "API",
-    "database",
-    "real-time",
-    "mobile",
-    "responsive"
-  ];
-  const found = complexityKeywords.filter(
-    (keyword) => description.toLowerCase().includes(keyword)
-  ).length;
-  return Math.max(0.8, Math.min(2, 1 + found * 0.2));
-}
-function getTimelineMultiplier(timeline) {
-  if (timeline.includes("urgent") || timeline.includes("asap")) return 1.5;
-  if (timeline.includes("semaine")) return 1.3;
-  if (timeline.includes("mois")) return 1;
-  return 1.1;
-}
-function analyzeBriefQuality(description) {
-  const words = description.split(" ").length;
-  const hasBudget = /budget|prix|coût|\€|\$/.test(description.toLowerCase());
-  const hasTimeline = /délai|semaine|mois|urgent/.test(description.toLowerCase());
-  const hasObjectives = /objectif|but|résultat/.test(description.toLowerCase());
-  const score = Math.min(
-    1,
-    words / 100 * 0.4 + (hasBudget ? 0.2 : 0) + (hasTimeline ? 0.2 : 0) + (hasObjectives ? 0.2 : 0)
-  );
-  const missing = [];
-  if (!hasBudget) missing.push("Budget");
-  if (!hasTimeline) missing.push("D\xE9lais");
-  if (!hasObjectives) missing.push("Objectifs clairs");
-  if (words < 50) missing.push("Plus de d\xE9tails");
-  return { score, missing };
-}
-function generateImprovements(description, category, analysis) {
-  let enhanced = description;
-  const changes = [];
-  const suggestions = [];
-  if (analysis.missing.includes("Budget")) {
-    enhanced += "\n\n\u{1F4B0} Budget: \xC0 d\xE9finir selon la proposition (ouvert aux suggestions)";
-    changes.push("Ajout indication budget");
-  }
-  if (analysis.missing.includes("D\xE9lais")) {
-    enhanced += "\n\u23F0 D\xE9lais: Flexible, id\xE9alement sous 4 semaines";
-    changes.push("Ajout d\xE9lais indicatifs");
-  }
-  if (analysis.missing.includes("Objectifs clairs")) {
-    enhanced += "\n\u{1F3AF} Objectifs: Livraison conforme aux attentes avec documentation compl\xE8te";
-    changes.push("Clarification objectifs");
-  }
-  suggestions.push("Ajouter des exemples concrets de ce qui est attendu");
-  suggestions.push("Pr\xE9ciser les crit\xE8res de s\xE9lection du prestataire");
-  suggestions.push("Mentionner les contraintes techniques \xE9ventuelles");
-  return { enhanced_description: enhanced, changes, suggestions };
-}
-function improveTitle(title, category) {
-  if (!title) return `Projet ${category} - Mission sp\xE9cialis\xE9e`;
-  const keywords = {
-    "development": "\u{1F4BB}",
-    "design": "\u{1F3A8}",
-    "marketing": "\u{1F4C8}",
-    "consulting": "\u{1F4A1}",
-    "writing": "\u270D\uFE0F"
-  };
-  const icon = keywords[category] || "\u{1F680}";
-  return title.includes(icon) ? title : `${icon} ${title}`;
-}
-var init_aiOrchestrator = __esm({
-  "apps/api/src/ai/aiOrchestrator.ts"() {
-    "use strict";
-  }
-});
-
 // apps/api/src/ai/adapters/geminiAdapter.ts
 var geminiAdapter_exports = {};
 __export(geminiAdapter_exports, {
@@ -863,1109 +679,6 @@ async function geminiCall(phase, prompt) {
 var init_geminiAdapter = __esm({
   "apps/api/src/ai/adapters/geminiAdapter.ts"() {
     "use strict";
-  }
-});
-
-// apps/api/src/ai/learning-engine.ts
-import { drizzle as drizzle4 } from "drizzle-orm/node-postgres";
-import { Pool as Pool4 } from "pg";
-import { desc as desc2, eq as eq5, and, gte } from "drizzle-orm";
-var pool4, db4, AILearningEngine, aiLearningEngine;
-var init_learning_engine = __esm({
-  "apps/api/src/ai/learning-engine.ts"() {
-    "use strict";
-    init_schema();
-    pool4 = new Pool4({ connectionString: process.env.DATABASE_URL });
-    db4 = drizzle4(pool4);
-    AILearningEngine = class {
-      patterns = /* @__PURE__ */ new Map();
-      insights = [];
-      /**
-       * Analyse les interactions passées avec Gemini pour identifier les patterns de succès
-       */
-      async analyzePastInteractions(limit = 1e3) {
-        try {
-          console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
-          const recentInteractions = await db4.select().from(aiEvents).where(and(
-            eq5(aiEvents.provider, "gemini-api"),
-            gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
-            // 30 jours
-          )).orderBy(desc2(aiEvents.created_at)).limit(limit);
-          console.log(`\u{1F4CA} Analyse de ${recentInteractions.length} interactions Gemini`);
-          for (const interaction of recentInteractions) {
-            await this.processInteraction(interaction);
-          }
-          this.generateLearningInsights();
-          console.log(`\u2705 Apprentissage termin\xE9: ${this.patterns.size} patterns identifi\xE9s`);
-        } catch (error) {
-          console.error("\u274C Erreur lors de l'apprentissage:", error);
-        }
-      }
-      /**
-       * Traite une interaction individuelle pour extraire des patterns
-       */
-      async processInteraction(interaction) {
-        try {
-          const inputData = interaction.input_redacted || {};
-          const output = interaction.output;
-          const userFeedback = interaction.accepted ? "positive" : "neutral";
-          if (!output || !inputData.prompt) return;
-          const inputPattern = this.extractPattern(inputData.prompt);
-          if (!inputPattern) return;
-          const cleanOutput = this.cleanGeminiOutput(output);
-          const patternKey = this.generatePatternKey(inputPattern, interaction.phase);
-          if (this.patterns.has(patternKey)) {
-            const existing = this.patterns.get(patternKey);
-            existing.usage_count++;
-            existing.confidence_score = this.calculateConfidence(existing);
-            if (userFeedback === "positive" && cleanOutput.length > existing.successful_output.length) {
-              existing.successful_output = cleanOutput;
-            }
-          } else {
-            this.patterns.set(patternKey, {
-              input_pattern: inputPattern,
-              successful_output: cleanOutput,
-              context_category: this.detectCategory(inputData.prompt),
-              user_feedback: userFeedback,
-              confidence_score: userFeedback === "positive" ? 0.8 : 0.6,
-              usage_count: 1
-            });
-          }
-        } catch (error) {
-          console.error("\u274C Erreur traitement interaction:", error);
-        }
-      }
-      /**
-       * Génère des suggestions améliorées basées sur l'apprentissage
-       */
-      async generateImprovedSuggestion(inputText, fieldType, category) {
-        const inputPattern = this.extractPattern(inputText);
-        const patternKey = this.generatePatternKey(inputPattern, fieldType);
-        if (this.patterns.has(patternKey)) {
-          const pattern = this.patterns.get(patternKey);
-          if (pattern.confidence_score > 0.7) {
-            console.log(`\u{1F3AF} Pattern trouv\xE9 (confiance: ${pattern.confidence_score})`);
-            return this.adaptPattern(pattern.successful_output, inputText);
-          }
-        }
-        const similarPatterns = this.findSimilarPatterns(inputPattern, fieldType);
-        if (similarPatterns.length > 0) {
-          const bestPattern = similarPatterns[0];
-          console.log(`\u{1F50D} Pattern similaire trouv\xE9 (confiance: ${bestPattern.confidence_score})`);
-          return this.adaptPattern(bestPattern.successful_output, inputText);
-        }
-        return null;
-      }
-      /**
-       * Apprend d'une nouvelle réponse Gemini réussie
-       */
-      async learnFromSuccess(originalText, improvedText, fieldType, category, userFeedback = "positive") {
-        try {
-          console.log("\u{1F4DA} Apprentissage d'un nouveau pattern de succ\xE8s...");
-          console.log("\u{1F916} Consultation Gemini pour enrichir l'apprentissage...");
-          const geminiAnalysis = await this.consultGeminiForLearning(originalText, improvedText, fieldType, category || this.detectCategory(originalText));
-          const pattern = this.extractPattern(originalText);
-          const patternKey = this.generatePatternKey(pattern, fieldType);
-          this.patterns.set(patternKey, {
-            input_pattern: pattern,
-            successful_output: this.cleanGeminiOutput(improvedText),
-            context_category: category || this.detectCategory(originalText),
-            user_feedback: userFeedback,
-            confidence_score: this.calculateConfidenceForNewPattern(userFeedback, geminiAnalysis),
-            usage_count: 1,
-            created_at: (/* @__PURE__ */ new Date()).toISOString(),
-            last_used: (/* @__PURE__ */ new Date()).toISOString(),
-            gemini_analysis: geminiAnalysis,
-            // Nouvel enrichissement Gemini
-            improvement_factors: geminiAnalysis?.improvement_factors || [],
-            semantic_keywords: geminiAnalysis?.semantic_keywords || []
-          });
-          console.log(`\u2705 Nouveau pattern appris avec aide Gemini: ${patternKey}`);
-        } catch (error) {
-          console.error("\u274C Erreur lors de l'apprentissage:", error);
-        }
-      }
-      /**
-       * Nettoyage des réponses Gemini (enlever JSON wrapper, etc.)
-       */
-      cleanGeminiOutput(output) {
-        let cleaned = output;
-        if (cleaned.includes("```json")) {
-          const match = cleaned.match(/```json\s*\{\s*"enhancedText":\s*"([^"]+)"/);
-          if (match) {
-            cleaned = match[1];
-          }
-        }
-        cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\"/g, '"');
-        return cleaned.trim();
-      }
-      extractPattern(text2) {
-        return text2.toLowerCase().split(" ").filter((word) => word.length > 3).slice(0, 5).join(" ");
-      }
-      generatePatternKey(pattern, type) {
-        return `${type}:${pattern}`;
-      }
-      detectCategory(text2) {
-        const categories = {
-          "d\xE9veloppement": ["site", "web", "app", "code", "javascript"],
-          "design": ["logo", "graphique", "design", "ui", "ux"],
-          "travaux": ["peinture", "travaux", "r\xE9novation", "construction"],
-          "marketing": ["marketing", "pub", "seo", "social"],
-          "r\xE9daction": ["article", "contenu", "texte", "blog"]
-        };
-        for (const [cat, keywords] of Object.entries(categories)) {
-          if (keywords.some((kw) => text2.toLowerCase().includes(kw))) {
-            return cat;
-          }
-        }
-        return "g\xE9n\xE9ral";
-      }
-      calculateConfidence(pattern) {
-        let confidence = 0.5;
-        confidence += Math.min(0.3, pattern.usage_count * 0.05);
-        if (pattern.user_feedback === "positive") confidence += 0.2;
-        if (pattern.user_feedback === "negative") confidence -= 0.3;
-        return Math.max(0.1, Math.min(0.95, confidence));
-      }
-      calculateConfidenceForNewPattern(userFeedback, geminiAnalysis) {
-        let confidence = userFeedback === "positive" ? 0.8 : 0.6;
-        if (geminiAnalysis) {
-          confidence += (geminiAnalysis.quality_score || 0.8) * 0.1;
-          confidence += (geminiAnalysis.reusability_score || 0.7) * 0.1;
-        }
-        return Math.max(0.1, Math.min(0.95, confidence));
-      }
-      findSimilarPatterns(inputPattern, fieldType) {
-        const similar = [];
-        const inputWords = inputPattern.split(" ");
-        for (const [key, pattern] of this.patterns) {
-          if (!key.startsWith(fieldType)) continue;
-          const patternWords = pattern.input_pattern.split(" ");
-          const commonWords = inputWords.filter((word) => patternWords.includes(word));
-          const similarity = commonWords.length / Math.max(inputWords.length, patternWords.length);
-          if (similarity > 0.3) {
-            similar.push({ ...pattern, similarity });
-          }
-        }
-        return similar.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
-      }
-      adaptPattern(patternOutput, newInput) {
-        return patternOutput.replace(/\[CONTEXTE\]/g, newInput.substring(0, 50));
-      }
-      generateLearningInsights() {
-        this.insights = [];
-        const categoryStats = /* @__PURE__ */ new Map();
-        for (const pattern of this.patterns.values()) {
-          const cat = pattern.context_category;
-          if (categoryStats.has(cat)) {
-            const stats = categoryStats.get(cat);
-            stats.count++;
-            stats.avgConfidence = (stats.avgConfidence + pattern.confidence_score) / 2;
-          } else {
-            categoryStats.set(cat, { count: 1, avgConfidence: pattern.confidence_score });
-          }
-        }
-        for (const [category, stats] of categoryStats) {
-          if (stats.count > 5 && stats.avgConfidence > 0.7) {
-            this.insights.push({
-              pattern_type: "enhancement",
-              improvement_suggestion: `Cat\xE9gorie ${category}: ${stats.count} patterns fiables identifi\xE9s`,
-              confidence: stats.avgConfidence,
-              based_on_samples: stats.count
-            });
-          }
-        }
-      }
-      /**
-       * Consultation Gemini pour enrichir l'apprentissage
-       */
-      async consultGeminiForLearning(originalText, improvedText, fieldType, category) {
-        try {
-          const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
-          const prompt = {
-            role: "expert_learning_analyst",
-            task: "improvement_pattern_analysis",
-            original: originalText,
-            improved: improvedText,
-            field_type: fieldType,
-            category,
-            request: "Analyse ce pattern d'am\xE9lioration et identifie les facteurs cl\xE9s de succ\xE8s"
-          };
-          console.log("\u{1F393} Gemini analyse du pattern d'am\xE9lioration...");
-          const response = await geminiCall2("learning_analysis", prompt);
-          if (response && response.output) {
-            console.log("\u2705 Analyse Gemini re\xE7ue pour apprentissage");
-            return {
-              improvement_factors: this.extractImprovementFactors(response.output),
-              semantic_keywords: this.extractSemanticKeywords(response.output),
-              quality_score: this.extractQualityScore(response.output),
-              reusability_score: this.extractReusabilityScore(response.output),
-              pattern_type: this.classifyPatternType(response.output),
-              raw_analysis: response.output
-            };
-          }
-          return null;
-        } catch (error) {
-          console.error("Erreur consultation Gemini apprentissage:", error);
-          return null;
-        }
-      }
-      extractImprovementFactors(output) {
-        if (typeof output === "string") {
-          const lines = output.split("\n").filter(
-            (line) => line.includes("facteur") || line.includes("am\xE9lior") || line.includes("cl\xE9")
-          );
-          return lines.slice(0, 5);
-        }
-        return output.improvement_factors || [];
-      }
-      extractSemanticKeywords(output) {
-        if (typeof output === "string") {
-          const words = output.toLowerCase().split(/\s+/).filter(
-            (word) => word.length > 4 && !["dans", "avec", "pour", "sans", "plus"].includes(word)
-          );
-          return words.slice(0, 10);
-        }
-        return output.semantic_keywords || [];
-      }
-      extractQualityScore(output) {
-        if (typeof output === "string") {
-          const match = output.match(/qualité.*?(\d+)/i);
-          return match ? parseInt(match[1]) / 100 : 0.8;
-        }
-        return output.quality_score || 0.8;
-      }
-      extractReusabilityScore(output) {
-        if (typeof output === "string") {
-          const match = output.match(/réutilis.*?(\d+)/i);
-          return match ? parseInt(match[1]) / 100 : 0.7;
-        }
-        return output.reusability_score || 0.7;
-      }
-      classifyPatternType(output) {
-        if (typeof output === "string") {
-          const types = ["structuration", "clarification", "enrichissement", "simplification"];
-          const found = types.find((type) => output.toLowerCase().includes(type));
-          return found || "general";
-        }
-        return output.pattern_type || "general";
-      }
-      /**
-       * Apprentissage universel pour TOUTES les interactions Gemini
-       */
-      async learnFromGeminiInteraction(interactionType, inputData, geminiResponse, finalResult, userFeedback = "positive") {
-        try {
-          console.log(`\u{1F393} Apprentissage du pattern ${interactionType} de Gemini...`);
-          const geminiMetaAnalysis = await this.consultGeminiForMetaLearning(
-            interactionType,
-            inputData,
-            geminiResponse,
-            finalResult
-          );
-          const pattern = this.generateUniversalPattern(inputData, interactionType);
-          const patternKey = this.generatePatternKey(pattern, interactionType);
-          const qualityScore = this.assessGeminiResponseQuality(geminiResponse, finalResult);
-          const confidenceScore = this.calculateConfidenceForGeminiInteraction(
-            userFeedback,
-            qualityScore,
-            geminiMetaAnalysis
-          );
-          this.patterns.set(patternKey, {
-            input_pattern: pattern,
-            successful_output: this.extractSuccessfulOutput(geminiResponse, finalResult),
-            context_category: this.detectCategoryFromInput(inputData),
-            user_feedback: userFeedback,
-            confidence_score: confidenceScore,
-            usage_count: 1,
-            created_at: (/* @__PURE__ */ new Date()).toISOString(),
-            last_used: (/* @__PURE__ */ new Date()).toISOString(),
-            gemini_analysis: geminiResponse,
-            improvement_factors: this.extractImprovementFactorsUniversal(geminiResponse),
-            semantic_keywords: this.extractSemanticKeywordsUniversal(inputData),
-            interaction_type: interactionType,
-            quality_metrics: {
-              response_quality: qualityScore,
-              relevance_score: geminiMetaAnalysis?.relevance_score || 0.8,
-              innovation_factor: geminiMetaAnalysis?.innovation_factor || 0.7,
-              reusability_potential: geminiMetaAnalysis?.reusability_potential || 0.8
-            },
-            meta_analysis: geminiMetaAnalysis
-          });
-          console.log(`\u2705 Pattern ${interactionType} appris avec m\xE9tadonn\xE9es Gemini: ${patternKey}`);
-          this.updateInsightsFromNewPattern(interactionType, confidenceScore);
-        } catch (error) {
-          console.error(`\u274C Erreur apprentissage ${interactionType}:`, error);
-        }
-      }
-      /**
-       * Génère un pattern universel à partir de n'importe quel input
-       */
-      generateUniversalPattern(inputData, type) {
-        let extractedText = "";
-        if (typeof inputData === "string") {
-          extractedText = inputData;
-        } else if (inputData.description) {
-          extractedText = inputData.description;
-        } else if (inputData.mission?.description) {
-          extractedText = inputData.mission.description;
-        } else if (inputData.title) {
-          extractedText = inputData.title;
-        } else {
-          extractedText = JSON.stringify(inputData).substring(0, 200);
-        }
-        return this.extractPattern(extractedText);
-      }
-      /**
-       * Évalue la qualité de la réponse Gemini
-       */
-      assessGeminiResponseQuality(geminiResponse, finalResult) {
-        let quality = 0.7;
-        if (geminiResponse && typeof geminiResponse === "object") {
-          const responseFields = Object.keys(geminiResponse).length;
-          quality += Math.min(0.2, responseFields * 0.05);
-        }
-        if (finalResult && geminiResponse) {
-          quality += 0.1;
-        }
-        return Math.min(0.95, quality);
-      }
-      /**
-       * Calcul de confiance pour interactions Gemini
-       */
-      calculateConfidenceForGeminiInteraction(userFeedback, qualityScore, metaAnalysis) {
-        let confidence = 0.8;
-        if (userFeedback === "positive") confidence += 0.1;
-        if (userFeedback === "negative") confidence -= 0.2;
-        confidence += (qualityScore - 0.7) * 0.5;
-        if (metaAnalysis) {
-          confidence += (metaAnalysis.relevance_score || 0.8) * 0.1;
-          confidence += (metaAnalysis.innovation_factor || 0.7) * 0.05;
-        }
-        return Math.max(0.3, Math.min(0.98, confidence));
-      }
-      /**
-       * Extrait le résultat réussi pour apprentissage
-       */
-      extractSuccessfulOutput(geminiResponse, finalResult) {
-        if (typeof geminiResponse === "string") {
-          return geminiResponse.substring(0, 500);
-        }
-        if (geminiResponse && typeof geminiResponse === "object") {
-          return JSON.stringify(geminiResponse).substring(0, 500);
-        }
-        if (finalResult) {
-          return JSON.stringify(finalResult).substring(0, 500);
-        }
-        return "R\xE9sultat Gemini trait\xE9";
-      }
-      /**
-       * Détecte la catégorie depuis n'importe quel input
-       */
-      detectCategoryFromInput(inputData) {
-        let textToAnalyze = "";
-        if (typeof inputData === "string") {
-          textToAnalyze = inputData;
-        } else if (inputData.category) {
-          return inputData.category;
-        } else if (inputData.mission?.category) {
-          return inputData.mission.category;
-        } else if (inputData.description) {
-          textToAnalyze = inputData.description;
-        } else {
-          textToAnalyze = JSON.stringify(inputData);
-        }
-        return this.detectCategory(textToAnalyze);
-      }
-      /**
-       * Extraction universelle de facteurs d'amélioration
-       */
-      extractImprovementFactorsUniversal(geminiResponse) {
-        const factors = [];
-        if (typeof geminiResponse === "string") {
-          const lines = geminiResponse.split("\n").filter(
-            (line) => line.includes("am\xE9liorer") || line.includes("optimiser") || line.includes("recommand")
-          );
-          factors.push(...lines.slice(0, 3));
-        } else if (geminiResponse && typeof geminiResponse === "object") {
-          if (geminiResponse.recommendations) factors.push(...geminiResponse.recommendations);
-          if (geminiResponse.suggestions) factors.push(...geminiResponse.suggestions);
-          if (geminiResponse.improvements) factors.push(...geminiResponse.improvements);
-        }
-        return factors.slice(0, 5);
-      }
-      /**
-       * Extraction universelle de mots-clés sémantiques
-       */
-      extractSemanticKeywordsUniversal(inputData) {
-        let textToAnalyze = "";
-        if (typeof inputData === "string") {
-          textToAnalyze = inputData;
-        } else if (inputData.description) {
-          textToAnalyze = inputData.description;
-        } else {
-          textToAnalyze = JSON.stringify(inputData);
-        }
-        const words = textToAnalyze.toLowerCase().split(/\s+/).filter((word) => word.length > 3).filter((word) => !["dans", "avec", "pour", "sans", "plus", "cette", "tous"].includes(word));
-        return [...new Set(words)].slice(0, 10);
-      }
-      /**
-       * Met à jour les insights globaux
-       */
-      updateInsightsFromNewPattern(interactionType, confidenceScore) {
-        if (confidenceScore > 0.85) {
-          this.insights.push({
-            pattern_type: "enhancement",
-            improvement_suggestion: `Nouveau pattern ${interactionType} de haute qualit\xE9 identifi\xE9`,
-            confidence: confidenceScore,
-            based_on_samples: 1
-          });
-        }
-      }
-      /**
-       * Consultation Gemini pour méta-apprentissage
-       */
-      async consultGeminiForMetaLearning(interactionType, inputData, geminiResponse, finalResult) {
-        try {
-          const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
-          const prompt = {
-            role: "expert_meta_learning_analyst",
-            task: "self_analysis_and_improvement",
-            interaction_type: interactionType,
-            original_input: inputData,
-            my_response: geminiResponse,
-            final_outcome: finalResult,
-            request: "Analyse ta propre contribution et identifie les patterns d'am\xE9lioration pour mes futurs apprentissages"
-          };
-          console.log("\u{1F504} Gemini m\xE9ta-analyse de sa propre contribution...");
-          const response = await geminiCall2("meta_learning_analysis", prompt);
-          if (response && response.output) {
-            console.log("\u2705 M\xE9ta-analyse Gemini re\xE7ue");
-            return {
-              relevance_score: this.extractMetaScore(response.output, "relevance"),
-              innovation_factor: this.extractMetaScore(response.output, "innovation"),
-              reusability_potential: this.extractMetaScore(response.output, "reusability"),
-              improvement_areas: this.extractImprovementAreas(response.output),
-              pattern_insights: this.extractPatternInsights(response.output),
-              raw_meta_analysis: response.output
-            };
-          }
-          return null;
-        } catch (error) {
-          console.error("Erreur m\xE9ta-apprentissage Gemini:", error);
-          return null;
-        }
-      }
-      extractMetaScore(output, scoreType) {
-        if (typeof output === "string") {
-          const match = output.match(new RegExp(`${scoreType}.*?(\\d+)`, "i"));
-          return match ? parseInt(match[1]) / 100 : 0.8;
-        }
-        return output[`${scoreType}_score`] || 0.8;
-      }
-      extractImprovementAreas(output) {
-        if (typeof output === "string") {
-          const lines = output.split("\n").filter(
-            (line) => line.includes("am\xE9liorer") || line.includes("d\xE9velopper") || line.includes("renforcer")
-          );
-          return lines.slice(0, 3);
-        }
-        return output.improvement_areas || [];
-      }
-      extractPatternInsights(output) {
-        if (typeof output === "string") {
-          const lines = output.split("\n").filter(
-            (line) => line.includes("pattern") || line.includes("tendance") || line.includes("r\xE9current")
-          );
-          return lines.slice(0, 3);
-        }
-        return output.pattern_insights || [];
-      }
-      /**
-       * API publique pour obtenir les statistiques d'apprentissage
-       */
-      getLearningStats() {
-        const stats = {
-          total_patterns: this.patterns.size,
-          insights_generated: this.insights.length,
-          high_confidence_patterns: Array.from(this.patterns.values()).filter((p) => p.confidence_score > 0.8).length,
-          categories_learned: [...new Set(Array.from(this.patterns.values()).map((p) => p.context_category))].length,
-          interaction_types: [...new Set(Array.from(this.patterns.values()).map((p) => p.interaction_type || "unknown"))],
-          gemini_contributions: Array.from(this.patterns.values()).filter((p) => p.gemini_analysis).length,
-          avg_confidence: Array.from(this.patterns.values()).reduce((sum, p) => sum + p.confidence_score, 0) / this.patterns.size || 0
-        };
-        console.log("\u{1F4CA} Statistiques d'apprentissage Gemini:", stats);
-        return stats;
-      }
-    };
-    aiLearningEngine = new AILearningEngine();
-  }
-});
-
-// server/services/ai-enhancement.ts
-var ai_enhancement_exports = {};
-__export(ai_enhancement_exports, {
-  AIEnhancementService: () => AIEnhancementService,
-  aiEnhancementService: () => aiEnhancementService
-});
-var AIEnhancementService, aiEnhancementService;
-var init_ai_enhancement = __esm({
-  "server/services/ai-enhancement.ts"() {
-    "use strict";
-    init_aiOrchestrator();
-    init_geminiAdapter();
-    init_learning_engine();
-    AIEnhancementService = class {
-      /**
-       * Suggère des prix basés sur l'analyse du marché et de la description du projet
-       */
-      async suggestPricing(projectTitle, description, category) {
-        try {
-          const prompt = {
-            projectTitle,
-            description,
-            category,
-            guidance: this.getCategoryPricingGuidance(category),
-            expertise: this.getCategoryExpertise(category)
-          };
-          const result = await getPricingSuggestion(prompt);
-          const minPrice = Math.max(500, result.minPrice || 1e3);
-          const maxPrice = Math.max(minPrice * 1.5, result.maxPrice || 3e3);
-          return {
-            minPrice,
-            maxPrice,
-            averagePrice: result.averagePrice || Math.round((minPrice + maxPrice) / 2),
-            factors: Array.isArray(result.factors) ? result.factors : this.getDetailedFallbackFactors(category, minPrice, maxPrice),
-            confidence: Math.max(0, Math.min(1, result.confidence || 0.7))
-          };
-        } catch (error) {
-          console.error("Erreur suggestion prix:", error);
-          const prices = this.getFallbackPrices(category);
-          return {
-            minPrice: prices.min,
-            maxPrice: prices.max,
-            averagePrice: prices.avg,
-            factors: this.getDetailedFallbackFactors(category, prices.min, prices.max),
-            confidence: 0.6
-          };
-        }
-      }
-      /**
-       * Améliore une description vague de projet en une description détaillée et structurée
-       */
-      async enhanceProjectDescription(vagueDescription, category, additionalInfo) {
-        try {
-          const categorySpecificPrompt = this.getCategorySpecificPrompt(category, vagueDescription, additionalInfo);
-          const prompt = `En tant qu'expert en ${this.getCategoryExpertise(category)}, aidez un client \xE0 clarifier et structurer sa demande.
-
-DEMANDE INITIALE:
-"${vagueDescription}"
-
-Cat\xE9gorie: ${category}
-${additionalInfo ? `Infos suppl\xE9mentaires: ${additionalInfo}` : ""}
-
-${categorySpecificPrompt}
-
-Transformez cette demande en brief professionnel concis et clair. Maximum 120 mots.
-
-R\xE9pondez au format JSON strict:
-{
-  "improvedTitle": "Titre professionnel clair et sp\xE9cifique",
-  "detailedDescription": "Description concise avec les \xE9l\xE9ments cl\xE9s de la cat\xE9gorie ${category}",
-  "suggestedRequirements": ["exigence sp\xE9cifique 1", "exigence m\xE9tier 2", "contrainte 3"],
-  "estimatedTimeline": "d\xE9lai r\xE9aliste selon la cat\xE9gorie",
-  "complexity": "simple"
-}
-
-La complexity doit \xEAtre "simple", "medium" ou "complex".`;
-          const vertexResponse = await geminiCall("brief_enhance", { prompt });
-          const result = vertexResponse.output;
-          return {
-            improvedTitle: result.improvedTitle || "Projet am\xE9lior\xE9",
-            detailedDescription: result.detailedDescription || vagueDescription,
-            suggestedRequirements: Array.isArray(result.suggestedRequirements) ? result.suggestedRequirements : [],
-            estimatedTimeline: result.estimatedTimeline || "2-4 semaines",
-            complexity: ["simple", "medium", "complex"].includes(result.complexity) ? result.complexity : "medium"
-          };
-        } catch (error) {
-          console.error("Erreur am\xE9lioration description:", error);
-          return {
-            improvedTitle: "Projet \xE0 pr\xE9ciser",
-            detailedDescription: `Demande initiale : ${vagueDescription}
-
-Cette demande n\xE9cessite des pr\xE9cisions suppl\xE9mentaires pour \xEAtre mieux comprise par les prestataires.`,
-            suggestedRequirements: ["\xC0 d\xE9finir selon les sp\xE9cifications"],
-            estimatedTimeline: "\xC0 d\xE9terminer",
-            complexity: "medium"
-          };
-        }
-      }
-      /**
-       * Génère des facteurs détaillés pour le fallback
-       */
-      getDetailedFallbackFactors(category, minPrice, maxPrice) {
-        const avgPrice = Math.round((minPrice + maxPrice) / 2);
-        const estimatedHours = Math.round(avgPrice / 50);
-        const categoryFactors = {
-          "d\xE9veloppement": [
-            `D\xE9veloppement ${category} : ${estimatedHours}h estim\xE9es \xE0 45-80\u20AC/h selon complexit\xE9`,
-            `Tarifs march\xE9 2025 France : ${minPrice}-${maxPrice}\u20AC incluant tests et d\xE9ploiement`,
-            `Maintenance post-livraison (3-6 mois) et r\xE9visions client incluses`
-          ],
-          "travaux": [
-            `Main d'\u0153uvre sp\xE9cialis\xE9e : ${estimatedHours}h \xE0 35-55\u20AC/h + mat\xE9riaux selon projet`,
-            `Tarifs France 2025 : ${minPrice}-${maxPrice}\u20AC avec assurances et garanties incluses`,
-            `D\xE9placements, outillage professionnel et nettoyage final inclus`
-          ],
-          "design": [
-            `Cr\xE9ation graphique : ${Math.round(estimatedHours / 2)} jours cr\xE9atifs \xE0 50-80\u20AC/h`,
-            `Forfait ${minPrice}-${maxPrice}\u20AC incluant 3-5 propositions et r\xE9visions illimit\xE9es`,
-            `Fichiers sources haute d\xE9finition et d\xE9clinaisons formats inclus`
-          ],
-          "marketing": [
-            `Strat\xE9gie digitale : ${estimatedHours}h conseil \xE0 60-100\u20AC/h (hors budget m\xE9dia)`,
-            `Mission ${minPrice}-${maxPrice}\u20AC incluant audit, cr\xE9ation contenu et reporting KPIs`,
-            `Formation \xE9quipe, templates r\xE9utilisables et suivi 3 mois inclus`
-          ],
-          "conseil": [
-            `Conseil expert : ${Math.round(estimatedHours / 8)} jours mission \xE0 80-150\u20AC/h`,
-            `Prestation ${minPrice}-${maxPrice}\u20AC incluant audit, recommandations et plan d'action`,
-            `Pr\xE9sentation dirigeants, documents strat\xE9giques et suivi mise en \u0153uvre`
-          ],
-          "r\xE9daction": [
-            `R\xE9daction professionnelle : ${estimatedHours * 100} mots \xE0 0,15-0,30\u20AC/mot`,
-            `Prestation ${minPrice}-${maxPrice}\u20AC incluant recherches, optimisation SEO et r\xE9visions`,
-            `Formats multiples, images libres de droits et planning \xE9ditorial inclus`
-          ],
-          "services": [
-            `Services professionnels : ${estimatedHours}h prestation \xE0 40-80\u20AC/h selon expertise`,
-            `Forfait ${minPrice}-${maxPrice}\u20AC adapt\xE9 aux standards du secteur fran\xE7ais 2025`,
-            `D\xE9placements, outils professionnels et garantie r\xE9sultat inclus`
-          ]
-        };
-        return categoryFactors[category] || [
-          `Prestation professionnelle : ${estimatedHours}h \xE0 50-80\u20AC/h selon expertise requise`,
-          `Tarifs march\xE9 France 2025 : ${minPrice}-${maxPrice}\u20AC incluant conseils et suivi`,
-          `Garantie qualit\xE9, r\xE9visions incluses et accompagnement personnalis\xE9`
-        ];
-      }
-      /**
-       * Retourne l'expertise spécifique à la catégorie
-       */
-      getCategoryExpertise(category) {
-        const expertises = {
-          "d\xE9veloppement": "d\xE9veloppement web et applications",
-          "design": "design graphique et UX/UI",
-          "marketing": "marketing digital et communication",
-          "conseil": "conseil en strat\xE9gie d'entreprise",
-          "r\xE9daction": "r\xE9daction et cr\xE9ation de contenu",
-          "travaux": "travaux et r\xE9novation",
-          "services": "services professionnels"
-        };
-        return expertises[category] || "gestion de projet";
-      }
-      /**
-       * Retourne le prompt spécifique à chaque catégorie
-       */
-      getCategorySpecificPrompt(category, description, additionalInfo) {
-        switch (category) {
-          case "travaux":
-            return `SP\xC9CIFICIT\xC9S TRAVAUX - Pr\xE9cisez obligatoirement :
-- Dur\xE9e estim\xE9e des travaux (jours/semaines)
-- Achat des mat\xE9riaux : inclus dans le devis OU \xE0 la charge du client
-- Surface concern\xE9e (m\xB2 si applicable)
-- Type d'intervention (neuf, r\xE9novation, entretien)
-- Contraintes d'acc\xE8s ou techniques
-- P\xE9riode souhait\xE9e (saison, planning)`;
-          case "d\xE9veloppement":
-            return `SP\xC9CIFICIT\xC9S D\xC9VELOPPEMENT - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de d\xE9veloppement estim\xE9e (semaines/mois)
-- Technologies souhait\xE9es ou contraintes techniques
-- Nombre d'utilisateurs attendus
-- Type d'application (web, mobile, desktop)
-- Int\xE9grations n\xE9cessaires (API, bases de donn\xE9es)
-- Maintenance post-livraison incluse ou non`;
-          case "design":
-            return `SP\xC9CIFICIT\xC9S DESIGN - Pr\xE9cisez obligatoirement :
-- Dur\xE9e du projet cr\xE9atif (jours/semaines)
-- Nombre de d\xE9clinaisons/formats souhait\xE9s
-- Support final (print, digital, vid\xE9o)
-- Charte graphique existante ou cr\xE9ation compl\xE8te
-- Nombre de r\xE9visions incluses
-- Fichiers sources inclus ou non`;
-          case "marketing":
-            return `SP\xC9CIFICIT\xC9S MARKETING - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de la campagne ou mission (mois)
-- Budget m\xE9dia inclus ou non (si pub payante)
-- Canaux prioritaires (r\xE9seaux sociaux, SEO, etc.)
-- Secteur d'activit\xE9 et cible
-- Objectifs mesurables (leads, ventes, notori\xE9t\xE9)
-- Reporting inclus (fr\xE9quence, KPIs)`;
-          case "conseil":
-            return `SP\xC9CIFICIT\xC9S CONSEIL - Pr\xE9cisez obligatoirement :
-- Dur\xE9e de la mission (jours/mois)
-- Nombre de s\xE9ances/ateliers inclus
-- Livrables attendus (rapport, pr\xE9sentation, plan d'action)
-- Secteur d'activit\xE9 et taille de l'entreprise
-- Niveau d'accompagnement (audit, strat\xE9gie, mise en \u0153uvre)
-- D\xE9placements inclus ou factur\xE9s en sus`;
-          case "r\xE9daction":
-            return `SP\xC9CIFICIT\xC9S R\xC9DACTION - Pr\xE9cisez obligatoirement :
-- Volume de contenu (nombre de mots, pages, articles)
-- D\xE9lai de livraison souhait\xE9
-- Type de contenu (web, print, technique, commercial)
-- Recherches documentaires incluses ou non
-- Nombre de r\xE9visions incluses
-- SEO et optimisation web inclus ou non`;
-          default:
-            return `Pr\xE9cisez la dur\xE9e estim\xE9e, les livrables attendus et les contraintes sp\xE9cifiques \xE0 cette cat\xE9gorie.`;
-        }
-      }
-      /**
-       * Retourne les guides tarifaires spécifiques à chaque catégorie
-       */
-      getCategoryPricingGuidance(category) {
-        switch (category) {
-          case "travaux":
-            return `TARIFS TRAVAUX 2025 (France) :
-- Peinture : 25-45\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 20-30\u20AC/h + mat\xE9riaux
-- \xC9lectricit\xE9 : 45-65\u20AC/h + mat\xE9riaux (comptez 20-30% du co\xFBt main d'\u0153uvre)
-- Plomberie : 40-60\u20AC/h + mat\xE9riaux (comptez 25-35% du co\xFBt main d'\u0153uvre)
-- Carrelage : 30-60\u20AC/m\xB2 (mat\xE9riaux INCLUS) ou 25-40\u20AC/h + mat\xE9riaux
-- Menuiserie : 35-55\u20AC/h + mat\xE9riaux (bois repr\xE9sente 40-60% du co\xFBt)
-- D\xE9placements : 0,50-0,65\u20AC/km ou forfait 50-150\u20AC selon distance
-
-CONSID\xC9RATIONS IMPORTANTES :
-- MAT\xC9RIAUX : Pr\xE9cisez si inclus (prix 40-70% plus \xE9lev\xE9) ou en sus
-- Dur\xE9e r\xE9aliste : 1-3j (petits travaux), 1-4 semaines (r\xE9novation)
-- Contraintes : acc\xE8s difficile, \xE9tage, p\xE9riode (+10-20%)
-- Garanties d\xE9cennales et assurances incluses`;
-          case "d\xE9veloppement":
-            return `TARIFS D\xC9VELOPPEMENT 2025 (France) :
-- D\xE9veloppement web : 45-80\u20AC/h (projets : 3000-25000\u20AC)
-- Applications mobile : 50-90\u20AC/h (projets : 8000-40000\u20AC)
-- E-commerce : 40-70\u20AC/h (projets : 5000-20000\u20AC)
-- Int\xE9gration API : 55-85\u20AC/h (projets : 2000-10000\u20AC)
-
-DUR\xC9ES R\xC9ALISTES :
-- Site vitrine : 2-4 semaines (80-150h)
-- E-commerce : 6-12 semaines (200-500h)
-- App mobile : 8-16 semaines (300-800h)
-- Maintenance : 10-20% du co\xFBt initial/an`;
-          case "design":
-            return `TARIFS DESIGN 2025 (France) :
-- Logo + charte : 1500-5000\u20AC (3-6 semaines)
-- Site web (maquettes) : 50-80\u20AC/h (projets : 2000-8000\u20AC)
-- Print (flyers, brochures) : 300-1500\u20AC/cr\xE9ation
-- Packaging : 2000-8000\u20AC selon complexit\xE9
-
-DUR\xC9ES TYPIQUES :
-- Logo : 2-3 semaines (3-5 propositions + r\xE9visions)
-- Charte graphique : 3-4 semaines
-- Maquettes web : 2-6 semaines selon nombre de pages`;
-          case "marketing":
-            return `TARIFS MARKETING 2025 (France) :
-- Community management : 800-2500\u20AC/mois (hors budget pub)
-- SEO/r\xE9f\xE9rencement : 60-100\u20AC/h ou 1500-5000\u20AC/mois
-- Campagnes Google Ads : 15-20% du budget pub + setup 800-2000\u20AC
-- Strat\xE9gie digitale : 2000-8000\u20AC (audit + plan d'actions)
-
-BUDGETS PUBLICITAIRES :
-- Google Ads : 500-5000\u20AC/mois minimum
-- Facebook/Instagram : 300-3000\u20AC/mois minimum
-- Pr\xE9cisez si budget m\xE9dia inclus dans la prestation ou en sus`;
-          case "conseil":
-            return `TARIFS CONSEIL 2025 (France) :
-- Conseil strat\xE9gique : 80-150\u20AC/h ou 1200-2500\u20AC/jour
-- Audit d'entreprise : 3000-15000\u20AC selon taille
-- Formation : 1500-3000\u20AC/jour + pr\xE9paration
-- Coaching dirigeant : 150-300\u20AC/h
-
-DUR\xC9ES MISSIONS :
-- Audit express : 5-10 jours
-- Mission strat\xE9gique : 20-60 jours \xE9tal\xE9s
-- Accompagnement : 3-12 mois (suivi r\xE9gulier)`;
-          case "r\xE9daction":
-            return `TARIFS R\xC9DACTION 2025 (France) :
-- Articles web : 0,10-0,30\u20AC/mot (SEO : +20-40%)
-- Pages site : 150-500\u20AC/page selon complexit\xE9
-- Fiches produits : 15-50\u20AC/fiche
-- Livre blanc : 2000-8000\u20AC selon longueur
-- Newsletter : 200-800\u20AC/\xE9dition
-
-VOLUMES TYPIQUES :
-- Article blog : 800-1500 mots
-- Page site : 300-800 mots
-- D\xE9lais : 2-7 jours/1000 mots selon recherches`;
-          default:
-            return `TARIFS SERVICES G\xC9N\xC9RAUX 2025 :
-- Prestations intellectuelles : 50-120\u20AC/h
-- Projets forfaitaires : 1500-8000\u20AC selon complexit\xE9
-- D\xE9placements : 0,50\u20AC/km + temps factur\xE9
-- R\xE9visions incluses : 2-3 allers-retours standard`;
-        }
-      }
-      /**
-       * Améliore n'importe quel texte selon son type
-       */
-      async enhanceText(text2, fieldType, category) {
-        if (!text2 || text2.trim().length === 0) {
-          console.warn("Texte vide fourni pour l'am\xE9lioration");
-          return text2;
-        }
-        try {
-          console.log(`\u{1F3AF} Am\xE9lioration ${fieldType} avec IA:`, text2.substring(0, 50) + "...");
-          let prompt = "";
-          let expectedFormat = "text";
-          switch (fieldType) {
-            case "title":
-              prompt = `Am\xE9liorez ce titre de projet pour qu'il soit plus professionnel et accrocheur:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "titre am\xE9lior\xE9 ici"
-}`;
-              expectedFormat = "json";
-              break;
-            case "description":
-              prompt = `INSTRUCTIONS : Am\xE9liorez cette description de projet (60-80 mots maximum).
-
-Texte \xE0 am\xE9liorer:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-Cr\xE9ez une description professionnelle qui inclut :
-1. L'objectif principal
-2. Les attentes essentielles
-3. Le contexte professionnel
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "description am\xE9lior\xE9e ici"
-}`;
-              expectedFormat = "json";
-              break;
-            case "requirements":
-              prompt = `Pr\xE9cisez et structurez ces exigences de projet:
-"${text2}"
-
-Cat\xE9gorie: ${category || "Non sp\xE9cifi\xE9e"}
-
-Transformez ces exigences en une liste claire et structur\xE9e.
-
-R\xE9pondez au format JSON:
-{
-  "enhancedText": "exigences am\xE9lior\xE9es ici"
-}`;
-              expectedFormat = "json";
-              break;
-          }
-          console.log("\u{1F9E0} V\xE9rification des patterns appris...");
-          const learnedSuggestion = await aiLearningEngine.generateImprovedSuggestion(text2, fieldType, category);
-          if (learnedSuggestion) {
-            console.log("\u2728 Suggestion bas\xE9e sur l'apprentissage automatique utilis\xE9e");
-            return learnedSuggestion;
-          }
-          console.log("\u{1F4E1} Envoi requ\xEAte Gemini (pas de pattern appris)...");
-          const geminiResponse = await geminiCall("text_enhance", { prompt });
-          console.log("\u{1F50D} R\xE9ponse Gemini compl\xE8te:", JSON.stringify(geminiResponse, null, 2));
-          if (geminiResponse && geminiResponse.output) {
-            let enhancedText = "";
-            if (typeof geminiResponse.output === "string") {
-              try {
-                const parsed = JSON.parse(geminiResponse.output);
-                enhancedText = parsed.enhancedText || parsed.enhanced_text || parsed.result || geminiResponse.output;
-              } catch {
-                enhancedText = geminiResponse.output;
-              }
-            } else if (geminiResponse.output && typeof geminiResponse.output === "object") {
-              enhancedText = geminiResponse.output.enhancedText || geminiResponse.output.enhanced_text || geminiResponse.output.result || JSON.stringify(geminiResponse.output);
-            }
-            if (enhancedText && enhancedText.trim().length > 0) {
-              console.log("\u2705 Am\xE9lioration Gemini r\xE9ussie:", enhancedText.substring(0, 100) + "...");
-              try {
-                await aiLearningEngine.learnFromSuccess(
-                  text2,
-                  enhancedText,
-                  fieldType,
-                  category,
-                  "positive"
-                );
-                console.log("\u{1F4DA} Pattern appris avec succ\xE8s");
-              } catch (learnError) {
-                console.warn("\u26A0\uFE0F Erreur apprentissage (non bloquant):", learnError);
-              }
-              return enhancedText.trim();
-            }
-          }
-          console.warn("\u26A0\uFE0F R\xE9ponse Gemini vide ou non trait\xE9e, utilisation du fallback local");
-          console.warn("\u{1F4CB} Contenu re\xE7u:", geminiResponse);
-          return this.enhanceTextLocal(text2, fieldType, category);
-        } catch (error) {
-          console.error("\u274C Erreur am\xE9lioration texte IA:", error);
-          console.log("\u{1F504} Utilisation du fallback local");
-          return this.enhanceTextLocal(text2, fieldType, category);
-        }
-      }
-      enhanceTextLocal(text2, fieldType, category) {
-        if (!text2 || text2.trim().length === 0) {
-          return text2;
-        }
-        switch (fieldType) {
-          case "title":
-            return this.enhanceTitleLocal(text2, category);
-          case "description":
-            return this.enhanceDescriptionLocal(text2, category);
-          case "requirements":
-            return this.enhanceRequirementsLocal(text2, category);
-          default:
-            return text2;
-        }
-      }
-      enhanceTitleLocal(title, category) {
-        let enhanced = title.trim();
-        enhanced = enhanced.charAt(0).toUpperCase() + enhanced.slice(1);
-        const categoryKeywords = {
-          "d\xE9veloppement": "D\xE9veloppement",
-          "design": "Design",
-          "marketing": "Marketing Digital",
-          "conseil": "Conseil",
-          "travaux": "Travaux",
-          "services": "Services"
-        };
-        const categoryKey = category?.toLowerCase() || "";
-        if (categoryKeywords[categoryKey] && !enhanced.toLowerCase().includes(categoryKey)) {
-          enhanced = `${categoryKeywords[categoryKey]} - ${enhanced}`;
-        }
-        if (enhanced.length < 30 && !enhanced.toLowerCase().includes("professionnel")) {
-          enhanced += " - Service Professionnel";
-        }
-        return enhanced;
-      }
-      enhanceDescriptionLocal(description, category) {
-        let enhanced = description.trim();
-        if (enhanced.length < 100) {
-          enhanced += "\n\nCe projet n\xE9cessite une approche professionnelle et une expertise confirm\xE9e dans le domaine.";
-        }
-        if (!enhanced.toLowerCase().includes("livrable") && !enhanced.toLowerCase().includes("r\xE9sultat")) {
-          enhanced += "\n\n\u{1F4CB} Livrables attendus :\n- Documentation compl\xE8te\n- Code source comment\xE9 (si applicable)\n- Formation utilisateur si n\xE9cessaire";
-        }
-        if (!enhanced.toLowerCase().includes("budget") && !enhanced.toLowerCase().includes("prix")) {
-          enhanced += "\n\n\u{1F4B0} Budget flexible selon la qualit\xE9 de la proposition.";
-        }
-        if (!enhanced.toLowerCase().includes("d\xE9lai") && !enhanced.toLowerCase().includes("\xE9ch\xE9ance")) {
-          enhanced += "\n\n\u23F0 D\xE9lais de livraison \xE0 discuter selon la complexit\xE9 du projet.";
-        }
-        if (!enhanced.toLowerCase().includes("exp\xE9rience") && !enhanced.toLowerCase().includes("portfolio")) {
-          enhanced += "\n\n\u{1F3AF} Merci de joindre votre portfolio et vos r\xE9f\xE9rences pertinentes.";
-        }
-        return enhanced;
-      }
-      enhanceRequirementsLocal(requirements, category) {
-        let enhanced = requirements.trim();
-        if (!enhanced.includes("-") && !enhanced.includes("\u2022") && !enhanced.includes("\n")) {
-          const sentences = enhanced.split(".").filter((s) => s.trim().length > 0);
-          if (sentences.length > 1) {
-            enhanced = sentences.map((s) => `\u2022 ${s.trim()}`).join("\n");
-          }
-        }
-        const categoryRequirements = {
-          "d\xE9veloppement": [
-            "\u2022 Code propre et document\xE9",
-            "\u2022 Tests unitaires inclus",
-            "\u2022 Compatibilit\xE9 navigateurs modernes"
-          ],
-          "design": [
-            "\u2022 Fichiers sources fournis",
-            "\u2022 Formats d'export multiples",
-            "\u2022 Respect de la charte graphique"
-          ],
-          "marketing": [
-            "\u2022 Analyse de performance incluse",
-            "\u2022 Rapport mensuel d\xE9taill\xE9",
-            "\u2022 Suivi des KPIs"
-          ]
-        };
-        const categoryKey = category?.toLowerCase() || "";
-        if (categoryRequirements[categoryKey]) {
-          enhanced += "\n\nExigences techniques standard :\n" + categoryRequirements[categoryKey].join("\n");
-        }
-        return enhanced;
-      }
-      /**
-       * Analyse la qualité d'une description de projet et suggère des améliorations
-       */
-      async analyzeDescriptionQuality(description) {
-        try {
-          const prompt = `Analysez la qualit\xE9 de cette description de projet freelance et sugg\xE9rez des am\xE9liorations:
-
-DESCRIPTION:
-"${description}"
-
-\xC9valuez selon ces crit\xE8res:
-- Clart\xE9 des objectifs
-- D\xE9tails techniques
-- Contraintes mentionn\xE9es
-- Budget/d\xE9lais pr\xE9cis\xE9s
-- Informations contextuelles
-
-R\xE9pondez au format JSON:
-{
-  "score": 0.0,
-  "suggestions": ["suggestion 1", "suggestion 2"],
-  "missingElements": ["\xE9l\xE9ment manquant 1", "\xE9l\xE9ment manquant 2"]
-}
-
-Score entre 0.0 (tr\xE8s vague) et 1.0 (tr\xE8s d\xE9taill\xE9).`;
-          const vertexResponse = await geminiCall("quality_analysis", { prompt });
-          const result = vertexResponse.output;
-          return {
-            score: Math.max(0, Math.min(1, result.score || 0.5)),
-            suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
-            missingElements: Array.isArray(result.missingElements) ? result.missingElements : []
-          };
-        } catch (error) {
-          console.error("Erreur analyse qualit\xE9:", error);
-          return {
-            score: this.calculateLocalQualityScore(description),
-            // Utilisation du score local comme fallback
-            suggestions: ["Ajoutez plus de d\xE9tails sur vos objectifs"],
-            missingElements: ["Budget indicatif", "D\xE9lais souhait\xE9s"]
-          };
-        }
-      }
-      /**
-       * Get fallback prices for a category
-       */
-      getFallbackPrices(category) {
-        const fallbackPrices = {
-          "d\xE9veloppement": { min: 2500, max: 12e3, avg: 6e3 },
-          "design": { min: 1200, max: 5e3, avg: 2800 },
-          "marketing": { min: 1800, max: 8e3, avg: 4e3 },
-          "r\xE9daction": { min: 800, max: 3e3, avg: 1500 },
-          "conseil": { min: 2e3, max: 1e4, avg: 5e3 },
-          "services": { min: 1500, max: 6e3, avg: 3e3 },
-          "travaux": { min: 2e3, max: 8e3, avg: 4500 }
-        };
-        return fallbackPrices[category] || fallbackPrices.conseil;
-      }
-      /**
-       * Calculate local quality score based on description length and content
-       */
-      calculateLocalQualityScore(description) {
-        let score = 0.3;
-        if (description.length > 100) score += 0.2;
-        if (description.length > 300) score += 0.2;
-        if (description.toLowerCase().includes("budget")) score += 0.1;
-        if (description.toLowerCase().includes("d\xE9lai")) score += 0.1;
-        if (description.toLowerCase().includes("exp\xE9rience")) score += 0.1;
-        return Math.min(1, score);
-      }
-    };
-    aiEnhancementService = new AIEnhancementService();
   }
 });
 
@@ -4620,246 +3333,23 @@ router4.get("/alerts", async (req, res) => {
 });
 var ai_monitoring_routes_default = router4;
 
-// server/routes/ai-routes.ts
+// server/routes/ai-suggestions-routes.ts
 import { Router as Router3 } from "express";
 import { z as z3 } from "zod";
 var router5 = Router3();
-var priceSuggestionSchema = z3.object({
-  title: z3.string().min(5, "Titre trop court"),
-  description: z3.string().min(10, "Description trop courte"),
-  category: z3.string().min(1, "Cat\xE9gorie requise")
-});
-var enhanceDescriptionSchema = z3.object({
-  description: z3.string().min(5, "Description trop courte"),
-  category: z3.string().min(1, "Cat\xE9gorie requise"),
-  additionalInfo: z3.string().optional()
-});
-var analyzeQualitySchema = z3.object({
-  description: z3.string().min(5, "Description trop courte")
-});
-var enhanceTextSchema = z3.object({
-  text: z3.string().min(1, "Texte requis"),
-  fieldType: z3.enum(["title", "description", "requirements"]),
-  category: z3.string().optional()
-});
-router5.post("/suggest-pricing", async (req, res) => {
-  try {
-    const { title, description, category } = priceSuggestionSchema.parse(req.body);
-    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
-    const aiEnhancementService2 = new AIEnhancementService2();
-    const priceSuggestion = await aiEnhancementService2.suggestPricing(
-      title,
-      description,
-      category
-    );
-    res.json({
-      success: true,
-      data: priceSuggestion,
-      message: "Suggestion de prix g\xE9n\xE9r\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    if (error instanceof z3.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    console.error("Erreur suggestion prix:", error);
-    res.status(500).json({
-      success: false,
-      error: "Erreur lors de la g\xE9n\xE9ration de la suggestion de prix"
-    });
-  }
-});
-router5.post("/enhance-description", async (req, res) => {
-  try {
-    const { description, category, additionalInfo } = enhanceDescriptionSchema.parse(req.body);
-    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
-    const aiEnhancementService2 = new AIEnhancementService2();
-    const enhancedDescription = await aiEnhancementService2.enhanceProjectDescription(
-      description,
-      category,
-      additionalInfo
-    );
-    res.json({
-      success: true,
-      data: enhancedDescription,
-      message: "Description am\xE9lior\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    if (error instanceof z3.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    console.error("Erreur am\xE9lioration description:", error);
-    res.status(500).json({
-      success: false,
-      error: "Erreur lors de l'am\xE9lioration de la description"
-    });
-  }
-});
-router5.post("/analyze-quality", async (req, res) => {
-  try {
-    const { description } = analyzeQualitySchema.parse(req.body);
-    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
-    const aiEnhancementService2 = new AIEnhancementService2();
-    const qualityAnalysis = await aiEnhancementService2.analyzeDescriptionQuality(description);
-    res.json({
-      success: true,
-      data: qualityAnalysis,
-      message: "Analyse de qualit\xE9 effectu\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    if (error instanceof z3.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    console.error("Erreur analyse qualit\xE9:", error);
-    res.status(500).json({
-      success: false,
-      error: "Erreur lors de l'analyse de qualit\xE9"
-    });
-  }
-});
-router5.post("/enhance-text", async (req, res) => {
-  try {
-    const { text: text2, fieldType, category } = req.body;
-    if (!text2 || typeof text2 !== "string" || text2.trim().length === 0) {
-      console.warn("\u274C Texte vide ou invalide re\xE7u");
-      return res.status(400).json({
-        success: false,
-        error: "Texte requis et non vide"
-      });
-    }
-    if (!fieldType || !["title", "description", "requirements"].includes(fieldType)) {
-      console.warn("\u274C Type de champ invalide:", fieldType);
-      return res.status(400).json({
-        success: false,
-        error: "Type de champ invalide. Attendu: title, description ou requirements"
-      });
-    }
-    console.log(`\u{1F3AF} Am\xE9lioration ${fieldType} demand\xE9e pour:`, text2.substring(0, 100) + "...");
-    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
-    const aiEnhancementService2 = new AIEnhancementService2();
-    const enhancedText = await aiEnhancementService2.enhanceText(text2, fieldType, category);
-    console.log("\u2705 Am\xE9lioration termin\xE9e avec succ\xE8s");
-    res.json({
-      success: true,
-      data: {
-        originalText: text2,
-        enhancedText,
-        fieldType,
-        category: category || "non-sp\xE9cifi\xE9e",
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    });
-  } catch (error) {
-    console.error("\u274C Erreur am\xE9lioration texte:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message || "Erreur lors de l'am\xE9lioration du texte",
-      details: process.env.NODE_ENV === "development" ? error.stack : void 0
-    });
-  }
-});
-router5.get("/health", async (req, res) => {
-  try {
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    const geminiConfigured = !!geminiApiKey;
-    const status = geminiConfigured ? "gemini_api_ready" : "gemini_api_configuration_incomplete";
-    res.json({
-      success: true,
-      data: {
-        ai_provider: "gemini-api-only",
-        gemini_ready: geminiConfigured,
-        api_key: geminiApiKey ? "\u2705 Configur\xE9" : "\u274C MANQUANT",
-        services_available: geminiConfigured ? [
-          "gemini_text_enhancement",
-          "gemini_price_suggestions",
-          "gemini_description_enhancement",
-          "gemini_quality_analysis",
-          "gemini_semantic_analysis"
-        ] : [],
-        status,
-        configuration_required: !geminiConfigured ? ["GEMINI_API_KEY"] : [],
-        mode: "production_gemini_api"
-      }
-    });
-  } catch (error) {
-    console.error("Erreur v\xE9rification sant\xE9 IA:", error);
-    res.status(500).json({
-      success: false,
-      error: "Erreur lors de la v\xE9rification"
-    });
-  }
-});
-router5.get("/test-config", async (req, res) => {
-  try {
-    const geminiAdapter = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
-    const geminiCall2 = geminiAdapter.geminiCall;
-    const testResponse = await geminiCall2("text_enhance", {
-      prompt: 'Dites simplement "Configuration Gemini OK"'
-    });
-    res.json({
-      success: true,
-      data: {
-        test_result: "success",
-        response: testResponse.output,
-        latency_ms: testResponse.quality?.latency_ms,
-        provider: testResponse.meta?.provider
-      }
-    });
-  } catch (error) {
-    console.error("\u274C Test configuration \xE9chou\xE9:", error);
-    res.status(500).json({
-      success: false,
-      error: "Test de configuration \xE9chou\xE9",
-      details: error.message
-    });
-  }
-});
-router5.post("/analyze", async (req, res) => {
-  const { title = "", description = "", category = "autre" } = req.body ?? {};
-  if (typeof description !== "string" || description.trim().length < 5) {
-    return res.status(400).json({ error: "Description trop courte" });
-  }
-  try {
-    const { AIEnhancementService: AIEnhancementService2 } = await Promise.resolve().then(() => (init_ai_enhancement(), ai_enhancement_exports));
-    const aiEnhancementService2 = new AIEnhancementService2();
-    const quality = await aiEnhancementService2.analyzeDescriptionQuality(description);
-    const pricing = await aiEnhancementService2.suggestPricing(title, description, category);
-    res.json({ quality, pricing });
-  } catch (e) {
-    console.error("AI /analyze error:", e);
-    res.status(500).json({ error: "Erreur analyse IA" });
-  }
-});
-var ai_routes_default = router5;
-
-// server/routes/ai-suggestions-routes.ts
-import { Router as Router4 } from "express";
-import { z as z4 } from "zod";
-var router6 = Router4();
-var assistantSuggestionsSchema = z4.object({
-  page: z4.string(),
-  userContext: z4.object({
-    isClient: z4.boolean().optional(),
-    isProvider: z4.boolean().optional(),
-    missions: z4.number().optional(),
-    completedProjects: z4.number().optional(),
-    completeness: z4.number().optional(),
-    hasContent: z4.object({
-      bio: z4.boolean().optional(),
-      headline: z4.boolean().optional(),
-      skills: z4.boolean().optional(),
-      portfolio: z4.boolean().optional()
+var assistantSuggestionsSchema = z3.object({
+  page: z3.string(),
+  userContext: z3.object({
+    isClient: z3.boolean().optional(),
+    isProvider: z3.boolean().optional(),
+    missions: z3.number().optional(),
+    completedProjects: z3.number().optional(),
+    completeness: z3.number().optional(),
+    hasContent: z3.object({
+      bio: z3.boolean().optional(),
+      headline: z3.boolean().optional(),
+      skills: z3.boolean().optional(),
+      portfolio: z3.boolean().optional()
     }).optional()
   }).optional()
 });
@@ -4966,7 +3456,7 @@ async function generatePageSuggestions(page, userContext = {}) {
   }
   return suggestions;
 }
-router6.post("/assistant-suggestions", async (req, res) => {
+router5.post("/assistant-suggestions", async (req, res) => {
   try {
     const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
     const suggestions = await generatePageSuggestions(page, userContext);
@@ -4976,7 +3466,7 @@ router6.post("/assistant-suggestions", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -5000,23 +3490,23 @@ router6.post("/assistant-suggestions", async (req, res) => {
     });
   }
 });
-var ai_suggestions_routes_default = router6;
+var ai_suggestions_routes_default = router5;
 
 // server/routes/ai-missions-routes.ts
-import { Router as Router5 } from "express";
-import { z as z5 } from "zod";
-var router7 = Router5();
-var missionSuggestionSchema = z5.object({
-  title: z5.string().min(3, "Titre trop court"),
-  description: z5.string().min(10, "Description trop courte"),
-  category: z5.string().min(1, "Cat\xE9gorie requise"),
-  budget_min: z5.number().optional(),
-  budget_max: z5.number().optional(),
-  deadline_ts: z5.string().optional(),
-  geo_required: z5.boolean().optional(),
-  onsite_radius_km: z5.number().optional()
+import { Router as Router4 } from "express";
+import { z as z4 } from "zod";
+var router6 = Router4();
+var missionSuggestionSchema = z4.object({
+  title: z4.string().min(3, "Titre trop court"),
+  description: z4.string().min(10, "Description trop courte"),
+  category: z4.string().min(1, "Cat\xE9gorie requise"),
+  budget_min: z4.number().optional(),
+  budget_max: z4.number().optional(),
+  deadline_ts: z4.string().optional(),
+  geo_required: z4.boolean().optional(),
+  onsite_radius_km: z4.number().optional()
 });
-router7.post("/suggest", async (req, res) => {
+router6.post("/suggest", async (req, res) => {
   try {
     console.log("Requ\xEAte re\xE7ue:", req.body);
     const { title, description, category } = missionSuggestionSchema.parse(req.body);
@@ -5100,7 +3590,7 @@ router7.post("/suggest", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z4.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -5114,13 +3604,193 @@ router7.post("/suggest", async (req, res) => {
     });
   }
 });
-var ai_missions_routes_default = router7;
+var ai_missions_routes_default = router6;
 
 // apps/api/src/routes/ai.ts
-init_aiOrchestrator();
-import { Router as Router6 } from "express";
-var router8 = Router6();
-router8.post("/pricing", async (req, res) => {
+import { Router as Router5 } from "express";
+
+// apps/api/src/ai/aiOrchestrator.ts
+import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
+async function getPricingSuggestion(request) {
+  try {
+    const basePrice = calculateBasePrice(request.category || "general");
+    const complexity = analyzeComplexity(request.description || "");
+    const timelineMultiplier = getTimelineMultiplier(request.timeline || "");
+    const minPrice = Math.round(basePrice * complexity * 0.8);
+    const maxPrice = Math.round(basePrice * complexity * timelineMultiplier * 1.3);
+    const averagePrice = Math.round((minPrice + maxPrice) / 2);
+    return {
+      success: true,
+      pricing: {
+        minPrice,
+        maxPrice,
+        averagePrice,
+        confidence: 0.85,
+        factors: [
+          `Cat\xE9gorie: ${request.category}`,
+          `Complexit\xE9: ${complexity}x`,
+          `D\xE9lai: ${timelineMultiplier}x`
+        ]
+      },
+      analysis: {
+        category: request.category,
+        complexity_level: complexity > 1.5 ? "high" : complexity > 1 ? "medium" : "low",
+        market_position: "competitive"
+      }
+    };
+  } catch (error) {
+    console.error("Erreur getPricingSuggestion:", error);
+    throw new Error("Impossible de calculer la suggestion de prix");
+  }
+}
+async function enhanceBrief(request) {
+  try {
+    const originalDescription = request.description || "";
+    const category = request.category || "general";
+    const analysis = analyzeBriefQuality(originalDescription);
+    const improvements = generateImprovements(originalDescription, category, analysis);
+    return {
+      success: true,
+      original: {
+        title: request.title,
+        description: originalDescription,
+        word_count: originalDescription.split(" ").length
+      },
+      enhanced: {
+        title: improveTitle(request.title || "", category),
+        description: improvements.enhanced_description,
+        word_count: improvements.enhanced_description.split(" ").length
+      },
+      analysis: {
+        quality_score: analysis.score,
+        missing_elements: analysis.missing,
+        improvements_applied: improvements.changes
+      },
+      suggestions: improvements.suggestions
+    };
+  } catch (error) {
+    console.error("Erreur enhanceBrief:", error);
+    throw new Error("Impossible d'am\xE9liorer le brief");
+  }
+}
+async function logUserFeedback(phase, prompt, feedback) {
+  try {
+    const logEntry = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      phase,
+      prompt,
+      feedback,
+      user_session: "anonymous"
+    };
+    const logsDir = join(process.cwd(), "logs");
+    if (!existsSync(logsDir)) {
+      mkdirSync(logsDir, { recursive: true });
+    }
+    const logFile = join(logsDir, `ai-feedback-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.json`);
+    const logs = [];
+    try {
+      const existingLogs = __require(logFile);
+      logs.push(...existingLogs);
+    } catch {
+    }
+    logs.push(logEntry);
+    writeFileSync(logFile, JSON.stringify(logs, null, 2));
+    console.log(`\u2705 Feedback logged: ${phase}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur logUserFeedback:", error);
+    throw new Error("Impossible d'enregistrer le feedback");
+  }
+}
+function calculateBasePrice(category) {
+  const basePrices = {
+    "development": 5e3,
+    "design": 2500,
+    "marketing": 3e3,
+    "consulting": 4e3,
+    "writing": 1500,
+    "general": 3e3
+  };
+  return basePrices[category] || basePrices.general;
+}
+function analyzeComplexity(description) {
+  const complexityKeywords = [
+    "complex",
+    "advanced",
+    "enterprise",
+    "scalable",
+    "integration",
+    "API",
+    "database",
+    "real-time",
+    "mobile",
+    "responsive"
+  ];
+  const found = complexityKeywords.filter(
+    (keyword) => description.toLowerCase().includes(keyword)
+  ).length;
+  return Math.max(0.8, Math.min(2, 1 + found * 0.2));
+}
+function getTimelineMultiplier(timeline) {
+  if (timeline.includes("urgent") || timeline.includes("asap")) return 1.5;
+  if (timeline.includes("semaine")) return 1.3;
+  if (timeline.includes("mois")) return 1;
+  return 1.1;
+}
+function analyzeBriefQuality(description) {
+  const words = description.split(" ").length;
+  const hasBudget = /budget|prix|coût|\€|\$/.test(description.toLowerCase());
+  const hasTimeline = /délai|semaine|mois|urgent/.test(description.toLowerCase());
+  const hasObjectives = /objectif|but|résultat/.test(description.toLowerCase());
+  const score = Math.min(
+    1,
+    words / 100 * 0.4 + (hasBudget ? 0.2 : 0) + (hasTimeline ? 0.2 : 0) + (hasObjectives ? 0.2 : 0)
+  );
+  const missing = [];
+  if (!hasBudget) missing.push("Budget");
+  if (!hasTimeline) missing.push("D\xE9lais");
+  if (!hasObjectives) missing.push("Objectifs clairs");
+  if (words < 50) missing.push("Plus de d\xE9tails");
+  return { score, missing };
+}
+function generateImprovements(description, category, analysis) {
+  let enhanced = description;
+  const changes = [];
+  const suggestions = [];
+  if (analysis.missing.includes("Budget")) {
+    enhanced += "\n\n\u{1F4B0} Budget: \xC0 d\xE9finir selon la proposition (ouvert aux suggestions)";
+    changes.push("Ajout indication budget");
+  }
+  if (analysis.missing.includes("D\xE9lais")) {
+    enhanced += "\n\u23F0 D\xE9lais: Flexible, id\xE9alement sous 4 semaines";
+    changes.push("Ajout d\xE9lais indicatifs");
+  }
+  if (analysis.missing.includes("Objectifs clairs")) {
+    enhanced += "\n\u{1F3AF} Objectifs: Livraison conforme aux attentes avec documentation compl\xE8te";
+    changes.push("Clarification objectifs");
+  }
+  suggestions.push("Ajouter des exemples concrets de ce qui est attendu");
+  suggestions.push("Pr\xE9ciser les crit\xE8res de s\xE9lection du prestataire");
+  suggestions.push("Mentionner les contraintes techniques \xE9ventuelles");
+  return { enhanced_description: enhanced, changes, suggestions };
+}
+function improveTitle(title, category) {
+  if (!title) return `Projet ${category} - Mission sp\xE9cialis\xE9e`;
+  const keywords = {
+    "development": "\u{1F4BB}",
+    "design": "\u{1F3A8}",
+    "marketing": "\u{1F4C8}",
+    "consulting": "\u{1F4A1}",
+    "writing": "\u270D\uFE0F"
+  };
+  const icon = keywords[category] || "\u{1F680}";
+  return title.includes(icon) ? title : `${icon} ${title}`;
+}
+
+// apps/api/src/routes/ai.ts
+var router7 = Router5();
+router7.post("/pricing", async (req, res) => {
   try {
     const result = await getPricingSuggestion(req.body);
     res.json(result);
@@ -5129,7 +3799,7 @@ router8.post("/pricing", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul de prix" });
   }
 });
-router8.post("/brief", async (req, res) => {
+router7.post("/brief", async (req, res) => {
   try {
     const result = await enhanceBrief(req.body);
     res.json(result);
@@ -5138,7 +3808,7 @@ router8.post("/brief", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
   }
 });
-router8.post("/feedback", async (req, res) => {
+router7.post("/feedback", async (req, res) => {
   try {
     const { phase, prompt, feedback } = req.body;
     await logUserFeedback(phase, prompt, feedback);
@@ -5148,14 +3818,14 @@ router8.post("/feedback", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-var ai_default = router8;
+var ai_default = router7;
 
 // server/routes/feed-routes.ts
 init_schema();
 import express4 from "express";
 import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { desc as desc3, eq as eq6, and as and2, not, inArray, sql as sql3 } from "drizzle-orm";
+import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
+import { desc as desc2, eq as eq5, and, not, inArray, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -5445,23 +4115,23 @@ var FeedRanker = class {
 };
 
 // server/routes/feed-routes.ts
-import { z as z6 } from "zod";
-var router9 = express4.Router();
+import { z as z5 } from "zod";
+var router8 = express4.Router();
 var connection = neon(process.env.DATABASE_URL);
-var db5 = drizzle5(connection);
+var db4 = drizzle4(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
-router9.get("/feed", async (req, res) => {
+router8.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
-    const seenAnnouncements = userId ? await db5.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
-      and2(
-        eq6(feedSeen.user_id, parseInt(userId))
+    const seenAnnouncements = userId ? await db4.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
+      and(
+        eq5(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq6(announcements.status, "active")];
+    let whereConditions = [eq5(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
@@ -5469,14 +4139,14 @@ router9.get("/feed", async (req, res) => {
       const cursorId = parseInt(cursor);
       whereConditions.push(sql3`${announcements.id} < ${cursorId}`);
     }
-    const query = db5.select().from(announcements).where(and2(...whereConditions));
-    const rawAnnouncements = await query.orderBy(desc3(announcements.created_at)).limit(limitNum + 5);
+    const query = db4.select().from(announcements).where(and(...whereConditions));
+    const rawAnnouncements = await query.orderBy(desc2(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    const sponsoredAnnouncements = await db5.select().from(announcements).where(and2(
-      eq6(announcements.sponsored, true),
-      eq6(announcements.status, "active")
+    const sponsoredAnnouncements = await db4.select().from(announcements).where(and(
+      eq5(announcements.sponsored, true),
+      eq5(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -5494,12 +4164,12 @@ router9.get("/feed", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration du feed" });
   }
 });
-router9.post("/feedback", async (req, res) => {
+router8.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    await db5.insert(feedFeedback).values(feedbackData);
+    await db4.insert(feedFeedback).values(feedbackData);
     if (feedbackData.action !== "view") {
-      await db5.insert(feedSeen).values({
+      await db4.insert(feedSeen).values({
         user_id: feedbackData.user_id,
         announcement_id: feedbackData.announcement_id
       }).onConflictDoNothing();
@@ -5513,13 +4183,13 @@ router9.post("/feedback", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Erreur enregistrement feedback:", error);
-    if (error instanceof z6.ZodError) {
+    if (error instanceof z5.ZodError) {
       return res.status(400).json({ error: "Donn\xE9es invalides", details: error.errors });
     }
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-router9.get("/price-benchmark", async (req, res) => {
+router8.get("/price-benchmark", async (req, res) => {
   try {
     const { category } = req.query;
     if (!category) {
@@ -5532,12 +4202,12 @@ router9.get("/price-benchmark", async (req, res) => {
         return res.json(cached.data);
       }
     }
-    const prices = await db5.select({
+    const prices = await db4.select({
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
-    }).from(announcements).where(and2(
-      eq6(announcements.category, category),
-      eq6(announcements.status, "active")
+    }).from(announcements).where(and(
+      eq5(announcements.category, category),
+      eq5(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -5562,26 +4232,26 @@ router9.get("/price-benchmark", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul du benchmark" });
   }
 });
-var feed_routes_default = router9;
+var feed_routes_default = router8;
 
 // server/routes/favorites-routes.ts
 init_schema();
-import { Router as Router7 } from "express";
-import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
+import { Router as Router6 } from "express";
+import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq7, and as and3 } from "drizzle-orm";
+import { eq as eq6, and as and2 } from "drizzle-orm";
 var sql4 = neon2(process.env.DATABASE_URL);
-var db6 = drizzle6(sql4);
-var router10 = Router7();
-router10.get("/favorites", async (req, res) => {
+var db5 = drizzle5(sql4);
+var router9 = Router6();
+router9.get("/favorites", async (req, res) => {
   try {
     const { user_id } = req.query;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    const userFavorites = await db6.select({
+    const userFavorites = await db5.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq7(favorites.announcement_id, announcements.id)).where(eq7(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -5592,22 +4262,22 @@ router10.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration des favoris" });
   }
 });
-router10.post("/favorites", async (req, res) => {
+router9.post("/favorites", async (req, res) => {
   try {
     const { user_id, announcement_id } = req.body;
     if (!user_id || !announcement_id) {
       return res.status(400).json({ error: "user_id et announcement_id requis" });
     }
-    const existing = await db6.select().from(favorites).where(
-      and3(
-        eq7(favorites.user_id, user_id),
-        eq7(favorites.announcement_id, announcement_id)
+    const existing = await db5.select().from(favorites).where(
+      and2(
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
       return res.status(200).json({ message: "D\xE9j\xE0 en favori" });
     }
-    await db6.insert(favorites).values({
+    await db5.insert(favorites).values({
       user_id,
       announcement_id,
       created_at: /* @__PURE__ */ new Date()
@@ -5618,17 +4288,17 @@ router10.post("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'ajout aux favoris" });
   }
 });
-router10.delete("/favorites/:announcementId", async (req, res) => {
+router9.delete("/favorites/:announcementId", async (req, res) => {
   try {
     const { announcementId } = req.params;
     const { user_id } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    await db6.delete(favorites).where(
-      and3(
-        eq7(favorites.user_id, user_id),
-        eq7(favorites.announcement_id, parseInt(announcementId))
+    await db5.delete(favorites).where(
+      and2(
+        eq6(favorites.user_id, user_id),
+        eq6(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -5637,11 +4307,11 @@ router10.delete("/favorites/:announcementId", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression des favoris" });
   }
 });
-var favorites_routes_default = router10;
+var favorites_routes_default = router9;
 
 // server/routes/mission-demo.ts
 import express5 from "express";
-var router11 = express5.Router();
+var router10 = express5.Router();
 var getDemoMissions = () => [
   {
     id: "mission1",
@@ -5722,10 +4392,10 @@ var getDemoMissions = () => [
     bids: []
   }
 ];
-router11.get("/missions-demo", (req, res) => {
+router10.get("/missions-demo", (req, res) => {
   res.json(getDemoMissions());
 });
-var mission_demo_default = router11;
+var mission_demo_default = router10;
 
 // server/routes/ai-quick-analysis.ts
 import express6 from "express";
@@ -6101,8 +4771,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router12 = express6.Router();
-router12.post("/ai/quick-analysis", async (req, res) => {
+var router11 = express6.Router();
+router11.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -6119,7 +4789,7 @@ router12.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router12.post("/ai/price-analysis", async (req, res) => {
+router11.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -6140,12 +4810,12 @@ router12.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router12;
+var ai_quick_analysis_default = router11;
 
 // server/routes/ai-diagnostic-routes.ts
-import { Router as Router8 } from "express";
-var router13 = Router8();
-router13.get("/diagnostic", async (req, res) => {
+import { Router as Router7 } from "express";
+var router12 = Router7();
+router12.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -6209,13 +4879,543 @@ router13.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router13;
+var ai_diagnostic_routes_default = router12;
 
 // server/routes/ai-learning-routes.ts
-init_learning_engine();
-import { Router as Router9 } from "express";
-var router14 = Router9();
-router14.post("/analyze-patterns", async (req, res) => {
+import { Router as Router8 } from "express";
+
+// apps/api/src/ai/learning-engine.ts
+init_schema();
+import { drizzle as drizzle6 } from "drizzle-orm/node-postgres";
+import { Pool as Pool4 } from "pg";
+import { desc as desc3, eq as eq7, and as and3, gte } from "drizzle-orm";
+var pool4 = new Pool4({ connectionString: process.env.DATABASE_URL });
+var db6 = drizzle6(pool4);
+var AILearningEngine = class {
+  patterns = /* @__PURE__ */ new Map();
+  insights = [];
+  /**
+   * Analyse les interactions passées avec Gemini pour identifier les patterns de succès
+   */
+  async analyzePastInteractions(limit = 1e3) {
+    try {
+      console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
+      const recentInteractions = await db6.select().from(aiEvents).where(and3(
+        eq7(aiEvents.provider, "gemini-api"),
+        gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
+        // 30 jours
+      )).orderBy(desc3(aiEvents.created_at)).limit(limit);
+      console.log(`\u{1F4CA} Analyse de ${recentInteractions.length} interactions Gemini`);
+      for (const interaction of recentInteractions) {
+        await this.processInteraction(interaction);
+      }
+      this.generateLearningInsights();
+      console.log(`\u2705 Apprentissage termin\xE9: ${this.patterns.size} patterns identifi\xE9s`);
+    } catch (error) {
+      console.error("\u274C Erreur lors de l'apprentissage:", error);
+    }
+  }
+  /**
+   * Traite une interaction individuelle pour extraire des patterns
+   */
+  async processInteraction(interaction) {
+    try {
+      const inputData = interaction.input_redacted || {};
+      const output = interaction.output;
+      const userFeedback = interaction.accepted ? "positive" : "neutral";
+      if (!output || !inputData.prompt) return;
+      const inputPattern = this.extractPattern(inputData.prompt);
+      if (!inputPattern) return;
+      const cleanOutput = this.cleanGeminiOutput(output);
+      const patternKey = this.generatePatternKey(inputPattern, interaction.phase);
+      if (this.patterns.has(patternKey)) {
+        const existing = this.patterns.get(patternKey);
+        existing.usage_count++;
+        existing.confidence_score = this.calculateConfidence(existing);
+        if (userFeedback === "positive" && cleanOutput.length > existing.successful_output.length) {
+          existing.successful_output = cleanOutput;
+        }
+      } else {
+        this.patterns.set(patternKey, {
+          input_pattern: inputPattern,
+          successful_output: cleanOutput,
+          context_category: this.detectCategory(inputData.prompt),
+          user_feedback: userFeedback,
+          confidence_score: userFeedback === "positive" ? 0.8 : 0.6,
+          usage_count: 1
+        });
+      }
+    } catch (error) {
+      console.error("\u274C Erreur traitement interaction:", error);
+    }
+  }
+  /**
+   * Génère des suggestions améliorées basées sur l'apprentissage
+   */
+  async generateImprovedSuggestion(inputText, fieldType, category) {
+    const inputPattern = this.extractPattern(inputText);
+    const patternKey = this.generatePatternKey(inputPattern, fieldType);
+    if (this.patterns.has(patternKey)) {
+      const pattern = this.patterns.get(patternKey);
+      if (pattern.confidence_score > 0.7) {
+        console.log(`\u{1F3AF} Pattern trouv\xE9 (confiance: ${pattern.confidence_score})`);
+        return this.adaptPattern(pattern.successful_output, inputText);
+      }
+    }
+    const similarPatterns = this.findSimilarPatterns(inputPattern, fieldType);
+    if (similarPatterns.length > 0) {
+      const bestPattern = similarPatterns[0];
+      console.log(`\u{1F50D} Pattern similaire trouv\xE9 (confiance: ${bestPattern.confidence_score})`);
+      return this.adaptPattern(bestPattern.successful_output, inputText);
+    }
+    return null;
+  }
+  /**
+   * Apprend d'une nouvelle réponse Gemini réussie
+   */
+  async learnFromSuccess(originalText, improvedText, fieldType, category, userFeedback = "positive") {
+    try {
+      console.log("\u{1F4DA} Apprentissage d'un nouveau pattern de succ\xE8s...");
+      console.log("\u{1F916} Consultation Gemini pour enrichir l'apprentissage...");
+      const geminiAnalysis = await this.consultGeminiForLearning(originalText, improvedText, fieldType, category || this.detectCategory(originalText));
+      const pattern = this.extractPattern(originalText);
+      const patternKey = this.generatePatternKey(pattern, fieldType);
+      this.patterns.set(patternKey, {
+        input_pattern: pattern,
+        successful_output: this.cleanGeminiOutput(improvedText),
+        context_category: category || this.detectCategory(originalText),
+        user_feedback: userFeedback,
+        confidence_score: this.calculateConfidenceForNewPattern(userFeedback, geminiAnalysis),
+        usage_count: 1,
+        created_at: (/* @__PURE__ */ new Date()).toISOString(),
+        last_used: (/* @__PURE__ */ new Date()).toISOString(),
+        gemini_analysis: geminiAnalysis,
+        // Nouvel enrichissement Gemini
+        improvement_factors: geminiAnalysis?.improvement_factors || [],
+        semantic_keywords: geminiAnalysis?.semantic_keywords || []
+      });
+      console.log(`\u2705 Nouveau pattern appris avec aide Gemini: ${patternKey}`);
+    } catch (error) {
+      console.error("\u274C Erreur lors de l'apprentissage:", error);
+    }
+  }
+  /**
+   * Nettoyage des réponses Gemini (enlever JSON wrapper, etc.)
+   */
+  cleanGeminiOutput(output) {
+    let cleaned = output;
+    if (cleaned.includes("```json")) {
+      const match = cleaned.match(/```json\s*\{\s*"enhancedText":\s*"([^"]+)"/);
+      if (match) {
+        cleaned = match[1];
+      }
+    }
+    cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\"/g, '"');
+    return cleaned.trim();
+  }
+  extractPattern(text2) {
+    return text2.toLowerCase().split(" ").filter((word) => word.length > 3).slice(0, 5).join(" ");
+  }
+  generatePatternKey(pattern, type) {
+    return `${type}:${pattern}`;
+  }
+  detectCategory(text2) {
+    const categories = {
+      "d\xE9veloppement": ["site", "web", "app", "code", "javascript"],
+      "design": ["logo", "graphique", "design", "ui", "ux"],
+      "travaux": ["peinture", "travaux", "r\xE9novation", "construction"],
+      "marketing": ["marketing", "pub", "seo", "social"],
+      "r\xE9daction": ["article", "contenu", "texte", "blog"]
+    };
+    for (const [cat, keywords] of Object.entries(categories)) {
+      if (keywords.some((kw) => text2.toLowerCase().includes(kw))) {
+        return cat;
+      }
+    }
+    return "g\xE9n\xE9ral";
+  }
+  calculateConfidence(pattern) {
+    let confidence = 0.5;
+    confidence += Math.min(0.3, pattern.usage_count * 0.05);
+    if (pattern.user_feedback === "positive") confidence += 0.2;
+    if (pattern.user_feedback === "negative") confidence -= 0.3;
+    return Math.max(0.1, Math.min(0.95, confidence));
+  }
+  calculateConfidenceForNewPattern(userFeedback, geminiAnalysis) {
+    let confidence = userFeedback === "positive" ? 0.8 : 0.6;
+    if (geminiAnalysis) {
+      confidence += (geminiAnalysis.quality_score || 0.8) * 0.1;
+      confidence += (geminiAnalysis.reusability_score || 0.7) * 0.1;
+    }
+    return Math.max(0.1, Math.min(0.95, confidence));
+  }
+  findSimilarPatterns(inputPattern, fieldType) {
+    const similar = [];
+    const inputWords = inputPattern.split(" ");
+    for (const [key, pattern] of Array.from(this.patterns.entries())) {
+      if (!key.startsWith(fieldType)) continue;
+      const patternWords = pattern.input_pattern.split(" ");
+      const commonWords = inputWords.filter((word) => patternWords.includes(word));
+      const similarity = commonWords.length / Math.max(inputWords.length, patternWords.length);
+      if (similarity > 0.3) {
+        similar.push({ ...pattern, similarity });
+      }
+    }
+    return similar.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
+  }
+  adaptPattern(patternOutput, newInput) {
+    return patternOutput.replace(/\[CONTEXTE\]/g, newInput.substring(0, 50));
+  }
+  generateLearningInsights() {
+    this.insights = [];
+    const categoryStats = /* @__PURE__ */ new Map();
+    for (const pattern of Array.from(this.patterns.values())) {
+      const cat = pattern.context_category;
+      if (categoryStats.has(cat)) {
+        const stats = categoryStats.get(cat);
+        stats.count++;
+        stats.avgConfidence = (stats.avgConfidence + pattern.confidence_score) / 2;
+      } else {
+        categoryStats.set(cat, { count: 1, avgConfidence: pattern.confidence_score });
+      }
+    }
+    for (const [category, stats] of Array.from(categoryStats.entries())) {
+      if (stats.count > 5 && stats.avgConfidence > 0.7) {
+        this.insights.push({
+          pattern_type: "enhancement",
+          improvement_suggestion: `Cat\xE9gorie ${category}: ${stats.count} patterns fiables identifi\xE9s`,
+          confidence: stats.avgConfidence,
+          based_on_samples: stats.count
+        });
+      }
+    }
+  }
+  /**
+   * Consultation Gemini pour enrichir l'apprentissage
+   */
+  async consultGeminiForLearning(originalText, improvedText, fieldType, category) {
+    try {
+      const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+      const prompt = {
+        role: "expert_learning_analyst",
+        task: "improvement_pattern_analysis",
+        original: originalText,
+        improved: improvedText,
+        field_type: fieldType,
+        category,
+        request: "Analyse ce pattern d'am\xE9lioration et identifie les facteurs cl\xE9s de succ\xE8s"
+      };
+      console.log("\u{1F393} Gemini analyse du pattern d'am\xE9lioration...");
+      const response = await geminiCall2("learning_analysis", prompt);
+      if (response && response.output) {
+        console.log("\u2705 Analyse Gemini re\xE7ue pour apprentissage");
+        return {
+          improvement_factors: this.extractImprovementFactors(response.output),
+          semantic_keywords: this.extractSemanticKeywords(response.output),
+          quality_score: this.extractQualityScore(response.output),
+          reusability_score: this.extractReusabilityScore(response.output),
+          pattern_type: this.classifyPatternType(response.output),
+          raw_analysis: response.output
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Erreur consultation Gemini apprentissage:", error);
+      return null;
+    }
+  }
+  extractImprovementFactors(output) {
+    if (typeof output === "string") {
+      const lines = output.split("\n").filter(
+        (line) => line.includes("facteur") || line.includes("am\xE9lior") || line.includes("cl\xE9")
+      );
+      return lines.slice(0, 5);
+    }
+    return output.improvement_factors || [];
+  }
+  extractSemanticKeywords(output) {
+    if (typeof output === "string") {
+      const words = output.toLowerCase().split(/\s+/).filter(
+        (word) => word.length > 4 && !["dans", "avec", "pour", "sans", "plus"].includes(word)
+      );
+      return words.slice(0, 10);
+    }
+    return output.semantic_keywords || [];
+  }
+  extractQualityScore(output) {
+    if (typeof output === "string") {
+      const match = output.match(/qualité.*?(\d+)/i);
+      return match ? parseInt(match[1]) / 100 : 0.8;
+    }
+    return output.quality_score || 0.8;
+  }
+  extractReusabilityScore(output) {
+    if (typeof output === "string") {
+      const match = output.match(/réutilis.*?(\d+)/i);
+      return match ? parseInt(match[1]) / 100 : 0.7;
+    }
+    return output.reusability_score || 0.7;
+  }
+  classifyPatternType(output) {
+    if (typeof output === "string") {
+      const types = ["structuration", "clarification", "enrichissement", "simplification"];
+      const found = types.find((type) => output.toLowerCase().includes(type));
+      return found || "general";
+    }
+    return output.pattern_type || "general";
+  }
+  /**
+   * Apprentissage universel pour TOUTES les interactions Gemini
+   */
+  async learnFromGeminiInteraction(interactionType, inputData, geminiResponse, finalResult, userFeedback = "positive") {
+    try {
+      console.log(`\u{1F393} Apprentissage du pattern ${interactionType} de Gemini...`);
+      const geminiMetaAnalysis = await this.consultGeminiForMetaLearning(
+        interactionType,
+        inputData,
+        geminiResponse,
+        finalResult
+      );
+      const pattern = this.generateUniversalPattern(inputData, interactionType);
+      const patternKey = this.generatePatternKey(pattern, interactionType);
+      const qualityScore = this.assessGeminiResponseQuality(geminiResponse, finalResult);
+      const confidenceScore = this.calculateConfidenceForGeminiInteraction(
+        userFeedback,
+        qualityScore,
+        geminiMetaAnalysis
+      );
+      this.patterns.set(patternKey, {
+        input_pattern: pattern,
+        successful_output: this.extractSuccessfulOutput(geminiResponse, finalResult),
+        context_category: this.detectCategoryFromInput(inputData),
+        user_feedback: userFeedback,
+        confidence_score: confidenceScore,
+        usage_count: 1,
+        created_at: (/* @__PURE__ */ new Date()).toISOString(),
+        last_used: (/* @__PURE__ */ new Date()).toISOString(),
+        gemini_analysis: geminiResponse,
+        improvement_factors: this.extractImprovementFactorsUniversal(geminiResponse),
+        semantic_keywords: this.extractSemanticKeywordsUniversal(inputData),
+        interaction_type: interactionType,
+        quality_metrics: {
+          response_quality: qualityScore,
+          relevance_score: geminiMetaAnalysis?.relevance_score || 0.8,
+          innovation_factor: geminiMetaAnalysis?.innovation_factor || 0.7,
+          reusability_potential: geminiMetaAnalysis?.reusability_potential || 0.8
+        },
+        meta_analysis: geminiMetaAnalysis
+      });
+      console.log(`\u2705 Pattern ${interactionType} appris avec m\xE9tadonn\xE9es Gemini: ${patternKey}`);
+      this.updateInsightsFromNewPattern(interactionType, confidenceScore);
+    } catch (error) {
+      console.error(`\u274C Erreur apprentissage ${interactionType}:`, error);
+    }
+  }
+  /**
+   * Génère un pattern universel à partir de n'importe quel input
+   */
+  generateUniversalPattern(inputData, type) {
+    let extractedText = "";
+    if (typeof inputData === "string") {
+      extractedText = inputData;
+    } else if (inputData.description) {
+      extractedText = inputData.description;
+    } else if (inputData.mission?.description) {
+      extractedText = inputData.mission.description;
+    } else if (inputData.title) {
+      extractedText = inputData.title;
+    } else {
+      extractedText = JSON.stringify(inputData).substring(0, 200);
+    }
+    return this.extractPattern(extractedText);
+  }
+  /**
+   * Évalue la qualité de la réponse Gemini
+   */
+  assessGeminiResponseQuality(geminiResponse, finalResult) {
+    let quality = 0.7;
+    if (geminiResponse && typeof geminiResponse === "object") {
+      const responseFields = Object.keys(geminiResponse).length;
+      quality += Math.min(0.2, responseFields * 0.05);
+    }
+    if (finalResult && geminiResponse) {
+      quality += 0.1;
+    }
+    return Math.min(0.95, quality);
+  }
+  /**
+   * Calcul de confiance pour interactions Gemini
+   */
+  calculateConfidenceForGeminiInteraction(userFeedback, qualityScore, metaAnalysis) {
+    let confidence = 0.8;
+    if (userFeedback === "positive") confidence += 0.1;
+    if (userFeedback === "negative") confidence -= 0.2;
+    confidence += (qualityScore - 0.7) * 0.5;
+    if (metaAnalysis) {
+      confidence += (metaAnalysis.relevance_score || 0.8) * 0.1;
+      confidence += (metaAnalysis.innovation_factor || 0.7) * 0.05;
+    }
+    return Math.max(0.3, Math.min(0.98, confidence));
+  }
+  /**
+   * Extrait le résultat réussi pour apprentissage
+   */
+  extractSuccessfulOutput(geminiResponse, finalResult) {
+    if (typeof geminiResponse === "string") {
+      return geminiResponse.substring(0, 500);
+    }
+    if (geminiResponse && typeof geminiResponse === "object") {
+      return JSON.stringify(geminiResponse).substring(0, 500);
+    }
+    if (finalResult) {
+      return JSON.stringify(finalResult).substring(0, 500);
+    }
+    return "R\xE9sultat Gemini trait\xE9";
+  }
+  /**
+   * Détecte la catégorie depuis n'importe quel input
+   */
+  detectCategoryFromInput(inputData) {
+    let textToAnalyze = "";
+    if (typeof inputData === "string") {
+      textToAnalyze = inputData;
+    } else if (inputData.category) {
+      return inputData.category;
+    } else if (inputData.mission?.category) {
+      return inputData.mission.category;
+    } else if (inputData.description) {
+      textToAnalyze = inputData.description;
+    } else {
+      textToAnalyze = JSON.stringify(inputData);
+    }
+    return this.detectCategory(textToAnalyze);
+  }
+  /**
+   * Extraction universelle de facteurs d'amélioration
+   */
+  extractImprovementFactorsUniversal(geminiResponse) {
+    const factors = [];
+    if (typeof geminiResponse === "string") {
+      const lines = geminiResponse.split("\n").filter(
+        (line) => line.includes("am\xE9liorer") || line.includes("optimiser") || line.includes("recommand")
+      );
+      factors.push(...lines.slice(0, 3));
+    } else if (geminiResponse && typeof geminiResponse === "object") {
+      if (geminiResponse.recommendations) factors.push(...geminiResponse.recommendations);
+      if (geminiResponse.suggestions) factors.push(...geminiResponse.suggestions);
+      if (geminiResponse.improvements) factors.push(...geminiResponse.improvements);
+    }
+    return factors.slice(0, 5);
+  }
+  /**
+   * Extraction universelle de mots-clés sémantiques
+   */
+  extractSemanticKeywordsUniversal(inputData) {
+    let textToAnalyze = "";
+    if (typeof inputData === "string") {
+      textToAnalyze = inputData;
+    } else if (inputData.description) {
+      textToAnalyze = inputData.description;
+    } else {
+      textToAnalyze = JSON.stringify(inputData);
+    }
+    const words = textToAnalyze.toLowerCase().split(/\s+/).filter((word) => word.length > 3).filter((word) => !["dans", "avec", "pour", "sans", "plus", "cette", "tous"].includes(word));
+    return Array.from(new Set(words)).slice(0, 10);
+  }
+  /**
+   * Met à jour les insights globaux
+   */
+  updateInsightsFromNewPattern(interactionType, confidenceScore) {
+    if (confidenceScore > 0.85) {
+      this.insights.push({
+        pattern_type: "enhancement",
+        improvement_suggestion: `Nouveau pattern ${interactionType} de haute qualit\xE9 identifi\xE9`,
+        confidence: confidenceScore,
+        based_on_samples: 1
+      });
+    }
+  }
+  /**
+   * Consultation Gemini pour méta-apprentissage
+   */
+  async consultGeminiForMetaLearning(interactionType, inputData, geminiResponse, finalResult) {
+    try {
+      const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
+      const prompt = {
+        role: "expert_meta_learning_analyst",
+        task: "self_analysis_and_improvement",
+        interaction_type: interactionType,
+        original_input: inputData,
+        my_response: geminiResponse,
+        final_outcome: finalResult,
+        request: "Analyse ta propre contribution et identifie les patterns d'am\xE9lioration pour mes futurs apprentissages"
+      };
+      console.log("\u{1F504} Gemini m\xE9ta-analyse de sa propre contribution...");
+      const response = await geminiCall2("meta_learning_analysis", prompt);
+      if (response && response.output) {
+        console.log("\u2705 M\xE9ta-analyse Gemini re\xE7ue");
+        return {
+          relevance_score: this.extractMetaScore(response.output, "relevance"),
+          innovation_factor: this.extractMetaScore(response.output, "innovation"),
+          reusability_potential: this.extractMetaScore(response.output, "reusability"),
+          improvement_areas: this.extractImprovementAreas(response.output),
+          pattern_insights: this.extractPatternInsights(response.output),
+          raw_meta_analysis: response.output
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Erreur m\xE9ta-apprentissage Gemini:", error);
+      return null;
+    }
+  }
+  extractMetaScore(output, scoreType) {
+    if (typeof output === "string") {
+      const match = output.match(new RegExp(`${scoreType}.*?(\\d+)`, "i"));
+      return match ? parseInt(match[1]) / 100 : 0.8;
+    }
+    return output[`${scoreType}_score`] || 0.8;
+  }
+  extractImprovementAreas(output) {
+    if (typeof output === "string") {
+      const lines = output.split("\n").filter(
+        (line) => line.includes("am\xE9liorer") || line.includes("d\xE9velopper") || line.includes("renforcer")
+      );
+      return lines.slice(0, 3);
+    }
+    return output.improvement_areas || [];
+  }
+  extractPatternInsights(output) {
+    if (typeof output === "string") {
+      const lines = output.split("\n").filter(
+        (line) => line.includes("pattern") || line.includes("tendance") || line.includes("r\xE9current")
+      );
+      return lines.slice(0, 3);
+    }
+    return output.pattern_insights || [];
+  }
+  /**
+   * API publique pour obtenir les statistiques d'apprentissage
+   */
+  getLearningStats() {
+    const stats = {
+      total_patterns: this.patterns.size,
+      insights_generated: this.insights.length,
+      high_confidence_patterns: Array.from(this.patterns.values()).filter((p) => p.confidence_score > 0.8).length,
+      categories_learned: Array.from(new Set(Array.from(this.patterns.values()).map((p) => p.context_category))).length,
+      interaction_types: Array.from(new Set(Array.from(this.patterns.values()).map((p) => p.interaction_type || "unknown"))),
+      gemini_contributions: Array.from(this.patterns.values()).filter((p) => p.gemini_analysis).length,
+      avg_confidence: Array.from(this.patterns.values()).reduce((sum, p) => sum + p.confidence_score, 0) / this.patterns.size || 0
+    };
+    console.log("\u{1F4CA} Statistiques d'apprentissage Gemini:", stats);
+    return stats;
+  }
+};
+var aiLearningEngine = new AILearningEngine();
+
+// server/routes/ai-learning-routes.ts
+var router13 = Router8();
+router13.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -6233,7 +5433,7 @@ router14.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router14.get("/stats", (req, res) => {
+router13.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -6245,39 +5445,39 @@ router14.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router14;
+var ai_learning_routes_default = router13;
 
 // server/routes/team-routes.ts
-import { Router as Router10 } from "express";
-import { z as z7 } from "zod";
-var router15 = Router10();
-var teamAnalysisSchema = z7.object({
-  description: z7.string().min(10),
-  title: z7.string().min(3),
-  category: z7.string().min(2),
-  budget: z7.union([z7.string(), z7.number()])
+import { Router as Router9 } from "express";
+import { z as z6 } from "zod";
+var router14 = Router9();
+var teamAnalysisSchema = z6.object({
+  description: z6.string().min(10),
+  title: z6.string().min(3),
+  category: z6.string().min(2),
+  budget: z6.union([z6.string(), z6.number()])
 });
-var teamProjectSchema = z7.object({
-  projectData: z7.object({
-    title: z7.string().min(3),
-    description: z7.string().min(10),
-    category: z7.string().min(2),
-    budget: z7.union([z7.string(), z7.number()]),
-    location: z7.string().optional(),
-    isTeamMode: z7.boolean()
+var teamProjectSchema = z6.object({
+  projectData: z6.object({
+    title: z6.string().min(3),
+    description: z6.string().min(10),
+    category: z6.string().min(2),
+    budget: z6.union([z6.string(), z6.number()]),
+    location: z6.string().optional(),
+    isTeamMode: z6.boolean()
   }),
-  teamRequirements: z7.array(z7.object({
-    profession: z7.string(),
-    description: z7.string(),
-    required_skills: z7.array(z7.string()),
-    estimated_budget: z7.number(),
-    estimated_days: z7.number(),
-    min_experience: z7.number(),
-    is_lead_role: z7.boolean(),
-    importance: z7.enum(["high", "medium", "low"])
+  teamRequirements: z6.array(z6.object({
+    profession: z6.string(),
+    description: z6.string(),
+    required_skills: z6.array(z6.string()),
+    estimated_budget: z6.number(),
+    estimated_days: z6.number(),
+    min_experience: z6.number(),
+    is_lead_role: z6.boolean(),
+    importance: z6.enum(["high", "medium", "low"])
   }))
 });
-router15.post("/analyze", async (req, res) => {
+router14.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -6322,7 +5522,7 @@ router15.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router15.post("/create-project", async (req, res) => {
+router14.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -6377,7 +5577,7 @@ router15.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router15;
+var team_routes_default = router14;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -6614,7 +5814,6 @@ app.use("/api/ai/suggest-pricing", strictAiRateLimit);
 app.use("/api/ai/enhance-description", strictAiRateLimit);
 app.use("/api/ai/analyze-quality", strictAiRateLimit);
 app.use("/api/ai/enhance-text", strictAiRateLimit);
-app.use("/api/ai", aiRateLimit, ai_routes_default);
 app.use("/api/ai", aiRateLimit, ai_suggestions_routes_default);
 app.use("/api/ai/missions", aiRateLimit, ai_missions_routes_default);
 app.use("/api-ai-orchestrator", strictAiRateLimit, ai_default);
