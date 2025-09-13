@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -128,27 +129,15 @@ export function TeamBidForm({ missionId, onSuccess }: TeamBidFormProps) {
         description: formData.message
       };
 
-      const response = await fetch('/api/bids', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          mission_id: parseInt(missionId),
-          provider_id: user.id,
-          amount: formData.amount,
-          timeline_days: parseInt(formData.timeline_days),
-          message: formData.message,
-          bid_type: 'team',
-          team_composition: teamComposition,
-          team_lead_id: user.id
-        })
+      const response = await apiRequest('POST', '/api/bids', {
+        mission_id: parseInt(missionId),
+        amount: formData.amount,
+        timeline_days: parseInt(formData.timeline_days),
+        message: formData.message,
+        bid_type: 'team',
+        team_composition: teamComposition,
+        team_lead_id: user.id
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erreur lors de la soumission');
-      }
 
       const result = await response.json();
       

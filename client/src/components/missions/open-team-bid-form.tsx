@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -130,39 +131,27 @@ export function OpenTeamBidForm({ missionId, onSuccess }: OpenTeamBidFormProps) 
 
     try {
       // Créer l'équipe ouverte
-      const response = await fetch('/api/open-teams', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          mission_id: parseInt(missionId),
-          creator_id: user.id,
-          name: formData.name,
-          description: formData.description,
-          estimated_budget: parseInt(formData.estimated_budget) * 100, // Convertir en centimes
-          estimated_timeline_days: parseInt(formData.estimated_timeline_days),
-          max_members: parseInt(formData.max_members),
-          visibility: formData.visibility,
-          auto_accept: formData.auto_accept,
-          required_roles: validRoles,
-          members: [
-            {
-              user_id: user.id,
-              name: user.name,
-              role: 'Initiateur',
-              experience_years: 5,
-              rating: 4.5,
-              joined_at: new Date().toISOString()
-            }
-          ]
-        })
+      const response = await apiRequest('POST', '/api/open-teams', {
+        mission_id: parseInt(missionId),
+        name: formData.name,
+        description: formData.description,
+        estimated_budget: parseInt(formData.estimated_budget) * 100, // Convertir en centimes
+        estimated_timeline_days: parseInt(formData.estimated_timeline_days),
+        max_members: parseInt(formData.max_members),
+        visibility: formData.visibility,
+        auto_accept: formData.auto_accept,
+        required_roles: validRoles,
+        members: [
+          {
+            user_id: user.id,
+            name: user.name,
+            role: 'Initiateur',
+            experience_years: 5,
+            rating: 4.5,
+            joined_at: new Date().toISOString()
+          }
+        ]
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erreur lors de la création de l\'équipe');
-      }
 
       const result = await response.json();
       

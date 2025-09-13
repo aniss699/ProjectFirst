@@ -15,7 +15,7 @@ interface BidFormProps {
 export function BidForm({ missionId, onSuccess }: BidFormProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    price: '',
+    amount: '',
     timeline: '',
     proposal: '',
   });
@@ -30,7 +30,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
       ['/api/users', user?.id, 'bids']
     ],
     onSuccess: () => {
-      setFormData({ price: '', timeline: '', proposal: '' });
+      setFormData({ amount: '', timeline: '', proposal: '' });
       onSuccess();
     },
   });
@@ -58,7 +58,7 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
       missionId,
       providerId: user.id,
       providerName: user.name,
-      price: parseFloat(formData.price),
+      amount: formData.amount,
       rating: user.rating || '5.0',
     });
   };
@@ -76,18 +76,18 @@ export function BidForm({ missionId, onSuccess }: BidFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="price" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Label htmlFor="amount" className="text-sm font-medium text-gray-700 flex items-center gap-2">
               <span className="text-lg">💰</span>
               <span>Prix proposé (€)</span>
             </Label>
             <Input
-              id="price"
+              id="amount"
               type="number"
               step="0.01"
               min="0"
               placeholder="Ex: 2500"
-              value={formData.price}
-              onChange={(e) => handleInputChange('price', e.target.value)}
+              value={formData.amount}
+              onChange={(e) => handleInputChange('amount', e.target.value)}
               className="h-11 rounded-lg border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-colors"
               required
               data-testid="input-bid-price"

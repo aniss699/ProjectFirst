@@ -149,7 +149,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   }
 
   const category = getCategoryById(mission.category);
-  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.price) - parseFloat(b.price)) : [];
+  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount)) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
   return (

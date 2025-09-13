@@ -181,6 +181,7 @@ import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js';
 import aiLearningRoutes from './routes/ai-learning-routes.js';
 import teamRoutes from './routes/team-routes.js';
 import openTeamsRoutes from './routes/open-teams.js';
+import bidsRoutes from './routes/bids.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -246,6 +247,14 @@ app.use('/api/open-teams', (req, res, next) => {
   console.log(`🤝 Open teams request: ${req.method} ${req.path}`);
   next();
 }, openTeamsRoutes);
+
+console.log('🎯 Registering bids routes...');
+app.use('/api/bids', (req, res, next) => {
+  console.log(`🎯 Bids request: ${req.method} ${req.path}`, { 
+    body: req.body.mission_id ? { mission_id: req.body.mission_id, bid_type: req.body.bid_type } : {} 
+  });
+  next();
+}, bidsRoutes);
 
 // Performance stats endpoint
 app.get('/api/performance', (req, res) => {
