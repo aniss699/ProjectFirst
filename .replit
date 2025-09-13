@@ -11,10 +11,6 @@ packages = ["libxcrypt"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 43069
-externalPort = 3000
-
 [workflows]
 runButton = "Project"
 
@@ -40,7 +36,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "npx tsx server/index.ts"
 waitForPort = 5000
 
 [[workflows.workflow]]
