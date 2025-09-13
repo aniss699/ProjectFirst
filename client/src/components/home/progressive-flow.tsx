@@ -79,8 +79,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     title: '',
     description: '',
     budget: '',
-    timeline: '',
-    requirements: '',
     location: {
       address: '',
       lat: null as number | null,
@@ -165,8 +163,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         // Mode mission simple
         const missionData = {
           title: projectData.title,
-          description: projectData.description + 
-            (projectData.requirements ? `\n\nExigences spécifiques: ${projectData.requirements}` : ''),
+          description: projectData.description,
           category: selectedCategory,
           budget: Number(projectData.budget),
           location: projectData.needsLocation ? projectData.location.address : 'Remote',
@@ -677,71 +674,23 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Euro className="w-4 h-4 inline mr-1" />
-                Budget en euros *
-              </label>
-              <Input
-                type="number"
-                placeholder="Ex: 5000"
-                min="10"
-                max="1000000"
-                value={projectData.budget}
-                onChange={(e) => setProjectData(prev => ({ ...prev, budget: e.target.value }))}
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Montant en euros (entre 10€ et 1 000 000€)
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 inline mr-1" />
-                Délai souhaité (optionnel)
-              </label>
-              <Input
-                placeholder="Ex: 2-3 mois"
-                value={projectData.timeline}
-                onChange={(e) => setProjectData(prev => ({ ...prev, timeline: e.target.value }))}
-              />
-            </div>
-          </div>
-
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Exigences spécifiques (optionnel)
-              </label>
-              <TextSuggestionButton
-                currentText={projectData.requirements}
-                fieldType="requirements"
-                category={selectedCategory}
-                onSuggestion={(suggestedText) => {
-                  setProjectData(prev => ({ ...prev, requirements: suggestedText }));
-                  setTextSuggestionFeedback(prev => ({ ...prev, requirements: true }));
-                }}
-                className="text-xs"
-              />
-            </div>
-            <Textarea
-              placeholder="Technologies requises, contraintes particulières, livrables attendus..."
-              rows={3}
-              value={projectData.requirements}
-              onChange={(e) => setProjectData(prev => ({ ...prev, requirements: e.target.value }))}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Euro className="w-4 h-4 inline mr-1" />
+              Budget en euros *
+            </label>
+            <Input
+              type="number"
+              placeholder="Ex: 5000"
+              min="10"
+              max="1000000"
+              value={projectData.budget}
+              onChange={(e) => setProjectData(prev => ({ ...prev, budget: e.target.value }))}
+              required
             />
-            {/* Mini feedback après suggestion d'exigences */}
-            {textSuggestionFeedback.requirements && (
-              <div className="mt-2">
-                <AIFeedbackButtons
-                  phase="brief_enhance"
-                  prompt={{ field: 'requirements', text: projectData.requirements }}
-                  onFeedback={() => setTextSuggestionFeedback(prev => ({ ...prev, requirements: false }))}
-                />
-              </div>
-            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Montant en euros (entre 10€ et 1 000 000€)
+            </p>
           </div>
 
           {/* Intégration IA Enhancement */}
