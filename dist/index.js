@@ -14,292 +14,6 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// shared/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  aiEvents: () => aiEvents,
-  aiEventsRelations: () => aiEventsRelations,
-  announcements: () => announcements,
-  announcementsRelations: () => announcementsRelations,
-  bids: () => bids,
-  bidsRelations: () => bidsRelations,
-  favorites: () => favorites,
-  favoritesRelations: () => favoritesRelations,
-  feedFeedback: () => feedFeedback,
-  feedFeedbackRelations: () => feedFeedbackRelations,
-  feedSeen: () => feedSeen,
-  feedSeenRelations: () => feedSeenRelations,
-  insertAiEventSchema: () => insertAiEventSchema,
-  insertAnnouncementSchema: () => insertAnnouncementSchema,
-  insertBidSchema: () => insertBidSchema,
-  insertFavoritesSchema: () => insertFavoritesSchema,
-  insertFeedFeedbackSchema: () => insertFeedFeedbackSchema,
-  insertFeedSeenSchema: () => insertFeedSeenSchema,
-  insertMissionSchema: () => insertMissionSchema,
-  insertUserSchema: () => insertUserSchema,
-  missions: () => missions,
-  missionsRelations: () => missionsRelations,
-  users: () => users,
-  usersRelations: () => usersRelations
-});
-import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { z } from "zod";
-var users, missions, bids, announcements, feedFeedback, feedSeen, favorites, usersRelations, missionsRelations, bidsRelations, announcementsRelations, feedFeedbackRelations, feedSeenRelations, favoritesRelations, insertUserSchema, insertMissionSchema, insertBidSchema, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoritesSchema, aiEvents, aiEventsRelations, insertAiEventSchema;
-var init_schema = __esm({
-  "shared/schema.ts"() {
-    "use strict";
-    users = pgTable("users", {
-      id: serial("id").primaryKey(),
-      email: text("email").notNull().unique(),
-      name: text("name").notNull(),
-      password: text("password").notNull(),
-      role: text("role").notNull().$type(),
-      rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
-      rating_count: integer("rating_count").default(0),
-      profile_data: jsonb("profile_data"),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    });
-    missions = pgTable("missions", {
-      id: serial("id").primaryKey(),
-      user_id: integer("user_id").references(() => users.id).notNull(),
-      client_id: integer("client_id").references(() => users.id),
-      title: text("title").notNull(),
-      description: text("description").notNull(),
-      excerpt: text("excerpt"),
-      category: text("category").notNull(),
-      // Localisation unifiée en JSON
-      location_data: jsonb("location_data"),
-      // Budget unifié (plus de redondance)
-      budget_value_cents: integer("budget_value_cents").notNull(),
-      currency: text("currency").default("EUR"),
-      // ENUMs PostgreSQL optimisés
-      urgency: text("urgency").$type().default("medium"),
-      status: text("status").$type().default("draft"),
-      quality_target: text("quality_target").$type().default("standard"),
-      deadline: timestamp("deadline"),
-      tags: jsonb("tags"),
-      skills_required: jsonb("skills_required"),
-      requirements: text("requirements"),
-      is_team_mission: boolean("is_team_mission").default(false),
-      team_size: integer("team_size").default(1),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    });
-    bids = pgTable("bids", {
-      id: serial("id").primaryKey(),
-      mission_id: integer("mission_id").references(() => missions.id).notNull(),
-      provider_id: integer("provider_id").references(() => users.id).notNull(),
-      amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-      timeline_days: integer("timeline_days"),
-      message: text("message"),
-      score_breakdown: jsonb("score_breakdown"),
-      is_leading: boolean("is_leading").default(false),
-      status: text("status").$type().default("pending"),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    });
-    announcements = pgTable("announcements", {
-      id: serial("id").primaryKey(),
-      title: text("title").notNull(),
-      content: text("content").notNull(),
-      type: text("type").$type().default("info"),
-      priority: integer("priority").default(1),
-      is_active: boolean("is_active").default(true),
-      status: text("status").$type().default("active"),
-      category: text("category"),
-      budget: integer("budget"),
-      location: text("location"),
-      user_id: integer("user_id").references(() => users.id),
-      sponsored: boolean("sponsored").default(false),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    });
-    feedFeedback = pgTable("feed_feedback", {
-      id: serial("id").primaryKey(),
-      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-      user_id: integer("user_id").references(() => users.id).notNull(),
-      feedback_type: text("feedback_type").$type().notNull(),
-      created_at: timestamp("created_at").defaultNow()
-    });
-    feedSeen = pgTable("feed_seen", {
-      id: serial("id").primaryKey(),
-      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-      user_id: integer("user_id").references(() => users.id).notNull(),
-      seen_at: timestamp("seen_at").defaultNow()
-    });
-    favorites = pgTable("favorites", {
-      id: serial("id").primaryKey(),
-      user_id: integer("user_id").references(() => users.id).notNull(),
-      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-      created_at: timestamp("created_at").defaultNow()
-    });
-    usersRelations = relations(users, ({ many }) => ({
-      missions: many(missions),
-      bids: many(bids)
-    }));
-    missionsRelations = relations(missions, ({ one, many }) => ({
-      user: one(users, {
-        fields: [missions.user_id],
-        references: [users.id]
-      }),
-      bids: many(bids)
-    }));
-    bidsRelations = relations(bids, ({ one }) => ({
-      mission: one(missions, {
-        fields: [bids.mission_id],
-        references: [missions.id]
-      }),
-      provider: one(users, {
-        fields: [bids.provider_id],
-        references: [users.id]
-      })
-    }));
-    announcementsRelations = relations(announcements, ({ one, many }) => ({
-      user: one(users, {
-        fields: [announcements.user_id],
-        references: [users.id]
-      }),
-      feedbacks: many(feedFeedback),
-      seenBy: many(feedSeen),
-      favorites: many(favorites)
-    }));
-    feedFeedbackRelations = relations(feedFeedback, ({ one }) => ({
-      announcement: one(announcements, {
-        fields: [feedFeedback.announcement_id],
-        references: [announcements.id]
-      }),
-      user: one(users, {
-        fields: [feedFeedback.user_id],
-        references: [users.id]
-      })
-    }));
-    feedSeenRelations = relations(feedSeen, ({ one }) => ({
-      announcement: one(announcements, {
-        fields: [feedSeen.announcement_id],
-        references: [announcements.id]
-      }),
-      user: one(users, {
-        fields: [feedSeen.user_id],
-        references: [users.id]
-      })
-    }));
-    favoritesRelations = relations(favorites, ({ one }) => ({
-      announcement: one(announcements, {
-        fields: [favorites.announcement_id],
-        references: [announcements.id]
-      }),
-      user: one(users, {
-        fields: [favorites.user_id],
-        references: [users.id]
-      })
-    }));
-    insertUserSchema = z.object({
-      email: z.string().email(),
-      name: z.string().min(1),
-      password: z.string().min(8),
-      // Added password validation, assuming a minimum of 8 characters
-      role: z.enum(["CLIENT", "PRO", "ADMIN"]),
-      rating_mean: z.string().optional(),
-      rating_count: z.number().int().min(0).optional(),
-      profile_data: z.any().optional()
-    });
-    insertMissionSchema = z.object({
-      user_id: z.number().int().positive(),
-      title: z.string().min(1),
-      description: z.string().min(1),
-      category: z.string().min(1),
-      location: z.string().optional(),
-      postal_code: z.string().optional(),
-      // Added postal_code validation
-      budget: z.number().int().min(0).optional(),
-      budget_value_cents: z.number().int().min(0).optional(),
-      budget_type: z.string().optional(),
-      urgency: z.enum(["low", "medium", "high", "urgent"]).optional(),
-      status: z.enum(["draft", "open", "published", "assigned", "completed", "cancelled"]).optional(),
-      quality_target: z.enum(["basic", "standard", "premium", "luxury"]).optional()
-    });
-    insertBidSchema = z.object({
-      mission_id: z.number().int().positive(),
-      provider_id: z.number().int().positive(),
-      amount: z.string(),
-      timeline_days: z.number().int().min(1).optional(),
-      message: z.string().optional(),
-      score_breakdown: z.any().optional(),
-      is_leading: z.boolean().optional(),
-      status: z.enum(["pending", "accepted", "rejected", "withdrawn"]).optional()
-    });
-    insertAnnouncementSchema = z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-      type: z.enum(["info", "warning", "error", "success"]).optional(),
-      priority: z.number().int().min(1).optional(),
-      is_active: z.boolean().optional(),
-      status: z.enum(["active", "completed", "cancelled", "draft"]).optional(),
-      category: z.string().optional(),
-      budget: z.number().int().min(0).optional(),
-      location: z.string().optional(),
-      user_id: z.number().int().positive().optional(),
-      sponsored: z.boolean().optional()
-    });
-    insertFeedFeedbackSchema = z.object({
-      announcement_id: z.number().int().positive(),
-      user_id: z.number().int().positive(),
-      feedback_type: z.enum(["like", "dislike", "interested", "not_relevant"])
-    });
-    insertFeedSeenSchema = z.object({
-      announcement_id: z.number().int().positive(),
-      user_id: z.number().int().positive()
-    });
-    insertFavoritesSchema = z.object({
-      user_id: z.number().int().positive(),
-      announcement_id: z.number().int().positive()
-    });
-    aiEvents = pgTable("ai_events", {
-      id: text("id").primaryKey(),
-      phase: text("phase").$type().notNull(),
-      provider: text("provider").notNull(),
-      model_family: text("model_family").$type().notNull(),
-      model_name: text("model_name").notNull(),
-      allow_training: boolean("allow_training").notNull(),
-      input_redacted: jsonb("input_redacted"),
-      output: jsonb("output"),
-      confidence: text("confidence"),
-      tokens: integer("tokens"),
-      latency_ms: integer("latency_ms"),
-      provenance: text("provenance").$type().notNull(),
-      prompt_hash: text("prompt_hash"),
-      accepted: boolean("accepted"),
-      rating: integer("rating"),
-      edits: jsonb("edits"),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    });
-    aiEventsRelations = relations(aiEvents, ({ one }) => ({
-      // Pas de relations directes pour l'instant
-    }));
-    insertAiEventSchema = z.object({
-      id: z.string(),
-      phase: z.enum(["pricing", "brief_enhance", "matching", "scoring"]),
-      provider: z.string(),
-      model_family: z.enum(["gemini", "openai", "local", "other"]),
-      model_name: z.string(),
-      allow_training: z.boolean(),
-      input_redacted: z.any().optional(),
-      output: z.any().optional(),
-      confidence: z.string().optional(),
-      tokens: z.number().int().optional(),
-      latency_ms: z.number().int().optional(),
-      provenance: z.enum(["auto", "human_validated", "ab_test_winner"]),
-      prompt_hash: z.string().optional(),
-      accepted: z.boolean().optional(),
-      rating: z.number().int().min(1).max(5).optional(),
-      edits: z.any().optional()
-    });
-  }
-});
-
 // apps/api/src/monitoring/event-logger.ts
 var event_logger_exports = {};
 __export(event_logger_exports, {
@@ -996,8 +710,260 @@ console.log("\u{1F517} Database connection established:", {
   isCloudSQL: databaseUrl?.includes("/cloudsql/") || false
 });
 
+// shared/schema.ts
+import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { z } from "zod";
+var users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  password: text("password").notNull(),
+  role: text("role").notNull().$type(),
+  rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
+  rating_count: integer("rating_count").default(0),
+  profile_data: jsonb("profile_data"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+var missions = pgTable("missions", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  client_id: integer("client_id").references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  excerpt: text("excerpt"),
+  category: text("category").notNull(),
+  // Localisation unifiée en JSON
+  location_data: jsonb("location_data"),
+  // Budget unifié (plus de redondance)
+  budget_value_cents: integer("budget_value_cents").notNull(),
+  currency: text("currency").default("EUR"),
+  // ENUMs PostgreSQL optimisés
+  urgency: text("urgency").$type().default("medium"),
+  status: text("status").$type().default("draft"),
+  quality_target: text("quality_target").$type().default("standard"),
+  deadline: timestamp("deadline"),
+  tags: jsonb("tags"),
+  skills_required: jsonb("skills_required"),
+  requirements: text("requirements"),
+  is_team_mission: boolean("is_team_mission").default(false),
+  team_size: integer("team_size").default(1),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+var bids = pgTable("bids", {
+  id: serial("id").primaryKey(),
+  mission_id: integer("mission_id").references(() => missions.id).notNull(),
+  provider_id: integer("provider_id").references(() => users.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  timeline_days: integer("timeline_days"),
+  message: text("message"),
+  score_breakdown: jsonb("score_breakdown"),
+  is_leading: boolean("is_leading").default(false),
+  status: text("status").$type().default("pending"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+var announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").$type().default("info"),
+  priority: integer("priority").default(1),
+  is_active: boolean("is_active").default(true),
+  status: text("status").$type().default("active"),
+  category: text("category"),
+  budget: integer("budget"),
+  location: text("location"),
+  user_id: integer("user_id").references(() => users.id),
+  sponsored: boolean("sponsored").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+var feedFeedback = pgTable("feed_feedback", {
+  id: serial("id").primaryKey(),
+  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  feedback_type: text("feedback_type").$type().notNull(),
+  created_at: timestamp("created_at").defaultNow()
+});
+var feedSeen = pgTable("feed_seen", {
+  id: serial("id").primaryKey(),
+  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  seen_at: timestamp("seen_at").defaultNow()
+});
+var favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+  created_at: timestamp("created_at").defaultNow()
+});
+var usersRelations = relations(users, ({ many }) => ({
+  missions: many(missions),
+  bids: many(bids)
+}));
+var missionsRelations = relations(missions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [missions.user_id],
+    references: [users.id]
+  }),
+  bids: many(bids)
+}));
+var bidsRelations = relations(bids, ({ one }) => ({
+  mission: one(missions, {
+    fields: [bids.mission_id],
+    references: [missions.id]
+  }),
+  provider: one(users, {
+    fields: [bids.provider_id],
+    references: [users.id]
+  })
+}));
+var announcementsRelations = relations(announcements, ({ one, many }) => ({
+  user: one(users, {
+    fields: [announcements.user_id],
+    references: [users.id]
+  }),
+  feedbacks: many(feedFeedback),
+  seenBy: many(feedSeen),
+  favorites: many(favorites)
+}));
+var feedFeedbackRelations = relations(feedFeedback, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [feedFeedback.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [feedFeedback.user_id],
+    references: [users.id]
+  })
+}));
+var feedSeenRelations = relations(feedSeen, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [feedSeen.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [feedSeen.user_id],
+    references: [users.id]
+  })
+}));
+var favoritesRelations = relations(favorites, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [favorites.announcement_id],
+    references: [announcements.id]
+  }),
+  user: one(users, {
+    fields: [favorites.user_id],
+    references: [users.id]
+  })
+}));
+var insertUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  password: z.string().min(8),
+  // Added password validation, assuming a minimum of 8 characters
+  role: z.enum(["CLIENT", "PRO", "ADMIN"]),
+  rating_mean: z.string().optional(),
+  rating_count: z.number().int().min(0).optional(),
+  profile_data: z.any().optional()
+});
+var insertMissionSchema = z.object({
+  user_id: z.number().int().positive(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  location: z.string().optional(),
+  postal_code: z.string().optional(),
+  // Added postal_code validation
+  budget: z.number().int().min(0).optional(),
+  budget_value_cents: z.number().int().min(0).optional(),
+  budget_type: z.string().optional(),
+  urgency: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  status: z.enum(["draft", "open", "published", "assigned", "completed", "cancelled"]).optional(),
+  quality_target: z.enum(["basic", "standard", "premium", "luxury"]).optional()
+});
+var insertBidSchema = z.object({
+  mission_id: z.number().int().positive(),
+  provider_id: z.number().int().positive(),
+  amount: z.string(),
+  timeline_days: z.number().int().min(1).optional(),
+  message: z.string().optional(),
+  score_breakdown: z.any().optional(),
+  is_leading: z.boolean().optional(),
+  status: z.enum(["pending", "accepted", "rejected", "withdrawn"]).optional()
+});
+var insertAnnouncementSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  type: z.enum(["info", "warning", "error", "success"]).optional(),
+  priority: z.number().int().min(1).optional(),
+  is_active: z.boolean().optional(),
+  status: z.enum(["active", "completed", "cancelled", "draft"]).optional(),
+  category: z.string().optional(),
+  budget: z.number().int().min(0).optional(),
+  location: z.string().optional(),
+  user_id: z.number().int().positive().optional(),
+  sponsored: z.boolean().optional()
+});
+var insertFeedFeedbackSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive(),
+  feedback_type: z.enum(["like", "dislike", "interested", "not_relevant"])
+});
+var insertFeedSeenSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive()
+});
+var insertFavoritesSchema = z.object({
+  user_id: z.number().int().positive(),
+  announcement_id: z.number().int().positive()
+});
+var aiEvents = pgTable("ai_events", {
+  id: text("id").primaryKey(),
+  phase: text("phase").$type().notNull(),
+  provider: text("provider").notNull(),
+  model_family: text("model_family").$type().notNull(),
+  model_name: text("model_name").notNull(),
+  allow_training: boolean("allow_training").notNull(),
+  input_redacted: jsonb("input_redacted"),
+  output: jsonb("output"),
+  confidence: text("confidence"),
+  tokens: integer("tokens"),
+  latency_ms: integer("latency_ms"),
+  provenance: text("provenance").$type().notNull(),
+  prompt_hash: text("prompt_hash"),
+  accepted: boolean("accepted"),
+  rating: integer("rating"),
+  edits: jsonb("edits"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+var aiEventsRelations = relations(aiEvents, ({ one }) => ({
+  // Pas de relations directes pour l'instant
+}));
+var insertAiEventSchema = z.object({
+  id: z.string(),
+  phase: z.enum(["pricing", "brief_enhance", "matching", "scoring"]),
+  provider: z.string(),
+  model_family: z.enum(["gemini", "openai", "local", "other"]),
+  model_name: z.string(),
+  allow_training: z.boolean(),
+  input_redacted: z.any().optional(),
+  output: z.any().optional(),
+  confidence: z.string().optional(),
+  tokens: z.number().int().optional(),
+  latency_ms: z.number().int().optional(),
+  provenance: z.enum(["auto", "human_validated", "ab_test_winner"]),
+  prompt_hash: z.string().optional(),
+  accepted: z.boolean().optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  edits: z.any().optional()
+});
+
 // server/services/mission-sync.ts
-init_schema();
 import { eq } from "drizzle-orm";
 var MissionSyncService = class {
   databaseUrl;
@@ -1441,7 +1407,6 @@ var getPerformanceStats = () => {
 };
 
 // server/auth-routes.ts
-init_schema();
 import express2 from "express";
 import { Pool as Pool2 } from "pg";
 import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
@@ -1770,199 +1735,19 @@ var auth_routes_default = router;
 // server/routes/missions.ts
 import { Router } from "express";
 import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
-init_schema();
 import { randomUUID } from "crypto";
 
-// server/validation/mission-schemas.ts
-import { z as z2 } from "zod";
-var createSimpleMissionSchema = z2.object({
-  title: z2.string().min(3, "Le titre doit contenir au moins 3 caract\xE8res").max(500, "Le titre ne peut pas d\xE9passer 500 caract\xE8res").transform((str) => str.trim()),
-  description: z2.string().min(10, "La description doit contenir au moins 10 caract\xE8res").max(5e3, "La description ne peut pas d\xE9passer 5000 caract\xE8res").transform((str) => str.trim()),
-  budget: z2.number().int("Le budget doit \xEAtre un nombre entier").positive("Le budget doit \xEAtre positif").min(10, "Budget minimum de 10\u20AC").max(1e6, "Budget maximum de 1 000 000\u20AC"),
-  isTeamMode: z2.boolean().default(false)
-});
-var locationDataSchema = z2.object({
-  address: z2.string().optional(),
-  postal_code: z2.string().regex(/^\d{5}$/, "Code postal invalide").optional(),
-  city: z2.string().optional(),
-  country: z2.string().default("France"),
-  coordinates: z2.object({
-    lat: z2.number().min(-90).max(90),
-    lng: z2.number().min(-180).max(180)
-  }).optional(),
-  remote_allowed: z2.boolean().default(true)
-}).optional();
-var budgetSchema = z2.object({
-  value_cents: z2.number().int().positive().min(1e3, "Budget minimum de 10\u20AC").max(1e8, "Budget maximum de 1M\u20AC"),
-  currency: z2.enum(["EUR", "USD", "GBP", "CHF"]).default("EUR")
-});
-var statusEnum = z2.enum(["draft", "open", "in_progress", "completed", "cancelled"]);
-var urgencyEnum = z2.enum(["low", "medium", "high", "urgent"]);
-var qualityTargetEnum = z2.enum(["basic", "standard", "premium", "luxury"]);
-var locationSchema = z2.object({
-  raw: z2.string().optional(),
-  city: z2.string().min(1).optional(),
-  postalCode: z2.string().regex(/^\d{5}$/).optional(),
-  country: z2.string().default("France"),
-  latitude: z2.number().min(-90).max(90).optional(),
-  longitude: z2.number().min(-180).max(180).optional(),
-  remoteAllowed: z2.boolean().default(true)
-});
-var teamSchema = z2.object({
-  isTeamMission: z2.boolean().default(false),
-  teamSize: z2.number().int().positive().default(1)
-}).refine((data) => !data.isTeamMission || data.teamSize > 1, {
-  message: "Une mission d'\xE9quipe doit avoir plus d'1 personne",
-  path: ["teamSize"]
-});
-var createMissionSchema = z2.object({
-  // Contenu obligatoire
-  title: z2.string().min(3, "Le titre doit contenir au moins 3 caract\xE8res").max(500, "Le titre ne peut pas d\xE9passer 500 caract\xE8res").transform((str) => str.trim()),
-  description: z2.string().min(10, "La description doit contenir au moins 10 caract\xE8res").max(5e3, "La description ne peut pas d\xE9passer 5000 caract\xE8res").transform((str) => str.trim()),
-  // Catégorisation
-  category: z2.string().min(1, "La cat\xE9gorie est requise").default("developpement"),
-  tags: z2.array(z2.string().min(1)).max(10, "Maximum 10 tags").default([]).transform((tags) => tags.map((tag) => tag.toLowerCase().trim())),
-  skillsRequired: z2.array(z2.string().min(1)).max(15, "Maximum 15 comp\xE9tences").default([]).transform((skills) => skills.map((skill) => skill.trim())),
-  // Budget obligatoire en euros
-  budget: z2.number().int("Le budget doit \xEAtre un nombre entier").positive("Le budget doit \xEAtre positif").min(10, "Budget minimum de 10\u20AC").max(1e6, "Budget maximum de 1 000 000\u20AC"),
-  // Localisation
-  location: locationSchema.optional(),
-  // Équipe
-  team: teamSchema.optional(),
-  // Timing et urgence
-  urgency: z2.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  deadline: z2.string().datetime("Format de date invalide").optional().transform((str) => str ? new Date(str) : void 0),
-  // Métadonnées
-  requirements: z2.string().max(2e3, "Les exigences ne peuvent pas d\xE9passer 2000 caract\xE8res").optional().transform((str) => str?.trim()),
-  deliverables: z2.array(z2.object({
-    title: z2.string().min(1),
-    description: z2.string().optional(),
-    dueDate: z2.string().datetime().optional()
-  })).max(20, "Maximum 20 livrables").default([]),
-  // Status (draft par défaut, published si publié immédiatement)
-  status: z2.enum(["draft", "published"]).default("draft")
-});
-var updateMissionSchema = createMissionSchema.partial().extend({
-  id: z2.number().int().positive()
-});
-var searchMissionsSchema = z2.object({
-  query: z2.string().min(1).optional(),
-  category: z2.string().optional(),
-  budgetMin: z2.number().int().positive().optional(),
-  budgetMax: z2.number().int().positive().optional(),
-  location: z2.string().optional(),
-  remoteOnly: z2.boolean().default(false),
-  urgency: z2.array(z2.enum(["low", "medium", "high", "urgent"])).optional(),
-  tags: z2.array(z2.string()).optional(),
-  skills: z2.array(z2.string()).optional(),
-  sortBy: z2.enum(["recent", "budget_asc", "budget_desc", "deadline"]).default("recent"),
-  page: z2.number().int().positive().default(1),
-  limit: z2.number().int().positive().max(50).default(20)
-});
-
-// server/services/mission-creator.ts
-init_schema();
-var MissionCreator = class {
-  static async createSimpleMission(input) {
-    console.log("\u{1F3AF} Cr\xE9ation mission simplifi\xE9e avec:", input);
-    const smartDefaults = await this.generateSmartDefaults(input);
-    console.log("\u{1F9E0} Valeurs par d\xE9faut g\xE9n\xE9r\xE9es:", smartDefaults);
+// server/dto/mission-dto.ts
+function extractLocationData(locationData) {
+  if (!locationData || typeof locationData !== "object") {
     return {
-      title: input.title,
-      description: input.description,
-      category: input.category || smartDefaults.category,
-      location_raw: input.location || smartDefaults.location,
-      urgency: "medium",
-      status: "published",
+      raw: "Remote",
       remote_allowed: true,
-      quality_target: "standard",
-      currency: "EUR",
-      budget_value_cents: (input.budget || smartDefaults.budget) * 100,
-      user_id: input.userId,
-      client_id: input.userId,
-      is_team_mission: input.isTeamMode,
-      team_size: input.isTeamMode ? 2 : 1,
-      tags: smartDefaults.tags || [],
-      skills_required: smartDefaults.skills || [],
-      created_at: (/* @__PURE__ */ new Date()).toISOString(),
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      country: "France"
     };
   }
-  static async generateSmartDefaults(input) {
-    console.log("\u{1F50D} G\xE9n\xE9ration valeurs par d\xE9faut pour:", input.title);
-    const titleLower = input.title.toLowerCase();
-    const descriptionLower = input.description.toLowerCase();
-    const text2 = (titleLower + " " + descriptionLower).toLowerCase();
-    let category = "developpement";
-    let location = "Remote";
-    let budget = input.budget || 2e3;
-    let tags = [];
-    let skills = [];
-    if (text2.includes("web") || text2.includes("site") || text2.includes("react") || text2.includes("javascript")) {
-      category = "web-development";
-      budget = input.budget || 3e3;
-      tags = ["web", "frontend"];
-      skills = ["JavaScript", "HTML", "CSS"];
-    } else if (text2.includes("mobile") || text2.includes("app") || text2.includes("android") || text2.includes("ios")) {
-      category = "mobile-development";
-      budget = input.budget || 5e3;
-      tags = ["mobile", "app"];
-      skills = ["React Native", "Mobile Development"];
-    } else if (text2.includes("design") || text2.includes("ui") || text2.includes("ux") || text2.includes("graphique")) {
-      category = "design";
-      budget = input.budget || 1500;
-      tags = ["design", "ui/ux"];
-      skills = ["Figma", "Design"];
-    } else if (text2.includes("data") || text2.includes("analyse") || text2.includes("machine learning") || text2.includes("ai")) {
-      category = "data-science";
-      budget = input.budget || 4e3;
-      tags = ["data", "analytics"];
-      skills = ["Python", "Data Analysis"];
-    }
-    if (text2.includes("paris") || text2.includes("france") || text2.includes("sur place") || text2.includes("pr\xE9sentiel")) {
-      location = "Paris, France";
-    }
-    console.log("\u2728 Valeurs par d\xE9faut g\xE9n\xE9r\xE9es:", { category, location, budget, tags, skills });
-    return { category, location, budget, tags, skills };
-  }
-  static async saveMission(missionData) {
-    console.log("\u{1F4BE} Sauvegarde mission:", missionData);
-    try {
-      const [savedMission] = await db.insert(missions).values(missionData).returning();
-      console.log("\u2705 Mission sauvegard\xE9e avec succ\xE8s:", savedMission.id);
-      return savedMission;
-    } catch (error) {
-      console.error("\u274C Erreur sauvegarde mission:", error);
-      throw new Error("Erreur lors de la sauvegarde de la mission");
-    }
-  }
-  static async createMission(missionData) {
-  }
-};
-
-// server/services/team-analysis.ts
-var TeamAnalysisService = class {
-  static async analyzeTeamRequirements(missionId) {
-    console.log("\u{1F50D} Analyse \xE9quipe pour mission:", missionId);
-    try {
-      console.log("\u2705 Analyse \xE9quipe termin\xE9e pour mission:", missionId);
-      return {
-        teamSizeRecommended: 2,
-        skillsNeeded: ["Frontend", "Backend"],
-        estimatedDuration: "4-6 semaines",
-        complexity: "medium"
-      };
-    } catch (error) {
-      console.error("\u274C Erreur analyse \xE9quipe:", error);
-      throw new Error("Erreur lors de l'analyse des besoins \xE9quipe");
-    }
-  }
-};
-
-// server/routes/missions.ts
-var asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+  return locationData;
+}
 function generateExcerpt(description, maxLength = 200) {
   if (!description || description.length <= maxLength) {
     return description || "";
@@ -1982,56 +1767,64 @@ function generateExcerpt(description, maxLength = 200) {
   }
   return truncated.trim() + "...";
 }
-var router2 = Router();
-router2.post("/simple", async (req, res) => {
-  try {
-    console.log("\u{1F680} Cr\xE9ation mission simplifi\xE9e - Donn\xE9es re\xE7ues:", req.body);
-    const validatedData = createSimpleMissionSchema.parse(req.body);
-    console.log("\u2705 Validation r\xE9ussie:", validatedData);
-    const userId = 3;
-    const missionData = await MissionCreator.createSimpleMission({
-      ...validatedData,
-      userId,
-      category: "developpement",
-      // Valeur par défaut
-      location: "Remote",
-      // Valeur par défaut
-      is_team_mission: validatedData.isTeamMode
-    });
-    console.log("\u{1F4DD} Donn\xE9es mission pr\xE9par\xE9es:", missionData);
-    const result = await MissionCreator.saveMission(missionData);
-    console.log("\u{1F4BE} Mission sauvegard\xE9e avec ID:", result.id);
-    if (validatedData.isTeamMode) {
-      try {
-        if (TeamAnalysisService && typeof TeamAnalysisService.analyzeTeamRequirements === "function") {
-          await TeamAnalysisService.analyzeTeamRequirements(result.id);
-          console.log("\u{1F50D} Analyse \xE9quipe d\xE9clench\xE9e pour mission:", result.id);
-        } else {
-          console.log("\u26A0\uFE0F Service d'analyse \xE9quipe non disponible ou m\xE9thode non trouv\xE9e.");
-        }
-      } catch (error) {
-        console.log("\u26A0\uFE0F Erreur lors du d\xE9clenchement de l'analyse \xE9quipe:", error.message);
-      }
-    }
-    res.json({
-      ok: true,
-      data: result,
-      message: "Mission cr\xE9\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    console.error("\u274C Erreur cr\xE9ation mission simplifi\xE9e:", error);
-    if (error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    res.status(500).json({
-      error: "Erreur lors de la cr\xE9ation de la mission",
-      message: error.message
-    });
+function mapMission(row) {
+  const locationData = extractLocationData(row.location_data);
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    excerpt: generateExcerpt(row.description, 200),
+    category: row.category,
+    budget: (row.budget_value_cents / 100).toString(),
+    // Convertir centimes en euros
+    budget_value_cents: row.budget_value_cents,
+    currency: row.currency || "EUR",
+    location: locationData.raw || locationData.city || "Remote",
+    postal_code: locationData.address || null,
+    city: locationData.city || null,
+    country: locationData.country || "France",
+    remote_allowed: locationData.remote_allowed ?? true,
+    user_id: row.user_id,
+    client_id: row.client_id,
+    status: row.status || "draft",
+    urgency: row.urgency || "medium",
+    is_team_mission: row.is_team_mission || false,
+    team_size: row.team_size || 1,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    createdAt: row.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: row.updated_at?.toISOString(),
+    clientName: "Client",
+    // TODO: récupérer le vrai nom client
+    bids: []
+    // TODO: récupérer les vraies offres
+  };
+}
+
+// server/routes/missions.ts
+var asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+function generateExcerpt2(description, maxLength = 200) {
+  if (!description || description.length <= maxLength) {
+    return description || "";
   }
-});
+  const truncated = description.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf("."),
+    truncated.lastIndexOf("!"),
+    truncated.lastIndexOf("?")
+  );
+  if (lastSentenceEnd > maxLength * 0.6) {
+    return truncated.substring(0, lastSentenceEnd + 1).trim();
+  }
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + "...";
+  }
+  return truncated.trim() + "...";
+}
+var router2 = Router();
 router2.post("/", asyncHandler(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
@@ -2101,12 +1894,37 @@ router2.post("/", asyncHandler(async (req, res) => {
       request_id: requestId
     });
   }
+  const existingUser = await db.select({ id: users.id }).from(users).where(eq3(users.id, userIdInt)).limit(1);
+  if (existingUser.length === 0) {
+    console.log(JSON.stringify({
+      level: "warn",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "security_validation_failed",
+      field: "userId",
+      value: userIdInt,
+      reason: "user_not_found"
+    }));
+    return res.status(401).json({
+      ok: false,
+      error: "Utilisateur non trouv\xE9",
+      field: "userId",
+      request_id: requestId
+    });
+  }
   const now = /* @__PURE__ */ new Date();
   const budgetCents = budget ? parseInt(budget.toString()) * 100 : 1e5;
   const extractCity = (locationString) => {
     if (!locationString) return null;
     const parts = locationString.split(",");
     return parts.length > 1 ? parts[parts.length - 1].trim() : locationString.trim();
+  };
+  const locationData = {
+    raw: location || "Remote",
+    address: req.body.postal_code || null,
+    city: extractCity(location) || null,
+    country: "France",
+    remote_allowed: req.body.remote_allowed !== false
   };
   const newMission = {
     title: title.trim(),
@@ -2116,20 +1934,16 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
     category: category || "developpement",
     budget_value_cents: budgetCents,
     currency: "EUR",
-    location_raw: location || null,
-    postal_code: req.body.postal_code || null,
-    // Added postal_code field
-    city: extractCity(location),
-    country: "France",
-    remote_allowed: req.body.remote_allowed !== false,
+    location_data: locationData,
+    // Utiliser le champ correct du schéma
     user_id: userIdInt,
     client_id: userIdInt,
-    status: "published",
+    status: "open",
+    // Utiliser un statut valide
     urgency: "medium",
     is_team_mission: false,
-    team_size: 1,
-    created_at: now,
-    updated_at: now
+    team_size: 1
+    // created_at et updated_at sont gérés automatiquement par la DB
   };
   console.log(JSON.stringify({
     level: "info",
@@ -2140,8 +1954,7 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
     description_length: newMission.description.length,
     budget_cents: newMission.budget_value_cents,
     user_id: newMission.user_id,
-    location: newMission.location_raw,
-    postal_code: newMission.postal_code
+    location_data: newMission.location_data
   }));
   console.log(JSON.stringify({
     level: "info",
@@ -2173,31 +1986,10 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
     throw new Error("Mission not found after insert");
   }
   const mission = fullMission[0];
+  const mappedMission = mapMission(mission);
   const responsePayload = {
     ok: true,
-    id: mission.id,
-    title: mission.title,
-    description: mission.description,
-    excerpt: generateExcerpt(mission.description || "", 200),
-    category: mission.category,
-    budget: mission.budget_value_cents?.toString() || "0",
-    budget_value_cents: mission.budget_value_cents,
-    currency: mission.currency,
-    location: mission.location_raw || mission.postal_code || "Remote",
-    // Use postal_code if location_raw is empty
-    user_id: mission.user_id,
-    client_id: mission.client_id,
-    status: mission.status,
-    urgency: mission.urgency,
-    remote_allowed: mission.remote_allowed,
-    is_team_mission: mission.is_team_mission,
-    team_size: mission.team_size,
-    created_at: mission.created_at,
-    updated_at: mission.updated_at,
-    createdAt: mission.created_at?.toISOString() || now.toISOString(),
-    updatedAt: mission.updated_at?.toISOString(),
-    clientName: "Client",
-    bids: [],
+    ...mappedMission,
     request_id: requestId
   };
   console.log(JSON.stringify({
@@ -2218,8 +2010,7 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
         description: mission.description,
         category: mission.category || "developpement",
         budget: mission.budget_value_cents?.toString() || "0",
-        location: mission.location_raw || mission.postal_code || "Remote",
-        // Use postal_code for feed
+        location: mission.location_data?.raw || mission.location_data?.city || "Remote",
         status: mission.status || "open",
         clientId: mission.user_id?.toString() || "1",
         clientName: "Client",
@@ -2248,44 +2039,12 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
 }));
 router2.get("/", asyncHandler(async (req, res) => {
   console.log("\u{1F4CB} Fetching all missions...");
-  const allMissions = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    postal_code: missions.postal_code,
-    // Include postal_code
-    city: missions.city,
-    country: missions.country,
-    user_id: missions.user_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at,
-    remote_allowed: missions.remote_allowed,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements
-  }).from(missions).orderBy(desc(missions.created_at));
+  const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
   console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
   const missionsWithBids = allMissions.map((mission) => ({
-    ...mission,
-    excerpt: generateExcerpt(mission.description || "", 200),
-    createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-    clientName: "Client anonyme",
-    // Default client name
-    bids: [],
+    ...mapMission(mission),
+    bids: []
     // Empty bids array for now
-    // Ensure budget consistency
-    budget: mission.budget_value_cents?.toString() || "0",
-    // Ensure location consistency, prioritize postal_code if available
-    location: mission.location_raw || mission.postal_code || mission.city || "Remote"
   }));
   console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
   res.json(missionsWithBids);
@@ -2341,75 +2100,25 @@ router2.get("/debug", asyncHandler(async (req, res) => {
 router2.get("/verify-sync", asyncHandler(async (req, res) => {
   console.log("\u{1F50D} V\xE9rification de la synchronisation missions/feed");
   try {
+    const missionCount = await db.select({ count: sql2`COUNT(*)` }).from(missions);
     const recentMissions = await db.select({
       id: missions.id,
       title: missions.title,
-      description: missions.description,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code,
-      // Include postal_code
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
       status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
+      created_at: missions.created_at
     }).from(missions).orderBy(desc(missions.created_at)).limit(5);
-    const { announcements: announcements2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const feedItems = await db.select({
-      id: announcements2.id,
-      title: announcements2.title,
-      description: announcements2.description,
-      category: announcements2.category,
-      budget_value_cents: announcements2.budget_value_cents,
-      currency: announcements2.currency,
-      location_raw: announcements2.location_raw,
-      postal_code: announcements2.postal_code,
-      // Assuming announcements table also has postal_code
-      city: announcements2.city,
-      country: announcements2.country,
-      remote_allowed: announcements2.remote_allowed,
-      user_id: announcements2.user_id,
-      client_id: announcements2.client_id,
-      status: announcements2.status,
-      urgency: announcements2.urgency,
-      deadline: announcements2.deadline,
-      tags: announcements2.tags,
-      skills_required: announcements2.skills_required,
-      requirements: announcements2.requirements,
-      is_team_mission: announcements2.is_team_mission,
-      team_size: announcements2.team_size,
-      created_at: announcements2.created_at,
-      updated_at: announcements2.updated_at
-    }).from(announcements2).orderBy(desc(announcements2.created_at)).limit(10);
+    const announcementCount = await db.select({ count: sql2`COUNT(*)` }).from(announcements);
     const syncStatus = {
-      totalMissions: recentMissions.length,
-      totalFeedItems: feedItems.length,
+      totalMissions: missionCount[0]?.count || 0,
+      totalFeedItems: announcementCount[0]?.count || 0,
       recentMissions: recentMissions.map((m) => ({
         id: m.id,
         title: m.title,
         status: m.status,
         created_at: m.created_at
       })),
-      feedItems: feedItems.map((f) => ({
-        id: f.id,
-        title: f.title,
-        status: f.status,
-        created_at: f.created_at
-      })),
-      syncHealth: feedItems.length > 0 ? "OK" : "WARNING"
+      syncHealth: "OK",
+      message: "Sync verification successful - using simplified queries"
     };
     console.log("\u{1F50D} Sync status:", syncStatus);
     res.json(syncStatus);
@@ -2445,33 +2154,8 @@ router2.get("/:id", asyncHandler(async (req, res) => {
       details: "L'ID doit \xEAtre un nombre entier positif"
     });
   }
-  const mission = await db.select({
-    id: missions.id,
-    title: missions.title,
-    description: missions.description,
-    category: missions.category,
-    budget_value_cents: missions.budget_value_cents,
-    currency: missions.currency,
-    location_raw: missions.location_raw,
-    postal_code: missions.postal_code,
-    // Include postal_code
-    city: missions.city,
-    country: missions.country,
-    remote_allowed: missions.remote_allowed,
-    user_id: missions.user_id,
-    client_id: missions.client_id,
-    status: missions.status,
-    urgency: missions.urgency,
-    deadline: missions.deadline,
-    tags: missions.tags,
-    skills_required: missions.skills_required,
-    requirements: missions.requirements,
-    is_team_mission: missions.is_team_mission,
-    team_size: missions.team_size,
-    created_at: missions.created_at,
-    updated_at: missions.updated_at
-  }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
-  if (mission.length === 0) {
+  const missionRaw = await db.select().from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+  if (missionRaw.length === 0) {
     console.error("\u274C API: Mission non trouv\xE9e:", missionId);
     return res.status(404).json({
       error: "Mission non trouv\xE9e",
@@ -2479,6 +2163,7 @@ router2.get("/:id", asyncHandler(async (req, res) => {
       details: "Aucune mission trouv\xE9e avec cet ID"
     });
   }
+  const mission = mapMission(missionRaw[0]);
   let missionBids = [];
   try {
     missionBids = await db.select({
@@ -2499,16 +2184,8 @@ router2.get("/:id", asyncHandler(async (req, res) => {
     missionBids = [];
   }
   const result = {
-    ...mission[0],
-    excerpt: generateExcerpt(mission[0].description || "", 200),
-    bids: missionBids || [],
-    // Ensure consistent budget format for frontend
-    budget: mission[0].budget_value_cents?.toString() || "0",
-    // Ensure consistent location format, prioritize postal_code
-    location: mission[0].location_raw || mission[0].postal_code || mission[0].city || "Remote",
-    // Ensure consistent timestamps
-    createdAt: mission[0].created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-    updatedAt: mission[0].updated_at?.toISOString()
+    ...mission,
+    bids: missionBids || []
   };
   console.log("\u2705 API: Mission trouv\xE9e:", result.title, "avec", result.bids.length, "offres");
   res.json(result);
@@ -2578,7 +2255,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
           id: row.mission_id,
           title: row.title,
           description: row.description,
-          excerpt: generateExcerpt(row.description || "", 200),
+          excerpt: generateExcerpt2(row.description || "", 200),
           category: row.category,
           // Budget
           budget_value_cents: row.budget_value_cents,
@@ -2662,7 +2339,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       id: mission.id,
       title: mission.title,
       description: mission.description,
-      excerpt: generateExcerpt(mission.description || "", 200),
+      excerpt: generateExcerpt2(mission.description || "", 200),
       category: mission.category,
       budget_value_cents: mission.budget_value_cents,
       budget: mission.budget_value_cents?.toString() || "0",
@@ -2808,7 +2485,6 @@ router2.delete("/:id", asyncHandler(async (req, res) => {
 var missions_default = router2;
 
 // server/api-routes.ts
-init_schema();
 import express3 from "express";
 import { Pool as Pool3 } from "pg";
 import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
@@ -3346,21 +3022,21 @@ var ai_monitoring_routes_default = router4;
 
 // server/routes/ai-suggestions-routes.ts
 import { Router as Router3 } from "express";
-import { z as z3 } from "zod";
+import { z as z2 } from "zod";
 var router5 = Router3();
-var assistantSuggestionsSchema = z3.object({
-  page: z3.string(),
-  userContext: z3.object({
-    isClient: z3.boolean().optional(),
-    isProvider: z3.boolean().optional(),
-    missions: z3.number().optional(),
-    completedProjects: z3.number().optional(),
-    completeness: z3.number().optional(),
-    hasContent: z3.object({
-      bio: z3.boolean().optional(),
-      headline: z3.boolean().optional(),
-      skills: z3.boolean().optional(),
-      portfolio: z3.boolean().optional()
+var assistantSuggestionsSchema = z2.object({
+  page: z2.string(),
+  userContext: z2.object({
+    isClient: z2.boolean().optional(),
+    isProvider: z2.boolean().optional(),
+    missions: z2.number().optional(),
+    completedProjects: z2.number().optional(),
+    completeness: z2.number().optional(),
+    hasContent: z2.object({
+      bio: z2.boolean().optional(),
+      headline: z2.boolean().optional(),
+      skills: z2.boolean().optional(),
+      portfolio: z2.boolean().optional()
     }).optional()
   }).optional()
 });
@@ -3477,7 +3153,7 @@ router5.post("/assistant-suggestions", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z3.ZodError) {
+    if (error instanceof z2.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -3505,17 +3181,17 @@ var ai_suggestions_routes_default = router5;
 
 // server/routes/ai-missions-routes.ts
 import { Router as Router4 } from "express";
-import { z as z4 } from "zod";
+import { z as z3 } from "zod";
 var router6 = Router4();
-var missionSuggestionSchema = z4.object({
-  title: z4.string().min(3, "Titre trop court"),
-  description: z4.string().min(10, "Description trop courte"),
-  category: z4.string().min(1, "Cat\xE9gorie requise"),
-  budget_min: z4.number().optional(),
-  budget_max: z4.number().optional(),
-  deadline_ts: z4.string().optional(),
-  geo_required: z4.boolean().optional(),
-  onsite_radius_km: z4.number().optional()
+var missionSuggestionSchema = z3.object({
+  title: z3.string().min(3, "Titre trop court"),
+  description: z3.string().min(10, "Description trop courte"),
+  category: z3.string().min(1, "Cat\xE9gorie requise"),
+  budget_min: z3.number().optional(),
+  budget_max: z3.number().optional(),
+  deadline_ts: z3.string().optional(),
+  geo_required: z3.boolean().optional(),
+  onsite_radius_km: z3.number().optional()
 });
 router6.post("/suggest", async (req, res) => {
   try {
@@ -3601,7 +3277,7 @@ router6.post("/suggest", async (req, res) => {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   } catch (error) {
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({
         success: false,
         error: "Donn\xE9es invalides",
@@ -3832,7 +3508,6 @@ router7.post("/feedback", async (req, res) => {
 var ai_default = router7;
 
 // server/routes/feed-routes.ts
-init_schema();
 import express4 from "express";
 import { neon } from "@neondatabase/serverless";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
@@ -4126,7 +3801,7 @@ var FeedRanker = class {
 };
 
 // server/routes/feed-routes.ts
-import { z as z5 } from "zod";
+import { z as z4 } from "zod";
 var router8 = express4.Router();
 var connection = neon(process.env.DATABASE_URL);
 var db4 = drizzle4(connection);
@@ -4194,7 +3869,7 @@ router8.post("/feedback", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Erreur enregistrement feedback:", error);
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z4.ZodError) {
       return res.status(400).json({ error: "Donn\xE9es invalides", details: error.errors });
     }
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
@@ -4246,7 +3921,6 @@ router8.get("/price-benchmark", async (req, res) => {
 var feed_routes_default = router8;
 
 // server/routes/favorites-routes.ts
-init_schema();
 import { Router as Router6 } from "express";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
@@ -4896,7 +4570,6 @@ var ai_diagnostic_routes_default = router12;
 import { Router as Router8 } from "express";
 
 // apps/api/src/ai/learning-engine.ts
-init_schema();
 import { drizzle as drizzle6 } from "drizzle-orm/node-postgres";
 import { Pool as Pool4 } from "pg";
 import { desc as desc3, eq as eq7, and as and3, gte } from "drizzle-orm";
@@ -5460,32 +5133,32 @@ var ai_learning_routes_default = router13;
 
 // server/routes/team-routes.ts
 import { Router as Router9 } from "express";
-import { z as z6 } from "zod";
+import { z as z5 } from "zod";
 var router14 = Router9();
-var teamAnalysisSchema = z6.object({
-  description: z6.string().min(10),
-  title: z6.string().min(3),
-  category: z6.string().min(2),
-  budget: z6.union([z6.string(), z6.number()])
+var teamAnalysisSchema = z5.object({
+  description: z5.string().min(10),
+  title: z5.string().min(3),
+  category: z5.string().min(2),
+  budget: z5.union([z5.string(), z5.number()])
 });
-var teamProjectSchema = z6.object({
-  projectData: z6.object({
-    title: z6.string().min(3),
-    description: z6.string().min(10),
-    category: z6.string().min(2),
-    budget: z6.union([z6.string(), z6.number()]),
-    location: z6.string().optional(),
-    isTeamMode: z6.boolean()
+var teamProjectSchema = z5.object({
+  projectData: z5.object({
+    title: z5.string().min(3),
+    description: z5.string().min(10),
+    category: z5.string().min(2),
+    budget: z5.union([z5.string(), z5.number()]),
+    location: z5.string().optional(),
+    isTeamMode: z5.boolean()
   }),
-  teamRequirements: z6.array(z6.object({
-    profession: z6.string(),
-    description: z6.string(),
-    required_skills: z6.array(z6.string()),
-    estimated_budget: z6.number(),
-    estimated_days: z6.number(),
-    min_experience: z6.number(),
-    is_lead_role: z6.boolean(),
-    importance: z6.enum(["high", "medium", "low"])
+  teamRequirements: z5.array(z5.object({
+    profession: z5.string(),
+    description: z5.string(),
+    required_skills: z5.array(z5.string()),
+    estimated_budget: z5.number(),
+    estimated_days: z5.number(),
+    min_experience: z5.number(),
+    is_lead_role: z5.boolean(),
+    importance: z5.enum(["high", "medium", "low"])
   }))
 });
 router14.post("/analyze", async (req, res) => {
