@@ -138,29 +138,23 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center space-x-2 sm:space-x-4">
-                {/* Desktop User Menu */}
+                {/* Desktop User Menu - Nettoyé */}
                 <div className="hidden xl:flex items-center space-x-3">
-                  <button
-                    onClick={() => handleNavigation('/missions')}
-                    className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2 text-sm"
-                  >
-                    Mes missions
-                  </button>
+                  <Button variant="ghost" onClick={() => setLocation('/marketplace')} className="text-gray-700 hover:text-blue-600">
+                    Marketplace
+                  </Button>
+                  <Button variant="ghost" onClick={() => setLocation('/missions')} className="text-gray-700 hover:text-blue-600">
+                    Mes Missions
+                  </Button>
+                  <Button variant="ghost" onClick={() => setLocation('/')} className="text-gray-700 hover:text-blue-600">
+                    Créer Mission
+                  </Button>
                   <button
                     onClick={() => handleNavigation('/messages')}
                     className="text-gray-700 hover:text-blue-600 transition-colors relative px-2 py-2 text-sm"
                   >
                     Messages
                   </button>
-                  <Button variant="ghost" onClick={() => setLocation('/marketplace')}>
-                    Marketplace
-                  </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/missions')}>
-                    Mes Missions
-                  </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/create-mission')}>
-                    Créer Mission
-                  </Button>
                 </div>
 
                 {/* User Dropdown */}
