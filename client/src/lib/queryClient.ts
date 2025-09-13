@@ -9,12 +9,23 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest(method: string, endpoint: string, body?: any) {
   const url = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+  
+  // Get current user for authentication header
+  const currentUser = localStorage.getItem('currentUser');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (currentUser) {
+    const user = JSON.parse(currentUser);
+    if (user.id) {
+      headers['X-User-ID'] = user.id.toString();
+    }
+  }
 
   const response = await fetch(url, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -38,8 +49,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get current user for authentication header
+    const currentUser = localStorage.getItem('currentUser');
+    const headers: Record<string, string> = {};
+    
+    if (currentUser) {
+      const user = JSON.parse(currentUser);
+      if (user.id) {
+        headers['X-User-ID'] = user.id.toString();
+      }
+    }
+    
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

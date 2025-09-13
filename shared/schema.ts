@@ -261,7 +261,7 @@ export const insertOpenTeamSchema = z.object({
   mission_id: z.number().int().positive(),
   name: z.string().min(1),
   description: z.string().optional(),
-  creator_id: z.number().int().positive(),
+  // creator_id is set from authenticated user, not from client
   estimated_budget: z.number().int().positive().optional(),
   estimated_timeline_days: z.number().int().min(1).optional(),
   members: z.any().optional(),

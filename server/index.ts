@@ -180,6 +180,7 @@ import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
 import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js';
 import aiLearningRoutes from './routes/ai-learning-routes.js';
 import teamRoutes from './routes/team-routes.js';
+import openTeamsRoutes from './routes/open-teams.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -239,6 +240,12 @@ app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
 app.use('/api', missionDemoRoutes);
 app.use('/api/team', teamRoutes);
+
+console.log('🤝 Registering open teams routes...');
+app.use('/api/open-teams', (req, res, next) => {
+  console.log(`🤝 Open teams request: ${req.method} ${req.path}`);
+  next();
+}, openTeamsRoutes);
 
 // Performance stats endpoint
 app.get('/api/performance', (req, res) => {
