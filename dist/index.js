@@ -64,21 +64,19 @@ var init_schema = __esm({
     missions = pgTable("missions", {
       id: serial("id").primaryKey(),
       user_id: integer("user_id").references(() => users.id).notNull(),
+      client_id: integer("client_id").references(() => users.id),
       title: text("title").notNull(),
       description: text("description").notNull(),
+      excerpt: text("excerpt"),
       category: text("category").notNull(),
-      location: text("location"),
-      location_raw: text("location_raw"),
-      postal_code: text("postal_code"),
-      city: text("city"),
-      country: text("country"),
-      remote_allowed: boolean("remote_allowed").default(true),
-      budget: integer("budget"),
-      budget_value_cents: integer("budget_value_cents"),
-      budget_type: text("budget_type"),
+      // Localisation unifiée en JSON
+      location_data: jsonb("location_data"),
+      // Budget unifié (plus de redondance)
+      budget_value_cents: integer("budget_value_cents").notNull(),
       currency: text("currency").default("EUR"),
+      // ENUMs PostgreSQL optimisés
       urgency: text("urgency").$type().default("medium"),
-      status: text("status").$type().default("open"),
+      status: text("status").$type().default("draft"),
       quality_target: text("quality_target").$type().default("standard"),
       deadline: timestamp("deadline"),
       tags: jsonb("tags"),
@@ -86,7 +84,6 @@ var init_schema = __esm({
       requirements: text("requirements"),
       is_team_mission: boolean("is_team_mission").default(false),
       team_size: integer("team_size").default(1),
-      client_id: integer("client_id").references(() => users.id),
       created_at: timestamp("created_at").defaultNow(),
       updated_at: timestamp("updated_at").defaultNow()
     });
@@ -1784,10 +1781,24 @@ var createSimpleMissionSchema = z2.object({
   budget: z2.number().int("Le budget doit \xEAtre un nombre entier").positive("Le budget doit \xEAtre positif").min(10, "Budget minimum de 10\u20AC").max(1e6, "Budget maximum de 1 000 000\u20AC"),
   isTeamMode: z2.boolean().default(false)
 });
+var locationDataSchema = z2.object({
+  address: z2.string().optional(),
+  postal_code: z2.string().regex(/^\d{5}$/, "Code postal invalide").optional(),
+  city: z2.string().optional(),
+  country: z2.string().default("France"),
+  coordinates: z2.object({
+    lat: z2.number().min(-90).max(90),
+    lng: z2.number().min(-180).max(180)
+  }).optional(),
+  remote_allowed: z2.boolean().default(true)
+}).optional();
 var budgetSchema = z2.object({
-  valueCents: z2.number().int().positive().min(1e3, "Budget minimum de 10\u20AC"),
+  value_cents: z2.number().int().positive().min(1e3, "Budget minimum de 10\u20AC").max(1e8, "Budget maximum de 1M\u20AC"),
   currency: z2.enum(["EUR", "USD", "GBP", "CHF"]).default("EUR")
 });
+var statusEnum = z2.enum(["draft", "open", "in_progress", "completed", "cancelled"]);
+var urgencyEnum = z2.enum(["low", "medium", "high", "urgent"]);
+var qualityTargetEnum = z2.enum(["basic", "standard", "premium", "luxury"]);
 var locationSchema = z2.object({
   raw: z2.string().optional(),
   city: z2.string().min(1).optional(),
