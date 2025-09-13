@@ -1781,7 +1781,7 @@ import { z as z2 } from "zod";
 var createSimpleMissionSchema = z2.object({
   title: z2.string().min(3, "Le titre doit contenir au moins 3 caract\xE8res").max(500, "Le titre ne peut pas d\xE9passer 500 caract\xE8res").transform((str) => str.trim()),
   description: z2.string().min(10, "La description doit contenir au moins 10 caract\xE8res").max(5e3, "La description ne peut pas d\xE9passer 5000 caract\xE8res").transform((str) => str.trim()),
-  budget: z2.number().min(1, "Le budget doit \xEAtre sup\xE9rieur \xE0 0").optional(),
+  budget: z2.number().int("Le budget doit \xEAtre un nombre entier").positive("Le budget doit \xEAtre positif").min(10, "Budget minimum de 10\u20AC").max(1e6, "Budget maximum de 1 000 000\u20AC"),
   isTeamMode: z2.boolean().default(false)
 });
 var budgetSchema = z2.object({
@@ -1812,8 +1812,8 @@ var createMissionSchema = z2.object({
   category: z2.string().min(1, "La cat\xE9gorie est requise").default("developpement"),
   tags: z2.array(z2.string().min(1)).max(10, "Maximum 10 tags").default([]).transform((tags) => tags.map((tag) => tag.toLowerCase().trim())),
   skillsRequired: z2.array(z2.string().min(1)).max(15, "Maximum 15 comp\xE9tences").default([]).transform((skills) => skills.map((skill) => skill.trim())),
-  // Budget (objet structuré)
-  budget: budgetSchema,
+  // Budget obligatoire en euros
+  budget: z2.number().int("Le budget doit \xEAtre un nombre entier").positive("Le budget doit \xEAtre positif").min(10, "Budget minimum de 10\u20AC").max(1e6, "Budget maximum de 1 000 000\u20AC"),
   // Localisation
   location: locationSchema.optional(),
   // Équipe
