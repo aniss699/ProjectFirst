@@ -18,29 +18,30 @@ export const users = pgTable('users', {
 export const missions = pgTable('missions', {
   id: serial('id').primaryKey(),
   user_id: integer('user_id').references(() => users.id).notNull(),
+  client_id: integer('client_id').references(() => users.id),
   title: text('title').notNull(),
   description: text('description').notNull(),
+  excerpt: text('excerpt'),
   category: text('category').notNull(),
-  location: text('location'),
-  location_raw: text('location_raw'),
-  postal_code: text("postal_code"),
-  city: text('city'),
-  country: text('country'),
-  remote_allowed: boolean('remote_allowed').default(true),
-  budget: integer('budget'),
-  budget_value_cents: integer('budget_value_cents'),
-  budget_type: text('budget_type'),
+
+  // Localisation unifiée en JSON
+  location_data: jsonb('location_data'),
+
+  // Budget unifié (plus de redondance)
+  budget_value_cents: integer('budget_value_cents').notNull(),
   currency: text('currency').default('EUR'),
+
+  // ENUMs PostgreSQL optimisés
   urgency: text('urgency').$type<'low' | 'medium' | 'high' | 'urgent'>().default('medium'),
-  status: text('status').$type<'draft' | 'open' | 'published' | 'assigned' | 'completed' | 'cancelled'>().default('open'),
+  status: text('status').$type<'draft' | 'open' | 'in_progress' | 'completed' | 'cancelled'>().default('draft'),
   quality_target: text('quality_target').$type<'basic' | 'standard' | 'premium' | 'luxury'>().default('standard'),
+
   deadline: timestamp('deadline'),
   tags: jsonb('tags'),
   skills_required: jsonb('skills_required'),
   requirements: text('requirements'),
   is_team_mission: boolean('is_team_mission').default(false),
   team_size: integer('team_size').default(1),
-  client_id: integer('client_id').references(() => users.id),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
 });

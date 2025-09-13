@@ -26,11 +26,31 @@ export const createSimpleMissionSchema = z.object({
 // SCHEMAS ZOD POUR VALIDATION SERVER-SIDE
 // ============================================
 
-// Budget schema simplifié avec prix unique obligatoire
+// Schémas optimisés pour le nouveau schéma de base
+
+// Schéma de localisation unifié
+const locationDataSchema = z.object({
+  address: z.string().optional(),
+  postal_code: z.string().regex(/^\d{5}$/, "Code postal invalide").optional(),
+  city: z.string().optional(),
+  country: z.string().default("France"),
+  coordinates: z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180)
+  }).optional(),
+  remote_allowed: z.boolean().default(true)
+}).optional();
+
+// Budget simplifié - une seule valeur obligatoire
 const budgetSchema = z.object({
-  valueCents: z.number().int().positive().min(1000, "Budget minimum de 10€"),
+  value_cents: z.number().int().positive().min(1000, "Budget minimum de 10€").max(100000000, "Budget maximum de 1M€"),
   currency: z.enum(['EUR', 'USD', 'GBP', 'CHF']).default('EUR')
 });
+
+// ENUMs PostgreSQL
+const statusEnum = z.enum(['draft', 'open', 'in_progress', 'completed', 'cancelled']);
+const urgencyEnum = z.enum(['low', 'medium', 'high', 'urgent']);
+const qualityTargetEnum = z.enum(['basic', 'standard', 'premium', 'luxury']);
 
 // Location schema
 const locationSchema = z.object({
