@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, inArray } from 'drizzle-orm';
 import { db } from '../database.js';
 import { missions as missionsTable, bids as bidTable, users, announcements } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js';
@@ -323,37 +323,11 @@ router.get('/', asyncHandler(async (req, res) => {
   }));
 
   try {
-    // Phase 3.1 : Requête explicite avec colonnes sélectionnées pour éviter les erreurs
+    // Phase 3.1 : Requête simple pour éviter les erreurs Drizzle
     const allMissions = await db
-      .select({
-        id: missionsTable.id,
-        title: missionsTable.title,
-        description: missionsTable.description,
-        excerpt: missionsTable.excerpt,
-        category: missionsTable.category,
-        budget_value_cents: missionsTable.budget_value_cents,
-        currency: missionsTable.currency,
-        location_data: missionsTable.location_data,
-        location_raw: missionsTable.location_raw,
-        postal_code: missionsTable.postal_code,
-        city: missionsTable.city,
-        country: missionsTable.country,
-        remote_allowed: missionsTable.remote_allowed,
-        user_id: missionsTable.user_id,
-        client_id: missionsTable.client_id,
-        status: missionsTable.status,
-        urgency: missionsTable.urgency,
-        deadline: missionsTable.deadline,
-        tags: missionsTable.tags,
-        skills_required: missionsTable.skills_required,
-        requirements: missionsTable.requirements,
-        is_team_mission: missionsTable.is_team_mission,
-        team_size: missionsTable.team_size,
-        created_at: missionsTable.created_at,
-        updated_at: missionsTable.updated_at
-      })
+      .select()
       .from(missionsTable)
-      .where(sql`${missionsTable.status} IN ('open', 'published', 'active')`)
+      .where(inArray(missionsTable.status, ['open', 'in_progress']))
       .orderBy(desc(missionsTable.created_at))
       .limit(100);
 

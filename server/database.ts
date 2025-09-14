@@ -2,6 +2,7 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import * as schema from '../shared/schema.js';
 import { users, missions, bids, announcements } from '../shared/schema.js';
 
 // Get database URL from environment
@@ -30,8 +31,8 @@ pool.on('connect', (client) => {
 });
 
 
-// Create drizzle database instance
-export const db = drizzle(pool);
+// Create drizzle database instance with schema
+export const db = drizzle(pool, { schema });
 
 
 // Export initialization functions for explicit calling

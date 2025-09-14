@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { MissionWithBids } from '@shared/schema';
+import type { Mission, Bid } from '@shared/schema';
 import { MissionCard } from '@/components/missions/mission-card';
 import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
 import { SystemStatusBanner } from '@/components/ui/system-status-banner';
@@ -18,6 +18,11 @@ import { Label } from '@/components/ui/label';
 import MissionMatchingEngine from '@/components/ai/mission-matching-engine';
 import { useAuth } from '@/hooks/use-auth';
 
+// Type local pour les missions avec bids
+type MissionWithBids = Mission & {
+  bids: Bid[];
+};
+
 export default function Marketplace() {
   const { user } = useAuth();
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
@@ -30,37 +35,6 @@ export default function Marketplace() {
     location: '',
     sort: 'newest',
   });
-
-  // Retry automatique intelligent
-  React.useEffect(() => {
-    if (error && !isLoading && retryCount < 3) {
-      const now = Date.now();
-      const timeSinceLastRetry = now - lastRetryTime;
-      const minRetryInterval = 5000; // 5 secondes minimum entre les tentatives
-
-      if (timeSinceLastRetry > minRetryInterval) {
-        const retryDelay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Backoff exponentiel
-        
-        console.log(`🔄 Retry automatique #${retryCount + 1} dans ${retryDelay}ms`);
-        
-        const timeoutId = setTimeout(() => {
-          console.log(`🔄 Exécution retry automatique #${retryCount + 1}`);
-          setRetryCount(prev => prev + 1);
-          setLastRetryTime(Date.now());
-          refetch();
-        }, retryDelay);
-
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [error, isLoading, retryCount, lastRetryTime, refetch]);
-
-  // Reset retry counter en cas de succès
-  React.useEffect(() => {
-    if (!error && !isLoading && missions.length > 0) {
-      setRetryCount(0);
-    }
-  }, [error, isLoading, missions.length]);
 
   const { data: missionsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/missions'],
@@ -132,7 +106,7 @@ export default function Marketplace() {
           metadata: {
             total: 0,
             has_errors: true,
-            error_message: `Erreur réseau: ${networkError.message}`,
+            error_message: `Erreur réseau: ${networkError instanceof Error ? networkError.message : 'Unknown error'}`,
             fallback_mode: true
           }
         };
@@ -168,8 +142,39 @@ export default function Marketplace() {
     errorMessage: error?.message 
   });
 
+  // Retry automatique intelligent
+  useEffect(() => {
+    if (error && !isLoading && retryCount < 3) {
+      const now = Date.now();
+      const timeSinceLastRetry = now - lastRetryTime;
+      const minRetryInterval = 5000; // 5 secondes minimum entre les tentatives
+
+      if (timeSinceLastRetry > minRetryInterval) {
+        const retryDelay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Backoff exponentiel
+        
+        console.log(`🔄 Retry automatique #${retryCount + 1} dans ${retryDelay}ms`);
+        
+        const timeoutId = setTimeout(() => {
+          console.log(`🔄 Exécution retry automatique #${retryCount + 1}`);
+          setRetryCount(prev => prev + 1);
+          setLastRetryTime(Date.now());
+          refetch();
+        }, retryDelay);
+
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [error, isLoading, retryCount, lastRetryTime, refetch]);
+
+  // Reset retry counter en cas de succès
+  useEffect(() => {
+    if (!error && !isLoading && missions.length > 0) {
+      setRetryCount(0);
+    }
+  }, [error, isLoading, missions.length]);
+
   const filteredAndSortedMissions = missions
-    .filter((mission) => {
+    .filter((mission: MissionWithBids) => {
       if (filters.category && filters.category !== 'all' && mission.category !== filters.category) return false;
       if (filters.location && !mission.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
       if (filters.budget && filters.budget !== 'all') {
@@ -189,7 +194,7 @@ export default function Marketplace() {
       }
       return true;
     })
-    .sort((a, b) => {
+    .sort((a: MissionWithBids, b: MissionWithBids) => {
       switch (filters.sort) {
         case 'newest':
           return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
@@ -385,7 +390,7 @@ export default function Marketplace() {
                 categories: ['web-development', 'mobile-development']
               }}
               missions={filteredAndSortedMissions}
-              onMissionRecommended={(mission) => {
+              onMissionRecommended={(mission: any) => {
                 setSelectedMissionId(mission.missionId);
                 setShowAIMatching(false);
               }}
@@ -520,7 +525,7 @@ export default function Marketplace() {
             </div>
           )}
 
-          {!isLoading && !error && filteredAndSortedMissions.map((mission) => (
+          {!isLoading && !error && filteredAndSortedMissions.map((mission: MissionWithBids) => (
             <MissionCard
               key={mission.id}
               mission={mission}
