@@ -6,7 +6,7 @@ export type MissionRow = typeof missions.$inferSelect;
 // Interface pour les données de localisation dans le JSONB
 export interface LocationData {
   raw?: string;
-  address?: string; 
+  address?: string;
   city?: string;
   country?: string;
   remote_allowed?: boolean;
@@ -75,14 +75,14 @@ export function generateExcerpt(description: string, maxLength: number = 200): s
 }
 
 // Fonction principale de mapping Row → DTO
-export function mapMission(row: MissionRow): MissionDTO {
+export function mapMission(row: MissionRow): any {
   const locationData = extractLocationData(row.location_data);
-  
+
   return {
     id: row.id,
     title: row.title,
     description: row.description,
-    excerpt: generateExcerpt(row.description, 200),
+    excerpt: row.excerpt || generateExcerpt(row.description, 200),
     category: row.category,
     budget: (row.budget_value_cents / 100).toString(), // Convertir centimes en euros
     budget_value_cents: row.budget_value_cents,

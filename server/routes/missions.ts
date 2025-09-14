@@ -16,8 +16,12 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: any) 
 
 // Utilitaire pour générer un excerpt à partir de la description
 function generateExcerpt(description: string, maxLength: number = 200): string {
-  if (!description || description.length <= maxLength) {
-    return description || '';
+  if (!description) {
+    return '';
+  }
+  
+  if (description.length <= maxLength) {
+    return description;
   }
 
   // Chercher la fin de phrase la plus proche avant maxLength
@@ -309,22 +313,51 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   console.log('📋 Fetching all missions...');
 
-  // Select only existing columns from the database
-  const allMissions = await db
-    .select()
-    .from(missions)
-    .orderBy(desc(missions.created_at));
+  try {
+    // Select only existing columns from the database with error handling
+    const allMissions = await db
+      .select()
+      .from(missions)
+      .orderBy(desc(missions.created_at));
 
-  console.log(`📋 Found ${allMissions.length} missions in database`);
+    console.log(`📋 Found ${allMissions.length} missions in database`);
 
-  // Use DTO mapper to transform each mission
-  const missionsWithBids = allMissions.map(mission => ({
-    ...mapMission(mission),
-    bids: [] // Empty bids array for now
-  }));
+    // Use DTO mapper to transform each mission
+    const missionsWithBids = allMissions.map(mission => ({
+      ...mapMission(mission),
+      bids: [] // Empty bids array for now
+    }));
 
-  console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
-  res.json(missionsWithBids);
+    console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
+    res.json(missionsWithBids);
+  } catch (error: any) {
+    console.error('❌ Error fetching missions:', error);
+    
+    // Check if it's a column-related error
+    if (error.message && error.message.includes('column') && error.message.includes('does not exist')) {
+      console.error('❌ Database schema issue detected:', error.message);
+      return res.status(500).json({
+        ok: false,
+        error: 'Database schema issue',
+        details: 'Please run database migrations',
+        error_type: 'database_schema_error',
+        timestamp: new Date().toISOString(),
+        request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        debug_mode: process.env.NODE_ENV === 'development'
+      });
+    }
+    
+    // Generic error response
+    res.status(500).json({
+      ok: false,
+      error: 'Internal server error',
+      details: 'An error occurred',
+      error_type: 'server_error',
+      timestamp: new Date().toISOString(),
+      request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+      debug_mode: process.env.NODE_ENV === 'development'
+    });
+  }
 }));
 
 // GET /api/missions/health - Health check endpoint (must be before /:id route)
