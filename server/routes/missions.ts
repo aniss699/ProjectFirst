@@ -170,10 +170,13 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     remote_allowed: req.body.remote_allowed !== false
   };
 
+  const fullDescription = description.trim() +
+    (req.body.requirements ? `\n\nExigences spécifiques: ${req.body.requirements}` : '');
+
   const newMission = {
     title: title.trim(),
-    description: description.trim() +
-      (req.body.requirements ? `\n\nExigences spécifiques: ${req.body.requirements}` : ''),
+    description: fullDescription,
+    excerpt: generateExcerpt(fullDescription, 200),
     category: category || 'developpement',
     budget_value_cents: budgetCents,
     currency: 'EUR',
@@ -826,6 +829,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
   const missionToUpdate = {
     title: updateData.title,
     description: updateData.description,
+    excerpt: generateExcerpt(updateData.description, 200),
     category: updateData.category || existingMission[0].category,
     budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
     location_raw: updateData.location || null,

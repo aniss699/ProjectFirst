@@ -159,6 +159,17 @@ BEGIN
                    WHERE table_name = 'missions' AND column_name = 'excerpt') THEN
         ALTER TABLE missions ADD COLUMN excerpt TEXT;
         RAISE NOTICE 'Colonne excerpt ajoutée à la table missions';
+        
+        -- Remplir les excerpts pour les missions existantes
+        UPDATE missions 
+        SET excerpt = CASE 
+          WHEN LENGTH(description) <= 200 THEN description
+          WHEN POSITION('.' IN SUBSTRING(description, 1, 200)) > 120 THEN 
+            SUBSTRING(description, 1, POSITION('.' IN SUBSTRING(description, 1, 200))) 
+          ELSE 
+            SUBSTRING(description, 1, 200) || '...'
+        END
+        WHERE excerpt IS NULL AND description IS NOT NULL;
     END IF;
 
     -- Supprimer les anciennes colonnes budget_min_cents et budget_max_cents si elles existent
