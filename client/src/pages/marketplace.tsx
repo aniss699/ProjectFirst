@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { MissionWithBids } from '@shared/schema';
 import { MissionCard } from '@/components/missions/mission-card';
 import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
+import { SystemStatusBanner } from '@/components/ui/system-status-banner';
 import { categories } from '@/lib/categories';
 import {
   Select,
@@ -21,6 +22,8 @@ export default function Marketplace() {
   const { user } = useAuth();
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [showAIMatching, setShowAIMatching] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastRetryTime, setLastRetryTime] = useState<number>(0);
   const [filters, setFilters] = useState({
     category: 'all',
     budget: 'all',
@@ -28,21 +31,135 @@ export default function Marketplace() {
     sort: 'newest',
   });
 
-  const { data: missions = [], isLoading, error } = useQuery<MissionWithBids[]>({
+  // Retry automatique intelligent
+  React.useEffect(() => {
+    if (error && !isLoading && retryCount < 3) {
+      const now = Date.now();
+      const timeSinceLastRetry = now - lastRetryTime;
+      const minRetryInterval = 5000; // 5 secondes minimum entre les tentatives
+
+      if (timeSinceLastRetry > minRetryInterval) {
+        const retryDelay = Math.min(2000 * Math.pow(2, retryCount), 10000); // Backoff exponentiel
+        
+        console.log(`🔄 Retry automatique #${retryCount + 1} dans ${retryDelay}ms`);
+        
+        const timeoutId = setTimeout(() => {
+          console.log(`🔄 Exécution retry automatique #${retryCount + 1}`);
+          setRetryCount(prev => prev + 1);
+          setLastRetryTime(Date.now());
+          refetch();
+        }, retryDelay);
+
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [error, isLoading, retryCount, lastRetryTime, refetch]);
+
+  // Reset retry counter en cas de succès
+  React.useEffect(() => {
+    if (!error && !isLoading && missions.length > 0) {
+      setRetryCount(0);
+    }
+  }, [error, isLoading, missions.length]);
+
+  const { data: missionsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/missions'],
-    refetchInterval: 60000, // Réduire à 1 minute pour moins de charge serveur
-    retry: 2, // Réduire les tentatives
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000),
-    staleTime: 30000, // Cache valide 30 secondes
-    gcTime: 300000, // Garder en cache 5 minutes
-    refetchOnWindowFocus: false, // Éviter les requêtes inutiles
-    onError: (err) => {
-      console.error('❌ Erreur chargement missions:', err);
+    queryFn: async () => {
+      console.log('🔄 Début requête missions API...');
+      
+      try {
+        const response = await fetch('/api/missions', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        console.log(`📡 Réponse API: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Erreur API détaillée:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          
+          // Retourner des données de fallback au lieu de throw
+          return {
+            missions: [],
+            metadata: {
+              total: 0,
+              has_errors: true,
+              error_message: `API Error ${response.status}: ${response.statusText}`,
+              fallback_mode: true
+            }
+          };
+        }
+
+        const data = await response.json();
+        console.log('✅ Données reçues:', {
+          type: typeof data,
+          hasMetadata: !!data.metadata,
+          hasMissions: !!data.missions,
+          missionsCount: data.missions?.length || (Array.isArray(data) ? data.length : 0)
+        });
+
+        // Normaliser la réponse selon le format attendu
+        if (data.missions && Array.isArray(data.missions)) {
+          return data; // Format avec metadata
+        } else if (Array.isArray(data)) {
+          return { missions: data, metadata: { total: data.length } }; // Format legacy
+        } else {
+          console.warn('⚠️ Format de réponse inattendu, utilisation de fallback');
+          return {
+            missions: [],
+            metadata: {
+              total: 0,
+              has_errors: true,
+              error_message: 'Format de réponse inattendu',
+              fallback_mode: true
+            }
+          };
+        }
+      } catch (networkError) {
+        console.error('❌ Erreur réseau:', networkError);
+        // Retourner des données de fallback au lieu de throw
+        return {
+          missions: [],
+          metadata: {
+            total: 0,
+            has_errors: true,
+            error_message: `Erreur réseau: ${networkError.message}`,
+            fallback_mode: true
+          }
+        };
+      }
     },
-    onSuccess: (data) => {
-      console.log('✅ Missions chargées avec succès:', data?.length || 0);
+    refetchInterval: 120000, // 2 minutes pour réduire la charge
+    retry: (failureCount, error) => {
+      console.log(`🔄 Tentative ${failureCount + 1}/3 après erreur:`, error);
+      return failureCount < 2; // Maximum 3 tentatives
+    },
+    retryDelay: attemptIndex => {
+      const delay = Math.min(1000 * Math.pow(2, attemptIndex), 10000);
+      console.log(`⏳ Retry dans ${delay}ms`);
+      return delay;
+    },
+    staleTime: 60000, // Cache valide 1 minute
+    gcTime: 300000, // Garder en cache 5 minutes
+    refetchOnWindowFocus: false,
+    meta: {
+      errorPolicy: 'soft' // Ne pas propager les erreurs, utiliser les fallbacks
     }
   });
+
+  // Extraire les missions et métadonnées de manière sécurisée
+  const missions = missionsResponse?.missions || [];
+  const metadata = missionsResponse?.metadata || { total: 0 };
+  const isFallbackMode = metadata.fallback_mode || false;
 
   console.log('🏪 Marketplace - État actuel:', { 
     missionsCount: missions.length, 
@@ -97,9 +214,22 @@ export default function Marketplace() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
           Marketplace des Projets
         </h1>
-        <p className="text-base sm:text-lg text-gray-600">
+        <p className="text-base sm:text-lg text-gray-600 mb-4">
           Découvrez et soumissionnez sur les projets disponibles
         </p>
+        
+        {/* Bannière de statut système */}
+        <SystemStatusBanner
+          isLoading={isLoading}
+          hasError={!!error && !isFallbackMode}
+          isFallbackMode={isFallbackMode}
+          errorMessage={metadata?.error_message}
+          onRetry={() => {
+            console.log('🔄 Retry depuis la bannière');
+            refetch();
+          }}
+          className="mb-4"
+        />
       </div>
 
       <div className="mb-6 sm:mb-8">
@@ -180,9 +310,41 @@ export default function Marketplace() {
 
       <div className="lg:w-3/4 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
-            Toutes les missions ({filteredAndSortedMissions.length})
-          </h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 sm:mb-0">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Toutes les missions ({filteredAndSortedMissions.length})
+            </h2>
+            
+            {/* Indicateurs de santé du système */}
+            <div className="flex items-center gap-2">
+              {isLoading && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Chargement...
+                </div>
+              )}
+              
+              {!isLoading && !error && !isFallbackMode && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Service actif
+                </div>
+              )}
+              
+              {isFallbackMode && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  Mode dégradé
+                </div>
+              )}
+              
+              {metadata?.total !== undefined && (
+                <div className="text-sm text-gray-500">
+                  {metadata.total} total{metadata.has_errors && ' (avec erreurs)'}
+                </div>
+              )}
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
             {user?.type === 'provider' && (
               <Button
@@ -239,35 +401,121 @@ export default function Marketplace() {
             </div>
           )}
 
-          {error && (
+          {/* Mode dégradé avec messages d'erreur améliorés */}
+          {(error || isFallbackMode) && !isLoading && (
             <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
-              <div className="text-red-500 mb-4">❌</div>
-              <p className="text-red-500 text-lg">Erreur de chargement des missions</p>
-              <p className="text-gray-600 text-sm mt-2 max-w-md mx-auto">
-                {error?.message?.includes('500') 
-                  ? 'Problème temporaire du serveur. Nos équipes travaillent à le résoudre.'
-                  : 'Impossible de charger les missions pour le moment.'
-                }
-              </p>
-              {process.env.NODE_ENV === 'development' && (
-                <details className="mt-4 text-left bg-gray-100 p-3 rounded text-xs max-w-lg mx-auto">
-                  <summary className="cursor-pointer font-medium">Détails techniques</summary>
-                  <pre className="mt-2 whitespace-pre-wrap">{error?.message}</pre>
-                </details>
-              )}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-                <button 
-                  onClick={() => window.location.reload()} 
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Recharger la page
-                </button>
-                <button 
-                  onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })} 
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                >
-                  Réinitialiser les filtres
-                </button>
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-8 mx-auto max-w-2xl">
+                <div className="text-orange-500 mb-4">
+                  {isFallbackMode ? '⚠️' : '❌'}
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {isFallbackMode ? 'Mode dégradé activé' : 'Problème de chargement'}
+                </h3>
+                
+                <p className="text-gray-700 text-base mb-4">
+                  {isFallbackMode 
+                    ? 'Les missions ne peuvent pas être chargées normalement. Le système fonctionne en mode dégradé.'
+                    : 'Impossible de charger les missions pour le moment.'
+                  }
+                </p>
+
+                {metadata.error_message && (
+                  <div className="bg-white/70 rounded-lg p-4 mb-4 text-sm text-gray-600">
+                    <span className="font-medium">Détail:</span> {metadata.error_message}
+                  </div>
+                )}
+
+                {process.env.NODE_ENV === 'development' && error && (
+                  <details className="mt-4 text-left bg-white/50 p-4 rounded-lg text-xs">
+                    <summary className="cursor-pointer font-medium text-gray-700">Informations de debug</summary>
+                    <div className="mt-3 space-y-2">
+                      <div><strong>Message:</strong> {error?.message}</div>
+                      <div><strong>Metadata:</strong> {JSON.stringify(metadata, null, 2)}</div>
+                      <div><strong>isFallbackMode:</strong> {isFallbackMode ? 'Oui' : 'Non'}</div>
+                    </div>
+                  </details>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                  <button 
+                    onClick={() => {
+                      console.log('🔄 Retry manuel déclenché');
+                      refetch();
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                  >
+                    🔄 Réessayer
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      console.log('🏠 Retour accueil');
+                      window.location.href = '/';
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                  >
+                    🏠 Retour accueil
+                  </button>
+                </div>
+
+                {/* Suggestions d'action */}
+                <div className="mt-6 text-sm text-gray-600">
+                  <p className="mb-2">💡 <strong>Suggestions:</strong></p>
+                  <ul className="text-left space-y-1 max-w-md mx-auto">
+                    <li>• Vérifiez votre connexion internet</li>
+                    <li>• Essayez de recharger dans quelques minutes</li>
+                    <li>• Contactez le support si le problème persiste</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mode dégradé avec missions de démonstration */}
+          {isFallbackMode && !isLoading && missions.length === 0 && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+                <h4 className="text-lg font-semibold text-blue-900 mb-3">🎯 Missions de démonstration</h4>
+                <p className="text-blue-800 mb-4">
+                  En attendant le retour du service, voici quelques exemples de missions typiques :
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      id: 'demo-1',
+                      title: 'Développement site e-commerce',
+                      description: 'Création d\'un site e-commerce moderne avec React et Node.js',
+                      category: 'developpement',
+                      budget: '3500',
+                      location: 'Remote',
+                      status: 'open',
+                      createdAt: new Date().toISOString(),
+                      bids: []
+                    },
+                    {
+                      id: 'demo-2', 
+                      title: 'Design d\'application mobile',
+                      description: 'Design UI/UX pour une application de fitness',
+                      category: 'design',
+                      budget: '2200',
+                      location: 'Paris',
+                      status: 'open',
+                      createdAt: new Date().toISOString(),
+                      bids: []
+                    }
+                  ].map((demoMission, index) => (
+                    <div key={index} className="bg-white/80 rounded-lg p-4 border border-blue-100">
+                      <h5 className="font-medium text-gray-900 mb-2">{demoMission.title}</h5>
+                      <p className="text-gray-600 text-sm mb-3">{demoMission.description}</p>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-600 font-medium">{demoMission.budget}€</span>
+                        <span className="text-gray-500">{demoMission.location}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
