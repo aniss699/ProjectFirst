@@ -2080,19 +2080,10 @@ import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 // server/dto/mission-dto.ts
-function extractLocationData(locationData) {
-  if (!locationData || typeof locationData !== "object") {
-    return {
-      raw: "Remote",
-      remote_allowed: true,
-      country: "France"
-    };
-  }
-  return locationData;
-}
 function generateExcerpt(description, maxLength = 200) {
-  if (!description || description.length <= maxLength) {
-    return description || "";
+  if (!description) return "";
+  if (description.length <= maxLength) {
+    return description;
   }
   const truncated = description.substring(0, maxLength);
   const lastSentenceEnd = Math.max(
@@ -2109,37 +2100,79 @@ function generateExcerpt(description, maxLength = 200) {
   }
   return truncated.trim() + "...";
 }
-function mapMission(row) {
-  const locationData = extractLocationData(row.location_data);
+function formatBudget(budgetValueCents, currency = "EUR") {
+  if (!budgetValueCents) return "0";
+  const budgetEuros = Math.round(budgetValueCents / 100);
+  return budgetEuros.toString();
+}
+function buildLocationData(row) {
   return {
+    raw: row.location_raw || void 0,
+    city: row.city || void 0,
+    country: row.country || "France",
+    postal_code: row.postal_code || void 0,
+    remote_allowed: row.remote_allowed ?? true
+  };
+}
+function formatLocation(locationData) {
+  if (locationData.city && locationData.country) {
+    return `${locationData.city}, ${locationData.country}`;
+  }
+  if (locationData.city) return locationData.city;
+  if (locationData.raw) return locationData.raw;
+  if (locationData.remote_allowed) return "Remote";
+  return "Non sp\xE9cifi\xE9";
+}
+function mapMission(row) {
+  const locationData = buildLocationData(row);
+  return {
+    // Identifiants
     id: row.id,
-    title: row.title,
-    description: row.description,
-    excerpt: row.excerpt || generateExcerpt(row.description, 200),
-    category: row.category,
-    budget: (row.budget_value_cents / 100).toString(),
-    // Convertir centimes en euros
+    // Contenu principal
+    title: row.title || "Mission sans titre",
+    description: row.description || "",
+    excerpt: row.excerpt || generateExcerpt(row.description),
+    category: row.category || "general",
+    // Budget
     budget_value_cents: row.budget_value_cents,
+    budget: formatBudget(row.budget_value_cents, row.currency),
     currency: row.currency || "EUR",
-    location: locationData.raw || locationData.city || "Remote",
-    postal_code: locationData.address || null,
-    city: locationData.city || null,
-    country: locationData.country || "France",
-    remote_allowed: locationData.remote_allowed ?? true,
+    // Location - formats multiples pour compatibilité
+    location_data: locationData,
+    location: formatLocation(locationData),
+    location_raw: row.location_raw,
+    postal_code: row.postal_code,
+    city: row.city,
+    country: row.country,
+    remote_allowed: row.remote_allowed,
+    // Relations utilisateur
     user_id: row.user_id,
     client_id: row.client_id,
-    status: row.status || "draft",
+    userId: row.user_id?.toString(),
+    clientId: row.client_id?.toString(),
+    clientName: "Client",
+    // Par défaut, sera remplacé par la vraie valeur si disponible
+    // Statut et priorité
+    status: row.status || "open",
     urgency: row.urgency || "medium",
+    deadline: row.deadline?.toISOString(),
+    // Métadonnées projet
+    tags: row.tags || [],
+    skills_required: row.skills_required || [],
+    requirements: row.requirements,
+    // Équipe
     is_team_mission: row.is_team_mission || false,
     team_size: row.team_size || 1,
+    // Timestamps
     created_at: row.created_at,
     updated_at: row.updated_at,
     createdAt: row.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
     updatedAt: row.updated_at?.toISOString(),
-    clientName: "Client",
-    // TODO: récupérer le vrai nom client
-    bids: []
-    // TODO: récupérer les vraies offres
+    // Champs calculés/par défaut pour compatibilité frontend
+    bids: [],
+    // Sera populé séparément si nécessaire
+    teamRequirements: []
+    // Pour les missions d'équipe
   };
 }
 
@@ -2387,18 +2420,48 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
 router2.get("/", asyncHandler(async (req, res) => {
   console.log("\u{1F4CB} Fetching all missions...");
   try {
-    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    const allMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      excerpt: missions.excerpt,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      currency: missions.currency,
+      location_raw: missions.location_raw,
+      postal_code: missions.postal_code,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
     const missionsWithBids = allMissions.map((mission) => ({
       ...mapMission(mission),
       bids: []
       // Empty bids array for now
     }));
-    console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
+    console.log("\u{1F4CB} Missions mapped successfully:", missionsWithBids.length);
     res.json(missionsWithBids);
   } catch (error) {
     console.error("\u274C Error fetching missions:", error);
-    if (error.message && error.message.includes("column") && error.message.includes("does not exist")) {
+    console.error("\u274C Full error details:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    if (error.message && (error.message.includes("column") || error.message.includes("relation"))) {
       console.error("\u274C Database schema issue detected:", error.message);
       return res.status(500).json({
         ok: false,
@@ -2413,7 +2476,7 @@ router2.get("/", asyncHandler(async (req, res) => {
     res.status(500).json({
       ok: false,
       error: "Internal server error",
-      details: "An error occurred",
+      details: error.message || "An error occurred",
       error_type: "server_error",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
