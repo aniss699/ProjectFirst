@@ -2229,29 +2229,6 @@ function mapMission(mission) {
     };
   }
 }
-function mapMissions(rows) {
-  if (!Array.isArray(rows)) {
-    console.warn("\u26A0\uFE0F DTO Mapper: Input n'est pas un tableau, retour tableau vide");
-    return [];
-  }
-  const mappedMissions = [];
-  let errorCount = 0;
-  for (const mission of rows) {
-    try {
-      const mapped = mapMission(mission);
-      mappedMissions.push(mapped);
-    } catch (error) {
-      errorCount++;
-      console.error("\u274C DTO Mapper: \xC9chec du mapping pour mission:", mission?.id, error);
-    }
-  }
-  if (errorCount > 0) {
-    console.warn(`\u26A0\uFE0F DTO Mapper: ${errorCount} missions n'ont pas pu \xEAtre mapp\xE9es correctement sur ${rows.length}`);
-  } else {
-    console.log(`\u2705 DTO Mapper: ${mappedMissions.length} missions mapp\xE9es avec succ\xE8s`);
-  }
-  return mappedMissions;
-}
 
 // server/routes/missions.ts
 var asyncHandler = (fn) => (req, res, next) => {
@@ -2495,24 +2472,150 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
   });
 }));
 router2.get("/", asyncHandler(async (req, res) => {
-  console.log("\u{1F4CB} Fetching all missions avec DTO mapper s\xE9curis\xE9...");
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  const startTime = Date.now();
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "get_missions_start",
+    user_agent: req.headers["user-agent"]
+  }));
   try {
-    const allMissions = await db.select().from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
-    console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
-    const missionsWithBids = mapMissions(allMissions);
-    console.log("\u2705 DTO Mapper: Missions mapped successfully:", missionsWithBids.length);
-    res.json(missionsWithBids);
+    const allMissions = await db.select({
+      id: missions.id,
+      title: missions.title,
+      description: missions.description,
+      excerpt: missions.excerpt,
+      category: missions.category,
+      budget_value_cents: missions.budget_value_cents,
+      currency: missions.currency,
+      location_data: missions.location_data,
+      location_raw: missions.location_raw,
+      postal_code: missions.postal_code,
+      city: missions.city,
+      country: missions.country,
+      remote_allowed: missions.remote_allowed,
+      user_id: missions.user_id,
+      client_id: missions.client_id,
+      status: missions.status,
+      urgency: missions.urgency,
+      deadline: missions.deadline,
+      tags: missions.tags,
+      skills_required: missions.skills_required,
+      requirements: missions.requirements,
+      is_team_mission: missions.is_team_mission,
+      team_size: missions.team_size,
+      created_at: missions.created_at,
+      updated_at: missions.updated_at
+    }).from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "database_query_success",
+      missions_count: allMissions.length,
+      query_time_ms: Date.now() - startTime
+    }));
+    const validMissions = allMissions.filter((mission) => {
+      if (!mission.id || !mission.title) {
+        console.warn(JSON.stringify({
+          level: "warn",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          request_id: requestId,
+          action: "mission_validation_failed",
+          mission_id: mission.id,
+          reason: "missing_required_fields"
+        }));
+        return false;
+      }
+      return true;
+    });
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "missions_validation_complete",
+      valid_missions: validMissions.length,
+      filtered_out: allMissions.length - validMissions.length
+    }));
+    const missionsWithBids = [];
+    let mappingErrors = 0;
+    for (const mission of validMissions) {
+      try {
+        const mappedMission = mapMission(mission);
+        missionsWithBids.push(mappedMission);
+      } catch (mappingError) {
+        mappingErrors++;
+        console.error(JSON.stringify({
+          level: "error",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          request_id: requestId,
+          action: "mission_mapping_error",
+          mission_id: mission.id,
+          error: mappingError.message
+        }));
+        missionsWithBids.push({
+          id: mission.id,
+          title: mission.title || "Mission sans titre",
+          description: mission.description || "",
+          excerpt: "Erreur lors du chargement des d\xE9tails",
+          category: mission.category || "general",
+          budget: "0",
+          budget_value_cents: 0,
+          currency: "EUR",
+          budget_display: "Non disponible",
+          location: "Remote",
+          status: mission.status || "open",
+          user_id: mission.user_id,
+          userId: mission.user_id?.toString(),
+          clientName: "Client",
+          createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+          bids: []
+        });
+      }
+    }
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "missions_mapping_complete",
+      successful_mappings: missionsWithBids.length - mappingErrors,
+      mapping_errors: mappingErrors,
+      total_time_ms: Date.now() - startTime
+    }));
+    res.json({
+      missions: missionsWithBids,
+      metadata: {
+        total: missionsWithBids.length,
+        request_id: requestId,
+        query_time_ms: Date.now() - startTime,
+        has_errors: mappingErrors > 0
+      }
+    });
   } catch (error) {
-    console.error("\u274C DTO Mapper Error:", error);
-    console.error("\u274C Stack:", error.stack);
+    console.error(JSON.stringify({
+      level: "error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "get_missions_error",
+      error_message: error.message,
+      error_stack: error.stack,
+      total_time_ms: Date.now() - startTime
+    }));
     res.status(500).json({
       ok: false,
       error: "Internal server error",
       details: error.message,
       error_type: "server_error",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-      debug_mode: process.env.NODE_ENV === "development"
+      request_id: requestId,
+      debug_mode: process.env.NODE_ENV === "development",
+      suggestions: [
+        "V\xE9rifiez la connectivit\xE9 \xE0 la base de donn\xE9es",
+        "Contr\xF4lez la structure de la table missions",
+        "Validez que les colonnes requises existent"
+      ]
     });
   }
 }));
