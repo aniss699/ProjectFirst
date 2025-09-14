@@ -11,10 +11,6 @@ packages = ["libxcrypt"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 39345
-externalPort = 3000
-
 [workflows]
 runButton = "Project"
 
@@ -32,18 +28,6 @@ task = "workflow.run"
 args = "Start application"
 
 [[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "NODE_ENV=development npx tsx server/index.ts"
-waitForPort = 5000
-
-[[workflows.workflow]]
 name = "Production Preview"
 author = 47514937
 mode = "sequential"
@@ -55,6 +39,18 @@ args = "npm run build"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run start"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [deployment]
 deploymentTarget = "autoscale"
