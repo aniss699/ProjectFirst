@@ -314,11 +314,38 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   console.log('📋 Fetching all missions...');
 
   try {
-    // Select only existing columns from the database with error handling
+    // Use explicit column selection to avoid schema issues
     const allMissions = await db
-      .select()
+      .select({
+        id: missions.id,
+        title: missions.title,
+        description: missions.description,
+        excerpt: missions.excerpt,
+        category: missions.category,
+        budget_value_cents: missions.budget_value_cents,
+        currency: missions.currency,
+        location_raw: missions.location_raw,
+        postal_code: missions.postal_code,
+        city: missions.city,
+        country: missions.country,
+        remote_allowed: missions.remote_allowed,
+        user_id: missions.user_id,
+        client_id: missions.client_id,
+        status: missions.status,
+        urgency: missions.urgency,
+        deadline: missions.deadline,
+        tags: missions.tags,
+        skills_required: missions.skills_required,
+        requirements: missions.requirements,
+        is_team_mission: missions.is_team_mission,
+        team_size: missions.team_size,
+        created_at: missions.created_at,
+        updated_at: missions.updated_at
+      })
       .from(missions)
-      .orderBy(desc(missions.created_at));
+      .where(sql`${missions.status} IN ('open', 'published', 'active')`)
+      .orderBy(desc(missions.created_at))
+      .limit(100); // Limiter pour éviter les surcharges
 
     console.log(`📋 Found ${allMissions.length} missions in database`);
 
@@ -328,13 +355,18 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
       bids: [] // Empty bids array for now
     }));
 
-    console.log('📋 Missions with bids:', missionsWithBids.map(m => ({ id: m.id, title: m.title, status: m.status })));
+    console.log('📋 Missions mapped successfully:', missionsWithBids.length);
     res.json(missionsWithBids);
   } catch (error: any) {
     console.error('❌ Error fetching missions:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     
     // Check if it's a column-related error
-    if (error.message && error.message.includes('column') && error.message.includes('does not exist')) {
+    if (error.message && (error.message.includes('column') || error.message.includes('relation'))) {
       console.error('❌ Database schema issue detected:', error.message);
       return res.status(500).json({
         ok: false,
@@ -351,7 +383,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     res.status(500).json({
       ok: false,
       error: 'Internal server error',
-      details: 'An error occurred',
+      details: error.message || 'An error occurred',
       error_type: 'server_error',
       timestamp: new Date().toISOString(),
       request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,

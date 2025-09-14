@@ -242,19 +242,33 @@ export default function Marketplace() {
           {error && (
             <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
               <div className="text-red-500 mb-4">❌</div>
-              <p className="text-red-500 text-lg">Erreur de chargement</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Impossible de charger les missions. 
-                {process.env.NODE_ENV === 'development' && (
-                  <span className="block mt-1 text-xs">Debug: {error?.message}</span>
-                )}
+              <p className="text-red-500 text-lg">Erreur de chargement des missions</p>
+              <p className="text-gray-600 text-sm mt-2 max-w-md mx-auto">
+                {error?.message?.includes('500') 
+                  ? 'Problème temporaire du serveur. Nos équipes travaillent à le résoudre.'
+                  : 'Impossible de charger les missions pour le moment.'
+                }
               </p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Recharger la page
-              </button>
+              {process.env.NODE_ENV === 'development' && (
+                <details className="mt-4 text-left bg-gray-100 p-3 rounded text-xs max-w-lg mx-auto">
+                  <summary className="cursor-pointer font-medium">Détails techniques</summary>
+                  <pre className="mt-2 whitespace-pre-wrap">{error?.message}</pre>
+                </details>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  Recharger la page
+                </button>
+                <button 
+                  onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })} 
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
             </div>
           )}
 
