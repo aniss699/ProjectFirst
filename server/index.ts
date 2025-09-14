@@ -114,7 +114,7 @@ async function cleanupPreviousProcess(): Promise<void> {
         console.log('⚠️ Port 5000 may still be busy, will retry during startup');
       }
     } catch (killError) {
-      console.log('🔍 Force-kill attempt failed, continuing with normal startup:', killError.message);
+      console.log('🔍 Force-kill attempt failed, continuing with normal startup:', killError instanceof Error ? killError.message : 'Unknown error');
     }
   }
 }
