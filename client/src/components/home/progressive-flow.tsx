@@ -302,8 +302,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   // Étape -1 (Niveau 0): Présentation de Swideal
   const renderStepMinus1 = () => (
-    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex flex-col justify-center px-4 py-6">
-      <div className="text-center space-y-4 max-w-3xl mx-auto flex-1 flex flex-col justify-center">
+    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex flex-col justify-center px-2 md:px-4 py-6">
+      <div className="text-center space-y-4 w-full md:max-w-3xl mx-auto flex-1 flex flex-col justify-center">
         <div className="space-y-4 animate-fade-in">
           <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
             <div className="text-center mb-4">
