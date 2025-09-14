@@ -2115,7 +2115,7 @@ function mapMission(row) {
     id: row.id,
     title: row.title,
     description: row.description,
-    excerpt: generateExcerpt(row.description, 200),
+    excerpt: row.excerpt || generateExcerpt(row.description, 200),
     category: row.category,
     budget: (row.budget_value_cents / 100).toString(),
     // Convertir centimes en euros
@@ -2148,8 +2148,11 @@ var asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 function generateExcerpt2(description, maxLength = 200) {
-  if (!description || description.length <= maxLength) {
-    return description || "";
+  if (!description) {
+    return "";
+  }
+  if (description.length <= maxLength) {
+    return description;
   }
   const truncated = description.substring(0, maxLength);
   const lastSentenceEnd = Math.max(
@@ -2383,15 +2386,40 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
 }));
 router2.get("/", asyncHandler(async (req, res) => {
   console.log("\u{1F4CB} Fetching all missions...");
-  const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
-  console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
-  const missionsWithBids = allMissions.map((mission) => ({
-    ...mapMission(mission),
-    bids: []
-    // Empty bids array for now
-  }));
-  console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
-  res.json(missionsWithBids);
+  try {
+    const allMissions = await db.select().from(missions).orderBy(desc(missions.created_at));
+    console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
+    const missionsWithBids = allMissions.map((mission) => ({
+      ...mapMission(mission),
+      bids: []
+      // Empty bids array for now
+    }));
+    console.log("\u{1F4CB} Missions with bids:", missionsWithBids.map((m) => ({ id: m.id, title: m.title, status: m.status })));
+    res.json(missionsWithBids);
+  } catch (error) {
+    console.error("\u274C Error fetching missions:", error);
+    if (error.message && error.message.includes("column") && error.message.includes("does not exist")) {
+      console.error("\u274C Database schema issue detected:", error.message);
+      return res.status(500).json({
+        ok: false,
+        error: "Database schema issue",
+        details: "Please run database migrations",
+        error_type: "database_schema_error",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        debug_mode: process.env.NODE_ENV === "development"
+      });
+    }
+    res.status(500).json({
+      ok: false,
+      error: "Internal server error",
+      details: "An error occurred",
+      error_type: "server_error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+      debug_mode: process.env.NODE_ENV === "development"
+    });
+  }
 }));
 router2.get("/health", asyncHandler(async (req, res) => {
   const startTime = Date.now();
