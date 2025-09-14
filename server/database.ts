@@ -29,25 +29,13 @@ pool.on('connect', (client) => {
   console.log('✅ Database connection established');
 });
 
-// Test connection on startup
-async function testConnection() {
-  try {
-    const result = await pool.query('SELECT NOW() as current_time');
-    console.log('✅ Database connection test successful:', result.rows[0]);
-  } catch (error) {
-    console.error('❌ Database connection test failed:', {
-      message: (error as Error).message,
-      code: (error as any).code,
-      detail: (error as any).detail
-    });
-  }
-}
 
 // Create drizzle database instance
 export const db = drizzle(pool);
 
-// Initialize database tables
-async function initializeDatabase() {
+
+// Export initialization functions for explicit calling
+export async function initializeDatabase() {
   try {
     console.log('🔧 Initializing database tables...');
     
@@ -207,9 +195,18 @@ async function initializeDatabase() {
   }
 }
 
-// Initialize on import
-initializeDatabase();
-testConnection();
+export async function testConnection() {
+  try {
+    const result = await pool.query('SELECT NOW() as current_time');
+    console.log('✅ Database connection test successful:', result.rows[0]);
+  } catch (error) {
+    console.error('❌ Database connection test failed:', {
+      message: (error as Error).message,
+      code: (error as any).code,
+      detail: (error as any).detail
+    });
+  }
+}
 
 // Log database configuration
 console.log('🔗 Database connection established:', {

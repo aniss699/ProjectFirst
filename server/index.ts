@@ -184,19 +184,7 @@ async function validateDatabaseConnection() {
   }
 }
 
-// Validate database connection on startup (non-blocking)
-setImmediate(async () => {
-  await validateDatabaseConnection();
-});
-
-// Création des comptes démo simplifiée (non bloquant) - moved to after server start
-setImmediate(async () => {
-  try {
-    console.log('✅ Comptes démo - vérification différée');
-  } catch (error) {
-    console.warn('⚠️ Comptes démo - vérification échouée');
-  }
-});
+// Database initialization will be called explicitly during server startup
 
 // Remove in-memory missions storage - using database only
 
@@ -490,6 +478,18 @@ async function startServerWithRetry(): Promise<void> {
   const startTime = Date.now();
   
   await cleanupPreviousProcess();
+  
+  // Initialize database explicitly here instead of in imports
+  console.log('🔧 Initializing database before server start...');
+  try {
+    const { initializeDatabase, testConnection } = await import('./database.js');
+    await initializeDatabase();
+    await testConnection();
+    await validateDatabaseConnection();
+    console.log('✅ Database initialization completed');
+  } catch (dbError) {
+    console.warn('⚠️ Database initialization failed (non-blocking):', dbError instanceof Error ? dbError.message : 'Unknown error');
+  }
   
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // Check hard deadline
