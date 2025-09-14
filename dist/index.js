@@ -14,6 +14,365 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  aiEvents: () => aiEvents,
+  aiEventsRelations: () => aiEventsRelations,
+  announcements: () => announcements,
+  announcementsRelations: () => announcementsRelations,
+  bids: () => bids,
+  bidsRelations: () => bidsRelations,
+  favorites: () => favorites,
+  favoritesRelations: () => favoritesRelations,
+  feedFeedback: () => feedFeedback,
+  feedFeedbackRelations: () => feedFeedbackRelations,
+  feedSeen: () => feedSeen,
+  feedSeenRelations: () => feedSeenRelations,
+  insertAiEventSchema: () => insertAiEventSchema,
+  insertAnnouncementSchema: () => insertAnnouncementSchema,
+  insertBidSchema: () => insertBidSchema,
+  insertFavoritesSchema: () => insertFavoritesSchema,
+  insertFeedFeedbackSchema: () => insertFeedFeedbackSchema,
+  insertFeedSeenSchema: () => insertFeedSeenSchema,
+  insertMissionSchema: () => insertMissionSchema,
+  insertOpenTeamSchema: () => insertOpenTeamSchema,
+  insertUserSchema: () => insertUserSchema,
+  missions: () => missions,
+  missionsRelations: () => missionsRelations,
+  openTeams: () => openTeams,
+  openTeamsRelations: () => openTeamsRelations,
+  users: () => users,
+  usersRelations: () => usersRelations
+});
+import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { z } from "zod";
+var users, missions, openTeams, bids, announcements, feedFeedback, feedSeen, favorites, usersRelations, missionsRelations, openTeamsRelations, bidsRelations, announcementsRelations, feedFeedbackRelations, feedSeenRelations, favoritesRelations, insertUserSchema, insertMissionSchema, insertBidSchema, insertOpenTeamSchema, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoritesSchema, aiEvents, aiEventsRelations, insertAiEventSchema;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    users = pgTable("users", {
+      id: serial("id").primaryKey(),
+      email: text("email").notNull().unique(),
+      name: text("name").notNull(),
+      password: text("password").notNull(),
+      role: text("role").notNull().$type(),
+      rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
+      rating_count: integer("rating_count").default(0),
+      profile_data: jsonb("profile_data"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    missions = pgTable("missions", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      client_id: integer("client_id").references(() => users.id),
+      title: text("title").notNull(),
+      description: text("description").notNull(),
+      excerpt: text("excerpt"),
+      category: text("category").notNull(),
+      // Localisation unifiée en JSON
+      location_data: jsonb("location_data"),
+      // Budget unifié (plus de redondance)
+      budget_value_cents: integer("budget_value_cents").notNull(),
+      currency: text("currency").default("EUR"),
+      // ENUMs PostgreSQL optimisés
+      urgency: text("urgency").$type().default("medium"),
+      status: text("status").$type().default("draft"),
+      quality_target: text("quality_target").$type().default("standard"),
+      deadline: timestamp("deadline"),
+      tags: jsonb("tags"),
+      skills_required: jsonb("skills_required"),
+      requirements: text("requirements"),
+      is_team_mission: boolean("is_team_mission").default(false),
+      team_size: integer("team_size").default(1),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    openTeams = pgTable("open_teams", {
+      id: serial("id").primaryKey(),
+      mission_id: integer("mission_id").references(() => missions.id).notNull(),
+      name: text("name").notNull(),
+      // Nom de l'équipe
+      description: text("description"),
+      creator_id: integer("creator_id").references(() => users.id).notNull(),
+      // Initiateur de l'équipe
+      estimated_budget: integer("estimated_budget"),
+      // Budget estimé en centimes
+      estimated_timeline_days: integer("estimated_timeline_days"),
+      members: jsonb("members"),
+      // Membres actuels de l'équipe
+      required_roles: jsonb("required_roles"),
+      // Rôles recherchés
+      max_members: integer("max_members").default(5),
+      status: text("status").$type().default("recruiting"),
+      visibility: text("visibility").$type().default("public"),
+      auto_accept: boolean("auto_accept").default(true),
+      // Accepter automatiquement les candidatures
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    bids = pgTable("bids", {
+      id: serial("id").primaryKey(),
+      mission_id: integer("mission_id").references(() => missions.id).notNull(),
+      provider_id: integer("provider_id").references(() => users.id).notNull(),
+      amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+      timeline_days: integer("timeline_days"),
+      message: text("message"),
+      score_breakdown: jsonb("score_breakdown"),
+      is_leading: boolean("is_leading").default(false),
+      status: text("status").$type().default("pending"),
+      // Extensions pour les équipes
+      bid_type: text("bid_type").$type().default("individual"),
+      team_composition: jsonb("team_composition"),
+      // Structure de l'équipe
+      team_lead_id: integer("team_lead_id").references(() => users.id),
+      // Chef d'équipe
+      open_team_id: integer("open_team_id").references(() => openTeams.id),
+      // Référence vers équipe ouverte
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    announcements = pgTable("announcements", {
+      id: serial("id").primaryKey(),
+      title: text("title").notNull(),
+      content: text("content").notNull(),
+      type: text("type").$type().default("info"),
+      priority: integer("priority").default(1),
+      is_active: boolean("is_active").default(true),
+      status: text("status").$type().default("active"),
+      category: text("category"),
+      budget: integer("budget"),
+      location: text("location"),
+      user_id: integer("user_id").references(() => users.id),
+      sponsored: boolean("sponsored").default(false),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    feedFeedback = pgTable("feed_feedback", {
+      id: serial("id").primaryKey(),
+      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      feedback_type: text("feedback_type").$type().notNull(),
+      created_at: timestamp("created_at").defaultNow()
+    });
+    feedSeen = pgTable("feed_seen", {
+      id: serial("id").primaryKey(),
+      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      seen_at: timestamp("seen_at").defaultNow()
+    });
+    favorites = pgTable("favorites", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
+      created_at: timestamp("created_at").defaultNow()
+    });
+    usersRelations = relations(users, ({ many }) => ({
+      missions: many(missions),
+      bids: many(bids)
+    }));
+    missionsRelations = relations(missions, ({ one, many }) => ({
+      user: one(users, {
+        fields: [missions.user_id],
+        references: [users.id]
+      }),
+      bids: many(bids)
+    }));
+    openTeamsRelations = relations(openTeams, ({ one, many }) => ({
+      mission: one(missions, {
+        fields: [openTeams.mission_id],
+        references: [missions.id]
+      }),
+      creator: one(users, {
+        fields: [openTeams.creator_id],
+        references: [users.id]
+      }),
+      bids: many(bids)
+    }));
+    bidsRelations = relations(bids, ({ one }) => ({
+      mission: one(missions, {
+        fields: [bids.mission_id],
+        references: [missions.id]
+      }),
+      provider: one(users, {
+        fields: [bids.provider_id],
+        references: [users.id]
+      }),
+      teamLead: one(users, {
+        fields: [bids.team_lead_id],
+        references: [users.id]
+      }),
+      openTeam: one(openTeams, {
+        fields: [bids.open_team_id],
+        references: [openTeams.id]
+      })
+    }));
+    announcementsRelations = relations(announcements, ({ one, many }) => ({
+      user: one(users, {
+        fields: [announcements.user_id],
+        references: [users.id]
+      }),
+      feedbacks: many(feedFeedback),
+      seenBy: many(feedSeen),
+      favorites: many(favorites)
+    }));
+    feedFeedbackRelations = relations(feedFeedback, ({ one }) => ({
+      announcement: one(announcements, {
+        fields: [feedFeedback.announcement_id],
+        references: [announcements.id]
+      }),
+      user: one(users, {
+        fields: [feedFeedback.user_id],
+        references: [users.id]
+      })
+    }));
+    feedSeenRelations = relations(feedSeen, ({ one }) => ({
+      announcement: one(announcements, {
+        fields: [feedSeen.announcement_id],
+        references: [announcements.id]
+      }),
+      user: one(users, {
+        fields: [feedSeen.user_id],
+        references: [users.id]
+      })
+    }));
+    favoritesRelations = relations(favorites, ({ one }) => ({
+      announcement: one(announcements, {
+        fields: [favorites.announcement_id],
+        references: [announcements.id]
+      }),
+      user: one(users, {
+        fields: [favorites.user_id],
+        references: [users.id]
+      })
+    }));
+    insertUserSchema = z.object({
+      email: z.string().email(),
+      name: z.string().min(1),
+      password: z.string().min(8),
+      // Added password validation, assuming a minimum of 8 characters
+      role: z.enum(["CLIENT", "PRO", "ADMIN"]),
+      rating_mean: z.string().optional(),
+      rating_count: z.number().int().min(0).optional(),
+      profile_data: z.any().optional()
+    });
+    insertMissionSchema = z.object({
+      user_id: z.number().int().positive(),
+      title: z.string().min(1),
+      description: z.string().min(1),
+      category: z.string().min(1),
+      location: z.string().optional(),
+      postal_code: z.string().optional(),
+      // Added postal_code validation
+      budget: z.number().int().min(0).optional(),
+      budget_value_cents: z.number().int().min(0).optional(),
+      budget_type: z.string().optional(),
+      urgency: z.enum(["low", "medium", "high", "urgent"]).optional(),
+      status: z.enum(["draft", "open", "published", "assigned", "completed", "cancelled"]).optional(),
+      quality_target: z.enum(["basic", "standard", "premium", "luxury"]).optional()
+    });
+    insertBidSchema = z.object({
+      mission_id: z.number().int().positive(),
+      provider_id: z.number().int().positive(),
+      amount: z.string(),
+      timeline_days: z.number().int().min(1).optional(),
+      message: z.string().optional(),
+      score_breakdown: z.any().optional(),
+      is_leading: z.boolean().optional(),
+      status: z.enum(["pending", "accepted", "rejected", "withdrawn"]).optional(),
+      // Extensions pour les équipes
+      bid_type: z.enum(["individual", "team", "open_team"]).optional(),
+      team_composition: z.any().optional(),
+      // Structure de l'équipe
+      team_lead_id: z.number().int().positive().optional(),
+      open_team_id: z.number().int().positive().optional()
+    });
+    insertOpenTeamSchema = z.object({
+      mission_id: z.number().int().positive(),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      // creator_id is set from authenticated user, not from client
+      estimated_budget: z.number().int().positive().optional(),
+      estimated_timeline_days: z.number().int().min(1).optional(),
+      members: z.any().optional(),
+      required_roles: z.any().optional(),
+      max_members: z.number().int().min(2).max(10).optional(),
+      status: z.enum(["recruiting", "complete", "submitted", "cancelled"]).optional(),
+      visibility: z.enum(["public", "private"]).optional(),
+      auto_accept: z.boolean().optional()
+    });
+    insertAnnouncementSchema = z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+      type: z.enum(["info", "warning", "error", "success"]).optional(),
+      priority: z.number().int().min(1).optional(),
+      is_active: z.boolean().optional(),
+      status: z.enum(["active", "completed", "cancelled", "draft"]).optional(),
+      category: z.string().optional(),
+      budget: z.number().int().min(0).optional(),
+      location: z.string().optional(),
+      user_id: z.number().int().positive().optional(),
+      sponsored: z.boolean().optional()
+    });
+    insertFeedFeedbackSchema = z.object({
+      announcement_id: z.number().int().positive(),
+      user_id: z.number().int().positive(),
+      feedback_type: z.enum(["like", "dislike", "interested", "not_relevant"])
+    });
+    insertFeedSeenSchema = z.object({
+      announcement_id: z.number().int().positive(),
+      user_id: z.number().int().positive()
+    });
+    insertFavoritesSchema = z.object({
+      user_id: z.number().int().positive(),
+      announcement_id: z.number().int().positive()
+    });
+    aiEvents = pgTable("ai_events", {
+      id: text("id").primaryKey(),
+      phase: text("phase").$type().notNull(),
+      provider: text("provider").notNull(),
+      model_family: text("model_family").$type().notNull(),
+      model_name: text("model_name").notNull(),
+      allow_training: boolean("allow_training").notNull(),
+      input_redacted: jsonb("input_redacted"),
+      output: jsonb("output"),
+      confidence: text("confidence"),
+      tokens: integer("tokens"),
+      latency_ms: integer("latency_ms"),
+      provenance: text("provenance").$type().notNull(),
+      prompt_hash: text("prompt_hash"),
+      accepted: boolean("accepted"),
+      rating: integer("rating"),
+      edits: jsonb("edits"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    aiEventsRelations = relations(aiEvents, ({ one }) => ({
+      // Pas de relations directes pour l'instant
+    }));
+    insertAiEventSchema = z.object({
+      id: z.string(),
+      phase: z.enum(["pricing", "brief_enhance", "matching", "scoring"]),
+      provider: z.string(),
+      model_family: z.enum(["gemini", "openai", "local", "other"]),
+      model_name: z.string(),
+      allow_training: z.boolean(),
+      input_redacted: z.any().optional(),
+      output: z.any().optional(),
+      confidence: z.string().optional(),
+      tokens: z.number().int().optional(),
+      latency_ms: z.number().int().optional(),
+      provenance: z.enum(["auto", "human_validated", "ab_test_winner"]),
+      prompt_hash: z.string().optional(),
+      accepted: z.boolean().optional(),
+      rating: z.number().int().min(1).max(5).optional(),
+      edits: z.any().optional()
+    });
+  }
+});
+
 // server/database.ts
 var database_exports = {};
 __export(database_exports, {
@@ -190,6 +549,7 @@ var databaseUrl, pool, db;
 var init_database = __esm({
   "server/database.ts"() {
     "use strict";
+    init_schema();
     databaseUrl = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
     pool = new Pool({
       connectionString: databaseUrl,
@@ -208,7 +568,7 @@ var init_database = __esm({
     pool.on("connect", (client) => {
       console.log("\u2705 Database connection established");
     });
-    db = drizzle(pool);
+    db = drizzle(pool, { schema: schema_exports });
     console.log("\u{1F517} Database connection established:", {
       databaseUrl: databaseUrl ? "***configured***" : "missing",
       isCloudSQL: databaseUrl?.includes("/cloudsql/") || false
@@ -978,331 +1338,7 @@ import { createServer } from "http";
 
 // server/services/mission-sync.ts
 init_database();
-
-// shared/schema.ts
-import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { z } from "zod";
-var users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  password: text("password").notNull(),
-  role: text("role").notNull().$type(),
-  rating_mean: decimal("rating_mean", { precision: 3, scale: 2 }),
-  rating_count: integer("rating_count").default(0),
-  profile_data: jsonb("profile_data"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var missions = pgTable("missions", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
-  client_id: integer("client_id").references(() => users.id),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  excerpt: text("excerpt"),
-  category: text("category").notNull(),
-  // Localisation unifiée en JSON
-  location_data: jsonb("location_data"),
-  // Budget unifié (plus de redondance)
-  budget_value_cents: integer("budget_value_cents").notNull(),
-  currency: text("currency").default("EUR"),
-  // ENUMs PostgreSQL optimisés
-  urgency: text("urgency").$type().default("medium"),
-  status: text("status").$type().default("draft"),
-  quality_target: text("quality_target").$type().default("standard"),
-  deadline: timestamp("deadline"),
-  tags: jsonb("tags"),
-  skills_required: jsonb("skills_required"),
-  requirements: text("requirements"),
-  is_team_mission: boolean("is_team_mission").default(false),
-  team_size: integer("team_size").default(1),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var openTeams = pgTable("open_teams", {
-  id: serial("id").primaryKey(),
-  mission_id: integer("mission_id").references(() => missions.id).notNull(),
-  name: text("name").notNull(),
-  // Nom de l'équipe
-  description: text("description"),
-  creator_id: integer("creator_id").references(() => users.id).notNull(),
-  // Initiateur de l'équipe
-  estimated_budget: integer("estimated_budget"),
-  // Budget estimé en centimes
-  estimated_timeline_days: integer("estimated_timeline_days"),
-  members: jsonb("members"),
-  // Membres actuels de l'équipe
-  required_roles: jsonb("required_roles"),
-  // Rôles recherchés
-  max_members: integer("max_members").default(5),
-  status: text("status").$type().default("recruiting"),
-  visibility: text("visibility").$type().default("public"),
-  auto_accept: boolean("auto_accept").default(true),
-  // Accepter automatiquement les candidatures
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var bids = pgTable("bids", {
-  id: serial("id").primaryKey(),
-  mission_id: integer("mission_id").references(() => missions.id).notNull(),
-  provider_id: integer("provider_id").references(() => users.id).notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  timeline_days: integer("timeline_days"),
-  message: text("message"),
-  score_breakdown: jsonb("score_breakdown"),
-  is_leading: boolean("is_leading").default(false),
-  status: text("status").$type().default("pending"),
-  // Extensions pour les équipes
-  bid_type: text("bid_type").$type().default("individual"),
-  team_composition: jsonb("team_composition"),
-  // Structure de l'équipe
-  team_lead_id: integer("team_lead_id").references(() => users.id),
-  // Chef d'équipe
-  open_team_id: integer("open_team_id").references(() => openTeams.id),
-  // Référence vers équipe ouverte
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var announcements = pgTable("announcements", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  type: text("type").$type().default("info"),
-  priority: integer("priority").default(1),
-  is_active: boolean("is_active").default(true),
-  status: text("status").$type().default("active"),
-  category: text("category"),
-  budget: integer("budget"),
-  location: text("location"),
-  user_id: integer("user_id").references(() => users.id),
-  sponsored: boolean("sponsored").default(false),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var feedFeedback = pgTable("feed_feedback", {
-  id: serial("id").primaryKey(),
-  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
-  feedback_type: text("feedback_type").$type().notNull(),
-  created_at: timestamp("created_at").defaultNow()
-});
-var feedSeen = pgTable("feed_seen", {
-  id: serial("id").primaryKey(),
-  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
-  seen_at: timestamp("seen_at").defaultNow()
-});
-var favorites = pgTable("favorites", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
-  announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
-  created_at: timestamp("created_at").defaultNow()
-});
-var usersRelations = relations(users, ({ many }) => ({
-  missions: many(missions),
-  bids: many(bids)
-}));
-var missionsRelations = relations(missions, ({ one, many }) => ({
-  user: one(users, {
-    fields: [missions.user_id],
-    references: [users.id]
-  }),
-  bids: many(bids)
-}));
-var openTeamsRelations = relations(openTeams, ({ one, many }) => ({
-  mission: one(missions, {
-    fields: [openTeams.mission_id],
-    references: [missions.id]
-  }),
-  creator: one(users, {
-    fields: [openTeams.creator_id],
-    references: [users.id]
-  }),
-  bids: many(bids)
-}));
-var bidsRelations = relations(bids, ({ one }) => ({
-  mission: one(missions, {
-    fields: [bids.mission_id],
-    references: [missions.id]
-  }),
-  provider: one(users, {
-    fields: [bids.provider_id],
-    references: [users.id]
-  }),
-  teamLead: one(users, {
-    fields: [bids.team_lead_id],
-    references: [users.id]
-  }),
-  openTeam: one(openTeams, {
-    fields: [bids.open_team_id],
-    references: [openTeams.id]
-  })
-}));
-var announcementsRelations = relations(announcements, ({ one, many }) => ({
-  user: one(users, {
-    fields: [announcements.user_id],
-    references: [users.id]
-  }),
-  feedbacks: many(feedFeedback),
-  seenBy: many(feedSeen),
-  favorites: many(favorites)
-}));
-var feedFeedbackRelations = relations(feedFeedback, ({ one }) => ({
-  announcement: one(announcements, {
-    fields: [feedFeedback.announcement_id],
-    references: [announcements.id]
-  }),
-  user: one(users, {
-    fields: [feedFeedback.user_id],
-    references: [users.id]
-  })
-}));
-var feedSeenRelations = relations(feedSeen, ({ one }) => ({
-  announcement: one(announcements, {
-    fields: [feedSeen.announcement_id],
-    references: [announcements.id]
-  }),
-  user: one(users, {
-    fields: [feedSeen.user_id],
-    references: [users.id]
-  })
-}));
-var favoritesRelations = relations(favorites, ({ one }) => ({
-  announcement: one(announcements, {
-    fields: [favorites.announcement_id],
-    references: [announcements.id]
-  }),
-  user: one(users, {
-    fields: [favorites.user_id],
-    references: [users.id]
-  })
-}));
-var insertUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
-  password: z.string().min(8),
-  // Added password validation, assuming a minimum of 8 characters
-  role: z.enum(["CLIENT", "PRO", "ADMIN"]),
-  rating_mean: z.string().optional(),
-  rating_count: z.number().int().min(0).optional(),
-  profile_data: z.any().optional()
-});
-var insertMissionSchema = z.object({
-  user_id: z.number().int().positive(),
-  title: z.string().min(1),
-  description: z.string().min(1),
-  category: z.string().min(1),
-  location: z.string().optional(),
-  postal_code: z.string().optional(),
-  // Added postal_code validation
-  budget: z.number().int().min(0).optional(),
-  budget_value_cents: z.number().int().min(0).optional(),
-  budget_type: z.string().optional(),
-  urgency: z.enum(["low", "medium", "high", "urgent"]).optional(),
-  status: z.enum(["draft", "open", "published", "assigned", "completed", "cancelled"]).optional(),
-  quality_target: z.enum(["basic", "standard", "premium", "luxury"]).optional()
-});
-var insertBidSchema = z.object({
-  mission_id: z.number().int().positive(),
-  provider_id: z.number().int().positive(),
-  amount: z.string(),
-  timeline_days: z.number().int().min(1).optional(),
-  message: z.string().optional(),
-  score_breakdown: z.any().optional(),
-  is_leading: z.boolean().optional(),
-  status: z.enum(["pending", "accepted", "rejected", "withdrawn"]).optional(),
-  // Extensions pour les équipes
-  bid_type: z.enum(["individual", "team", "open_team"]).optional(),
-  team_composition: z.any().optional(),
-  // Structure de l'équipe
-  team_lead_id: z.number().int().positive().optional(),
-  open_team_id: z.number().int().positive().optional()
-});
-var insertOpenTeamSchema = z.object({
-  mission_id: z.number().int().positive(),
-  name: z.string().min(1),
-  description: z.string().optional(),
-  // creator_id is set from authenticated user, not from client
-  estimated_budget: z.number().int().positive().optional(),
-  estimated_timeline_days: z.number().int().min(1).optional(),
-  members: z.any().optional(),
-  required_roles: z.any().optional(),
-  max_members: z.number().int().min(2).max(10).optional(),
-  status: z.enum(["recruiting", "complete", "submitted", "cancelled"]).optional(),
-  visibility: z.enum(["public", "private"]).optional(),
-  auto_accept: z.boolean().optional()
-});
-var insertAnnouncementSchema = z.object({
-  title: z.string().min(1),
-  content: z.string().min(1),
-  type: z.enum(["info", "warning", "error", "success"]).optional(),
-  priority: z.number().int().min(1).optional(),
-  is_active: z.boolean().optional(),
-  status: z.enum(["active", "completed", "cancelled", "draft"]).optional(),
-  category: z.string().optional(),
-  budget: z.number().int().min(0).optional(),
-  location: z.string().optional(),
-  user_id: z.number().int().positive().optional(),
-  sponsored: z.boolean().optional()
-});
-var insertFeedFeedbackSchema = z.object({
-  announcement_id: z.number().int().positive(),
-  user_id: z.number().int().positive(),
-  feedback_type: z.enum(["like", "dislike", "interested", "not_relevant"])
-});
-var insertFeedSeenSchema = z.object({
-  announcement_id: z.number().int().positive(),
-  user_id: z.number().int().positive()
-});
-var insertFavoritesSchema = z.object({
-  user_id: z.number().int().positive(),
-  announcement_id: z.number().int().positive()
-});
-var aiEvents = pgTable("ai_events", {
-  id: text("id").primaryKey(),
-  phase: text("phase").$type().notNull(),
-  provider: text("provider").notNull(),
-  model_family: text("model_family").$type().notNull(),
-  model_name: text("model_name").notNull(),
-  allow_training: boolean("allow_training").notNull(),
-  input_redacted: jsonb("input_redacted"),
-  output: jsonb("output"),
-  confidence: text("confidence"),
-  tokens: integer("tokens"),
-  latency_ms: integer("latency_ms"),
-  provenance: text("provenance").$type().notNull(),
-  prompt_hash: text("prompt_hash"),
-  accepted: boolean("accepted"),
-  rating: integer("rating"),
-  edits: jsonb("edits"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
-});
-var aiEventsRelations = relations(aiEvents, ({ one }) => ({
-  // Pas de relations directes pour l'instant
-}));
-var insertAiEventSchema = z.object({
-  id: z.string(),
-  phase: z.enum(["pricing", "brief_enhance", "matching", "scoring"]),
-  provider: z.string(),
-  model_family: z.enum(["gemini", "openai", "local", "other"]),
-  model_name: z.string(),
-  allow_training: z.boolean(),
-  input_redacted: z.any().optional(),
-  output: z.any().optional(),
-  confidence: z.string().optional(),
-  tokens: z.number().int().optional(),
-  latency_ms: z.number().int().optional(),
-  provenance: z.enum(["auto", "human_validated", "ab_test_winner"]),
-  prompt_hash: z.string().optional(),
-  accepted: z.boolean().optional(),
-  rating: z.number().int().min(1).max(5).optional(),
-  edits: z.any().optional()
-});
-
-// server/services/mission-sync.ts
+init_schema();
 import { eq } from "drizzle-orm";
 var MissionSyncService = class {
   databaseUrl;
@@ -1748,6 +1784,7 @@ var getPerformanceStats = () => {
 };
 
 // server/auth-routes.ts
+init_schema();
 import express from "express";
 import { Pool as Pool2 } from "pg";
 import { drizzle as drizzle2 } from "drizzle-orm/node-postgres";
@@ -2075,8 +2112,9 @@ var auth_routes_default = router;
 
 // server/routes/missions.ts
 init_database();
+init_schema();
 import { Router } from "express";
-import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
+import { eq as eq3, desc, sql as sql2, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 // server/dto/mission-dto.ts
@@ -2482,33 +2520,7 @@ router2.get("/", asyncHandler(async (req, res) => {
     user_agent: req.headers["user-agent"]
   }));
   try {
-    const allMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      excerpt: missions.excerpt,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      location_data: missions.location_data,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      tags: missions.tags,
-      skills_required: missions.skills_required,
-      requirements: missions.requirements,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at
-    }).from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
+    const allMissions = await db.select().from(missions).where(inArray(missions.status, ["open", "in_progress"])).orderBy(desc(missions.created_at)).limit(100);
     console.log(JSON.stringify({
       level: "info",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -3056,6 +3068,7 @@ router2.delete("/:id", asyncHandler(async (req, res) => {
 var missions_default = router2;
 
 // server/api-routes.ts
+init_schema();
 import express2 from "express";
 import { Pool as Pool3 } from "pg";
 import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
@@ -3865,10 +3878,11 @@ router6.post("/suggest", async (req, res) => {
 var ai_missions_routes_default = router6;
 
 // server/routes/feed-routes.ts
+init_schema();
 import express3 from "express";
 import { neon } from "@neondatabase/serverless";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { desc as desc2, eq as eq5, and, not, inArray, sql as sql3 } from "drizzle-orm";
+import { desc as desc2, eq as eq5, and, not, inArray as inArray2, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -4176,7 +4190,7 @@ router7.get("/feed", async (req, res) => {
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
     let whereConditions = [eq5(announcements.status, "active")];
     if (seenIds.length > 0) {
-      whereConditions.push(not(inArray(announcements.id, seenIds)));
+      whereConditions.push(not(inArray2(announcements.id, seenIds)));
     }
     if (cursor) {
       const cursorId = parseInt(cursor);
@@ -4278,6 +4292,7 @@ router7.get("/price-benchmark", async (req, res) => {
 var feed_routes_default = router7;
 
 // server/routes/favorites-routes.ts
+init_schema();
 import { Router as Router5 } from "express";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
@@ -4927,6 +4942,7 @@ var ai_diagnostic_routes_default = router11;
 import { Router as Router7 } from "express";
 
 // apps/api/src/ai/learning-engine.ts
+init_schema();
 import { drizzle as drizzle6 } from "drizzle-orm/node-postgres";
 import { Pool as Pool4 } from "pg";
 import { desc as desc3, eq as eq7, and as and3, gte } from "drizzle-orm";
@@ -5622,12 +5638,15 @@ var team_routes_default = router13;
 
 // server/routes/open-teams.ts
 init_database();
+init_schema();
+init_schema();
 import { Router as Router9 } from "express";
 import { eq as eq9, desc as desc4, and as and4 } from "drizzle-orm";
 import { randomUUID as randomUUID2 } from "crypto";
 
 // server/middleware/auth.ts
 init_database();
+init_schema();
 import { eq as eq8 } from "drizzle-orm";
 var requireAuth = async (req, res, next) => {
   try {
@@ -6027,6 +6046,7 @@ var open_teams_default = router14;
 
 // server/routes/bids.ts
 init_database();
+init_schema();
 import { Router as Router10 } from "express";
 import { eq as eq10, and as and5, desc as desc5 } from "drizzle-orm";
 import { z as z6 } from "zod";
