@@ -2268,11 +2268,13 @@ router2.post("/", asyncHandler(async (req, res) => {
     country: "France",
     remote_allowed: req.body.remote_allowed !== false
   };
+  const fullDescription = description.trim() + (req.body.requirements ? `
+
+Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
   const newMission = {
     title: title.trim(),
-    description: description.trim() + (req.body.requirements ? `
-
-Exigences sp\xE9cifiques: ${req.body.requirements}` : ""),
+    description: fullDescription,
+    excerpt: generateExcerpt2(fullDescription, 200),
     category: category || "developpement",
     budget_value_cents: budgetCents,
     currency: "EUR",
@@ -2772,6 +2774,7 @@ router2.put("/:id", asyncHandler(async (req, res) => {
   const missionToUpdate = {
     title: updateData.title,
     description: updateData.description,
+    excerpt: generateExcerpt2(updateData.description, 200),
     category: updateData.category || existingMission[0].category,
     budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
     location_raw: updateData.location || null,
