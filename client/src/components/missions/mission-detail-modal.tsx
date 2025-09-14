@@ -57,7 +57,6 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [selectedBidderName, setSelectedBidderName] = useState<string>('');
   const [showBidForm, setShowBidForm] = useState(false);
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   // Fetch mission data avec mappers normalisés
   const { data: mission, isLoading, error } = useQuery<MissionView>({
@@ -86,32 +85,24 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`w-3 h-3 ${
-          i < Math.floor(numRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+        className={`w-4 h-4 ${
+          i < Math.floor(numRating) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'
         }`}
       />
     ));
   };
 
-  // Loading state amélioré avec animations
+  // Loading state simplifié et élégant
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] max-w-4xl mx-auto p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden">
-          <div className="flex items-center justify-center min-h-[400px] bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-200 border-t-blue-600"></div>
-                <div className="absolute inset-0 animate-pulse rounded-full h-12 w-12 border-3 border-transparent border-t-purple-600 opacity-75"></div>
-              </div>
+        <DialogContent className="w-[95vw] max-w-4xl mx-auto p-8 bg-white dark:bg-gray-900 border-0 shadow-xl rounded-2xl">
+          <div className="flex items-center justify-center min-h-[300px]">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
               <div className="text-center">
-                <p className="text-base text-gray-700 dark:text-gray-300 font-semibold mb-1">Chargement de la mission...</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Récupération des détails</p>
-              </div>
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Chargement de la mission</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Récupération des détails...</p>
               </div>
             </div>
           </div>
@@ -120,30 +111,29 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
     );
   }
 
-  // Error state amélioré
+  // Error state simplifié
   if (error || !mission) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] max-w-lg mx-auto p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden">
-          <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-red-900/20 p-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/50 dark:to-red-800/50 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-              <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+        <DialogContent className="w-[95vw] max-w-lg mx-auto p-8 bg-white dark:bg-gray-900 border-0 shadow-xl rounded-2xl">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mission introuvable</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Mission introuvable</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">
               {error instanceof Error ? error.message : 'Cette mission n\'existe plus ou a été supprimée.'}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex gap-3 justify-center">
               <Button 
                 onClick={() => window.location.reload()} 
-                variant="outline" 
-                className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 transition-all duration-200"
+                variant="outline"
               >
-                Recharger la page
+                Recharger
               </Button>
               <Button 
                 onClick={onClose} 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg transition-all duration-200 transform hover:scale-105"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Fermer
               </Button>
@@ -159,13 +149,9 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
-  // Gérer les animations de transition
+  // Navigation simplifiée sans animations complexes
   const handleTabChange = (newTab: string) => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setActiveTab(newTab);
-      setIsAnimating(false);
-    }, 150);
+    setActiveTab(newTab);
   };
 
   return (
@@ -178,211 +164,171 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
         <div className="flex flex-col min-h-0 max-h-[90vh]">
 
-        {/* Header Mobile/Desktop avec design amélioré */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0 shadow-xl overflow-hidden">
-            {/* Effet de background animé */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-pink-500/20 animate-pulse"></div>
-            <div className="relative z-10">
-            <div className="flex items-center justify-between p-3 md:p-6">
-              <Button
-                onClick={onClose}
-                size="sm"
-                variant="ghost"
-                className="text-white hover:bg-white/20 p-2 rounded-full md:hidden"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
+        {/* Header simplifié et élégant */}
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center justify-between p-4 md:p-6">
+            {/* Bouton retour mobile */}
+            <Button
+              onClick={onClose}
+              size="sm"
+              variant="ghost"
+              className="md:hidden p-2"
+              aria-label="Retour au marketplace"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
 
-              <div className="flex-1 md:flex-none min-w-0">
-                <h2 className="text-lg md:text-2xl font-bold leading-tight pr-2 md:pr-0 truncate">
-                  {mission.title}
-                </h2>
-                <p className="text-blue-100 text-sm md:text-base mt-1 opacity-90 truncate">
-                  Par {mission.clientName} • {mission.budgetDisplay}
-                </p>
+            {/* Informations principales */}
+            <div className="flex-1 min-w-0 md:pr-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-2">
+                    {mission.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      {mission.clientName}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Euro className="w-4 h-4" />
+                      {mission.budgetDisplay}
+                    </span>
+                    {category && (
+                      <Badge variant="secondary" className="text-xs">
+                        {category.name}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
+            </div>
 
+            {/* Actions header */}
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mr-4">
+                <span className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {sortedBids.length}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {mission.createdAt ? formatDate(mission.createdAt) : 'Date non spécifiée'}
+                </span>
+              </div>
               <Button
                 onClick={onClose}
                 size="sm"
                 variant="ghost"
-                className="text-white hover:bg-white/20 p-1.5 rounded-full"
-                aria-label="Fermer la modal"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Fermer"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
-
-            {/* Stats rapides */}
-            <div className="px-3 pb-4 md:px-6 md:pb-6">
-              <div className="flex items-center gap-3 md:gap-6 text-sm text-blue-100 flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span className="hidden sm:inline">{formatDate(mission.createdAt)}</span>
-                  <span className="sm:hidden">Créé</span>
-                </div>
-                {category && (
-                  <Badge className="bg-white/25 text-white border-none text-sm px-3 py-1 rounded-full font-medium">
-                    {category.name}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            </div>
           </div>
+        </div>
 
-          {/* Navigation Tabs avec design amélioré */}
-          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 relative">
-            {/* Ligne décorative animée */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-20"></div>
-            
+        {/* Navigation simplifiée et moderne */}
+        <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="w-full h-14 md:h-16 bg-transparent rounded-none border-none p-0 relative">
-              {/* Indicateur de tab active avec animation fluide */}
-              <div 
-                className={`absolute bottom-0 h-1 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 ease-out rounded-t-full shadow-lg ${
-                  activeTab === 'overview' ? 'left-0 w-1/3' :
-                  activeTab === 'bids' ? `left-1/3 w-1/3 ${isTeamMission ? '' : 'left-1/2 w-1/2'}` :
-                  activeTab === 'team' ? 'left-2/3 w-1/3' : ''
-                }`}
-                style={{
-                  width: isTeamMission ? '33.333333%' : '50%',
-                  left: activeTab === 'overview' ? '0%' : 
-                        activeTab === 'bids' ? (isTeamMission ? '33.333333%' : '50%') :
-                        activeTab === 'team' ? '66.666667%' : '0%'
-                }}
-              />
-              
-              <div className="flex w-full relative z-10">
-                <button
-                  onClick={() => handleTabChange('overview')}
-                  className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
-                    activeTab === 'overview'
-                      ? 'text-blue-600 dark:text-blue-400 transform scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
+            <TabsList className="w-full bg-transparent rounded-none border-none p-0 h-auto">
+              <div className="flex w-full">
+                <TabsTrigger 
+                  value="overview"
+                  className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
                 >
-                  <Briefcase className={`w-4 h-4 transition-all duration-300 ${
-                    activeTab === 'overview' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
-                  }`} />
-                  <span className="hidden sm:inline">Aperçu</span>
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Détails</span>
                   <span className="sm:hidden">Info</span>
-                </button>
+                </TabsTrigger>
                 
-                <button
-                  onClick={() => handleTabChange('bids')}
-                  className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
-                    activeTab === 'bids'
-                      ? 'text-blue-600 dark:text-blue-400 transform scale-105'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
+                <TabsTrigger 
+                  value="bids"
+                  className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none flex items-center gap-2"
                 >
-                  <Users className={`w-4 h-4 transition-all duration-300 ${
-                    activeTab === 'bids' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
-                  }`} />
-                  <span className="hidden sm:inline">Offres</span>
-                  <span className="sm:hidden flex items-center gap-1">
-                    <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full transition-all duration-300 ${
-                      activeTab === 'bids' 
-                        ? 'bg-blue-600 text-white scale-110' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      {sortedBids.length}
-                    </span>
-                  </span>
-                  <span className="hidden sm:inline">
-                    <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold rounded-full transition-all duration-300 ml-1 ${
-                      activeTab === 'bids' 
-                        ? 'bg-blue-600 text-white scale-110' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      {sortedBids.length}
-                    </span>
-                  </span>
-                </button>
+                  <Users className="w-4 h-4" />
+                  <span>Offres</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {sortedBids.length}
+                  </Badge>
+                </TabsTrigger>
                 
                 {isTeamMission && (
-                  <button
-                    onClick={() => handleTabChange('team')}
-                    className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
-                      activeTab === 'team'
-                        ? 'text-blue-600 dark:text-blue-400 transform scale-105'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
+                  <TabsTrigger 
+                    value="team"
+                    className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
                   >
-                    <Target className={`w-4 h-4 transition-all duration-300 ${
-                      activeTab === 'team' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
-                    }`} />
-                    <span className="hidden sm:inline">Équipe</span>
-                    <span className="sm:hidden">Team</span>
-                  </button>
+                    <Target className="w-4 h-4 mr-2" />
+                    Équipe
+                  </TabsTrigger>
                 )}
               </div>
             </TabsList>
 
-            {/* Content avec animations de transition */}
-            <div className="flex-1 min-h-0 relative">
+            {/* Contenu simplifié */}
+            <div className="flex-1 min-h-0">
 
               {/* Overview Tab */}
-              <TabsContent 
-                value="overview" 
-                className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
-                  activeTab === 'overview' 
-                    ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                    : 'opacity-0 translate-x-4 pointer-events-none'
-                } data-[state=active]:flex data-[state=active]:flex-col`}
-              >
-                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                  <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
+              <TabsContent value="overview" className="m-0 h-full">
+                <div className="h-full overflow-y-auto">
+                  <div className="p-6 space-y-6">
 
-                  {/* Description */}
-                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
-                    <h3 className="font-semibold text-gray-900 mb-3 text-sm md:text-base">Description du projet</h3>
-                    <p className="text-gray-700 leading-relaxed text-sm md:text-base">{mission.description}</p>
-                  </div>
-
-                  {/* Informations clés */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-                    <div className="bg-green-50 rounded-lg p-3 md:p-4 border border-green-100">
-                      <div className="flex items-center gap-2 mb-1 md:mb-2">
-                        <div className="w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                          <Euro className="w-3 h-3 md:w-4 md:h-4 text-white" />
-                        </div>
-                        <span className="font-medium text-gray-900 text-xs md:text-sm">Budget</span>
-                      </div>
-                      <div className="text-lg md:text-2xl font-bold text-green-600">
-                        {mission.budgetDisplay}
-                      </div>
+                    {/* Description principale */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <Briefcase className="w-5 h-5 text-blue-600" />
+                        Description du projet
+                      </h2>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base">
+                        {mission.description}
+                      </p>
                     </div>
 
-                    <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-100">
-                      <div className="flex items-center gap-2 mb-1 md:mb-2">
-                        <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                          <MapPin className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                    {/* Informations en grid simplifié */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Budget</p>
+                            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                              {mission.budgetDisplay}
+                            </p>
+                          </div>
                         </div>
-                        <span className="font-medium text-gray-900 text-xs md:text-sm">Lieu</span>
                       </div>
-                      <div className="text-blue-600 font-medium text-xs md:text-base truncate">
-                        {mission.location || 'Non spécifié'}
-                      </div>
-                    </div>
 
-                    <div className="bg-purple-50 rounded-lg p-3 md:p-4 border border-purple-100 col-span-2 md:col-span-1">
-                      <div className="flex items-center gap-2 mb-1 md:mb-2">
-                        <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                          <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Localisation</p>
+                            <p className="text-base font-medium text-gray-900 dark:text-white">
+                              {mission.location || 'Non spécifié'}
+                            </p>
+                          </div>
                         </div>
-                        <span className="font-medium text-gray-900 text-xs md:text-sm">Intérêt</span>
                       </div>
-                      <div className="text-purple-600 font-medium text-xs md:text-base">
-                        {sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}
+
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                            <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Candidatures</p>
+                            <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                              {sortedBids.length}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   {/* Actions pour prestataires - Nouveaux onglets de candidature */}
                   {user && user.type === 'provider' && mission.clientName !== user.name && (
@@ -413,126 +359,102 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent 
-                value="bids" 
-                className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
-                  activeTab === 'bids' 
-                    ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                    : 'opacity-0 translate-x-4 pointer-events-none'
-                } data-[state=active]:flex data-[state=active]:flex-col`}
-              >
-                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                  <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
+              <TabsContent value="bids" className="m-0 h-full">
+                <div className="h-full overflow-y-auto">
+                  <div className="p-6">
 
-                  {sortedBids.length === 0 ? (
-                    <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Users className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune candidature</h4>
-                      <p className="text-sm text-gray-500">Les prestataires peuvent encore postuler</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {sortedBids.map((bid: BidView, index: number) => (
-                        <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
-
-                          {/* Header offre */}
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                {bid.providerName.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h5
-                                    className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm md:text-base"
-                                    onClick={() => {
-                                      setSelectedProviderId(bid.providerId);
-                                      setSelectedProviderName(bid.providerName);
-                                    }}
-                                  >
-                                    {bid.providerName}
-                                  </h5>
-                                  {/* Badge pour le type de candidature */}
-                                  {bid.bid_type === 'team' && (
-                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 border-purple-200">
-                                      <Users className="w-3 h-3 mr-1" />
-                                      Équipe
-                                    </Badge>
-                                  )}
-                                  {bid.bid_type === 'open_team' && (
-                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
-                                      <Users className="w-3 h-3 mr-1" />
-                                      Équipe Ouverte
-                                    </Badge>
-                                  )}
-                                  {(!bid.bid_type || bid.bid_type === 'individual') && (
-                                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200">
-                                      <User className="w-3 h-3 mr-1" />
-                                      Individuel
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="flex items-center">
-                                    {renderStars(bid.rating || '5.0')}
-                                  </div>
-                                  <span className="text-xs text-gray-500 ml-1">
-                                    {parseFloat(bid.rating || '5.0').toFixed(1)}/5
-                                  </span>
-                                  {index === 0 && sortedBids.length > 1 && (
-                                    <Badge className="bg-green-100 text-green-700 text-xs ml-2">
-                                      Meilleure offre
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <div className="text-lg md:text-xl font-bold text-green-600">
-                                {bid.price || formatBudget(bid.amount.toString())}
-                              </div>
-                              <div className="text-xs text-gray-500 flex items-center justify-end mt-1">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {bid.timeline_days ? `${bid.timeline_days} jours` : 'Non spécifié'}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Proposition */}
-                          <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4 border-l-4 border-blue-400">
-                            <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.message || 'Candidature soumise'}</p>
-                          </div>
-
-                          {/* Actions */}
-                          {user && (mission.clientName === user.name || mission.userName === user.name) && (
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                              <Button
-                                onClick={() => {
-                                  setSelectedBidId(bid.id);
-                                  setSelectedBidderName(bid.providerName);
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center justify-center gap-2 text-sm"
-                              >
-                                <MessageCircle className="w-4 h-4" />
-                                Répondre
-                              </Button>
-                              <Button
-                                size="sm"
-                                className="bg-green-500 hover:bg-green-600 text-white flex items-center justify-center gap-2 text-sm"
-                              >
-                                <UserCheck className="w-4 h-4" />
-                                Accepter
-                              </Button>
-                            </div>
-                          )}
+                    {sortedBids.length === 0 ? (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <Users className="w-10 h-10 text-gray-400" />
                         </div>
-                      ))}
-                    </div>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Aucune candidature</h3>
+                        <p className="text-gray-500 dark:text-gray-400">Cette mission n'a pas encore reçu d'offres de prestataires</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {sortedBids.map((bid: BidView, index: number) => (
+                          <div key={bid.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
+
+                            {/* En-tête de l'offre */}
+                            <div className="flex items-start justify-between mb-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                                  {bid.providerName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h4
+                                      className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                      onClick={() => {
+                                        setSelectedProviderId(bid.providerId);
+                                        setSelectedProviderName(bid.providerName);
+                                      }}
+                                    >
+                                      {bid.providerName}
+                                    </h4>
+                                    {index === 0 && sortedBids.length > 1 && (
+                                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                        Meilleure offre
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center">
+                                      {renderStars(bid.rating || '5.0')}
+                                    </div>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                      {parseFloat(bid.rating || '5.0').toFixed(1)}/5
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                  {bid.price || formatBudget(bid.amount.toString())}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  {bid.timeline_days ? `${bid.timeline_days} jours` : 'Non spécifié'}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Message de la proposition */}
+                            {bid.message && (
+                              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+                                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                  {bid.message}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Actions pour les clients */}
+                            {user && (mission.clientName === user.name || mission.userName === user.name) && (
+                              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <Button
+                                  onClick={() => {
+                                    setSelectedBidId(bid.id);
+                                    setSelectedBidderName(bid.providerName);
+                                  }}
+                                  variant="outline"
+                                  className="flex items-center gap-2"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  Contacter
+                                </Button>
+                                <Button
+                                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                  Accepter l'offre
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                   )}
                     </div>
                   </div>
@@ -540,56 +462,55 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
               {/* Team Tab */}
               {isTeamMission && (
-                <TabsContent 
-                  value="team" 
-                  className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
-                    activeTab === 'team' 
-                      ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                      : 'opacity-0 translate-x-4 pointer-events-none'
-                  } data-[state=active]:flex data-[state=active]:flex-col`}
-                >
-                  <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                    <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
-                    <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
-                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
-                        <Target className="w-5 h-5" />
-                        Composition de l'équipe
-                      </h3>
+                <TabsContent value="team" className="m-0 h-full">
+                  <div className="h-full overflow-y-auto">
+                    <div className="p-6">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                          <Target className="w-5 h-5 text-blue-600" />
+                          Composition de l'équipe requise
+                        </h2>
 
-                      <div className="space-y-3">
-                        {mission.teamRequirements?.map((requirement: any, index: number) => (
-                          <div key={index} className="border-l-4 border-l-blue-500 bg-blue-50/50 rounded-r-lg p-4">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <h4 className="font-semibold text-gray-900 text-sm md:text-base">{requirement.role}</h4>
-                                <p className="text-gray-600 text-xs md:text-sm">{requirement.description}</p>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm md:text-base font-bold text-green-600">
-                                  {formatBudget(requirement.budget || '0')}
+                        <div className="space-y-4">
+                          {mission.teamRequirements?.map((requirement: any, index: number) => (
+                            <div key={index} className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-5 border-l-4 border-blue-500">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                    {requirement.role}
+                                  </h3>
+                                  <p className="text-gray-600 dark:text-gray-300 mb-3">
+                                    {requirement.description}
+                                  </p>
                                 </div>
-                                <Badge variant="outline" className="text-xs">
-                                  {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
-                                </Badge>
+                                <div className="text-right ml-4">
+                                  <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                    {formatBudget(requirement.budget || '0')}
+                                  </div>
+                                  <Badge variant="outline" className="text-sm">
+                                    {requirement.quantity} personne{requirement.quantity > 1 ? 's' : ''}
+                                  </Badge>
+                                </div>
                               </div>
+
+                              {requirement.skills && requirement.skills.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">
+                                    Compétences requises :
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {requirement.skills.map((skill: string, skillIndex: number) => (
+                                      <Badge key={skillIndex} variant="secondary" className="text-sm px-3 py-1">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-
-                            {requirement.skills && requirement.skills.length > 0 && (
-                              <div>
-                                <h5 className="font-medium text-xs mb-2">Compétences :</h5>
-                                <div className="flex flex-wrap gap-1">
-                                  {requirement.skills.map((skill: string, skillIndex: number) => (
-                                    <Badge key={skillIndex} variant="secondary" className="text-xs">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
                     </div>
                   </div>
                 </TabsContent>
