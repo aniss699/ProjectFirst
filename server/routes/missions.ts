@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../database.js';
-import { missions, bids as bidTable, users, announcements } from '../../shared/schema.js';
+import { missions as missionsTable, bids as bidTable, users, announcements } from '../../shared/schema.js';
 import { MissionSyncService } from '../services/mission-sync.js';
 import { DataConsistencyValidator } from '../services/data-consistency-validator.js';
 import { randomUUID } from 'crypto';
@@ -19,7 +19,7 @@ function generateExcerpt(description: string, maxLength: number = 200): string {
   if (!description) {
     return '';
   }
-  
+
   if (description.length <= maxLength) {
     return description;
   }
@@ -214,12 +214,12 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     action: 'db_transaction_start'
   }));
 
-  const insertResult = await db.insert(missions).values(newMission).returning({
-    id: missions.id,
-    title: missions.title,
-    status: missions.status,
-    user_id: missions.user_id,
-    created_at: missions.created_at
+  const insertResult = await db.insert(missionsTable).values(newMission).returning({
+    id: missionsTable.id,
+    title: missionsTable.title,
+    status: missionsTable.status,
+    user_id: missionsTable.user_id,
+    created_at: missionsTable.created_at
   });
 
   if (!insertResult || insertResult.length === 0) {
@@ -240,8 +240,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   // 4. Récupérer la mission complète pour la réponse
   const fullMission = await db
     .select()
-    .from(missions)
-    .where(eq(missions.id, insertedMission.id))
+    .from(missionsTable)
+    .where(eq(missionsTable.id, insertedMission.id))
     .limit(1);
 
   if (fullMission.length === 0) {
@@ -310,41 +310,41 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/missions - Get all missions with bids
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+router.get('/', asyncHandler(async (req, res) => {
   console.log('📋 Fetching all missions...');
 
   try {
     // Use explicit column selection to avoid schema issues
     const allMissions = await db
       .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        excerpt: missions.excerpt,
-        category: missions.category,
-        budget_value_cents: missions.budget_value_cents,
-        currency: missions.currency,
-        location_raw: missions.location_raw,
-        postal_code: missions.postal_code,
-        city: missions.city,
-        country: missions.country,
-        remote_allowed: missions.remote_allowed,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        status: missions.status,
-        urgency: missions.urgency,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        skills_required: missions.skills_required,
-        requirements: missions.requirements,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at
+        id: missionsTable.id,
+        title: missionsTable.title,
+        description: missionsTable.description,
+        excerpt: missionsTable.excerpt,
+        category: missionsTable.category,
+        budget_value_cents: missionsTable.budget_value_cents,
+        currency: missionsTable.currency,
+        location_raw: missionsTable.location_raw,
+        postal_code: missionsTable.postal_code,
+        city: missionsTable.city,
+        country: missionsTable.country,
+        remote_allowed: missionsTable.remote_allowed,
+        user_id: missionsTable.user_id,
+        client_id: missionsTable.client_id,
+        status: missionsTable.status,
+        urgency: missionsTable.urgency,
+        deadline: missionsTable.deadline,
+        tags: missionsTable.tags,
+        skills_required: missionsTable.skills_required,
+        requirements: missionsTable.requirements,
+        is_team_mission: missionsTable.is_team_mission,
+        team_size: missionsTable.team_size,
+        created_at: missionsTable.created_at,
+        updated_at: missionsTable.updated_at
       })
-      .from(missions)
-      .where(sql`${missions.status} IN ('open', 'published', 'active')`)
-      .orderBy(desc(missions.created_at))
+      .from(missionsTable)
+      .where(sql`${missionsTable.status} IN ('open', 'published', 'active')`)
+      .orderBy(desc(missionsTable.created_at))
       .limit(100); // Limiter pour éviter les surcharges
 
     console.log(`📋 Found ${allMissions.length} missions in database`);
@@ -364,7 +364,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
       stack: error.stack,
       code: error.code
     });
-    
+
     // Check if it's a column-related error
     if (error.message && (error.message.includes('column') || error.message.includes('relation'))) {
       console.error('❌ Database schema issue detected:', error.message);
@@ -378,7 +378,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
         debug_mode: process.env.NODE_ENV === 'development'
       });
     }
-    
+
     // Generic error response
     res.status(500).json({
       ok: false,
@@ -399,7 +399,7 @@ router.get('/health', asyncHandler(async (req, res) => {
 
   try {
     // Test database connectivity
-    const dbTest = await db.select({ count: sql`COUNT(*)` }).from(missions).limit(1);
+    const dbTest = await db.select({ count: sql`COUNT(*)` }).from(missionsTable).limit(1);
     const dbConnected = dbTest.length > 0;
 
     // Calculate response time
@@ -440,7 +440,7 @@ router.get('/debug', asyncHandler(async (req, res) => {
   console.log('🔍 Mission debug endpoint called');
 
   // Test database connection
-  const testQuery = await db.select({ id: missions.id }).from(missions).limit(1);
+  const testQuery = await db.select({ id: missionsTable.id }).from(missionsTable).limit(1);
 
   // Check database structure
   const dbInfo = {
@@ -463,17 +463,17 @@ router.get('/verify-sync', asyncHandler(async (req, res) => {
     // Utiliser une requête simple similaire au debug endpoint qui fonctionne
     const missionCount = await db
       .select({ count: sql`COUNT(*)` })
-      .from(missions);
+      .from(missionsTable);
 
     const recentMissions = await db
-      .select({ 
-        id: missions.id, 
-        title: missions.title, 
-        status: missions.status, 
-        created_at: missions.created_at 
+      .select({
+        id: missionsTable.id,
+        title: missionsTable.title,
+        status: missionsTable.status,
+        created_at: missionsTable.created_at
       })
-      .from(missions)
-      .orderBy(desc(missions.created_at))
+      .from(missionsTable)
+      .orderBy(desc(missionsTable.created_at))
       .limit(5);
 
     // Compter les announcements sans problème de field mapping
@@ -540,8 +540,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
   // Use select() + mapMission() pattern to avoid column mapping issues
   const missionRaw = await db
     .select()
-    .from(missions)
-    .where(eq(missions.id, missionIdInt))
+    .from(missionsTable)
+    .where(eq(missionsTable.id, missionIdInt))
     .limit(1);
 
   if (missionRaw.length === 0) {
@@ -621,29 +621,29 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
     const missionsWithBidsData = await db
       .select({
         // Mission fields
-        mission_id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget_value_cents: missions.budget_value_cents,
-        currency: missions.currency,
-        location_raw: missions.location_raw,
-        postal_code: missions.postal_code,
-        city: missions.city,
-        country: missions.country,
-        remote_allowed: missions.remote_allowed,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        status: missions.status,
-        urgency: missions.urgency,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        skills_required: missions.skills_required,
-        requirements: missions.requirements,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        mission_created_at: missions.created_at,
-        mission_updated_at: missions.updated_at,
+        mission_id: missionsTable.id,
+        title: missionsTable.title,
+        description: missionsTable.description,
+        category: missionsTable.category,
+        budget_value_cents: missionsTable.budget_value_cents,
+        currency: missionsTable.currency,
+        location_raw: missionsTable.location_raw,
+        postal_code: missionsTable.postal_code,
+        city: missionsTable.city,
+        country: missionsTable.country,
+        remote_allowed: missionsTable.remote_allowed,
+        user_id: missionsTable.user_id,
+        client_id: missionsTable.client_id,
+        status: missionsTable.status,
+        urgency: missionsTable.urgency,
+        deadline: missionsTable.deadline,
+        tags: missionsTable.tags,
+        skills_required: missionsTable.skills_required,
+        requirements: missionsTable.requirements,
+        is_team_mission: missionsTable.is_team_mission,
+        team_size: missionsTable.team_size,
+        mission_created_at: missionsTable.created_at,
+        mission_updated_at: missionsTable.updated_at,
         // Bid fields (null if no bids)
         bid_id: bidTable.id,
         bid_amount: bidTable.amount,
@@ -653,10 +653,10 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
         bid_created_at: bidTable.created_at,
         provider_id: bidTable.provider_id
       })
-      .from(missions)
-      .leftJoin(bidTable, eq(missions.id, bidTable.mission_id))
-      .where(eq(missions.user_id, userIdInt))
-      .orderBy(desc(missions.created_at), desc(bidTable.created_at));
+      .from(missionsTable)
+      .leftJoin(bidTable, eq(missionsTable.id, bidTable.mission_id))
+      .where(eq(missionsTable.user_id, userIdInt))
+      .orderBy(desc(missionsTable.created_at), desc(bidTable.created_at));
 
     console.log('📊 JOIN query result: Found', missionsWithBidsData.length, 'mission-bid combinations');
 
@@ -736,33 +736,33 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
     // Fallback to simple missions without bids
     const userMissions = await db
       .select({
-        id: missions.id,
-        title: missions.title,
-        description: missions.description,
-        category: missions.category,
-        budget_value_cents: missions.budget_value_cents,
-        currency: missions.currency,
-        location_raw: missions.location_raw,
-        postal_code: missions.postal_code,
-        city: missions.city,
-        country: missions.country,
-        remote_allowed: missions.remote_allowed,
-        user_id: missions.user_id,
-        client_id: missions.client_id,
-        status: missions.status,
-        urgency: missions.urgency,
-        deadline: missions.deadline,
-        tags: missions.tags,
-        skills_required: missions.skills_required,
-        requirements: missions.requirements,
-        is_team_mission: missions.is_team_mission,
-        team_size: missions.team_size,
-        created_at: missions.created_at,
-        updated_at: missions.updated_at
+        id: missionsTable.id,
+        title: missionsTable.title,
+        description: missionsTable.description,
+        category: missionsTable.category,
+        budget_value_cents: missionsTable.budget_value_cents,
+        currency: missionsTable.currency,
+        location_raw: missionsTable.location_raw,
+        postal_code: missionsTable.postal_code,
+        city: missionsTable.city,
+        country: missionsTable.country,
+        remote_allowed: missionsTable.remote_allowed,
+        user_id: missionsTable.user_id,
+        client_id: missionsTable.client_id,
+        status: missionsTable.status,
+        urgency: missionsTable.urgency,
+        deadline: missionsTable.deadline,
+        tags: missionsTable.tags,
+        skills_required: missionsTable.skills_required,
+        requirements: missionsTable.requirements,
+        is_team_mission: missionsTable.is_team_mission,
+        team_size: missionsTable.team_size,
+        created_at: missionsTable.created_at,
+        updated_at: missionsTable.updated_at
       })
-      .from(missions)
-      .where(eq(missions.user_id, userIdInt))
-      .orderBy(desc(missions.created_at));
+      .from(missionsTable)
+      .where(eq(missionsTable.user_id, userIdInt))
+      .orderBy(desc(missionsTable.created_at));
 
     const fallbackMissions = userMissions.map(mission => ({
       id: mission.id,
@@ -873,9 +873,9 @@ router.put('/:id', asyncHandler(async (req, res) => {
 
   // Check if mission exists - select only id for existence check
   const existingMission = await db
-    .select({ id: missions.id, category: missions.category, deadline: missions.deadline, tags: missions.tags, requirements: missions.requirements, currency: missions.currency, city: missions.city, country: missions.country, postal_code: missions.postal_code }) // Include postal_code
-    .from(missions)
-    .where(eq(missions.id, missionIdInt))
+    .select({ id: missionsTable.id, category: missionsTable.category, deadline: missionsTable.deadline, tags: missionsTable.tags, requirements: missionsTable.requirements, currency: missionsTable.currency, city: missionsTable.city, country: missionsTable.country, postal_code: missionsTable.postal_code }) // Include postal_code
+    .from(missionsTable)
+    .where(eq(missionsTable.id, missionIdInt))
     .limit(1);
 
   if (existingMission.length === 0) {
@@ -915,9 +915,9 @@ router.put('/:id', asyncHandler(async (req, res) => {
 
   // Update the mission
   const updatedMission = await db
-    .update(missions)
+    .update(missionsTable)
     .set(missionToUpdate)
-    .where(eq(missions.id, missionIdInt))
+    .where(eq(missionsTable.id, missionIdInt))
     .returning();
 
   if (updatedMission.length === 0) {
@@ -952,9 +952,9 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 
   // Check if mission exists - select only id for existence check
   const existingMission = await db
-    .select({ id: missions.id })
-    .from(missions)
-    .where(eq(missions.id, missionIdInt))
+    .select({ id: missionsTable.id })
+    .from(missionsTable)
+    .where(eq(missionsTable.id, missionIdInt))
     .limit(1);
 
   if (existingMission.length === 0) {
@@ -968,8 +968,8 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 
   // Delete the mission
   const deletedMission = await db
-    .delete(missions)
-    .where(eq(missions.id, missionIdInt))
+    .delete(missionsTable)
+    .where(eq(missionsTable.id, missionIdInt))
     .returning();
 
   if (deletedMission.length === 0) {
