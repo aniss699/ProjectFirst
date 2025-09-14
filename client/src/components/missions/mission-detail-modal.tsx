@@ -163,7 +163,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
         <div className="flex flex-col min-h-0 max-h-[90vh]">
 
         {/* Header Mobile/Desktop */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0 shadow-lg">
             <div className="flex items-center justify-between p-3 md:p-6">
               <Button
                 onClick={onClose}
@@ -175,10 +175,10 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </Button>
 
               <div className="flex-1 md:flex-none min-w-0">
-                <h2 className="text-base md:text-xl font-bold leading-tight pr-2 md:pr-0 truncate">
+                <h2 className="text-lg md:text-2xl font-bold leading-tight pr-2 md:pr-0 truncate">
                   {mission.title}
                 </h2>
-                <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90 truncate">
+                <p className="text-blue-100 text-sm md:text-base mt-1 opacity-90 truncate">
                   Par {mission.clientName} • {formatBudget(mission.budget || '0')}
                 </p>
               </div>
@@ -195,8 +195,8 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
             </div>
 
             {/* Stats rapides */}
-            <div className="px-3 pb-3 md:px-6 md:pb-4">
-              <div className="flex items-center gap-2 md:gap-4 text-xs text-blue-100 flex-wrap">
+            <div className="px-3 pb-4 md:px-6 md:pb-6">
+              <div className="flex items-center gap-3 md:gap-6 text-sm text-blue-100 flex-wrap">
                 <div className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   <span>{sortedBids.length} candidature{sortedBids.length !== 1 ? 's' : ''}</span>
@@ -207,7 +207,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                   <span className="sm:hidden">Créé</span>
                 </div>
                 {category && (
-                  <Badge className="bg-white/20 text-white border-none text-xs px-1.5 py-0.5">
+                  <Badge className="bg-white/25 text-white border-none text-sm px-3 py-1 rounded-full font-medium">
                     {category.name}
                   </Badge>
                 )}
@@ -216,13 +216,13 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
           </div>
 
           {/* Navigation Tabs */}
-          <div className="bg-white border-b flex-shrink-0">
+          <div className="bg-white border-b shadow-sm flex-shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-10 md:h-12 bg-transparent rounded-none border-none p-0">
+            <TabsList className="w-full h-12 md:h-14 bg-transparent rounded-none border-none p-0">
               <div className="flex w-full">
                 <TabsTrigger
                   value="overview"
-                  className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
+                  className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
                 >
                   <Briefcase className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                   <span className="hidden sm:inline">Aperçu</span>
@@ -230,7 +230,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 </TabsTrigger>
                 <TabsTrigger
                   value="bids"
-                  className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
+                  className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
                 >
                   <Users className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                   <span className="hidden sm:inline">Offres ({sortedBids.length})</span>
@@ -239,7 +239,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 {isTeamMission && (
                   <TabsTrigger
                     value="team"
-                    className="flex-1 h-10 md:h-12 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-2"
+                    className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
                   >
                     <Target className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                     <span className="hidden sm:inline">Équipe</span>

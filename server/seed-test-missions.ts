@@ -6,7 +6,7 @@ const TEST_MISSIONS = [
   {
     title: "Application mobile de livraison rapide",
     description: "Développement d'une app mobile native (iOS/Android) pour service de livraison en 30min. Interface utilisateur intuitive, géolocalisation temps réel, système de paiement intégré, notifications push. Technologies: React Native ou Flutter, Firebase, Stripe.",
-    category: "developpement",
+    category: "web-digital",
     budget_value_cents: 800000, // 8000€
     location_data: {
       address: "Paris, France",
@@ -27,7 +27,7 @@ const TEST_MISSIONS = [
   {
     title: "Refonte complète site e-commerce mode",
     description: "Modernisation boutique en ligne 100% mobile-first. Design tendance, UX optimisée, performances élevées. Intégration Instagram Shopping, réalité augmentée pour essayage virtuel, programme fidélité gamifié.",
-    category: "web",
+    category: "web-digital",
     budget_value_cents: 1200000, // 12000€
     location_data: {
       address: "Lyon, France", 
@@ -48,7 +48,7 @@ const TEST_MISSIONS = [
   {
     title: "Stratégie marketing digital startup fintech",
     description: "Lancement produit révolutionnaire dans la fintech. Stratégie 360° : content marketing viral, LinkedIn B2B, SEA Google/Facebook, partenariats influenceurs finance. Objectif: 50K early adopters en 3 mois.",
-    category: "marketing",
+    category: "web-digital",
     budget_value_cents: 1500000, // 15000€
     location_data: {
       address: "Bordeaux, France",
@@ -69,7 +69,7 @@ const TEST_MISSIONS = [
   {
     title: "Système IA prédiction immobilier",
     description: "Développement algorithme IA pour prédiction prix immobilier. Machine Learning avancé, traitement données massives, API temps réel. Stack moderne: Python, TensorFlow, FastAPI, PostgreSQL, Docker.",
-    category: "ia",
+    category: "tech-consulting",
     budget_value_cents: 3500000, // 35000€
     location_data: {
       address: "Toulouse, France",
@@ -90,7 +90,7 @@ const TEST_MISSIONS = [
   {
     title: "Formation cybersécurité équipes IT",
     description: "Programme formation cybersécurité sur-mesure pour PME tech. Ateliers pratiques, simulations d'attaques, certifications ANSSI. Format hybride présentiel/distanciel, support pédagogique interactif.",
-    category: "formation",
+    category: "tech-consulting",
     budget_value_cents: 450000, // 4500€
     location_data: {
       address: "Lille, France",
@@ -111,7 +111,7 @@ const TEST_MISSIONS = [
   {
     title: "Audit UX/UI application mobile banking",
     description: "Audit complet expérience utilisateur app banking existante. Analyse parcours clients, tests utilisabilité, benchmark concurrence, recommandations d'amélioration. Livrable: guide UX actionnable.",
-    category: "design",
+    category: "design-creative",
     budget_value_cents: 650000, // 6500€
     location_data: {
       address: "Nice, France",
