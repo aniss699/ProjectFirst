@@ -6,7 +6,7 @@ import { RssSitemapService } from './services/rss-sitemap';
 import { EnrichmentService } from './services/enrichment';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = parseInt(process.env.INGESTION_PORT || '3001', 10);
 
 // Services
 const webSourcing = new WebSourcingService();
@@ -51,6 +51,12 @@ app.get('/api/sourcing/stats', async (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`🔍 Ingestion service running on http://0.0.0.0:${port}`);
-});
+// Only start server if running as standalone service
+if (process.env.STANDALONE_INGESTION === 'true') {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`🔍 Ingestion service running on http://0.0.0.0:${port}`);
+  });
+}
+
+// Export the app for potential use in other services
+export default app;

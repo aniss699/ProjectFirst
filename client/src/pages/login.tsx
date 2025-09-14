@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   // Utilisation de l'architecture centralisée pour éliminer la duplication
   const loginApi = useCreateApi<any, { email: string; password: string }>('/api/auth/login', {
@@ -84,6 +85,7 @@ export default function LoginPage() {
   };
 
   const handleVerifyDemoAccounts = async () => {
+    setIsVerifying(true);
     try {
       const result = await verifyDemoAccounts();
       setVerificationResult(result);
@@ -91,6 +93,8 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Erreur vérification:', error);
       authSubmit.handleError(error, 'Vérification des comptes');
+    } finally {
+      setIsVerifying(false);
     }
   };
 

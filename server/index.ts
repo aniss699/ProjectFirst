@@ -2,12 +2,14 @@ import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
-import { setupVite, serveStatic, log } from './vite.js';
+// Vite imports will be dynamic to avoid side effects
 import { Mission } from './types/mission.js';
 import { MissionSyncService } from './services/mission-sync.js';
 import { validateEnvironment } from './environment-check.js';
 import { Pool } from 'pg';
 import cors from 'cors'; // Import cors
+import fs from 'fs';
+import net from 'net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +19,127 @@ validateEnvironment();
 
 const app = express();
 const port = parseInt(process.env.PORT || '5000', 10);
+const PID_FILE = '/tmp/swideal-server.pid';
+
+// Helper function to check if port is free
+function checkPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const client = new net.Socket();
+    client.setTimeout(1000);
+    
+    client.on('connect', () => {
+      client.destroy();
+      resolve(false); // Port is busy
+    });
+    
+    client.on('timeout', () => {
+      client.destroy();
+      resolve(true); // Port is free
+    });
+    
+    client.on('error', () => {
+      resolve(true); // Port is free (connection refused)
+    });
+    
+    client.connect(port, '127.0.0.1');
+  });
+}
+
+// Helper function to wait for port to be free
+async function waitForPortFree(port: number, maxWaitMs: number = 10000): Promise<boolean> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    if (await checkPortFree(port)) {
+      return true;
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  return false;
+}
+
+// Helper function to handle previous process cleanup and force-kill port 5000 in dev
+async function cleanupPreviousProcess(): Promise<void> {
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      const pidString = fs.readFileSync(PID_FILE, 'utf8').trim();
+      const pid = parseInt(pidString, 10);
+      
+      if (!isNaN(pid)) {
+        try {
+          // Check if process is still running
+          process.kill(pid, 0);
+          console.log(`🔄 Found previous process with PID ${pid}, sending SIGTERM...`);
+          process.kill(pid, 'SIGTERM');
+          
+          // Wait for process to exit and port to be free
+          console.log('⏳ Waiting for previous process to exit...');
+          await waitForPortFree(port, 8000);
+        } catch (err) {
+          // Process not running, PID file is stale
+          console.log('🧹 Removing stale PID file');
+        }
+      }
+      
+      fs.unlinkSync(PID_FILE);
+    }
+  } catch (error) {
+    console.log('🔍 No previous process to cleanup');
+  }
+  
+  // Development-only: Force kill any process holding port 5000
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      console.log('🔫 Development mode: Force-killing any process on port 5000...');
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execAsync = util.promisify(exec);
+      
+      // Try multiple approaches to kill port 5000 listeners
+      try {
+        await execAsync('fuser -k 5000/tcp 2>/dev/null || true');
+        console.log('🧹 fuser kill attempt completed');
+      } catch (e) {
+        console.log('🔍 fuser not available, trying alternative...');
+      }
+      
+      // Wait a moment for processes to die
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Double-check port is free
+      if (await checkPortFree(port)) {
+        console.log('✅ Port 5000 is now free');
+      } else {
+        console.log('⚠️ Port 5000 may still be busy, will retry during startup');
+      }
+    } catch (killError) {
+      console.log('🔍 Force-kill attempt failed, continuing with normal startup:', killError.message);
+    }
+  }
+}
+
+// Helper function to write PID file
+function writePidFile(): void {
+  try {
+    fs.writeFileSync(PID_FILE, process.pid.toString());
+    console.log(`📝 PID file created: ${PID_FILE} (${process.pid})`);
+  } catch (error) {
+    console.warn('⚠️ Could not write PID file:', error);
+  }
+}
+
+// Helper function to remove PID file
+function removePidFile(): void {
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      fs.unlinkSync(PID_FILE);
+      console.log('🧹 PID file removed');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not remove PID file:', error);
+  }
+}
 
 // Initialize services with Replit PostgreSQL
 const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
@@ -172,7 +295,7 @@ import apiRoutes from './api-routes.js';
 import aiMonitoringRoutes from './routes/ai-monitoring-routes.js';
 import aiSuggestionsRoutes from './routes/ai-suggestions-routes.js';
 import aiMissionsRoutes from './routes/ai-missions-routes.js';
-import aiOrchestratorRoutes from '../apps/api/src/routes/ai.ts';
+// AI orchestrator routes will be imported dynamically
 import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
 import missionDemoRoutes from './routes/mission-demo.js';
@@ -229,7 +352,7 @@ app.use('/api/ai/enhance-text', strictAiRateLimit);  // Endpoint coûteux
 // aiRoutes supprimés - routes IA gérées par modules spécialisés
 app.use('/api/ai', aiRateLimit, aiSuggestionsRoutes);
 app.use('/api/ai/missions', aiRateLimit, aiMissionsRoutes);
-app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);  // Orchestrateur IA complexe
+// AI orchestrator routes will be mounted after server starts
 app.use('/api', aiRateLimit, aiQuickAnalysisRoutes);  // Analyses IA rapides
 
 // Register AI diagnostic and learning routes
@@ -356,42 +479,111 @@ app.get('/api/ai/gemini-diagnostic', (req, res) => {
 
 // Mission GET by ID endpoint now handled by server/routes/missions.ts (database-only)
 
-// Start server
-const server = createServer(app);
+// Start server with retry logic
+let currentServer: any = null;
 
-// Start listening immediately for faster deployment
-server.listen(port, '0.0.0.0', async () => {
-  console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port}`);
-  console.log(`📱 Frontend: http://0.0.0.0:${port}`);
-  console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
-  console.log(`🎯 AI Provider: Gemini API Only`);
-  console.log(`🔍 Process ID: ${process.pid}`);
-  console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
-
-  // Setup Vite for development, static files for production
-  if (process.env.NODE_ENV === 'production') {
-    console.log('🏭 Production mode: serving static files');
-    serveStatic(app);
-  } else {
-    console.log('🔧 Development mode: setting up Vite middleware');
+// Function to start server with retry logic
+async function startServerWithRetry(): Promise<void> {
+  const maxAttempts = 8;
+  const delayMs = 750;
+  const totalTimeoutMs = 9000; // 9 second hard deadline
+  const startTime = Date.now();
+  
+  await cleanupPreviousProcess();
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Check hard deadline
+    if (Date.now() - startTime > totalTimeoutMs) {
+      console.error(`❌ Startup deadline exceeded (${totalTimeoutMs}ms), exiting for supervisor restart`);
+      process.exit(1);
+    }
+    
     try {
-      await setupVite(app, server);
-      console.log('✅ Vite middleware setup complete');
-    } catch (error) {
-      console.error('❌ Failed to setup Vite middleware:', error);
+      // Create a fresh server for each attempt
+      const server = createServer(app);
+      currentServer = server;
+      
+      await new Promise<void>((resolve, reject) => {
+        const serverInstance = server.listen(port, '0.0.0.0', async () => {
+          writePidFile();
+          console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
+          console.log(`📱 Frontend: http://0.0.0.0:${port}`);
+          console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
+          console.log(`🎯 AI Provider: Gemini API Only`);
+          console.log(`🔍 Process ID: ${process.pid}`);
+          console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
+
+          // Dynamic imports to avoid side effects during startup
+          console.log('📦 Loading Vite and AI modules dynamically...');
+          try {
+            // Import Vite module dynamically
+            const { setupVite, serveStatic } = await import('./vite.js');
+            
+            // Import AI orchestrator routes dynamically
+            const aiOrchestratorModule = await import('../apps/api/src/routes/ai.ts');
+            const aiOrchestratorRoutes = aiOrchestratorModule.default;
+            
+            // Mount AI orchestrator routes now that server is running
+            app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);
+            console.log('✅ AI orchestrator routes mounted');
+            
+            // Setup Vite for development, static files for production
+            if (process.env.NODE_ENV === 'production') {
+              console.log('🏭 Production mode: serving static files');
+              serveStatic(app);
+            } else {
+              console.log('🔧 Development mode: setting up Vite middleware');
+              try {
+                await setupVite(app, server);
+                console.log('✅ Vite middleware setup complete');
+              } catch (error) {
+                console.error('❌ Failed to setup Vite middleware:', error);
+              }
+            }
+          } catch (importError) {
+            console.error('❌ Failed to import modules:', importError);
+          }
+          resolve();
+        });
+        
+        server.on('error', (err: any) => {
+          server.close(); // Clean up this server instance
+          if (err.code === 'EADDRINUSE') {
+            console.log(`⏳ Port ${port} busy on attempt ${attempt}/${maxAttempts}`);
+            reject(new Error('EADDRINUSE'));
+          } else {
+            console.error('❌ Server error:', err);
+            reject(err);
+          }
+        });
+      });
+      
+      // Success!
+      return;
+      
+    } catch (error: any) {
+      if (error.message === 'EADDRINUSE' && attempt < maxAttempts) {
+        const remainingTime = totalTimeoutMs - (Date.now() - startTime);
+        if (remainingTime > delayMs) {
+          console.log(`🔄 Waiting ${delayMs}ms before retry ${attempt + 1}/${maxAttempts}...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          await waitForPortFree(port, 1000); // Shorter wait
+        } else {
+          console.error(`❌ Not enough time remaining for retry, exiting`);
+          process.exit(1);
+        }
+      } else {
+        console.error(`❌ Failed to start server after ${maxAttempts} attempts:`, error);
+        process.exit(1);
+      }
     }
   }
-});
+}
 
-server.on('error', (err: any) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${port} is already in use. Server will exit and let Replit handle restart.`);
-    console.error(`💡 The deployment compilation issues have been fixed. This is just a port conflict that should resolve on restart.`);
-    process.exit(1);
-  } else {
-    console.error('❌ Server error:', err);
-    process.exit(1);
-  }
+// Start the server
+startServerWithRetry().catch((error) => {
+  console.error('❌ Fatal error starting server:', error);
+  process.exit(1);
 });
 
 
@@ -402,18 +594,28 @@ console.log('✅ Advanced AI routes registered - Gemini API Only');
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('Received SIGINT, shutting down gracefully...');
-  server.close(() => {
-    console.log('HTTP server closed.');
+  removePidFile();
+  if (currentServer) {
+    currentServer.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM, shutting down gracefully...');
-  server.close(() => {
-    console.log('HTTP server closed.');
+  removePidFile();
+  if (currentServer) {
+    currentServer.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 // Handle uncaught exceptions
