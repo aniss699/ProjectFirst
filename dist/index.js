@@ -2080,107 +2080,184 @@ import { eq as eq3, desc, sql as sql2 } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 // server/dto/mission-dto.ts
-function generateExcerpt(description, maxLength = 200) {
-  if (!description) return "";
-  if (description.length <= maxLength) {
-    return description;
+function extractLocationSafely(mission) {
+  const defaults = {
+    location: "Remote",
+    location_raw: null,
+    postal_code: null,
+    city: null,
+    country: "France",
+    remote_allowed: true,
+    location_data: { remote_allowed: true }
+  };
+  try {
+    if (mission.location_data && typeof mission.location_data === "object") {
+      const locationData = mission.location_data;
+      return {
+        location: locationData.raw || locationData.city || locationData.address || "Remote",
+        location_raw: locationData.raw || mission.location_raw || null,
+        postal_code: locationData.postal_code || mission.postal_code || null,
+        city: locationData.city || mission.city || null,
+        country: locationData.country || mission.country || "France",
+        remote_allowed: locationData.remote_allowed !== void 0 ? locationData.remote_allowed : true,
+        location_data: locationData
+      };
+    }
+    return {
+      location: mission.location_raw || mission.city || "Remote",
+      location_raw: mission.location_raw || null,
+      postal_code: mission.postal_code || null,
+      city: mission.city || null,
+      country: mission.country || "France",
+      remote_allowed: mission.remote_allowed !== void 0 ? mission.remote_allowed : true,
+      location_data: {
+        raw: mission.location_raw || null,
+        city: mission.city || null,
+        country: mission.country || "France",
+        remote_allowed: mission.remote_allowed !== void 0 ? mission.remote_allowed : true
+      }
+    };
+  } catch (error) {
+    console.warn("\u26A0\uFE0F Erreur extraction location, utilisation des valeurs par d\xE9faut:", error);
+    return defaults;
   }
-  const truncated = description.substring(0, maxLength);
-  const lastSentenceEnd = Math.max(
-    truncated.lastIndexOf("."),
-    truncated.lastIndexOf("!"),
-    truncated.lastIndexOf("?")
-  );
-  if (lastSentenceEnd > maxLength * 0.6) {
-    return truncated.substring(0, lastSentenceEnd + 1).trim();
-  }
-  const lastSpace = truncated.lastIndexOf(" ");
-  if (lastSpace > maxLength * 0.6) {
-    return truncated.substring(0, lastSpace).trim() + "...";
-  }
-  return truncated.trim() + "...";
 }
-function formatBudget(budgetValueCents, currency = "EUR") {
-  if (!budgetValueCents) return "0";
-  const budgetEuros = Math.round(budgetValueCents / 100);
-  return budgetEuros.toString();
-}
-function buildLocationData(row) {
+function extractBudgetSafely(mission) {
+  const budgetCents = mission.budget_value_cents || 0;
+  const currency = mission.currency || "EUR";
+  const budgetEuros = Math.round(budgetCents / 100);
   return {
-    raw: row.location_raw || void 0,
-    city: row.city || void 0,
-    country: row.country || "France",
-    postal_code: row.postal_code || void 0,
-    remote_allowed: row.remote_allowed ?? true
+    budget: budgetEuros.toString(),
+    budget_value_cents: budgetCents,
+    currency,
+    budget_display: budgetCents > 0 ? `${budgetEuros}\u20AC` : "\xC0 n\xE9gocier"
   };
 }
-function formatLocation(locationData) {
-  if (locationData.city && locationData.country) {
-    return `${locationData.city}, ${locationData.country}`;
-  }
-  if (locationData.city) return locationData.city;
-  if (locationData.raw) return locationData.raw;
-  if (locationData.remote_allowed) return "Remote";
-  return "Non sp\xE9cifi\xE9";
-}
-function mapMission(row) {
-  const locationData = buildLocationData(row);
+function extractMetadataSafely(mission) {
   return {
-    // Identifiants
-    id: row.id,
-    // Contenu principal
-    title: row.title || "Mission sans titre",
-    description: row.description || "",
-    excerpt: row.excerpt || generateExcerpt(row.description),
-    category: row.category || "general",
-    // Budget
-    budget_value_cents: row.budget_value_cents,
-    budget: formatBudget(row.budget_value_cents, row.currency),
-    currency: row.currency || "EUR",
-    // Location - formats multiples pour compatibilité
-    location_data: locationData,
-    location: formatLocation(locationData),
-    location_raw: row.location_raw,
-    postal_code: row.postal_code,
-    city: row.city,
-    country: row.country,
-    remote_allowed: row.remote_allowed,
-    // Relations utilisateur
-    user_id: row.user_id,
-    client_id: row.client_id,
-    userId: row.user_id?.toString(),
-    clientId: row.client_id?.toString(),
-    clientName: "Client",
-    // Par défaut, sera remplacé par la vraie valeur si disponible
-    // Statut et priorité
-    status: row.status || "open",
-    urgency: row.urgency || "medium",
-    deadline: row.deadline?.toISOString(),
-    // Métadonnées projet
-    tags: row.tags || [],
-    skills_required: row.skills_required || [],
-    requirements: row.requirements,
-    // Équipe
-    is_team_mission: row.is_team_mission || false,
-    team_size: row.team_size || 1,
-    // Timestamps
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    createdAt: row.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-    updatedAt: row.updated_at?.toISOString(),
-    // Champs calculés/par défaut pour compatibilité frontend
-    bids: [],
-    // Sera populé séparément si nécessaire
-    teamRequirements: []
-    // Pour les missions d'équipe
+    tags: Array.isArray(mission.tags) ? mission.tags : [],
+    skills_required: Array.isArray(mission.skills_required) ? mission.skills_required : [],
+    requirements: mission.requirements || null
   };
+}
+function mapMission(mission) {
+  if (!mission || !mission.id) {
+    console.error("\u274C DTO Mapper: Mission invalide re\xE7ue:", mission);
+    throw new Error("Mission data is invalid or missing required fields");
+  }
+  try {
+    const location = extractLocationSafely(mission);
+    const budget = extractBudgetSafely(mission);
+    const metadata = extractMetadataSafely(mission);
+    const mappedMission = {
+      // Identifiants
+      id: mission.id,
+      // Contenu
+      title: mission.title || "Mission sans titre",
+      description: mission.description || "",
+      excerpt: mission.excerpt || (mission.description ? mission.description.length > 200 ? mission.description.substring(0, 200) + "..." : mission.description : "Description non disponible"),
+      category: mission.category || "general",
+      // Budget
+      ...budget,
+      // Localisation
+      ...location,
+      // Relations utilisateur
+      user_id: mission.user_id,
+      client_id: mission.client_id || mission.user_id,
+      userId: mission.user_id?.toString(),
+      clientId: (mission.client_id || mission.user_id)?.toString(),
+      clientName: "Client",
+      // TODO: Récupérer le vrai nom depuis une jointure
+      // Statut et timing
+      status: mission.status || "open",
+      urgency: mission.urgency || "medium",
+      deadline: mission.deadline?.toISOString(),
+      // Métadonnées
+      ...metadata,
+      // Équipe
+      is_team_mission: mission.is_team_mission || false,
+      team_size: mission.team_size || 1,
+      // Timestamps
+      created_at: mission.created_at,
+      updated_at: mission.updated_at,
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      // Champs pour compatibilité frontend
+      bids: []
+      // Sera rempli par les routes qui récupèrent les bids
+    };
+    console.log("\u2705 DTO Mapper: Mission mapp\xE9e avec succ\xE8s:", mappedMission.id, mappedMission.title);
+    return mappedMission;
+  } catch (error) {
+    console.error("\u274C DTO Mapper: Erreur lors du mapping de la mission:", mission.id, error);
+    console.error("\u274C DTO Mapper: Donn\xE9es mission probl\xE9matiques:", JSON.stringify(mission, null, 2));
+    return {
+      id: mission.id,
+      title: mission.title || "Mission avec erreur",
+      description: mission.description || "",
+      excerpt: "Erreur lors du chargement des d\xE9tails",
+      category: "general",
+      budget: "0",
+      budget_value_cents: 0,
+      currency: "EUR",
+      budget_display: "Non disponible",
+      location: "Remote",
+      location_raw: null,
+      postal_code: null,
+      city: null,
+      country: "France",
+      remote_allowed: true,
+      location_data: { remote_allowed: true },
+      user_id: mission.user_id,
+      client_id: mission.client_id || mission.user_id,
+      userId: mission.user_id?.toString(),
+      clientId: (mission.client_id || mission.user_id)?.toString(),
+      clientName: "Client",
+      status: "open",
+      urgency: "medium",
+      deadline: null,
+      tags: [],
+      skills_required: [],
+      requirements: null,
+      is_team_mission: false,
+      team_size: 1,
+      created_at: mission.created_at,
+      updated_at: mission.updated_at,
+      createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: mission.updated_at?.toISOString(),
+      bids: []
+    };
+  }
+}
+function mapMissions(rows) {
+  if (!Array.isArray(rows)) {
+    console.warn("\u26A0\uFE0F DTO Mapper: Input n'est pas un tableau, retour tableau vide");
+    return [];
+  }
+  const mappedMissions = [];
+  let errorCount = 0;
+  for (const mission of rows) {
+    try {
+      const mapped = mapMission(mission);
+      mappedMissions.push(mapped);
+    } catch (error) {
+      errorCount++;
+      console.error("\u274C DTO Mapper: \xC9chec du mapping pour mission:", mission?.id, error);
+    }
+  }
+  if (errorCount > 0) {
+    console.warn(`\u26A0\uFE0F DTO Mapper: ${errorCount} missions n'ont pas pu \xEAtre mapp\xE9es correctement sur ${rows.length}`);
+  } else {
+    console.log(`\u2705 DTO Mapper: ${mappedMissions.length} missions mapp\xE9es avec succ\xE8s`);
+  }
+  return mappedMissions;
 }
 
 // server/routes/missions.ts
 var asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
-function generateExcerpt2(description, maxLength = 200) {
+function generateExcerpt(description, maxLength = 200) {
   if (!description) {
     return "";
   }
@@ -2310,7 +2387,7 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
   const newMission = {
     title: title.trim(),
     description: fullDescription,
-    excerpt: generateExcerpt2(fullDescription, 200),
+    excerpt: generateExcerpt(fullDescription, 200),
     category: category || "developpement",
     budget_value_cents: budgetCents,
     currency: "EUR",
@@ -2418,89 +2495,24 @@ Exigences sp\xE9cifiques: ${req.body.requirements}` : "");
   });
 }));
 router2.get("/", asyncHandler(async (req, res) => {
-  console.log("\u{1F4CB} Fetching all missions (Quick Fix Mode)...");
+  console.log("\u{1F4CB} Fetching all missions avec DTO mapper s\xE9curis\xE9...");
   try {
-    const allMissions = await db.select({
-      id: missions.id,
-      title: missions.title,
-      description: missions.description,
-      excerpt: missions.excerpt,
-      category: missions.category,
-      budget_value_cents: missions.budget_value_cents,
-      currency: missions.currency,
-      user_id: missions.user_id,
-      client_id: missions.client_id,
-      status: missions.status,
-      urgency: missions.urgency,
-      deadline: missions.deadline,
-      created_at: missions.created_at,
-      updated_at: missions.updated_at,
-      is_team_mission: missions.is_team_mission,
-      team_size: missions.team_size
-    }).from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
+    const allMissions = await db.select().from(missions).where(sql2`${missions.status} IN ('open', 'published', 'active')`).orderBy(desc(missions.created_at)).limit(100);
     console.log(`\u{1F4CB} Found ${allMissions.length} missions in database`);
-    const missionsWithBids = allMissions.map((mission) => {
-      const excerpt = mission.excerpt || (mission.description ? mission.description.length <= 200 ? mission.description : mission.description.substring(0, 200) + "..." : "Description non disponible");
-      return {
-        // Identifiants
-        id: mission.id,
-        // Contenu
-        title: mission.title || "Mission sans titre",
-        description: mission.description || "",
-        excerpt,
-        category: mission.category || "general",
-        // Budget - simple et sûr
-        budget_value_cents: mission.budget_value_cents || 0,
-        budget: mission.budget_value_cents ? Math.round(mission.budget_value_cents / 100).toString() : "0",
-        currency: mission.currency || "EUR",
-        // Location - valeurs par défaut sûres
-        location: "Remote",
-        // Valeur par défaut simple
-        location_raw: null,
-        postal_code: null,
-        city: null,
-        country: "France",
-        remote_allowed: true,
-        location_data: { remote_allowed: true },
-        // Relations utilisateur
-        user_id: mission.user_id,
-        client_id: mission.client_id || mission.user_id,
-        userId: mission.user_id?.toString(),
-        clientId: (mission.client_id || mission.user_id)?.toString(),
-        clientName: "Client",
-        // Statut
-        status: mission.status || "open",
-        urgency: mission.urgency || "medium",
-        deadline: mission.deadline?.toISOString(),
-        // Équipe
-        is_team_mission: mission.is_team_mission || false,
-        team_size: mission.team_size || 1,
-        // Métadonnées - valeurs par défaut sûres
-        tags: [],
-        skills_required: [],
-        requirements: null,
-        // Timestamps
-        created_at: mission.created_at,
-        updated_at: mission.updated_at,
-        createdAt: mission.created_at?.toISOString() || (/* @__PURE__ */ new Date()).toISOString(),
-        updatedAt: mission.updated_at?.toISOString(),
-        // Offres - vide pour l'instant
-        bids: []
-      };
-    });
-    console.log("\u2705 Quick Fix: Missions mapped successfully:", missionsWithBids.length);
+    const missionsWithBids = mapMissions(allMissions);
+    console.log("\u2705 DTO Mapper: Missions mapped successfully:", missionsWithBids.length);
     res.json(missionsWithBids);
   } catch (error) {
-    console.error("\u274C Quick Fix Error:", error);
+    console.error("\u274C DTO Mapper Error:", error);
     console.error("\u274C Stack:", error.stack);
     res.status(500).json({
       ok: false,
-      error: "Erreur serveur temporaire",
-      details: "Mode Quick Fix actif - contactez le support",
-      error_type: "quick_fix_error",
+      error: "Internal server error",
+      details: error.message,
+      error_type: "server_error",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-      debug_info: process.env.NODE_ENV === "development" ? error.message : void 0
+      debug_mode: process.env.NODE_ENV === "development"
     });
   }
 }));
@@ -2710,7 +2722,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
           id: row.mission_id,
           title: row.title,
           description: row.description,
-          excerpt: generateExcerpt2(row.description || "", 200),
+          excerpt: generateExcerpt(row.description || "", 200),
           category: row.category,
           // Budget
           budget_value_cents: row.budget_value_cents,
@@ -2794,7 +2806,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       id: mission.id,
       title: mission.title,
       description: mission.description,
-      excerpt: generateExcerpt2(mission.description || "", 200),
+      excerpt: generateExcerpt(mission.description || "", 200),
       category: mission.category,
       budget_value_cents: mission.budget_value_cents,
       budget: mission.budget_value_cents?.toString() || "0",
@@ -2885,7 +2897,7 @@ router2.put("/:id", asyncHandler(async (req, res) => {
   const missionToUpdate = {
     title: updateData.title,
     description: updateData.description,
-    excerpt: generateExcerpt2(updateData.description, 200),
+    excerpt: generateExcerpt(updateData.description, 200),
     category: updateData.category || existingMission[0].category,
     budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
     location_raw: updateData.location || null,
