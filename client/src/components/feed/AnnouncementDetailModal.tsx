@@ -1,5 +1,5 @@
 import React from 'react';
-import { Announcement } from '../../../shared/schema.js';
+import { AnnouncementView } from '@shared/types';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 interface AnnouncementDetailModalProps {
-  announcement: Announcement | null;
+  announcement: AnnouncementView | null;
   isOpen: boolean;
   onClose: () => void;
   onSave: (announcementId: number) => void;
@@ -83,7 +83,7 @@ export function AnnouncementDetailModal({
                 )}
               </div>
               <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-1 text-xs">
-                ✨ {Math.round((announcement.quality_score || 0.8) * 100)}%
+                ✨ {Math.round((announcement.qualityScore || 0.8) * 100)}%
               </Badge>
             </div>
             <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">
@@ -104,7 +104,7 @@ export function AnnouncementDetailModal({
                 <span className="text-sm font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">Budget</span>
               </div>
               <span className="text-base font-medium text-gray-900 dark:text-white break-words">
-                {formatBudget(announcement.budget_min, announcement.budget_max)}
+                {formatBudget(announcement.budgetMin, announcement.budgetMax)}
               </span>
             </div>
 
@@ -136,7 +136,7 @@ export function AnnouncementDetailModal({
                 <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">Client</span>
               </div>
               <span className="text-base font-medium text-gray-900 dark:text-white">
-                Client #{announcement.user_id}
+                Client #{announcement.userId}
               </span>
             </div>
           </div>
@@ -171,7 +171,7 @@ export function AnnouncementDetailModal({
               variant="outline"
               className="w-full text-base py-3 h-auto"
               onClick={() => {
-                window.open(`/messages?client=${announcement.user_id}`, '_blank');
+                window.open(`/messages?client=${announcement.userId}`, '_blank');
                 console.log('Contacter le client');
               }}
             >

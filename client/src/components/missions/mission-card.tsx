@@ -3,18 +3,18 @@ import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { MapPin, Euro, Clock, Users, TrendingUp } from 'lucide-react';
-import type { MissionWithBids } from '@shared/schema';
+import type { MissionView, BidView } from '@shared/types';
 import { categories } from '@/lib/categories';
 
 interface MissionCardProps {
-  mission: MissionWithBids;
+  mission: MissionView;
   onClick?: () => void;
 }
 
 export function MissionCard({ mission, onClick }: MissionCardProps) {
   const category = categories.find(c => c.id === mission.category);
   const averageBid = mission.bids.length > 0
-    ? mission.bids.reduce((sum, bid) => sum + parseFloat(bid.price), 0) / mission.bids.length
+    ? mission.bids.reduce((sum: number, bid: BidView) => sum + bid.amount, 0) / mission.bids.length
     : 0;
 
   return (
@@ -48,7 +48,7 @@ export function MissionCard({ mission, onClick }: MissionCardProps) {
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center gap-1 text-gray-600">
             <Euro className="w-3 h-3 text-green-600" />
-            <span className="font-medium truncate">{typeof mission.budget === 'number' ? mission.budget : parseInt(mission.budget || '0')}€</span>
+            <span className="font-medium truncate">{mission.budgetDisplay}</span>
           </div>
 
           <div className="flex items-center gap-1 text-gray-600">
@@ -75,7 +75,7 @@ export function MissionCard({ mission, onClick }: MissionCardProps) {
           <div className="flex items-center gap-1 text-gray-500">
             <Clock className="w-3 h-3" />
             <span className="truncate">
-              {formatDistanceToNow(new Date(mission.createdAt!), {
+              {formatDistanceToNow(new Date(mission.createdAt), {
                 addSuffix: true,
                 locale: fr
               })}

@@ -406,4 +406,38 @@ export interface Mission {
   title: string;
   description: string;
   teamRequirements?: TeamRequirement[];
+  category: string;
+  budget?: string | number;
+  location?: string;
+  clientName?: string;
+  createdAt?: string;
+  bids?: any[];
 }
+
+// ⚠️ DEPRECATED LEGACY UI TYPES
+// Please use types from @shared/types instead for UI components
+// These are kept only for backward compatibility and will be removed
+export namespace DeprecatedUITypes {
+  export interface MissionWithBids extends Mission {
+    bids: any[];
+  }
+
+  export interface Announcement {
+    id: number;
+    title: string;
+    description: string;
+    category: string;
+    budget_min?: number;
+    budget_max?: number;
+    deadline?: Date;
+    city?: string;
+    user_id: number;
+    tags?: string[];
+    sponsored?: boolean;
+    quality_score?: number;
+  }
+}
+
+// Re-exports for backward compatibility - to be removed
+export interface MissionWithBids extends DeprecatedUITypes.MissionWithBids {}
+export interface Announcement extends DeprecatedUITypes.Announcement {}

@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import { Announcement } from '../../shared/schema';
+import type { AnnouncementView } from '@shared/types';
+import { dataApi } from '@/lib/api/services';
 
 interface FeedState {
   // État du feed
-  items: Announcement[];
+  items: AnnouncementView[];
   currentIndex: number;
   loading: boolean;
   error: string | null;
@@ -24,7 +25,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   error: null,
   hasMore: true,
 
-  // Charger le feed
+  // Charger le feed avec mappers
   loadFeed: async (reset = false) => {
     const state = get();
     
@@ -33,25 +34,21 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const cursor = reset ? undefined : (state.items.length > 0 ? state.items[state.items.length - 1]?.id : undefined);
-      const queryParams = new URLSearchParams({ limit: '10' });
-      if (cursor) queryParams.append('cursor', cursor.toString());
-      const response = await fetch(`/api/feed?${queryParams}`);
+      const cursor = reset ? undefined : (state.items.length > 0 ? state.items[state.items.length - 1]?.id.toString() : undefined);
+      console.log('🔄 Chargement feed avec mappers...', { reset, cursor });
       
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement du feed');
-      }
-
-      const data = await response.json();
-      const newItems = data.items || [];
-
+      // Utiliser le service API centralisé avec mappers
+      const feedData = await dataApi.getFeed(cursor, 10);
+      
       set({
-        items: reset ? newItems : [...state.items, ...newItems],
+        items: reset ? feedData.items : [...state.items, ...feedData.items],
         currentIndex: reset ? 0 : state.currentIndex,
-        hasMore: newItems.length === 10,
+        hasMore: feedData.hasMore,
         loading: false,
         error: null
       });
+
+      console.log('✅ Feed normalisé chargé:', feedData.items.length, 'annonces');
 
     } catch (error) {
       console.error('Erreur loadFeed:', error);

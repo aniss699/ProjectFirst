@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { Mission, Bid } from '@shared/schema';
+import type { MissionView } from '@shared/types';
+import { dataApi } from '@/lib/api/services';
 import { MissionCard } from '@/components/missions/mission-card';
 import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
 import { SystemStatusBanner } from '@/components/ui/system-status-banner';
@@ -18,10 +19,8 @@ import { Label } from '@/components/ui/label';
 import MissionMatchingEngine from '@/components/ai/mission-matching-engine';
 import { useAuth } from '@/hooks/use-auth';
 
-// Type local pour les missions avec bids
-type MissionWithBids = Mission & {
-  bids: Bid[];
-};
+// Utiliser le type normalisé MissionView qui inclut déjà les bids
+type MissionWithBids = MissionView;
 
 export default function Marketplace() {
   const { user } = useAuth();
@@ -39,65 +38,13 @@ export default function Marketplace() {
   const { data: missionsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/missions'],
     queryFn: async () => {
-      console.log('🔄 Début requête missions API...');
+      console.log('🔄 Début requête missions API avec mappers...');
       
       try {
-        const response = await fetch('/api/missions', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          credentials: 'include'
-        });
-
-        console.log(`📡 Réponse API: ${response.status} ${response.statusText}`);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Erreur API détaillée:', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText
-          });
-          
-          // Retourner des données de fallback au lieu de throw
-          return {
-            missions: [],
-            metadata: {
-              total: 0,
-              has_errors: true,
-              error_message: `API Error ${response.status}: ${response.statusText}`,
-              fallback_mode: true
-            }
-          };
-        }
-
-        const data = await response.json();
-        console.log('✅ Données reçues:', {
-          type: typeof data,
-          hasMetadata: !!data.metadata,
-          hasMissions: !!data.missions,
-          missionsCount: data.missions?.length || (Array.isArray(data) ? data.length : 0)
-        });
-
-        // Normaliser la réponse selon le format attendu
-        if (data.missions && Array.isArray(data.missions)) {
-          return data; // Format avec metadata
-        } else if (Array.isArray(data)) {
-          return { missions: data, metadata: { total: data.length } }; // Format legacy
-        } else {
-          console.warn('⚠️ Format de réponse inattendu, utilisation de fallback');
-          return {
-            missions: [],
-            metadata: {
-              total: 0,
-              has_errors: true,
-              error_message: 'Format de réponse inattendu',
-              fallback_mode: true
-            }
-          };
-        }
+        // Utiliser le service API centralisé avec mappers
+        const result = await dataApi.getMissions();
+        console.log('✅ Missions normalisées récupérées:', result.missions.length);
+        return result;
       } catch (networkError) {
         console.error('❌ Erreur réseau:', networkError);
         // Retourner des données de fallback au lieu de throw
@@ -178,7 +125,7 @@ export default function Marketplace() {
       if (filters.category && filters.category !== 'all' && mission.category !== filters.category) return false;
       if (filters.location && !mission.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
       if (filters.budget && filters.budget !== 'all') {
-        const budget = parseFloat(mission.budget || '0');
+        const budget = mission.budget; // Déjà normalisé en nombre par le mapper
         switch (filters.budget) {
           case '0-500':
             return budget >= 0 && budget <= 500;
@@ -199,9 +146,9 @@ export default function Marketplace() {
         case 'newest':
           return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
         case 'budget-high':
-          return parseFloat(b.budget || '0') - parseFloat(a.budget || '0');
+          return b.budget - a.budget; // Déjà normalisés en nombre par le mapper
         case 'budget-low':
-          return parseFloat(a.budget || '0') - parseFloat(b.budget || '0');
+          return a.budget - b.budget; // Déjà normalisés en nombre par le mapper
         case 'bids':
           return b.bids.length - a.bids.length;
         default:

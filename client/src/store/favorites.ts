@@ -1,13 +1,14 @@
 import { create } from 'zustand';
-import { Announcement } from '../../shared/schema';
+import type { AnnouncementView } from '@shared/types';
+import { dataApi } from '@/lib/api/services';
 
 interface FavoritesState {
-  favorites: Announcement[];
+  favorites: AnnouncementView[];
   loading: boolean;
   error: string | null;
   
   // Actions
-  addToFavorites: (announcement: Announcement) => Promise<void>;
+  addToFavorites: (announcement: AnnouncementView) => Promise<void>;
   removeFromFavorites: (announcementId: number) => Promise<void>;
   loadFavorites: () => Promise<void>;
   isFavorite: (announcementId: number) => boolean;
@@ -18,7 +19,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   loading: false,
   error: null,
 
-  addToFavorites: async (announcement: Announcement) => {
+  addToFavorites: async (announcement: AnnouncementView) => {
     const state = get();
     
     // Éviter les doublons
@@ -91,17 +92,17 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const response = await fetch('/api/favorites?user_id=1'); // TODO: récupérer depuis auth
+      console.log('🔄 Chargement favoris avec mappers...');
       
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des favoris');
-      }
-
-      const data = await response.json();
+      // Utiliser le service API centralisé avec mappers
+      const normalizedFavorites = await dataApi.getFavorites(1); // TODO: récupérer user ID depuis auth
+      
       set({
-        favorites: data.favorites || [],
+        favorites: normalizedFavorites,
         loading: false
       });
+
+      console.log('✅ Favoris normalisés chargés:', normalizedFavorites.length);
 
     } catch (error) {
       console.error('Erreur loadFavorites:', error);

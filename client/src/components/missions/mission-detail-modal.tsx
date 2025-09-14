@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
+import type { MissionView, BidView } from '@shared/types';
+import { dataApi } from '@/lib/api/services';
 import { formatBudget, formatDate, getCategoryById } from '@/lib/categories';
 import { BidForm } from './bid-form';
 import { BidTabs } from './bid-tabs';
@@ -57,37 +59,20 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Fetch mission data avec gestion d'erreur améliorée
-  const { data: mission, isLoading, error } = useQuery<any>({
+  // Fetch mission data avec mappers normalisés
+  const { data: mission, isLoading, error } = useQuery<MissionView>({
     queryKey: ['mission-detail', missionId],
     queryFn: async () => {
       if (!missionId) {
         throw new Error('ID de mission manquant');
       }
 
-      console.log('🔍 Chargement mission ID:', missionId);
+      console.log('🔍 Chargement mission avec mappers ID:', missionId);
 
-      try {
-        const response = await fetch(`/api/missions/${missionId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Erreur API mission:', response.status, errorText);
-          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ Mission chargée:', data?.title || 'Sans titre');
-        return data;
-      } catch (fetchError) {
-        console.error('❌ Erreur réseau mission:', fetchError);
-        throw fetchError;
-      }
+      // Utiliser le service API centralisé avec mappers
+      const normalizedMission = await dataApi.getMissionById(missionId);
+      console.log('✅ Mission normalisée chargée:', normalizedMission.title);
+      return normalizedMission;
     },
     enabled: !!missionId && isOpen,
     retry: 1,
@@ -170,7 +155,8 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   }
 
   const category = getCategoryById(mission.category);
-  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.price || a.amount || '0') - parseFloat(b.price || b.amount || '0')) : [];
+  // Avec les types normalisés, amount est déjà un nombre
+  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
   // Gérer les animations de transition
@@ -212,7 +198,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                   {mission.title}
                 </h2>
                 <p className="text-blue-100 text-sm md:text-base mt-1 opacity-90 truncate">
-                  Par {mission.clientName} • {formatBudget(mission.budget || '0')}
+                  Par {mission.clientName} • {mission.budgetDisplay}
                 </p>
               </div>
 
@@ -236,7 +222,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span className="hidden sm:inline">{formatDate(mission.createdAt || new Date().toISOString())}</span>
+                  <span className="hidden sm:inline">{formatDate(mission.createdAt)}</span>
                   <span className="sm:hidden">Créé</span>
                 </div>
                 {category && (
@@ -369,7 +355,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                         <span className="font-medium text-gray-900 text-xs md:text-sm">Budget</span>
                       </div>
                       <div className="text-lg md:text-2xl font-bold text-green-600">
-                        {formatBudget(mission.budget || '0')}
+                        {mission.budgetDisplay}
                       </div>
                     </div>
 
@@ -448,7 +434,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {sortedBids.map((bid: any, index: number) => (
+                      {sortedBids.map((bid: BidView, index: number) => (
                         <div key={bid.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border hover:shadow-md transition-shadow">
 
                           {/* Header offre */}
@@ -506,18 +492,18 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
                             <div className="text-right">
                               <div className="text-lg md:text-xl font-bold text-green-600">
-                                {formatBudget(bid.price)}
+                                {bid.price || formatBudget(bid.amount.toString())}
                               </div>
                               <div className="text-xs text-gray-500 flex items-center justify-end mt-1">
                                 <Clock className="w-3 h-3 mr-1" />
-                                {bid.timeline}
+                                {bid.timeline_days ? `${bid.timeline_days} jours` : 'Non spécifié'}
                               </div>
                             </div>
                           </div>
 
                           {/* Proposition */}
                           <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4 border-l-4 border-blue-400">
-                            <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.proposal}</p>
+                            <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">{bid.message || 'Candidature soumise'}</p>
                           </div>
 
                           {/* Actions */}

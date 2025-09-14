@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import type { Mission, Bid } from '@shared/schema';
+import type { MissionView, BidView } from '@shared/types';
+import { dataApi } from '@/lib/api/services';
 import { formatBudget, formatDate } from '@/lib/categories';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,8 @@ import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
 import { paths } from '../routes/paths';
 import { useToast } from '@/hooks/use-toast';
 
-interface MissionWithBids extends Mission {
-  bids: Bid[];
-}
+// Utiliser le type normalisé MissionView qui inclut déjà les bids
+type MissionWithBids = MissionView;
 
 export default function Missions() {
   const { user } = useAuth();
@@ -32,34 +32,33 @@ export default function Missions() {
         throw new Error('User ID manquant');
       }
 
-      console.log('🔍 OPTIMIZED: Récupération des missions avec offres pour user.id:', user.id);
+      console.log('🔍 OPTIMIZED: Récupération des missions avec mappers pour user.id:', user.id);
       
-      const response = await fetch(`/api/missions/users/${user.id}/missions`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erreur API missions:', response.status, errorText);
-        throw new Error(`Erreur ${response.status}: ${errorText}`);
-      }
+      // Utiliser le service API centralisé avec mappers
+      const normalizedMissions = await dataApi.getUserMissions(user.id);
+      console.log('✅ PERFORMANCE BOOST: Missions normalisées récupérées:', normalizedMissions.length);
       
-      const missionsWithBids = await response.json();
-      console.log('✅ PERFORMANCE BOOST: Missions avec offres récupérées en 1 seule requête:', missionsWithBids.length);
-      console.log('✅ ELIMINATED N+1: Pas de requêtes individuelles pour les offres');
-      
-      return missionsWithBids;
+      return normalizedMissions;
     },
     enabled: !!user?.id,
     retry: 2,
     retryDelay: 1000,
   });
 
-  const { data: userBids = [], isLoading: bidsLoading } = useQuery<Bid[]>({
+  const { data: userBids = [], isLoading: bidsLoading } = useQuery<BidView[]>({
     queryKey: ['userBids', user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/missions/users/${user?.id}/bids`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch user bids');
+      if (!user?.id) {
+        throw new Error('User ID manquant');
       }
-      return response.json();
+      
+      console.log('🔍 Récupération des bids avec mappers pour user.id:', user.id);
+      
+      // Utiliser le service API centralisé avec mappers
+      const normalizedBids = await dataApi.getUserBids(user.id);
+      console.log('✅ Bids normalisés récupérés:', normalizedBids.length);
+      
+      return normalizedBids;
     },
     enabled: !!user && user.type === 'provider',
   });
@@ -212,7 +211,7 @@ export default function Missions() {
                     </div>
                     <div className="text-left sm:text-right">
                       <div className="text-xl font-bold text-primary">
-                        {formatBudget(mission.budget || '0')}
+                        {mission.budgetDisplay}
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
                         {formatDate(mission.createdAt!)}
@@ -271,8 +270,8 @@ export default function Missions() {
                       <div className="space-y-2">
                         {mission.bids.slice(0, 2).map((bid) => (
                           <div key={bid.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
-                            <span className="truncate flex-1">{bid.proposal}</span>
-                            <span className="font-medium text-primary ml-2">{formatBudget(bid.price)}</span>
+                            <span className="truncate flex-1">{bid.message || 'Candidature soumise'}</span>
+                            <span className="font-medium text-primary ml-2">{bid.price || formatBudget(bid.amount.toString())}</span>
                           </div>
                         ))}
                         {mission.bids.length > 2 && (
@@ -312,16 +311,16 @@ export default function Missions() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     Candidature soumise
                   </h3>
-                  <p className="text-gray-600 mb-4 text-sm sm:text-base">{bid.proposal}</p>
+                  <p className="text-gray-600 mb-4 text-sm sm:text-base">{bid.message || 'Aucun message fourni'}</p>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
                       <span className="text-sm text-gray-500">Votre offre:</span>
                       <span className="text-xl font-bold text-primary ml-2">
-                        {formatBudget(bid.price)}
+                        {bid.price || formatBudget(bid.amount.toString())}
                       </span>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-500">Délai: {bid.timeline}</span>
+                      <span className="text-sm text-gray-500">Délai: {bid.timeline_days ? `${bid.timeline_days} jours` : 'Non spécifié'}</span>
                       <Badge variant="secondary">
                         En attente
                       </Badge>
