@@ -309,39 +309,176 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
-// GET /api/missions - Get all missions with bids (avec DTO mapper corrigé)
+// GET /api/missions - Get all missions with bids (Phase 3 - Version ultra robuste)
 router.get('/', asyncHandler(async (req, res) => {
-  console.log('📋 Fetching all missions avec DTO mapper sécurisé...');
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  const startTime = Date.now();
+  
+  console.log(JSON.stringify({
+    level: 'info',
+    timestamp: new Date().toISOString(),
+    request_id: requestId,
+    action: 'get_missions_start',
+    user_agent: req.headers['user-agent']
+  }));
 
   try {
-    // Requête complète pour récupérer toutes les données nécessaires
+    // Phase 3.1 : Requête explicite avec colonnes sélectionnées pour éviter les erreurs
     const allMissions = await db
-      .select()
+      .select({
+        id: missionsTable.id,
+        title: missionsTable.title,
+        description: missionsTable.description,
+        excerpt: missionsTable.excerpt,
+        category: missionsTable.category,
+        budget_value_cents: missionsTable.budget_value_cents,
+        currency: missionsTable.currency,
+        location_data: missionsTable.location_data,
+        location_raw: missionsTable.location_raw,
+        postal_code: missionsTable.postal_code,
+        city: missionsTable.city,
+        country: missionsTable.country,
+        remote_allowed: missionsTable.remote_allowed,
+        user_id: missionsTable.user_id,
+        client_id: missionsTable.client_id,
+        status: missionsTable.status,
+        urgency: missionsTable.urgency,
+        deadline: missionsTable.deadline,
+        tags: missionsTable.tags,
+        skills_required: missionsTable.skills_required,
+        requirements: missionsTable.requirements,
+        is_team_mission: missionsTable.is_team_mission,
+        team_size: missionsTable.team_size,
+        created_at: missionsTable.created_at,
+        updated_at: missionsTable.updated_at
+      })
       .from(missionsTable)
       .where(sql`${missionsTable.status} IN ('open', 'published', 'active')`)
       .orderBy(desc(missionsTable.created_at))
       .limit(100);
 
-    console.log(`📋 Found ${allMissions.length} missions in database`);
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'database_query_success',
+      missions_count: allMissions.length,
+      query_time_ms: Date.now() - startTime
+    }));
 
-    // Utiliser le DTO mapper sécurisé
-    const missionsWithBids = mapMissions(allMissions);
+    // Phase 3.2 : Validation préalable des données avant mapping
+    const validMissions = allMissions.filter(mission => {
+      if (!mission.id || !mission.title) {
+        console.warn(JSON.stringify({
+          level: 'warn',
+          timestamp: new Date().toISOString(),
+          request_id: requestId,
+          action: 'mission_validation_failed',
+          mission_id: mission.id,
+          reason: 'missing_required_fields'
+        }));
+        return false;
+      }
+      return true;
+    });
 
-    console.log('✅ DTO Mapper: Missions mapped successfully:', missionsWithBids.length);
-    res.json(missionsWithBids);
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'missions_validation_complete',
+      valid_missions: validMissions.length,
+      filtered_out: allMissions.length - validMissions.length
+    }));
+
+    // Phase 3.3 : Mapping sécurisé avec gestion d'erreur par mission
+    const missionsWithBids = [];
+    let mappingErrors = 0;
+
+    for (const mission of validMissions) {
+      try {
+        const mappedMission = mapMission(mission);
+        missionsWithBids.push(mappedMission);
+      } catch (mappingError: any) {
+        mappingErrors++;
+        console.error(JSON.stringify({
+          level: 'error',
+          timestamp: new Date().toISOString(),
+          request_id: requestId,
+          action: 'mission_mapping_error',
+          mission_id: mission.id,
+          error: mappingError.message
+        }));
+        
+        // Ajouter une version minimale de la mission en cas d'erreur
+        missionsWithBids.push({
+          id: mission.id,
+          title: mission.title || 'Mission sans titre',
+          description: mission.description || '',
+          excerpt: 'Erreur lors du chargement des détails',
+          category: mission.category || 'general',
+          budget: '0',
+          budget_value_cents: 0,
+          currency: 'EUR',
+          budget_display: 'Non disponible',
+          location: 'Remote',
+          status: mission.status || 'open',
+          user_id: mission.user_id,
+          userId: mission.user_id?.toString(),
+          clientName: 'Client',
+          createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
+          bids: []
+        });
+      }
+    }
+
+    console.log(JSON.stringify({
+      level: 'info',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'missions_mapping_complete',
+      successful_mappings: missionsWithBids.length - mappingErrors,
+      mapping_errors: mappingErrors,
+      total_time_ms: Date.now() - startTime
+    }));
+
+    // Phase 3.4 : Réponse structurée avec métadonnées
+    res.json({
+      missions: missionsWithBids,
+      metadata: {
+        total: missionsWithBids.length,
+        request_id: requestId,
+        query_time_ms: Date.now() - startTime,
+        has_errors: mappingErrors > 0
+      }
+    });
     
   } catch (error: any) {
-    console.error('❌ DTO Mapper Error:', error);
-    console.error('❌ Stack:', error.stack);
+    // Phase 3.5 : Gestion d'erreur robuste avec logs structurés
+    console.error(JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+      action: 'get_missions_error',
+      error_message: error.message,
+      error_stack: error.stack,
+      total_time_ms: Date.now() - startTime
+    }));
 
+    // Réponse d'erreur détaillée pour le debug
     res.status(500).json({
       ok: false,
       error: 'Internal server error',
       details: error.message,
       error_type: 'server_error',
       timestamp: new Date().toISOString(),
-      request_id: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-      debug_mode: process.env.NODE_ENV === 'development'
+      request_id: requestId,
+      debug_mode: process.env.NODE_ENV === 'development',
+      suggestions: [
+        'Vérifiez la connectivité à la base de données',
+        'Contrôlez la structure de la table missions',
+        'Validez que les colonnes requises existent'
+      ]
     });
   }
 }));
