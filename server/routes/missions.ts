@@ -234,7 +234,14 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     request_id: requestId,
     action: 'db_insert_success',
     mission_id: insertedMission.id,
-    execution_time_ms: Date.now() - startTime
+    execution_time_ms: Date.now() - startTime,
+    inserted_data: {
+      id: insertedMission.id,
+      title: insertedMission.title,
+      status: insertedMission.status,
+      user_id: insertedMission.user_id,
+      created_at: insertedMission.created_at
+    }
   }));
 
   // 4. Récupérer la mission complète pour la réponse
@@ -413,7 +420,14 @@ router.get('/', asyncHandler(async (req, res) => {
       action: 'missions_mapping_complete',
       successful_mappings: missionsWithBids.length - mappingErrors,
       mapping_errors: mappingErrors,
-      total_time_ms: Date.now() - startTime
+      total_time_ms: Date.now() - startTime,
+      sample_mission_ids: missionsWithBids.slice(0, 3).map(m => m.id),
+      first_mission_sample: missionsWithBids[0] ? {
+        id: missionsWithBids[0].id,
+        title: missionsWithBids[0].title,
+        status: missionsWithBids[0].status,
+        budget_display: missionsWithBids[0].budget_display
+      } : null
     }));
 
     // Phase 3.4 : Réponse structurée avec métadonnées
