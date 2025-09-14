@@ -55,6 +55,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const [selectedBidderName, setSelectedBidderName] = useState<string>('');
   const [showBidForm, setShowBidForm] = useState(false);
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Fetch mission data avec gestion d'erreur améliorée
   const { data: mission, isLoading, error } = useQuery<any>({
@@ -107,15 +108,26 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
     ));
   };
 
-  // Loading state
+  // Loading state amélioré avec animations
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] max-w-lg mx-auto p-0 gap-0 bg-white">
-          <div className="flex items-center justify-center min-h-[200px]">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
-              <p className="text-sm text-gray-500 font-medium">Chargement...</p>
+        <DialogContent className="w-[95vw] max-w-4xl mx-auto p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden">
+          <div className="flex items-center justify-center min-h-[400px] bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-200 border-t-blue-600"></div>
+                <div className="absolute inset-0 animate-pulse rounded-full h-12 w-12 border-3 border-transparent border-t-purple-600 opacity-75"></div>
+              </div>
+              <div className="text-center">
+                <p className="text-base text-gray-700 dark:text-gray-300 font-semibold mb-1">Chargement de la mission...</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Récupération des détails</p>
+              </div>
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -123,24 +135,33 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
     );
   }
 
-  // Error state
+  // Error state amélioré
   if (error || !mission) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] max-w-lg mx-auto p-6 gap-4 bg-white">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-red-500" />
+        <DialogContent className="w-[95vw] max-w-lg mx-auto p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden">
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-red-900/20 p-8 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/50 dark:to-red-800/50 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+              <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              {error instanceof Error ? error.message : 'Mission introuvable'}
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mission introuvable</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              {error instanceof Error ? error.message : 'Cette mission n\'existe plus ou a été supprimée.'}
             </p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={() => window.location.reload()} variant="outline" size="sm">
-                Recharger
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 transition-all duration-200"
+              >
+                Recharger la page
               </Button>
-              <Button onClick={onClose} size="sm">Fermer</Button>
+              <Button 
+                onClick={onClose} 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg transition-all duration-200 transform hover:scale-105"
+              >
+                Fermer
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -149,12 +170,21 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   }
 
   const category = getCategoryById(mission.category);
-  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount)) : [];
+  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => parseFloat(a.price || a.amount || '0') - parseFloat(b.price || b.amount || '0')) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
+
+  // Gérer les animations de transition
+  const handleTabChange = (newTab: string) => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setActiveTab(newTab);
+      setIsAnimating(false);
+    }, 150);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-h-[90vh] max-w-4xl p-0 gap-0 bg-gray-50 rounded-xl flex flex-col">
+      <DialogContent className="w-[95vw] max-h-[90vh] max-w-4xl p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden flex flex-col transition-all duration-300">
         <DialogHeader className="sr-only">
           <DialogTitle>{mission.title}</DialogTitle>
           <DialogDescription>Détails de la mission</DialogDescription>
@@ -162,8 +192,11 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
         <div className="flex flex-col min-h-0 max-h-[90vh]">
 
-        {/* Header Mobile/Desktop */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0 shadow-lg">
+        {/* Header Mobile/Desktop avec design amélioré */}
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white relative flex-shrink-0 shadow-xl overflow-hidden">
+            {/* Effet de background animé */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-pink-500/20 animate-pulse"></div>
+            <div className="relative z-10">
             <div className="flex items-center justify-between p-3 md:p-6">
               <Button
                 onClick={onClose}
@@ -213,49 +246,112 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 )}
               </div>
             </div>
+            </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="bg-white border-b shadow-sm flex-shrink-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-12 md:h-14 bg-transparent rounded-none border-none p-0">
-              <div className="flex w-full">
-                <TabsTrigger
-                  value="overview"
-                  className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
+          {/* Navigation Tabs avec design amélioré */}
+          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 relative">
+            {/* Ligne décorative animée */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-20"></div>
+            
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="w-full h-14 md:h-16 bg-transparent rounded-none border-none p-0 relative">
+              {/* Indicateur de tab active avec animation fluide */}
+              <div 
+                className={`absolute bottom-0 h-1 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 ease-out rounded-t-full shadow-lg ${
+                  activeTab === 'overview' ? 'left-0 w-1/3' :
+                  activeTab === 'bids' ? `left-1/3 w-1/3 ${isTeamMission ? '' : 'left-1/2 w-1/2'}` :
+                  activeTab === 'team' ? 'left-2/3 w-1/3' : ''
+                }`}
+                style={{
+                  width: isTeamMission ? '33.333333%' : '50%',
+                  left: activeTab === 'overview' ? '0%' : 
+                        activeTab === 'bids' ? (isTeamMission ? '33.333333%' : '50%') :
+                        activeTab === 'team' ? '66.666667%' : '0%'
+                }}
+              />
+              
+              <div className="flex w-full relative z-10">
+                <button
+                  onClick={() => handleTabChange('overview')}
+                  className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
+                    activeTab === 'overview'
+                      ? 'text-blue-600 dark:text-blue-400 transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
                 >
-                  <Briefcase className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                  <Briefcase className={`w-4 h-4 transition-all duration-300 ${
+                    activeTab === 'overview' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
+                  }`} />
                   <span className="hidden sm:inline">Aperçu</span>
                   <span className="sm:hidden">Info</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="bids"
-                  className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
+                </button>
+                
+                <button
+                  onClick={() => handleTabChange('bids')}
+                  className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
+                    activeTab === 'bids'
+                      ? 'text-blue-600 dark:text-blue-400 transform scale-105'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
                 >
-                  <Users className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                  <span className="hidden sm:inline">Offres ({sortedBids.length})</span>
-                  <span className="sm:hidden">({sortedBids.length})</span>
-                </TabsTrigger>
+                  <Users className={`w-4 h-4 transition-all duration-300 ${
+                    activeTab === 'bids' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
+                  }`} />
+                  <span className="hidden sm:inline">Offres</span>
+                  <span className="sm:hidden flex items-center gap-1">
+                    <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full transition-all duration-300 ${
+                      activeTab === 'bids' 
+                        ? 'bg-blue-600 text-white scale-110' 
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {sortedBids.length}
+                    </span>
+                  </span>
+                  <span className="hidden sm:inline">
+                    <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold rounded-full transition-all duration-300 ml-1 ${
+                      activeTab === 'bids' 
+                        ? 'bg-blue-600 text-white scale-110' 
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {sortedBids.length}
+                    </span>
+                  </span>
+                </button>
+                
                 {isTeamMission && (
-                  <TabsTrigger
-                    value="team"
-                    className="flex-1 h-12 md:h-14 text-sm font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-3 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-3 transition-all duration-200"
+                  <button
+                    onClick={() => handleTabChange('team')}
+                    className={`flex-1 h-14 md:h-16 text-sm font-semibold px-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 ${
+                      activeTab === 'team'
+                        ? 'text-blue-600 dark:text-blue-400 transform scale-105'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
                   >
-                    <Target className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                    <Target className={`w-4 h-4 transition-all duration-300 ${
+                      activeTab === 'team' ? 'text-blue-600 dark:text-blue-400 animate-pulse' : ''
+                    }`} />
                     <span className="hidden sm:inline">Équipe</span>
                     <span className="sm:hidden">Team</span>
-                  </TabsTrigger>
+                  </button>
                 )}
               </div>
             </TabsList>
 
-            {/* Content */}
-            <div className="flex-1 min-h-0">
+            {/* Content avec animations de transition */}
+            <div className="flex-1 min-h-0 relative">
 
               {/* Overview Tab */}
-              <TabsContent value="overview" className="m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
-                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
+              <TabsContent 
+                value="overview" 
+                className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
+                  activeTab === 'overview' 
+                    ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                    : 'opacity-0 translate-x-4 pointer-events-none'
+                } data-[state=active]:flex data-[state=active]:flex-col`}
+              >
+                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
 
                   {/* Description */}
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
@@ -331,9 +427,16 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               </TabsContent>
 
               {/* Bids Tab */}
-              <TabsContent value="bids" className="m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
-                  <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8">
+              <TabsContent 
+                value="bids" 
+                className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
+                  activeTab === 'bids' 
+                    ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                    : 'opacity-0 translate-x-4 pointer-events-none'
+                } data-[state=active]:flex data-[state=active]:flex-col`}
+              >
+                <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
 
                   {sortedBids.length === 0 ? (
                     <div className="bg-white rounded-lg p-8 md:p-12 text-center shadow-sm border">
@@ -418,7 +521,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                           </div>
 
                           {/* Actions */}
-                          {user && mission.userName === user.name && (
+                          {user && (mission.clientName === user.name || mission.userName === user.name) && (
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                               <Button
                                 onClick={() => {
@@ -451,9 +554,16 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
 
               {/* Team Tab */}
               {isTeamMission && (
-                <TabsContent value="team" className="m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                  <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
-                    <div className="p-3 md:p-6 space-y-3 md:space-y-4 pb-6 md:pb-8"></div>
+                <TabsContent 
+                  value="team" 
+                  className={`m-0 absolute inset-0 transition-all duration-300 ease-out ${
+                    activeTab === 'team' 
+                      ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                      : 'opacity-0 translate-x-4 pointer-events-none'
+                  } data-[state=active]:flex data-[state=active]:flex-col`}
+                >
+                  <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-6 md:pb-8 bg-gray-50 dark:bg-gray-900/50 min-h-full">
                     <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border">
                       <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm md:text-base">
                         <Target className="w-5 h-5" />
@@ -493,6 +603,7 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                           </div>
                         ))}
                       </div>
+                    </div>
                     </div>
                   </div>
                 </TabsContent>
