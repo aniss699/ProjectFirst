@@ -2815,11 +2815,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       category: missions.category,
       budget_value_cents: missions.budget_value_cents,
       currency: missions.currency,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
+      location_data: missions.location_data,
       user_id: missions.user_id,
       client_id: missions.client_id,
       status: missions.status,
@@ -2858,12 +2854,8 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
           budget: row.budget_value_cents?.toString() || "0",
           currency: row.currency,
           // Location
-          location_raw: row.location_raw,
-          location: row.location_raw || row.postal_code || row.city || "Remote",
-          postal_code: row.postal_code,
-          city: row.city,
-          country: row.country,
-          remote_allowed: row.remote_allowed,
+          location_data: row.location_data,
+          location: row.location_data?.raw || row.location_data?.city || "Remote",
           // Status
           status: row.status,
           urgency: row.urgency,
@@ -2913,11 +2905,7 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       category: missions.category,
       budget_value_cents: missions.budget_value_cents,
       currency: missions.currency,
-      location_raw: missions.location_raw,
-      postal_code: missions.postal_code,
-      city: missions.city,
-      country: missions.country,
-      remote_allowed: missions.remote_allowed,
+      location_data: missions.location_data,
       user_id: missions.user_id,
       client_id: missions.client_id,
       status: missions.status,
@@ -2940,12 +2928,8 @@ router2.get("/users/:userId/missions", asyncHandler(async (req, res) => {
       budget_value_cents: mission.budget_value_cents,
       budget: mission.budget_value_cents?.toString() || "0",
       currency: mission.currency,
-      location_raw: mission.location_raw,
-      location: mission.location_raw || mission.postal_code || mission.city || "Remote",
-      postal_code: mission.postal_code,
-      city: mission.city,
-      country: mission.country,
-      remote_allowed: mission.remote_allowed,
+      location_data: mission.location_data,
+      location: mission.location_data?.raw || mission.location_data?.city || "Remote",
       status: mission.status,
       urgency: mission.urgency,
       user_id: mission.user_id,
@@ -3013,7 +2997,7 @@ router2.put("/:id", asyncHandler(async (req, res) => {
       field: "description"
     });
   }
-  const existingMission = await db.select({ id: missions.id, category: missions.category, deadline: missions.deadline, tags: missions.tags, requirements: missions.requirements, currency: missions.currency, city: missions.city, country: missions.country, postal_code: missions.postal_code }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
+  const existingMission = await db.select({ id: missions.id, category: missions.category, deadline: missions.deadline, tags: missions.tags, requirements: missions.requirements, currency: missions.currency, location_data: missions.location_data }).from(missions).where(eq3(missions.id, missionIdInt)).limit(1);
   if (existingMission.length === 0) {
     console.error("\u274C API: Mission non trouv\xE9e pour modification:", missionId);
     return res.status(404).json({ error: "Mission non trouv\xE9e" });
@@ -3029,20 +3013,19 @@ router2.put("/:id", asyncHandler(async (req, res) => {
     excerpt: generateExcerpt(updateData.description, 200),
     category: updateData.category || existingMission[0].category,
     budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
-    location_raw: updateData.location || null,
-    postal_code: updateData.postal_code || existingMission[0].postal_code,
-    // Update postal_code
-    city: updateData.city || existingMission[0].city,
-    // Assuming city might be provided separately or extracted
-    country: updateData.country || existingMission[0].country,
+    location_data: updateData.location ? {
+      raw: updateData.location,
+      city: updateData.city || null,
+      country: updateData.country || "France",
+      remote_allowed: updateData.remote_allowed !== false
+    } : existingMission[0].location_data,
     urgency: updateData.urgency || "medium",
     status: updateData.status || "published",
     updated_at: /* @__PURE__ */ new Date(),
     deadline: updateData.deadline ? new Date(updateData.deadline) : existingMission[0].deadline,
     tags: updateData.tags || existingMission[0].tags,
     requirements: updateData.requirements || existingMission[0].requirements,
-    currency: updateData.currency || existingMission[0].currency,
-    remote_allowed: updateData.remote_allowed !== void 0 ? updateData.remote_allowed : true
+    currency: updateData.currency || existingMission[0].currency
   };
   console.log("\u270F\uFE0F API: Donn\xE9es de mise \xE0 jour:", JSON.stringify(missionToUpdate, null, 2));
   const updatedMission = await db.update(missions).set(missionToUpdate).where(eq3(missions.id, missionIdInt)).returning();
