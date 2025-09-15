@@ -706,11 +706,7 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
         category: missionsTable.category,
         budget_value_cents: missionsTable.budget_value_cents,
         currency: missionsTable.currency,
-        location_raw: missionsTable.location_raw,
-        postal_code: missionsTable.postal_code,
-        city: missionsTable.city,
-        country: missionsTable.country,
-        remote_allowed: missionsTable.remote_allowed,
+        location_data: missionsTable.location_data,
         user_id: missionsTable.user_id,
         client_id: missionsTable.client_id,
         status: missionsTable.status,
@@ -759,12 +755,8 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
           budget: row.budget_value_cents?.toString() || '0',
           currency: row.currency,
           // Location
-          location_raw: row.location_raw,
-          location: row.location_raw || row.postal_code || row.city || 'Remote',
-          postal_code: row.postal_code,
-          city: row.city,
-          country: row.country,
-          remote_allowed: row.remote_allowed,
+          location_data: row.location_data,
+          location: ((row.location_data as any)?.raw || (row.location_data as any)?.city || 'Remote'),
           // Status
           status: row.status,
           urgency: row.urgency,
@@ -821,11 +813,7 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
         category: missionsTable.category,
         budget_value_cents: missionsTable.budget_value_cents,
         currency: missionsTable.currency,
-        location_raw: missionsTable.location_raw,
-        postal_code: missionsTable.postal_code,
-        city: missionsTable.city,
-        country: missionsTable.country,
-        remote_allowed: missionsTable.remote_allowed,
+        location_data: missionsTable.location_data,
         user_id: missionsTable.user_id,
         client_id: missionsTable.client_id,
         status: missionsTable.status,
@@ -852,12 +840,8 @@ router.get('/users/:userId/missions', asyncHandler(async (req, res) => {
       budget_value_cents: mission.budget_value_cents,
       budget: mission.budget_value_cents?.toString() || '0',
       currency: mission.currency,
-      location_raw: mission.location_raw,
-      location: mission.location_raw || mission.postal_code || mission.city || 'Remote',
-      postal_code: mission.postal_code,
-      city: mission.city,
-      country: mission.country,
-      remote_allowed: mission.remote_allowed,
+      location_data: mission.location_data,
+      location: ((mission.location_data as any)?.raw || (mission.location_data as any)?.city || 'Remote'),
       status: mission.status,
       urgency: mission.urgency,
       user_id: mission.user_id,
@@ -952,7 +936,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
 
   // Check if mission exists - select only id for existence check
   const existingMission = await db
-    .select({ id: missionsTable.id, category: missionsTable.category, deadline: missionsTable.deadline, tags: missionsTable.tags, requirements: missionsTable.requirements, currency: missionsTable.currency, city: missionsTable.city, country: missionsTable.country, postal_code: missionsTable.postal_code }) // Include postal_code
+    .select({ id: missionsTable.id, category: missionsTable.category, deadline: missionsTable.deadline, tags: missionsTable.tags, requirements: missionsTable.requirements, currency: missionsTable.currency, location_data: missionsTable.location_data })
     .from(missionsTable)
     .where(eq(missionsTable.id, missionIdInt))
     .limit(1);
@@ -976,10 +960,12 @@ router.put('/:id', asyncHandler(async (req, res) => {
     excerpt: generateExcerpt(updateData.description, 200),
     category: updateData.category || existingMission[0].category,
     budget_value_cents: updateData.budget ? parseInt(updateData.budget) : null,
-    location_raw: updateData.location || null,
-    postal_code: updateData.postal_code || existingMission[0].postal_code, // Update postal_code
-    city: updateData.city || existingMission[0].city, // Assuming city might be provided separately or extracted
-    country: updateData.country || existingMission[0].country,
+    location_data: updateData.location ? {
+      raw: updateData.location,
+      city: updateData.city || null,
+      country: updateData.country || 'France',
+      remote_allowed: updateData.remote_allowed !== false
+    } : existingMission[0].location_data,
     urgency: updateData.urgency || 'medium',
     status: updateData.status || 'published',
     updated_at: new Date(),
@@ -987,7 +973,6 @@ router.put('/:id', asyncHandler(async (req, res) => {
     tags: updateData.tags || existingMission[0].tags,
     requirements: updateData.requirements || existingMission[0].requirements,
     currency: updateData.currency || existingMission[0].currency,
-    remote_allowed: updateData.remote_allowed !== undefined ? updateData.remote_allowed : true,
   };
 
   console.log('✏️ API: Données de mise à jour:', JSON.stringify(missionToUpdate, null, 2));
