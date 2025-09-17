@@ -1,4 +1,3 @@
-
 import type { 
   FlashDealRequest, 
   ReverseSubscriptionRequest, 
@@ -8,7 +7,7 @@ import type {
   LiveSlot,
   OpportunityFilters 
 } from '../types/services';
-import { mapToMissionView, mapToAnnouncementView, mapToBidView } from '@shared/mappers';
+import { mapToMissionView, mapToAnnouncementView, mapToBidView, mapMissionFromApi } from '@shared/mappers';
 import type { MissionView, AnnouncementView, BidView } from '@shared/types';
 
 // Simulation de délai réseau
@@ -79,11 +78,11 @@ export const servicesApi = {
     await delay(450);
     // TODO: wire to backend - GET /api/opportunities/live-slots
     console.log('Fetching live slots with filters:', filters);
-    
+
     // Mock data
     const providers = ['Alice M.', 'Thomas B.', 'Sophie L.', 'Marc D.', 'Emma P.'];
     const categories = ['Développement', 'Design', 'Marketing', 'Conseil', 'Formation'];
-    
+
     return Array.from({ length: 8 }, (_, i) => ({
       id: `slot_${i}_${Date.now()}`,
       providerName: providers[Math.floor(Math.random() * providers.length)],
@@ -126,7 +125,7 @@ export const dataApi = {
     }
 
     const data = await response.json();
-    
+
     // Normaliser la réponse et appliquer les mappers
     let missions = [];
     let metadata = { total: 0 };
@@ -141,7 +140,7 @@ export const dataApi = {
 
     // Appliquer le mapper à chaque mission
     const normalizedMissions = missions.map(mission => mapToMissionView(mission));
-    
+
     console.log('✅ Missions normalisées avec mappers:', normalizedMissions.length);
     return { missions: normalizedMissions, metadata };
   },
@@ -154,14 +153,14 @@ export const dataApi = {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Erreur API missions utilisateur:', response.status, errorText);
-      throw new Error(`Erreur ${response.status}: ${errorText}`);
+      throw new Error(`Erreur ${response.status}: ${response.statusText}`);
     }
-    
+
     const missionsData = await response.json();
-    
+
     // Appliquer le mapper à chaque mission
     const normalizedMissions = missionsData.map((mission: any) => mapToMissionView(mission));
-    
+
     console.log('✅ Missions utilisateur normalisées:', normalizedMissions.length);
     return normalizedMissions;
   },
@@ -174,12 +173,12 @@ export const dataApi = {
     if (!response.ok) {
       throw new Error('Failed to fetch user bids');
     }
-    
+
     const bidsData = await response.json();
-    
+
     // Appliquer le mapper à chaque bid
     const normalizedBids = bidsData.map((bid: any) => mapToBidView(bid));
-    
+
     console.log('✅ Bids utilisateur normalisés:', normalizedBids.length);
     return normalizedBids;
   },
@@ -187,13 +186,23 @@ export const dataApi = {
   /**
    * Récupère une mission spécifique par ID
    */
-  async getMissionById(missionId: string | number): Promise<MissionView> {
-    const response = await fetch(`/api/missions/${missionId}`, {
+  async getMissionById(id: string): Promise<MissionView> {
+    console.log('🔍 API Service - getMissionById appelé avec ID:', id);
+
+    // Validation préalable de l'ID
+    if (!id || id === 'undefined' || id === 'null') {
+      console.error('❌ API Service - ID invalide:', id);
+      throw new Error('ID de mission invalide');
+    }
+
+    const response = await fetch(`/api/missions/${id}`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
+
+    console.log('🔍 API Service - Réponse reçue:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -202,11 +211,14 @@ export const dataApi = {
     }
 
     const missionData = await response.json();
-    
-    // Appliquer le mapper
-    const normalizedMission = mapToMissionView(missionData);
-    
-    console.log('✅ Mission normalisée:', normalizedMission.title);
+    console.log('🔍 API Service - Données brutes reçues:', {
+      id: missionData.id,
+      title: missionData.title,
+      hasBids: !!missionData.bids
+    });
+
+    const normalizedMission = mapMissionFromApi(missionData);
+    console.log('✅ Mission normalisée:', normalizedMission.title, 'avec', normalizedMission.bids?.length || 0, 'offres');
     return normalizedMission;
   },
 
@@ -216,9 +228,9 @@ export const dataApi = {
   async getFeed(cursor?: string, limit = 10): Promise<{ items: AnnouncementView[]; hasMore: boolean }> {
     const queryParams = new URLSearchParams({ limit: limit.toString() });
     if (cursor) queryParams.append('cursor', cursor);
-    
+
     const response = await fetch(`/api/feed?${queryParams}`);
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors du chargement du feed');
     }
@@ -228,7 +240,7 @@ export const dataApi = {
 
     // Appliquer le mapper à chaque annonce
     const normalizedItems = rawItems.map((item: any) => mapToAnnouncementView(item));
-    
+
     console.log('✅ Feed normalisé:', normalizedItems.length, 'annonces');
     return {
       items: normalizedItems,
@@ -241,7 +253,7 @@ export const dataApi = {
    */
   async getFavorites(userId: string | number): Promise<AnnouncementView[]> {
     const response = await fetch(`/api/favorites?user_id=${userId}`);
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors du chargement des favoris');
     }
@@ -251,7 +263,7 @@ export const dataApi = {
 
     // Appliquer le mapper à chaque favori
     const normalizedFavorites = rawFavorites.map((favorite: any) => mapToAnnouncementView(favorite));
-    
+
     console.log('✅ Favoris normalisés:', normalizedFavorites.length);
     return normalizedFavorites;
   }

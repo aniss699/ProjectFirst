@@ -39,11 +39,16 @@ import { BidResponseModal } from '@/components/missions/bid-response-modal';
 import SmartBidAnalyzer from '@/components/ai/smart-bid-analyzer';
 
 export default function MissionDetailPage() {
+  console.log('🔍 MissionDetailPage - Démarrage du composant');
+  
   const { user } = useAuth();
   const params = useParams();
   const [, setLocation] = useLocation();
   const missionId = params.id;
   
+  console.log('🔍 MissionDetailPage - Params reçus:', { missionId, user: user?.name });
+
+  // États initialisés avant toute condition
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [selectedProviderName, setSelectedProviderName] = useState<string>('');
@@ -52,22 +57,45 @@ export default function MissionDetailPage() {
   const [showBidForm, setShowBidForm] = useState(false);
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
 
-  // Fetch mission data avec mappers normalisés
+  // Validation préalable du missionId
+  if (!missionId || missionId === 'undefined' || missionId === 'null') {
+    console.error('❌ MissionDetailPage - Mission ID invalide:', missionId);
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="text-center mt-20">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Mission introuvable</h1>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">L'ID de mission est invalide ou manquant.</p>
+            <Button 
+              onClick={() => setLocation('/marketplace')} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour au marketplace
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fetch mission data avec mappers normalisés - maintenant avec missionId validé
   const { data: mission, isLoading, error } = useQuery<MissionView>({
     queryKey: ['mission-detail', missionId],
     queryFn: async () => {
-      if (!missionId) {
-        throw new Error('ID de mission manquant');
-      }
-
       console.log('🔍 Chargement mission avec mappers ID:', missionId);
 
-      // Utiliser le service API centralisé avec mappers
-      const normalizedMission = await dataApi.getMissionById(missionId);
-      console.log('✅ Mission normalisée chargée:', normalizedMission.title);
-      return normalizedMission;
+      try {
+        // Utiliser le service API centralisé avec mappers
+        const normalizedMission = await dataApi.getMissionById(missionId);
+        console.log('✅ Mission normalisée chargée:', normalizedMission.title);
+        return normalizedMission;
+      } catch (fetchError) {
+        console.error('❌ Erreur lors du chargement de la mission:', fetchError);
+        throw fetchError;
+      }
     },
-    enabled: !!missionId,
+    enabled: true, // Toujours activé car missionId est validé
     retry: 1,
     retryDelay: 2000,
     staleTime: 30000,
@@ -101,8 +129,16 @@ export default function MissionDetailPage() {
     ));
   };
 
+  console.log('🔍 MissionDetailPage - État du rendu:', { 
+    isLoading, 
+    hasError: !!error, 
+    hasMission: !!mission,
+    missionId: mission?.id
+  });
+
   // Loading state
   if (isLoading) {
+    console.log('⏳ MissionDetailPage - Affichage du loading');
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto p-6">
@@ -122,6 +158,7 @@ export default function MissionDetailPage() {
 
   // Error state
   if (error || !mission) {
+    console.error('❌ MissionDetailPage - Erreur ou mission manquante:', { error, mission });
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto p-6">
@@ -154,27 +191,43 @@ export default function MissionDetailPage() {
     );
   }
 
+  console.log('✅ MissionDetailPage - Mission chargée, préparation du rendu:', mission.title);
+
+  // Variables calculées de façon sécurisée
   const category = getCategoryById(mission.category);
   const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
-  // Gestion intelligente de l'onglet par défaut
+  // Gestion intelligente de l'onglet par défaut - sécurisée
   const getDefaultTab = () => {
-    if (user && user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {
+    if (!mission || !user) return 'overview';
+    
+    const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
+    const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
+    
+    if (user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {
       return 'bids';
     }
-    if (isTeamMission && user && user.type === 'provider' && mission.clientName !== user.name) {
+    if (isTeamMission && user.type === 'provider' && mission.clientName !== user.name) {
       return 'team';
     }
     return 'overview';
   };
 
-  // Réinitialiser l'onglet quand la mission change
+  // Réinitialiser l'onglet quand la mission change - toujours exécuté
   useEffect(() => {
+    console.log('🔄 useEffect - Mission ou user changé:', { 
+      missionId: mission?.id, 
+      userId: user?.id, 
+      missionExists: !!mission 
+    });
+    
     if (mission) {
       const defaultTab = getDefaultTab();
+      console.log('📊 Onglet par défaut calculé:', defaultTab);
       setActiveTab(defaultTab);
       
+      // Reset des états
       setSelectedProviderId(null);
       setSelectedProviderName('');
       setSelectedBidId(null);
@@ -182,7 +235,7 @@ export default function MissionDetailPage() {
       setShowBidForm(false);
       setShowAIAnalyzer(false);
     }
-  }, [mission?.id, user?.id]);
+  }, [mission?.id, user?.id, mission, user]); // Dépendances explicites
 
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
