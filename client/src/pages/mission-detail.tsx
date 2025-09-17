@@ -48,16 +48,7 @@ export default function MissionDetailPage() {
   
   console.log('🔍 MissionDetailPage - Params reçus:', { missionId, user: user?.name });
 
-  // États initialisés avant toute condition
-  const [activeTab, setActiveTab] = useState('overview');
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
-  const [selectedProviderName, setSelectedProviderName] = useState<string>('');
-  const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
-  const [selectedBidderName, setSelectedBidderName] = useState<string>('');
-  const [showBidForm, setShowBidForm] = useState(false);
-  const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
-
-  // Validation préalable du missionId
+  // Validation préalable du missionId AVANT l'initialisation des hooks
   if (!missionId || missionId === 'undefined' || missionId === 'null') {
     console.error('❌ MissionDetailPage - Mission ID invalide:', missionId);
     return (
@@ -78,6 +69,15 @@ export default function MissionDetailPage() {
       </div>
     );
   }
+
+  // États initialisés APRÈS validation du missionId pour éviter hooks conditionnels
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [selectedProviderName, setSelectedProviderName] = useState<string>('');
+  const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+  const [selectedBidderName, setSelectedBidderName] = useState<string>('');
+  const [showBidForm, setShowBidForm] = useState(false);
+  const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
 
   // Fetch mission data avec mappers normalisés - maintenant avec missionId validé
   const { data: mission, isLoading, error } = useQuery<MissionView>({
@@ -156,9 +156,17 @@ export default function MissionDetailPage() {
     );
   }
 
-  // Error state
+  // Error state avec debug amélioré
   if (error || !mission) {
-    console.error('❌ MissionDetailPage - Erreur ou mission manquante:', { error, mission });
+    console.error('❌ MissionDetailPage - Erreur ou mission manquante:', { 
+      error: error instanceof Error ? error.message : error, 
+      mission, 
+      missionId,
+      hasError: !!error,
+      hasMission: !!mission,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto p-6">
@@ -167,9 +175,18 @@ export default function MissionDetailPage() {
               <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Mission introuvable</h1>
-            <p className="text-gray-600 dark:text-gray-300 mb-8">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
               {error instanceof Error ? error.message : 'Cette mission n\'existe plus ou a été supprimée.'}
             </p>
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-left bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6 text-sm">
+                <p><strong>Debug info:</strong></p>
+                <p>Mission ID: {missionId}</p>
+                <p>Has Error: {!!error ? 'Yes' : 'No'}</p>
+                <p>Has Mission: {!!mission ? 'Yes' : 'No'}</p>
+                {error && <p>Error: {error instanceof Error ? error.message : String(error)}</p>}
+              </div>
+            )}
             <div className="flex gap-3 justify-center">
               <Button 
                 onClick={() => window.location.reload()} 
@@ -193,16 +210,17 @@ export default function MissionDetailPage() {
 
   console.log('✅ MissionDetailPage - Mission chargée, préparation du rendu:', mission.title);
 
-  // Variables calculées de façon sécurisée
-  const category = getCategoryById(mission.category);
-  const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
-  const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
+  // Variables calculées de façon sécurisée avec valeurs par défaut
+  const category = mission ? getCategoryById(mission.category) : null;
+  const sortedBids = mission?.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
+  const isTeamMission = mission?.teamRequirements && mission.teamRequirements.length > 0;
 
   // Gestion intelligente de l'onglet par défaut - sécurisée
   const getDefaultTab = () => {
     if (!mission || !user) return 'overview';
     
-    const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
+    const missionBids = mission.bids || [];
+    const sortedBids = [...missionBids].sort((a, b) => a.amount - b.amount);
     const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
     
     if (user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {

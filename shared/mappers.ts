@@ -67,6 +67,9 @@ export function mapToAnnouncementView(announcementData: any): AnnouncementView {
   };
 }
 
+// Alias pour la compatibilité avec le service API
+export const mapMissionFromApi = mapToMissionView;
+
 // Utilitaires d'aide pour l'affichage
 export function formatBudgetDisplay(min?: number, max?: number): string {
   if (min && max) {
