@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import type { MissionView, BidView } from '@shared/types';
@@ -35,7 +35,10 @@ import {
   ChevronLeft,
   TrendingUp,
   Eye,
-  Zap
+  Zap,
+  FileText,
+  HandHeart,
+  UsersRound
 } from 'lucide-react';
 import { ProviderProfileModal } from './provider-profile-modal';
 import { BidResponseModal } from './bid-response-modal';
@@ -149,9 +152,42 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   const sortedBids = mission.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
   const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
 
-  // Navigation simplifiée sans animations complexes
+  // Gestion intelligente de l'onglet par défaut
+  const getDefaultTab = () => {
+    // Si l'utilisateur est le propriétaire de la mission et qu'il y a des candidatures
+    if (user && user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {
+      return 'bids'; // Afficher les candidatures par défaut
+    }
+    // Pour les missions d'équipe, privilégier l'onglet équipe pour les nouveaux utilisateurs
+    if (isTeamMission && user && user.type === 'provider' && mission.clientName !== user.name) {
+      return 'team'; // Afficher les exigences d'équipe par défaut pour les prestataires
+    }
+    // Par défaut, afficher la vue d'ensemble
+    return 'overview';
+  };
+
+  // Réinitialiser et optimiser l'onglet quand la mission change
+  useEffect(() => {
+    if (mission) {
+      const defaultTab = getDefaultTab();
+      setActiveTab(defaultTab);
+      
+      // Réinitialiser les autres états de la modal
+      setSelectedProviderId(null);
+      setSelectedProviderName('');
+      setSelectedBidId(null);
+      setSelectedBidderName('');
+      setShowBidForm(false);
+      setShowAIAnalyzer(false);
+    }
+  }, [mission?.id, user?.id]); // Dépendances sur l'ID de mission et utilisateur
+
+  // Navigation avec gestion de l'historique local
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
+    
+    // Optionnel : Ajouter une logique métrique pour tracker l'usage des onglets
+    console.log(`📊 Navigation vers l'onglet: ${newTab} pour mission ${mission.id}`);
   };
 
   return (
@@ -236,20 +272,21 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
               <div className="flex w-full">
                 <TabsTrigger 
                   value="overview"
-                  className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
+                  className="flex-1 h-14 sm:h-12 text-xs sm:text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4"
                 >
-                  <Briefcase className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Détails</span>
-                  <span className="sm:hidden">Info</span>
+                  <span className="sm:hidden truncate">Info</span>
                 </TabsTrigger>
                 
                 <TabsTrigger 
                   value="bids"
-                  className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none flex items-center gap-2"
+                  className="flex-1 h-14 sm:h-12 text-xs sm:text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4"
                 >
-                  <Users className="w-4 h-4" />
-                  <span>Offres</span>
-                  <Badge variant="secondary" className="text-xs">
+                  <HandHeart className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Offres</span>
+                  <span className="xs:hidden sm:hidden truncate">Of.</span>
+                  <Badge variant="secondary" className="text-xs ml-1 px-1.5 py-0.5 min-w-[1.5rem] h-5 flex items-center justify-center">
                     {sortedBids.length}
                   </Badge>
                 </TabsTrigger>
@@ -257,10 +294,14 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
                 {isTeamMission && (
                   <TabsTrigger 
                     value="team"
-                    className="flex-1 h-12 text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
+                    className="flex-1 h-14 sm:h-12 text-xs sm:text-sm font-medium data-[state=active]:text-blue-600 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4"
                   >
-                    <Target className="w-4 h-4 mr-2" />
-                    Équipe
+                    <UsersRound className="w-4 h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Équipe</span>
+                    <span className="sm:hidden truncate">Eq.</span>
+                    <Badge variant="secondary" className="text-xs ml-1 px-1.5 py-0.5 min-w-[1.5rem] h-5 flex items-center justify-center">
+                      {mission.teamRequirements?.length || 0}
+                    </Badge>
                   </TabsTrigger>
                 )}
               </div>
