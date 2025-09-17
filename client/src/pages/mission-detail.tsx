@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
@@ -48,29 +49,7 @@ export default function MissionDetailPage() {
   
   console.log('🔍 MissionDetailPage - Params reçus:', { missionId, user: user?.name });
 
-  // Validation préalable du missionId AVANT l'initialisation des hooks
-  if (!missionId || missionId === 'undefined' || missionId === 'null') {
-    console.error('❌ MissionDetailPage - Mission ID invalide:', missionId);
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="text-center mt-20">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Mission introuvable</h1>
-            <p className="text-gray-600 dark:text-gray-300 mb-8">L'ID de mission est invalide ou manquant.</p>
-            <Button 
-              onClick={() => setLocation('/marketplace')} 
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au marketplace
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // États initialisés APRÈS validation du missionId pour éviter hooks conditionnels
+  // États initialisés toujours (pas de hooks conditionnels)
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [selectedProviderName, setSelectedProviderName] = useState<string>('');
@@ -79,14 +58,18 @@ export default function MissionDetailPage() {
   const [showBidForm, setShowBidForm] = useState(false);
   const [showAIAnalyzer, setShowAIAnalyzer] = useState(false);
 
-  // Fetch mission data avec mappers normalisés - maintenant avec missionId validé
+  // Fetch mission data - toujours activé mais avec gestion d'erreur
   const { data: mission, isLoading, error } = useQuery<MissionView>({
     queryKey: ['mission-detail', missionId],
     queryFn: async () => {
       console.log('🔍 Chargement mission avec mappers ID:', missionId);
 
+      // Validation dans la fonction query
+      if (!missionId || missionId === 'undefined' || missionId === 'null') {
+        throw new Error('ID de mission invalide');
+      }
+
       try {
-        // Utiliser le service API centralisé avec mappers
         const normalizedMission = await dataApi.getMissionById(missionId);
         console.log('✅ Mission normalisée chargée:', normalizedMission.title);
         return normalizedMission;
@@ -95,7 +78,7 @@ export default function MissionDetailPage() {
         throw fetchError;
       }
     },
-    enabled: true, // Toujours activé car missionId est validé
+    enabled: !!missionId, // Activé seulement si missionId existe
     retry: 1,
     retryDelay: 2000,
     staleTime: 30000,
@@ -106,7 +89,6 @@ export default function MissionDetailPage() {
     if (mission) {
       document.title = `${mission.title} - SwipDEAL`;
       
-      // Métadonnées pour le SEO
       const metaDescription = document.querySelector('meta[name="description"]');
       if (metaDescription) {
         metaDescription.setAttribute('content', 
@@ -115,6 +97,51 @@ export default function MissionDetailPage() {
       }
     }
   }, [mission]);
+
+  // Gestion intelligente de l'onglet par défaut
+  const getDefaultTab = () => {
+    if (!mission || !user) return 'overview';
+    
+    const missionBids = mission.bids || [];
+    const sortedBids = [...missionBids].sort((a, b) => a.amount - b.amount);
+    const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
+    
+    if (user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {
+      return 'bids';
+    }
+    if (isTeamMission && user.type === 'provider' && mission.clientName !== user.name) {
+      return 'team';
+    }
+    return 'overview';
+  };
+
+  // Réinitialiser l'onglet quand la mission change
+  useEffect(() => {
+    console.log('🔄 useEffect - Mission ou user changé:', { 
+      missionId: mission?.id, 
+      userId: user?.id, 
+      missionExists: !!mission 
+    });
+    
+    if (mission) {
+      const defaultTab = getDefaultTab();
+      console.log('📊 Onglet par défaut calculé:', defaultTab);
+      setActiveTab(defaultTab);
+      
+      // Reset des états
+      setSelectedProviderId(null);
+      setSelectedProviderName('');
+      setSelectedBidId(null);
+      setSelectedBidderName('');
+      setShowBidForm(false);
+      setShowAIAnalyzer(false);
+    }
+  }, [mission?.id, user?.id, mission, user]);
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    console.log(`📊 Navigation vers l'onglet: ${newTab} pour mission ${mission?.id}`);
+  };
 
   // Fonction de rendu des étoiles
   const renderStars = (rating: string | number) => {
@@ -214,51 +241,6 @@ export default function MissionDetailPage() {
   const category = mission ? getCategoryById(mission.category) : null;
   const sortedBids = mission?.bids ? [...mission.bids].sort((a, b) => a.amount - b.amount) : [];
   const isTeamMission = mission?.teamRequirements && mission.teamRequirements.length > 0;
-
-  // Gestion intelligente de l'onglet par défaut - sécurisée
-  const getDefaultTab = () => {
-    if (!mission || !user) return 'overview';
-    
-    const missionBids = mission.bids || [];
-    const sortedBids = [...missionBids].sort((a, b) => a.amount - b.amount);
-    const isTeamMission = mission.teamRequirements && mission.teamRequirements.length > 0;
-    
-    if (user.type === 'client' && mission.clientName === user.name && sortedBids.length > 0) {
-      return 'bids';
-    }
-    if (isTeamMission && user.type === 'provider' && mission.clientName !== user.name) {
-      return 'team';
-    }
-    return 'overview';
-  };
-
-  // Réinitialiser l'onglet quand la mission change - toujours exécuté
-  useEffect(() => {
-    console.log('🔄 useEffect - Mission ou user changé:', { 
-      missionId: mission?.id, 
-      userId: user?.id, 
-      missionExists: !!mission 
-    });
-    
-    if (mission) {
-      const defaultTab = getDefaultTab();
-      console.log('📊 Onglet par défaut calculé:', defaultTab);
-      setActiveTab(defaultTab);
-      
-      // Reset des états
-      setSelectedProviderId(null);
-      setSelectedProviderName('');
-      setSelectedBidId(null);
-      setSelectedBidderName('');
-      setShowBidForm(false);
-      setShowAIAnalyzer(false);
-    }
-  }, [mission?.id, user?.id, mission, user]); // Dépendances explicites
-
-  const handleTabChange = (newTab: string) => {
-    setActiveTab(newTab);
-    console.log(`📊 Navigation vers l'onglet: ${newTab} pour mission ${mission.id}`);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -604,19 +586,16 @@ export default function MissionDetailPage() {
         }}
       />
 
-      {showBidForm && (
+      {showBidForm && missionId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {missionId && (
-              <BidForm
-                missionId={missionId}
-                onSuccess={() => {
-                  setShowBidForm(false);
-                  // Refetch mission data
-                  window.location.reload();
-                }}
-              />
-            )}
+            <BidForm
+              missionId={missionId}
+              onSuccess={() => {
+                setShowBidForm(false);
+                window.location.reload();
+              }}
+            />
           </div>
         </div>
       )}
