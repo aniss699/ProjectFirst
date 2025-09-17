@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Hand, Plus, Eye, Edit, Trash2, MessageSquare, AlertCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
 import { paths } from '../routes/paths';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,7 +20,6 @@ export default function Missions() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'posted' | 'bids'>('posted');
-  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -235,7 +233,7 @@ export default function Missions() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedMissionId(mission.id?.toString() || null)}
+                        onClick={() => setLocation(`/missions/${mission.id}`)}
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-4 h-4" />
@@ -344,11 +342,6 @@ export default function Missions() {
         </div>
       )}
 
-      <MissionDetailModal
-        missionId={selectedMissionId}
-        isOpen={!!selectedMissionId}
-        onClose={() => setSelectedMissionId(null)}
-      />
     </div>
   );
 }
