@@ -193,9 +193,9 @@ export function MissionDetailModal({ missionId, isOpen, onClose }: MissionDetail
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-h-[90vh] max-w-4xl p-0 gap-0 bg-white dark:bg-gray-900 border-0 shadow-2xl rounded-xl overflow-hidden flex flex-col transition-all duration-300">
-        <DialogHeader className="sr-only">
+        <DialogHeader className="absolute inset-0 pointer-events-none opacity-0 overflow-hidden h-0">
           <DialogTitle>{mission.title}</DialogTitle>
-          <DialogDescription>Détails de la mission</DialogDescription>
+          <DialogDescription>Détails de la mission - {isTeamMission ? 'Mission d\'équipe' : 'Mission individuelle'}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col min-h-0 max-h-[90vh]">
