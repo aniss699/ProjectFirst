@@ -536,14 +536,16 @@ export default function MissionDetailPage() {
       {showBidForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <BidForm
-              missionId={missionId}
-              onSuccess={() => {
-                setShowBidForm(false);
-                // Refetch mission data
-                window.location.reload();
-              }}
-            />
+            {missionId && (
+              <BidForm
+                missionId={missionId}
+                onSuccess={() => {
+                  setShowBidForm(false);
+                  // Refetch mission data
+                  window.location.reload();
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -563,7 +565,20 @@ export default function MissionDetailPage() {
                 </Button>
               </div>
               <SmartBidAnalyzer
-                missionId={missionId}
+                missionTitle={mission.title}
+                missionDescription={mission.description}
+                missionBudget={mission.budget_value_cents || 0}
+                missionCategory={mission.category}
+                currentBid={{
+                  price: 0,
+                  timeline: "À définir",
+                  proposal: ""
+                }}
+                providerProfile={{
+                  rating: 5,
+                  completedProjects: 0,
+                  expertise: []
+                }}
                 onRecommendationApplied={() => {
                   setShowAIAnalyzer(false);
                   setShowBidForm(true);
