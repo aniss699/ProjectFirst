@@ -26,21 +26,21 @@ function checkPortFree(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const client = new net.Socket();
     client.setTimeout(1000);
-    
+
     client.on('connect', () => {
       client.destroy();
       resolve(false); // Port is busy
     });
-    
+
     client.on('timeout', () => {
       client.destroy();
       resolve(true); // Port is free
     });
-    
+
     client.on('error', () => {
       resolve(true); // Port is free (connection refused)
     });
-    
+
     client.connect(port, '127.0.0.1');
   });
 }
@@ -48,14 +48,14 @@ function checkPortFree(port: number): Promise<boolean> {
 // Helper function to wait for port to be free
 async function waitForPortFree(port: number, maxWaitMs: number = 10000): Promise<boolean> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < maxWaitMs) {
     if (await checkPortFree(port)) {
       return true;
     }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  
+
   return false;
 }
 
@@ -65,14 +65,14 @@ async function cleanupPreviousProcess(): Promise<void> {
     if (fs.existsSync(PID_FILE)) {
       const pidString = fs.readFileSync(PID_FILE, 'utf8').trim();
       const pid = parseInt(pidString, 10);
-      
+
       if (!isNaN(pid)) {
         try {
           // Check if process is still running
           process.kill(pid, 0);
           console.log(`🔄 Found previous process with PID ${pid}, sending SIGTERM...`);
           process.kill(pid, 'SIGTERM');
-          
+
           // Wait for process to exit and port to be free
           console.log('⏳ Waiting for previous process to exit...');
           await waitForPortFree(port, 8000);
@@ -81,13 +81,13 @@ async function cleanupPreviousProcess(): Promise<void> {
           console.log('🧹 Removing stale PID file');
         }
       }
-      
+
       fs.unlinkSync(PID_FILE);
     }
   } catch (error) {
     console.log('🔍 No previous process to cleanup');
   }
-  
+
   // Development-only: Force kill any process holding port 5000
   if (process.env.NODE_ENV !== 'production') {
     try {
@@ -95,7 +95,7 @@ async function cleanupPreviousProcess(): Promise<void> {
       const { exec } = await import('child_process');
       const util = await import('util');
       const execAsync = util.promisify(exec);
-      
+
       // Try multiple approaches to kill port 5000 listeners
       try {
         await execAsync('fuser -k 5000/tcp 2>/dev/null || true');
@@ -103,10 +103,10 @@ async function cleanupPreviousProcess(): Promise<void> {
       } catch (e) {
         console.log('🔍 fuser not available, trying alternative...');
       }
-      
+
       // Wait a moment for processes to die
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Double-check port is free
       if (await checkPortFree(port)) {
         console.log('✅ Port 5000 is now free');
@@ -223,12 +223,12 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // In development, allow all origins
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
-    
+
     // Production: Only allow trusted domains
     const allowedOrigins = [
       'https://swideal.com',
@@ -237,7 +237,7 @@ app.use(cors({
       /^https:\/\/.*\.replit\.app$/,
       /^https:\/\/.*\.replit\.co$/
     ];
-    
+
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
         return origin === allowed;
@@ -245,7 +245,7 @@ app.use(cors({
         return allowed.test(origin);
       }
     });
-    
+
     if (isAllowed) {
       return callback(null, true);
     } else {
@@ -476,9 +476,9 @@ async function startServerWithRetry(): Promise<void> {
   const delayMs = 750;
   const totalTimeoutMs = 9000; // 9 second hard deadline
   const startTime = Date.now();
-  
+
   await cleanupPreviousProcess();
-  
+
   // Initialize database explicitly here instead of in imports
   console.log('🔧 Initializing database before server start...');
   try {
@@ -490,19 +490,19 @@ async function startServerWithRetry(): Promise<void> {
   } catch (dbError) {
     console.warn('⚠️ Database initialization failed (non-blocking):', dbError instanceof Error ? dbError.message : 'Unknown error');
   }
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // Check hard deadline
     if (Date.now() - startTime > totalTimeoutMs) {
       console.error(`❌ Startup deadline exceeded (${totalTimeoutMs}ms), exiting for supervisor restart`);
       process.exit(1);
     }
-    
+
     try {
       // Create a fresh server for each attempt
       const server = createServer(app);
       currentServer = server;
-      
+
       await new Promise<void>((resolve, reject) => {
         const serverInstance = server.listen(port, '0.0.0.0', async () => {
           writePidFile();
@@ -518,15 +518,15 @@ async function startServerWithRetry(): Promise<void> {
           try {
             // Import Vite module dynamically
             const { setupVite, serveStatic } = await import('./vite.js');
-            
+
             // Import AI orchestrator routes dynamically
             const aiOrchestratorModule = await import('../apps/api/src/routes/ai.ts');
             const aiOrchestratorRoutes = aiOrchestratorModule.default;
-            
+
             // Mount AI orchestrator routes now that server is running
             app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);
             console.log('✅ AI orchestrator routes mounted');
-            
+
             // Setup Vite for development, static files for production
             if (process.env.NODE_ENV === 'production') {
               console.log('🏭 Production mode: serving static files');
@@ -545,7 +545,7 @@ async function startServerWithRetry(): Promise<void> {
           }
           resolve();
         });
-        
+
         server.on('error', (err: any) => {
           server.close(); // Clean up this server instance
           if (err.code === 'EADDRINUSE') {
@@ -557,10 +557,10 @@ async function startServerWithRetry(): Promise<void> {
           }
         });
       });
-      
+
       // Success!
       return;
-      
+
     } catch (error: any) {
       if (error.message === 'EADDRINUSE' && attempt < maxAttempts) {
         const remainingTime = totalTimeoutMs - (Date.now() - startTime);
