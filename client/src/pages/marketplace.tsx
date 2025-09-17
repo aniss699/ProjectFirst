@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import type { MissionView } from '@shared/types';
 import { dataApi } from '@/lib/api/services';
 import { MissionCard } from '@/components/missions/mission-card';
-import { MissionDetailModal } from '@/components/missions/mission-detail-modal';
 import { SystemStatusBanner } from '@/components/ui/system-status-banner';
 import { categories } from '@/lib/categories';
 import {
@@ -24,7 +24,7 @@ type MissionWithBids = MissionView;
 
 export default function Marketplace() {
   const { user } = useAuth();
-  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
   const [showAIMatching, setShowAIMatching] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastRetryTime, setLastRetryTime] = useState<number>(0);
@@ -338,7 +338,7 @@ export default function Marketplace() {
               }}
               missions={filteredAndSortedMissions}
               onMissionRecommended={(mission: any) => {
-                setSelectedMissionId(mission.missionId);
+                setLocation(`/missions/${mission.missionId}`);
                 setShowAIMatching(false);
               }}
             />
@@ -476,7 +476,7 @@ export default function Marketplace() {
             <MissionCard
               key={mission.id}
               mission={mission}
-              onClick={() => setSelectedMissionId(mission.id.toString())}
+              onClick={() => setLocation(`/missions/${mission.id}`)}
             />
           ))}
 
@@ -494,11 +494,6 @@ export default function Marketplace() {
         </div>
       </div>
 
-      <MissionDetailModal
-        missionId={selectedMissionId}
-        isOpen={!!selectedMissionId}
-        onClose={() => setSelectedMissionId(null)}
-      />
     </div>
   );
 }
