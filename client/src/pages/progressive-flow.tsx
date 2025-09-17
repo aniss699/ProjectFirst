@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { ProgressiveFlow } from '../components/home/progressive-flow';
 
-export function AdvancedCreateMissionPage() {
+function AdvancedCreateMissionPage() {
   const [, setLocation] = useLocation();
 
   return (
@@ -28,3 +28,5 @@ export function AdvancedCreateMissionPage() {
     </div>
   );
 }
+
+export default AdvancedCreateMissionPage;

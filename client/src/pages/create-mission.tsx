@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
 
-export function CreateMissionPage() {
+function CreateMissionPage() {
   const [, setLocation] = useLocation();
 
   // Rediriger automatiquement vers le flow progressif principal
@@ -21,3 +21,5 @@ export function CreateMissionPage() {
     </div>
   );
 }
+
+export default CreateMissionPage;

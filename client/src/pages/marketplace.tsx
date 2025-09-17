@@ -476,7 +476,7 @@ export default function Marketplace() {
             <MissionCard
               key={mission.id}
               mission={mission}
-              onClick={() => setSelectedMissionId(mission.id)}
+              onClick={() => setSelectedMissionId(mission.id.toString())}
             />
           ))}
 
