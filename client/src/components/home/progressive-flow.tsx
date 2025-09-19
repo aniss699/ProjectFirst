@@ -344,7 +344,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
         <div className="mt-6">
           <Button 
-            onClick={() => setCurrentStep(1)}
+            onClick={() => setCurrentStep(0)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             size="lg"
           >
@@ -356,8 +356,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   );
 
 
-  // Étape 1: Choix du type de service
-  const renderStep1 = () => (
+  // Étape 0: Choix du type de service  
+  const renderStep0 = () => (
     <div className="text-center space-y-3">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-gray-900 progressive-flow-title">
@@ -377,7 +377,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             setServiceType('mise-en-relation');
             setClickedCard('mise-en-relation');
             setTimeout(() => {
-              setCurrentStep(2);
+              setCurrentStep(1);
               setClickedCard(null);
             }, 400);
           }}
@@ -405,7 +405,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             setServiceType('appel-offres');
             setClickedCard('appel-offres');
             setTimeout(() => {
-              setCurrentStep(2);
+              setCurrentStep(1);
               setClickedCard(null);
             }, 400);
           }}
@@ -437,8 +437,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     </div>
   );
 
-  // Étape 2: Choix de catégorie
-  const renderStep2 = () => {
+  // Étape 1: Choix de catégorie
+  const renderStep1 = () => {
     // Choisir les catégories appropriées selon le type de service
     const categoriesToShow = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const categoryLabel = serviceType === 'mise-en-relation' ? 'expert' : 'projet';
@@ -465,7 +465,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               setSelectedCategory(category.id);
               setClickedCard(category.id);
               setTimeout(() => {
-                setCurrentStep(3);
+                setCurrentStep(2);
                 setClickedCard(null);
               }, 400);
             }}
@@ -491,7 +491,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
       <div className="flex justify-center">
         <Button 
           variant="outline" 
-          onClick={() => setCurrentStep(1)}
+          onClick={() => setCurrentStep(0)}
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Retour
@@ -501,8 +501,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     );
   };
 
-  // Étape 3: Complétude d'annonce
-  const renderStep3 = () => {
+  // Étape 2: Complétude d'annonce
+  const renderStep2 = () => {
     const categoriesToSearch = serviceType === 'mise-en-relation' ? connectionCategories : CATEGORIES;
     const selectedCat = categoriesToSearch.find(cat => cat.id === selectedCategory);
     const projectLabel = serviceType === 'mise-en-relation' ? 'demande de contact' : 'projet';
@@ -733,7 +733,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           <div className="flex justify-between">
             <Button 
               variant="outline" 
-              onClick={() => setCurrentStep(2)}
+              onClick={() => setCurrentStep(1)}
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Retour
@@ -771,7 +771,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   };
 
 
-  const steps = [renderStepMinus1, renderStep1, renderStep2, renderStep3];
+  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
@@ -781,14 +781,14 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         </div>
 
         {/* Bloc de progression compact sous le contenu - masqué pour le niveau présentation */}
-        {currentStep >= 1 && (
+        {currentStep >= 0 && (
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep} sur 3
+                Étape {currentStep + 1} sur 3
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round((currentStep / 3) * 100)}%
+                {Math.round(((currentStep + 1) / 3) * 100)}%
               </span>
             </div>
 
@@ -796,7 +796,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${(currentStep / 3) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / 3) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
@@ -808,12 +808,12 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               {[1, 2, 3].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    step <= currentStep 
+                    step <= currentStep + 1 
                       ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
                       : 'bg-gray-300'
                   }`}></div>
                   <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                    step <= currentStep ? 'text-blue-600' : 'text-gray-400'
+                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
                   }`}>
                     {step}
                   </span>
