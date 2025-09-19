@@ -731,6 +731,13 @@
     flex-direction: column;
   }
 
+  /* Optimisation spéciale pour le niveau -1 sur mobile */
+  .progressive-flow-container > div:first-child {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
   .progressive-flow-step {
     padding: 0.25rem 0.25rem;
     display: flex;
