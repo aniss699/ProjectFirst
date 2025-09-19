@@ -323,7 +323,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white">
                 Enchère inversée
               </h3>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed hidden sm:block">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 Les prestataires rivalisent pour vous offrir les meilleures conditions
               </p>
             </div>
@@ -336,7 +336,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white">
                 Contact direct
               </h3>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed hidden sm:block">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 Accès immédiat aux experts de votre réseau et au-delà
               </p>
             </div>
@@ -349,7 +349,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white">
                 Monétisez votre réseau
               </h3>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed hidden sm:block">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 Générez des revenus en recommandant les bons contacts
               </p>
             </div>
@@ -363,8 +363,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             </p>
           </div>
 
-          {/* Boutons d'action */}
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mt-4 md:mt-8 px-4">
+          {/* Bouton d'action */}
+          <div className="flex justify-center items-center mt-4 md:mt-8 px-4">
             <Button 
               onClick={() => setCurrentStep(0)}
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 md:px-8 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base"
@@ -372,25 +372,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               data-testid="button-create-mission"
             >
               Let's go 🚀
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={() => {
-                // Action différente : scroller vers les cartes d'information
-                const cardsSection = document.querySelector('.grid');
-                if (cardsSection) {
-                  cardsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  // Afficher une notification informative
-                  console.log('📖 Mode découverte activé - Explorez les fonctionnalités ci-dessous');
-                }
-              }}
-              className="w-full sm:w-auto border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-6 py-2.5 md:px-8 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base"
-              size="lg"
-              data-testid="button-discover"
-            >
-              Découvrir
             </Button>
           </div>
 
