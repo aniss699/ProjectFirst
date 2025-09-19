@@ -371,7 +371,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               size="lg"
               data-testid="button-create-mission"
             >
-              Créer une mission
+              Let's go 🚀
             </Button>
             
             <Button 
