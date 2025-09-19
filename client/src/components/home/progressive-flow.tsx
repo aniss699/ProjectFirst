@@ -8,7 +8,6 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { 
-  Users, 
   Zap, 
   ChevronRight, 
   ChevronLeft,
@@ -34,7 +33,6 @@ import { GeoSearch } from '@/components/location/geo-search';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TeamRequirement } from '@shared/schema';
 
-type UserType = 'client' | 'prestataire' | null;
 type ServiceType = 'mise-en-relation' | 'appel-offres' | null;
 
 interface ProgressiveFlowProps {
@@ -47,7 +45,7 @@ interface ProgressiveFlowProps {
 export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError }: ProgressiveFlowProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 pour avoir le niveau 0
+  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 (présentation)
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
@@ -72,7 +70,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     };
     return iconMap[iconName] || Target;
   };
-  const [userType, setUserType] = useState<UserType>(null);
   const [serviceType, setServiceType] = useState<ServiceType>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [projectData, setProjectData] = useState({
@@ -145,7 +142,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             // Rediriger vers les missions
             setLocation('/missions');
             onComplete?.({
-              userType,
               serviceType,
               selectedCategory,
               projectData,
@@ -202,7 +198,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           // Rediriger vers les missions
           setLocation('/missions');
           onComplete?.({
-            userType,
             serviceType,
             selectedCategory,
             projectData,
@@ -349,7 +344,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
         <div className="mt-6">
           <Button 
-            onClick={() => setCurrentStep(0)}
+            onClick={() => setCurrentStep(1)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             size="lg"
           >
@@ -360,77 +355,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
     </div>
   );
 
-  // Étape 0: Choix du type d'utilisateur
-  const renderStep0 = () => (
-    <div className="text-center space-y-3">
-      <div className="space-y-2 animate-fade-in">
-        <h2 className="text-2xl font-bold text-gray-900 animate-bounce-in progressive-flow-title" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-          Créez votre mission en quelques clics
-        </h2>
-        <p className="text-gray-600 animate-slide-up progressive-flow-description" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-          Publiez votre projet et recevez des propositions de <span className="text-green-600 font-semibold">prestataires</span> qualifiés
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto progressive-flow-grid">
-        <Card 
-          className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1 group card-shine progressive-flow-card ${
-            userType === 'client' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-blue-50/30'
-          } ${clickedCard === 'client' ? 'scale-95 ring-4 ring-blue-400 bg-blue-100 animate-pulse-glow' : ''}`}
-          onClick={() => {
-            setUserType('client');
-            setClickedCard('client');
-            setTimeout(() => {
-              setCurrentStep(1);
-              setClickedCard(null);
-            }, 400);
-          }}
-        >
-          <CardContent className="p-6 text-center">
-            <Users className={`w-12 h-12 mx-auto mb-4 text-blue-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${
-              clickedCard === 'client' ? 'scale-125 animate-pulse text-blue-800' : ''
-            }`} />
-            <h3 className="text-xl font-semibold mb-2" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>👨‍💼 <span className="text-gray-900">Je suis</span> <span className="text-blue-600">Client</span></h3>
-            <h4 className="text-lg font-medium text-gray-900 mb-3" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-              Trouvez le <span className="text-green-600 font-semibold">prestataire</span> idéal pour vos projets
-            </h4>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              AppelsPro révolutionne la mise en relation entre <span className="text-blue-600 font-medium">clients</span> et <span className="text-green-600 font-medium">prestataires</span>. 
-              Publiez votre projet et recevez des devis personnalisés en quelques heures.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1 group card-shine progressive-flow-card ${
-            userType === 'prestataire' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-green-50/30'
-          } ${clickedCard === 'prestataire' ? 'scale-95 ring-4 ring-green-400 bg-green-100 animate-pulse-glow' : ''}`}
-          onClick={() => {
-            setUserType('prestataire');
-            setClickedCard('prestataire');
-            setTimeout(() => {
-              setCurrentStep(1);
-              setClickedCard(null);
-            }, 400);
-          }}
-        >
-          <CardContent className="p-6 text-center">
-            <Zap className={`w-12 h-12 mx-auto mb-4 text-green-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${
-              clickedCard === 'prestataire' ? 'scale-125 animate-pulse text-green-800' : ''
-            }`} />
-            <h3 className="text-xl font-semibold mb-2" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>🛠️ <span className="text-gray-900">Je suis</span> <span className="text-green-600">Prestataire</span></h3>
-            <h4 className="text-lg font-medium text-gray-900 mb-3" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-              Développez votre activité en tant que pro
-            </h4>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              Accédez à de nouvelles opportunités business sans prospection.
-              Répondez aux appels d'offres qui correspondent à vos compétences.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
 
   // Étape 1: Choix du type de service
   const renderStep1 = () => (
@@ -504,7 +428,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
       <Button 
         variant="outline" 
-        onClick={() => setCurrentStep(0)}
+        onClick={() => setCurrentStep(-1)}
         className="mt-4"
       >
         <ChevronLeft className="w-4 h-4 mr-2" />
@@ -847,7 +771,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   };
 
 
-  const steps = [renderStepMinus1, renderStep0, renderStep1, renderStep2, renderStep3];
+  const steps = [renderStepMinus1, renderStep1, renderStep2, renderStep3];
 
   return (
     <div className="w-full max-w-6xl mx-auto progressive-flow-container">
@@ -856,15 +780,15 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           {steps[currentStep + 1]()}
         </div>
 
-        {/* Bloc de progression compact sous le contenu - masqué pour le niveau 0 */}
-        {currentStep >= 0 && (
+        {/* Bloc de progression compact sous le contenu - masqué pour le niveau présentation */}
+        {currentStep >= 1 && (
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Étape {currentStep + 1} sur 4
+                Étape {currentStep} sur 3
               </span>
               <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 4) * 100)}%
+                {Math.round((currentStep / 3) * 100)}%
               </span>
             </div>
 
@@ -872,7 +796,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
-                style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
+                style={{ width: `${(currentStep / 3) * 100}%` }}
               >
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
@@ -881,15 +805,15 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
             {/* Points d'étapes réduits */}
             <div className="flex justify-between mt-2">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div key={step} className="flex flex-col items-center">
                   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    step <= currentStep + 1 
+                    step <= currentStep 
                       ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
                       : 'bg-gray-300'
                   }`}></div>
                   <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
+                    step <= currentStep ? 'text-blue-600' : 'text-gray-400'
                   }`}>
                     {step}
                   </span>
