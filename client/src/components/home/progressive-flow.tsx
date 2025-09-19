@@ -295,143 +295,109 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
 
 
-  // Étape -1 (Niveau 0): Présentation révolutionnaire de SwipDEAL
+  // Étape -1: Présentation professionnelle de SwipDEAL
   const renderStepMinus1 = () => (
-    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] relative overflow-hidden">
-      {/* Arrière-plan dynamique avec dégradés et particules */}
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-900 via-purple-900 to-blue-900 opacity-95"></div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-purple-500/10 to-cyan-400/20"></div>
-      
-      {/* Particules flottantes animées */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-75"></div>
-        <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-pink-400 rounded-full animate-pulse opacity-60"></div>
-        <div className="absolute bottom-32 left-1/4 w-3 h-3 bg-cyan-400 rounded-full animate-bounce opacity-50"></div>
-        <div className="absolute top-1/3 right-1/3 w-2.5 h-2.5 bg-purple-400 rounded-full animate-ping opacity-70 animation-delay-1000"></div>
-        <div className="absolute bottom-20 right-10 w-1 h-1 bg-green-400 rounded-full animate-pulse opacity-80"></div>
-      </div>
-
-      <div className="relative z-10 flex flex-col justify-center items-center min-h-full px-4 py-8">
-        <div className="text-center space-y-8 max-w-4xl mx-auto">
+    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] bg-white dark:bg-gray-950">
+      <div className="flex flex-col justify-center items-center min-h-full px-4 py-8">
+        <div className="text-center max-w-4xl mx-auto space-y-8">
           
-          {/* Accroche principale avec effet magique */}
-          <div className="space-y-6 animate-fade-in">
-            <div className="relative">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-cyan-400 mb-4 animate-bounce-in tracking-tight">
-                🎯 SwipDEAL
-              </h1>
-              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400/20 via-pink-500/20 to-cyan-400/20 rounded-full blur-xl animate-pulse"></div>
-            </div>
+          {/* En-tête principal */}
+          <div className="space-y-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-gray-900 dark:text-white leading-[1.1] tracking-tight">
+              SwipDEAL
+            </h1>
             
-            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white animate-slide-up leading-tight">
-              Révolutionne ta façon de
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400 animate-sparkle"> trouver</span> et 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-cyan-400 animate-sparkle"> collaborer</span>
+            <h2 className="text-xl md:text-2xl lg:text-3xl text-gray-600 dark:text-gray-300 font-medium max-w-3xl mx-auto leading-[1.3]">
+              La plateforme qui révolutionne la mise en relation professionnelle
             </h2>
-            
-            <p className="text-lg md:text-xl text-gray-200 font-medium max-w-2xl mx-auto animate-slide-up leading-relaxed">
-              Fini les recherches interminables et les négociations douloureuses. 
-              <span className="text-yellow-300 font-bold"> SwipDEAL</span> met le pouvoir entre tes mains.
-            </p>
           </div>
 
-          {/* Cards révolutionnaires avec animations */}
-          <div className="grid md:grid-cols-2 gap-6 mt-12 animate-fade-in">
+          {/* Propositions de valeur */}
+          <div className="grid md:grid-cols-3 gap-8 mt-12">
             
-            {/* Card Enchère Inversée */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-violet-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-              <div className="relative bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transform transition-all duration-500 hover:scale-105 hover:-rotate-1 hover:shadow-2xl">
-                <div className="text-center space-y-4">
-                  <div className="relative inline-block">
-                    <div className="text-5xl animate-bounce">⚡</div>
-                    <div className="absolute -inset-2 bg-yellow-400/30 rounded-full blur-md animate-pulse"></div>
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-white">
-                    L'Enchère Inversée
-                  </h3>
-                  <p className="text-gray-200 text-sm md:text-base leading-relaxed">
-                    <span className="text-yellow-300 font-semibold">Tu poses ton besoin</span>, 
-                    les pros se battent pour te donner le 
-                    <span className="text-pink-300 font-semibold"> meilleur prix</span> !
-                  </p>
-                  <div className="flex justify-center space-x-2 mt-4">
-                    <span className="px-3 py-1 bg-gradient-to-r from-pink-500/20 to-violet-500/20 text-pink-200 text-xs rounded-full border border-pink-400/30">
-                      Prix compétitifs
-                    </span>
-                    <span className="px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-200 text-xs rounded-full border border-yellow-400/30">
-                      Zéro négociation
-                    </span>
-                  </div>
-                </div>
+            {/* Enchère inversée */}
+            <div className="text-center space-y-4 group">
+              <div className="w-12 h-12 mx-auto bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
+                <Target className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Enchère inversée
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                Les prestataires rivalisent pour vous offrir les meilleures conditions
+              </p>
             </div>
 
-            {/* Card Mise en relation */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-green-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-              <div className="relative bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transform transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-2xl">
-                <div className="text-center space-y-4">
-                  <div className="relative inline-block">
-                    <div className="text-5xl animate-bounce animation-delay-500">🤝</div>
-                    <div className="absolute -inset-2 bg-cyan-400/30 rounded-full blur-md animate-pulse animation-delay-500"></div>
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-white">
-                    Connexion Stratégique
-                  </h3>
-                  <p className="text-gray-200 text-sm md:text-base leading-relaxed">
-                    <span className="text-cyan-300 font-semibold">Accès direct aux experts</span> 
-                    grâce aux réseaux. 
-                    <span className="text-green-300 font-semibold">Monétise tes contacts</span> !
-                  </p>
-                  <div className="flex justify-center space-x-2 mt-4">
-                    <span className="px-3 py-1 bg-gradient-to-r from-cyan-500/20 to-green-500/20 text-cyan-200 text-xs rounded-full border border-cyan-400/30">
-                      Réseau premium
-                    </span>
-                    <span className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-200 text-xs rounded-full border border-green-400/30">
-                      Revenus passifs
-                    </span>
-                  </div>
-                </div>
+            {/* Mise en relation */}
+            <div className="text-center space-y-4 group">
+              <div className="w-12 h-12 mx-auto bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center transition-colors group-hover:bg-green-100 dark:group-hover:bg-green-900/40">
+                <Zap className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Contact direct
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                Accès immédiat aux experts de votre réseau et au-delà
+              </p>
             </div>
-          </div>
 
-          {/* Message de transformation */}
-          <div className="relative mt-8 animate-slide-up animation-delay-1000">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-2xl blur-lg"></div>
-            <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/30">
-              <p className="text-lg md:text-xl text-center text-white font-semibold leading-relaxed">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-300 text-2xl">✨ SwipDEAL ✨</span>
-                <br />
-                Transforme chaque collaboration en 
-                <span className="text-yellow-300 font-bold"> art du deal</span>
+            {/* Monétisation */}
+            <div className="text-center space-y-4 group">
+              <div className="w-12 h-12 mx-auto bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center transition-colors group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40">
+                <Euro className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Monétisez votre réseau
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                Générez des revenus en recommandant les bons contacts
               </p>
             </div>
           </div>
 
-          {/* Call-to-action époustouflant */}
-          <div className="mt-10 animate-bounce-in animation-delay-1500">
-            <div className="relative inline-block group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-cyan-500 rounded-2xl blur-lg group-hover:blur-xl transition duration-300 animate-pulse"></div>
-              <Button 
-                onClick={() => setCurrentStep(0)}
-                className="relative bg-gradient-to-r from-yellow-500 via-pink-500 to-cyan-500 hover:from-yellow-400 hover:via-pink-400 hover:to-cyan-400 text-white font-black text-lg md:text-xl px-12 py-6 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-110 hover:-translate-y-2 border-2 border-white/30"
-                size="lg"
-              >
-                <span className="flex items-center space-x-3">
-                  <span className="text-2xl animate-bounce">🚀</span>
-                  <span>COMMENCER L'AVENTURE</span>
-                  <span className="text-2xl animate-pulse">⚡</span>
-                </span>
-              </Button>
-            </div>
-            
-            {/* Indicateur subtil */}
-            <p className="text-gray-300 text-sm mt-4 animate-pulse">
-              🎯 Rejoins des milliers d'entrepreneurs malins
+          {/* Message central */}
+          <div className="max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-200 leading-relaxed">
+              SwipDEAL transforme chaque collaboration en 
+              <span className="font-semibold text-blue-600 dark:text-blue-400"> opportunité gagnant-gagnant</span>
             </p>
           </div>
+
+          {/* Boutons d'action */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+            <Button 
+              onClick={() => setCurrentStep(0)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+              size="lg"
+              data-testid="button-create-mission"
+            >
+              Créer une mission
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => {
+                // Action différente : scroller vers les cartes d'information
+                const cardsSection = document.querySelector('.grid');
+                if (cardsSection) {
+                  cardsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  // Afficher une notification informative
+                  console.log('📖 Mode découverte activé - Explorez les fonctionnalités ci-dessous');
+                }
+              }}
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-8 py-3 rounded-lg font-medium transition-colors"
+              size="lg"
+              data-testid="button-discover"
+            >
+              Découvrir
+            </Button>
+          </div>
+
+          {/* Indicateur subtil */}
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Rejoignez des milliers de professionnels qui font confiance à SwipDEAL
+          </p>
 
         </div>
       </div>
