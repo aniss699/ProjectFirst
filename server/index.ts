@@ -262,11 +262,8 @@ app.use(cors({
 import { validateRequest, limitRequestSize } from './middleware/request-validator.js';
 import { performanceMonitor, getPerformanceStats } from './middleware/performance-monitor.js';
 
-// Apply middleware in correct order
-app.use(limitRequestSize);
-app.use(validateRequest);
-app.use(performanceMonitor);
-app.use(express.json({ limit: '10mb' }));
+// Apply middleware only to API routes to avoid interfering with Vite frontend
+app.use('/api', limitRequestSize, validateRequest, performanceMonitor, express.json({ limit: '10mb' }));
 
 // Import auth routes
 import authRoutes from './auth-routes.js';
@@ -523,8 +520,8 @@ async function startServerWithRetry(): Promise<void> {
             const aiOrchestratorModule = await import('../apps/api/src/routes/ai.ts');
             const aiOrchestratorRoutes = aiOrchestratorModule.default;
 
-            // Mount AI orchestrator routes now that server is running
-            app.use('/api-ai-orchestrator', strictAiRateLimit, aiOrchestratorRoutes);
+            // Mount AI orchestrator routes now that server is running with necessary middleware
+            app.use('/api-ai-orchestrator', express.json({ limit: '10mb' }), strictAiRateLimit, aiOrchestratorRoutes);
             console.log('✅ AI orchestrator routes mounted');
 
             // Setup Vite for development, static files for production
