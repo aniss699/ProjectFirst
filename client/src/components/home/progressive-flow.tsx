@@ -303,12 +303,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           
           {/* En-tête principal */}
           <div className="space-y-2 md:space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-semibold text-gray-900 dark:text-white leading-[1.1] tracking-tight">
-              SwipDEAL
-            </h1>
-            
             <h2 className="text-sm sm:text-base md:text-2xl lg:text-3xl text-gray-600 dark:text-gray-300 font-medium max-w-3xl mx-auto leading-[1.3] px-2">
-              La plateforme qui révolutionne la mise en relation professionnelle
+              La plateforme qui modernise la mise en relation
             </h2>
           </div>
 
@@ -324,7 +320,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                 Enchère inversée
               </h3>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                Les prestataires rivalisent pour vous offrir les meilleures conditions
+                Les prestataires rivalisent pour vous offrir le meilleur
               </p>
             </div>
 
@@ -337,7 +333,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                 Contact direct
               </h3>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                Accès immédiat aux experts de votre réseau et au-delà
+                Accès immédiat aux experts du réseau et au-delà
               </p>
             </div>
 
@@ -347,7 +343,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                 <Euro className="w-4 h-4 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white">
-                Monétisez votre réseau
+                Valorisez votre réseau
               </h3>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 Générez des revenus en recommandant les bons contacts
@@ -358,8 +354,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           {/* Message central */}
           <div className="max-w-2xl mx-auto px-2">
             <p className="text-sm md:text-lg lg:text-xl text-gray-700 dark:text-gray-200 leading-relaxed">
-              SwipDEAL transforme chaque collaboration en 
-              <span className="font-semibold text-blue-600 dark:text-blue-400"> opportunité gagnant-gagnant</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">Swideal transforme chaque collaboration en opportunité gagnant-gagnant</span>
             </p>
           </div>
 
