@@ -6633,10 +6633,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app.use(limitRequestSize);
-app.use(validateRequest);
-app.use(performanceMonitor);
-app.use(express7.json({ limit: "10mb" }));
+app.use("/api", limitRequestSize, validateRequest, performanceMonitor, express7.json({ limit: "10mb" }));
 app.use("/api/auth", (req, res, next) => {
   console.log(`\u{1F510} Auth request: ${req.method} ${req.path}`, { body: req.body.email ? { email: req.body.email } : {} });
   next();
@@ -6812,7 +6809,7 @@ async function startServerWithRetry() {
             const { setupVite: setupVite2, serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
             const aiOrchestratorModule = await Promise.resolve().then(() => (init_ai(), ai_exports));
             const aiOrchestratorRoutes = aiOrchestratorModule.default;
-            app.use("/api-ai-orchestrator", strictAiRateLimit, aiOrchestratorRoutes);
+            app.use("/api-ai-orchestrator", express7.json({ limit: "10mb" }), strictAiRateLimit, aiOrchestratorRoutes);
             console.log("\u2705 AI orchestrator routes mounted");
             if (process.env.NODE_ENV === "production") {
               console.log("\u{1F3ED} Production mode: serving static files");
