@@ -14,8 +14,8 @@ export default function Home() {
         {/* Bloc d'affichage progressif */}
         <div id="mission-creator" className="px-2 sm:px-0 relative">
           {/* Fond décoratif harmonisé */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-200/20 via-indigo-200/15 to-purple-200/20 rounded-3xl blur-2xl transform -rotate-1 scale-105"></div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/30 via-purple-100/20 to-blue-100/25 rounded-3xl blur-xl transform rotate-1 scale-102"></div>
+          <div className="absolute inset-0 bg-white rounded-3xl blur-2xl transform -rotate-1 scale-105"></div>
+          <div className="absolute inset-0 bg-white rounded-3xl blur-xl transform rotate-1 scale-102"></div>
           <div className="relative z-10">
             <ProgressiveFlow 
               onComplete={(data) => {
@@ -30,8 +30,8 @@ export default function Home() {
         {/* Slogan principal - VERSION PROFESSIONNELLE */}
         <div className="relative text-center py-16 px-2 sm:px-0 overflow-hidden">
           {/* Effet de fond subtil */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-indigo-50/20 to-purple-50/30 rounded-3xl blur-2xl"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/40 via-transparent to-blue-50/30 rounded-3xl transform rotate-1"></div>
+          <div className="absolute inset-0 bg-white rounded-3xl blur-2xl"></div>
+          <div className="absolute inset-0 bg-white rounded-3xl transform rotate-1"></div>
 
           {/* Contenu du slogan */}
           <div className="relative z-10">
@@ -58,7 +58,7 @@ export default function Home() {
             <p className="text-gray-600">Découvrez quelques projets actuellement ouverts sur la plateforme</p>
           </div>
 
-          <div className="text-center py-12 bg-gray-50 rounded-xl">
+          <div className="text-center py-12 bg-white rounded-xl">
             <div className="text-gray-500 mb-4">
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
