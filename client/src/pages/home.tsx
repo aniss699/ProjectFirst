@@ -9,13 +9,13 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Bloc d'affichage progressif */}
         <div id="mission-creator" className="px-2 sm:px-0 relative">
           {/* Fond décoratif harmonisé */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-200/20 via-indigo-200/15 to-purple-200/20 rounded-3xl blur-2xl transform -rotate-1 scale-105"></div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/30 via-purple-100/20 to-blue-100/25 rounded-3xl blur-xl transform rotate-1 scale-102"></div>
+          <div className="absolute inset-0 bg-white/50 rounded-3xl blur-2xl transform -rotate-1 scale-105"></div>
+          <div className="absolute inset-0 bg-white/30 rounded-3xl blur-xl transform rotate-1 scale-102"></div>
           <div className="relative z-10">
             <ProgressiveFlow 
               onComplete={(data) => {
@@ -30,8 +30,8 @@ export default function Home() {
         {/* Slogan principal - VERSION PROFESSIONNELLE */}
         <div className="relative text-center py-16 px-2 sm:px-0 overflow-hidden">
           {/* Effet de fond subtil */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-indigo-50/20 to-purple-50/30 rounded-3xl blur-2xl"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/40 via-transparent to-blue-50/30 rounded-3xl transform rotate-1"></div>
+          <div className="absolute inset-0 bg-white/20 rounded-3xl blur-2xl"></div>
+          <div className="absolute inset-0 bg-gray-50/40 rounded-3xl transform rotate-1"></div>
 
           {/* Contenu du slogan */}
           <div className="relative z-10">

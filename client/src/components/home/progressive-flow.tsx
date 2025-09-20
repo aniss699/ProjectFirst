@@ -812,7 +812,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
         {/* Bloc de progression compact sous le contenu - masqué pour le niveau présentation */}
         {currentStep >= 0 && (
-          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+          <div className="bg-white p-3 rounded-xl mt-6 mb-6 border border-gray-200/20 backdrop-blur-sm progressive-flow-progress"></div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
                 Étape {currentStep + 1} sur 3
