@@ -298,75 +298,75 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   // Étape -1: Présentation professionnelle de SwipDEAL
   const renderStepMinus1 = () => (
     <div className="w-full h-screen max-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 overflow-hidden">
-      <div className="flex flex-col justify-center items-center h-full px-4 py-6 md:px-6 md:py-8">
-        <div className="text-center w-full max-w-5xl mx-auto space-y-4 md:space-y-8">
+      <div className="flex flex-col justify-center items-center h-full px-2 py-3 md:px-6 md:py-8">
+        <div className="text-center w-full max-w-5xl mx-auto space-y-2 md:space-y-8 flex flex-col justify-center min-h-0">
           
           {/* En-tête principal avec effet visuel */}
-          <div className="space-y-3 md:space-y-6 relative">
+          <div className="space-y-2 md:space-y-6 relative flex-shrink-0">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 rounded-3xl blur-3xl opacity-30"></div>
             <div className="relative">
               <h1 className="text-lg sm:text-xl md:text-3xl lg:text-4xl text-gray-800 dark:text-white font-semibold max-w-4xl mx-auto leading-[1.2] px-3">
                 La plateforme qui modernise la mise en relation
               </h1>
-              <div className="w-16 md:w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto mt-3 md:mt-4"></div>
+              <div className="w-16 md:w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto mt-2 md:mt-4"></div>
             </div>
           </div>
 
           {/* Message central repositionné en haut */}
-          <div className="max-w-3xl mx-auto px-3 py-4 md:py-6">
-            <p className="text-base md:text-xl lg:text-2xl font-medium bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent leading-relaxed">
+          <div className="max-w-3xl mx-auto px-3 py-2 md:py-6 flex-shrink-0">
+            <p className="text-sm md:text-xl lg:text-2xl font-medium bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent leading-relaxed">
               Swideal transforme chaque collaboration en opportunité gagnant-gagnant
             </p>
           </div>
 
           {/* Propositions de valeur avec disposition améliorée */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mt-6 md:mt-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-6 max-w-4xl mx-auto flex-1 min-h-0">
             
             {/* Enchère inversée */}
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-6 text-center space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-blue-100/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-3 md:p-6 text-center space-y-2 md:space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-blue-100/50 dark:border-gray-700/50">
+              <div className="w-10 h-10 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-5 h-5 md:w-8 md:h-8 text-white" />
               </div>
-              <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white">
                 Enchère inversée
               </h3>
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
                 Les prestataires rivalisent pour vous offrir le meilleur
               </p>
             </div>
 
             {/* Mise en relation */}
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-6 text-center space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-green-100/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Zap className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-3 md:p-6 text-center space-y-2 md:space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-green-100/50 dark:border-gray-700/50">
+              <div className="w-10 h-10 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Zap className="w-5 h-5 md:w-8 md:h-8 text-white" />
               </div>
-              <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white">
                 Contact direct
               </h3>
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
                 Accès immédiat aux experts du réseau et au-delà
               </p>
             </div>
 
             {/* Monétisation */}
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-6 text-center space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-purple-100/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Euro className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-3 md:p-6 text-center space-y-2 md:space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-purple-100/50 dark:border-gray-700/50">
+              <div className="w-10 h-10 md:w-16 md:h-16 mx-auto bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Euro className="w-5 h-5 md:w-8 md:h-8 text-white" />
               </div>
-              <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white">
                 Valorisez votre réseau
               </h3>
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
                 Générez des revenus en recommandant les bons contacts
               </p>
             </div>
           </div>
 
           {/* Bouton d'action amélioré */}
-          <div className="flex justify-center items-center mt-8 md:mt-12 px-4">
+          <div className="flex justify-center items-center mt-3 md:mt-12 px-4 flex-shrink-0">
             <Button 
               onClick={() => setCurrentStep(0)}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 text-white px-8 py-3 md:px-12 md:py-4 rounded-2xl font-semibold transition-all duration-300 text-base md:text-lg shadow-xl hover:shadow-2xl hover:scale-105 transform"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 text-white px-6 py-2 md:px-12 md:py-4 rounded-2xl font-semibold transition-all duration-300 text-sm md:text-lg shadow-xl hover:shadow-2xl hover:scale-105 transform"
               size="lg"
               data-testid="button-create-mission"
             >
@@ -378,7 +378,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           </div>
 
           {/* Indicateur subtil repositionné */}
-          <div className="mt-6 md:mt-8">
+          <div className="mt-2 md:mt-8 flex-shrink-0">
             <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm px-4 opacity-75">
               Rejoignez des milliers de professionnels qui font confiance à SwipDEAL
             </p>
