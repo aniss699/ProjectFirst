@@ -57,8 +57,6 @@ const MesDemandes = React.lazy(() => import('@/pages/mes-demandes'));
 // Lazy load the advanced create mission page
 const AdvancedCreateMissionPage = React.lazy(() => import('@/pages/progressive-flow'));
 
-// Temporary page for logo comparison
-const LogoComparison = React.lazy(() => import('@/pages/logo-comparison'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -142,8 +140,6 @@ function App() {
                     <Route path="/favorites" component={Favorites} />
                     {/* Added route for Mes demandes */}
                     <Route path="/mes-demandes" component={MesDemandes} />
-                    {/* Temporary route for logo comparison */}
-                    <Route path="/logo-comparison" component={LogoComparison} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

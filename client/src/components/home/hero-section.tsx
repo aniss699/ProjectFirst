@@ -11,9 +11,9 @@ export function HeroSection() {
           <div className="relative">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300">
               <img 
-                src="/swideal-logo.png" 
+                src="/swideal-logo.jpeg" 
                 alt="Swideal Logo" 
-                className="w-full h-full object-cover brightness-0 invert"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>

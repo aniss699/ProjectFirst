@@ -99,9 +99,9 @@ export default function Navbar() {
               <div className="relative mobile-logo-wrapper">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
                   <img
-                    src="/swideal-logo.png"
+                    src="/swideal-logo.jpeg"
                     alt="Swideal Logo"
-                    className="w-full h-full object-cover brightness-0 invert group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
                 <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
@@ -301,9 +301,9 @@ export default function Navbar() {
               <div className="relative">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 shadow-sm">
                   <img
-                    src="/swideal-logo.png"
+                    src="/swideal-logo.jpeg"
                     alt="Swideal Logo"
-                    className="w-full h-full object-cover brightness-0 invert"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
