@@ -298,7 +298,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
   // Étape -1: Présentation professionnelle de SwipDEAL
   const renderStepMinus1 = () => (
     <div className="w-full h-screen max-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 overflow-hidden">
-      <div className="flex flex-col justify-center items-center h-full px-2 py-3 md:px-6 md:py-8">
+      <div className="flex flex-col justify-center items-center h-full px-2 pt-1 pb-3 md:px-6 md:py-8">
         <div className="text-center w-full max-w-5xl mx-auto space-y-2 md:space-y-8 flex flex-col justify-center min-h-0">
           
           {/* En-tête principal avec effet visuel */}
