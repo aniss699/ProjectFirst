@@ -132,37 +132,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Pourquoi choisir AppelsPro */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Pourquoi choisir SWIDEAL</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="font-bold text-lg mb-2">Gain de temps</h3>
-              <p className="text-gray-600">Recevez plusieurs devis qualifiés en quelques heures au lieu de semaines de prospection</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="font-bold text-lg mb-2">IA intelligente</h3>
-              <p className="text-gray-600">Notre IA optimise votre brief et attire les meilleurs <span className="text-green-600 font-medium">prestataires</span> pour votre projet</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="font-bold text-lg mb-2">Qualité garantie</h3>
-              <p className="text-gray-600">Tous nos <span className="text-green-600 font-medium">prestataires</span> sont vérifiés et évalués par la communauté</p>
-            </div>
-          </div>
-        </div>
-
         {/* Chiffres clés */}
         <div className="mb-16 px-2 sm:px-0">
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
