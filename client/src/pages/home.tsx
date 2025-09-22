@@ -55,78 +55,129 @@ export default function Home() {
 
         {/* Notre concept */}
         <div className="mb-16 px-2 sm:px-0">
-          <div className="relative overflow-hidden">
-            {/* Effets de fond dynamiques */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-3xl"></div>
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-3xl animate-pulse"></div>
-            
-            {/* Motifs décoratifs */}
-            <div className="absolute top-4 right-4 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
-            <div className="absolute bottom-4 left-4 w-16 h-16 bg-emerald-400/20 rounded-full blur-lg"></div>
-            <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-bounce"></div>
-            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-emerald-300/60 rounded-full animate-pulse"></div>
-            
-            <div className="relative z-10 p-8 md:p-12 text-white">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-6 py-2 mb-6">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full mr-3 animate-pulse"></div>
-                  <span className="text-sm font-semibold text-white/90">Innovation • IA • Enchères Inversées</span>
-                </div>
-                
-                <h2 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-                  Notre concept révolutionnaire
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="p-8 md:p-12">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
+                  Notre concept
                 </h2>
-                
-                <p className="text-lg md:text-xl leading-relaxed max-w-4xl mx-auto text-white/90 mb-8">
-                  SWIDEAL transforme la mise en relation professionnelle en plaçant l'intelligence artificielle au cœur du processus. 
-                  Fini les recherches fastidieuses : notre plateforme d'enchères inversées fait que <span className="text-blue-200 font-semibold">les meilleurs prestataires viennent à vous</span> avec leurs meilleures offres.
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                  SWIDEAL révolutionne la mise en relation entre <span className="text-blue-600 font-semibold">clients</span> et <span className="text-emerald-600 font-semibold">prestataires</span> grâce à deux innovations majeures
                 </p>
               </div>
 
-              {/* Points clés avec icônes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl">🤖</span>
+              {/* Les deux concepts principaux */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                
+                {/* Enchères inversées */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 border border-blue-100">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <span className="text-3xl text-white">⚖️</span>
                     </div>
-                    <h3 className="font-bold text-lg mb-2">IA Intelligente</h3>
-                    <p className="text-white/80 text-sm">
-                      Notre IA optimise automatiquement votre projet et attire les meilleurs talents
+                    <h3 className="text-2xl font-bold text-blue-900 mb-3">Enchères inversées</h3>
+                    <p className="text-blue-700 font-medium">Le cœur de notre innovation</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">1</span>
+                      </div>
+                      <p className="text-gray-700">Vous publiez votre projet une seule fois</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">2</span>
+                      </div>
+                      <p className="text-gray-700">Les <span className="font-semibold text-emerald-600">prestataires</span> viennent à vous avec leurs propositions</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">3</span>
+                      </div>
+                      <p className="text-gray-700">Ils rivalisent pour vous offrir le meilleur rapport qualité-prix</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-blue-100 rounded-lg">
+                    <p className="text-blue-800 font-medium text-center">
+                      ✨ Résultat : Prix optimisés automatiquement
                     </p>
                   </div>
                 </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl">💰</span>
+
+                {/* Mise en relation payante */}
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-8 border border-emerald-100">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <span className="text-3xl text-white">🤝</span>
                     </div>
-                    <h3 className="font-bold text-lg mb-2">Enchères Inversées</h3>
-                    <p className="text-white/80 text-sm">
-                      Les prestataires se disputent votre projet avec leurs meilleures offres
-                    </p>
+                    <h3 className="text-2xl font-bold text-emerald-900 mb-3">Mise en relation payante</h3>
+                    <p className="text-emerald-700 font-medium">Garantie qualité et sérieux</p>
                   </div>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl">⚡</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                      <p className="text-gray-700">Profils vérifiés et compétences validées</p>
                     </div>
-                    <h3 className="font-bold text-lg mb-2">Gain de Temps</h3>
-                    <p className="text-white/80 text-sm">
-                      Recevez plusieurs devis qualifiés en quelques heures au lieu de semaines
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                      <p className="text-gray-700">Engagement financier qui filtre les candidatures sérieuses</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                      <p className="text-gray-700">Support et médiation en cas de litige</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-emerald-100 rounded-lg">
+                    <p className="text-emerald-800 font-medium text-center">
+                      🛡️ Résultat : Qualité et sérieux garantis
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Call to action subtil */}
+              {/* Avantages concrets */}
+              <div className="bg-gray-50 rounded-xl p-8">
+                <h4 className="text-xl font-bold text-gray-900 text-center mb-6">Pourquoi cette approche change tout</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <span className="text-white font-bold text-xl">€</span>
+                    </div>
+                    <h5 className="font-semibold text-gray-900 mb-2">Prix justes</h5>
+                    <p className="text-gray-600 text-sm">La concurrence naturelle entre prestataires optimise automatiquement les tarifs</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <span className="text-white font-bold text-xl">⏱</span>
+                    </div>
+                    <h5 className="font-semibold text-gray-900 mb-2">Gain de temps</h5>
+                    <p className="text-gray-600 text-sm">Plus besoin de chercher : les candidats viennent à vous avec leurs meilleures offres</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <span className="text-white font-bold text-xl">🎯</span>
+                    </div>
+                    <h5 className="font-semibold text-gray-900 mb-2">Qualité assurée</h5>
+                    <p className="text-gray-600 text-sm">Modèle payant qui filtre les profils et garantit le sérieux des échanges</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conclusion */}
               <div className="text-center mt-8">
-                <p className="text-white/70 text-sm">
-                  Une approche unique qui fait gagner du temps aux <span className="text-blue-200 font-medium">clients</span> 
-                  et offre plus d'opportunités aux <span className="text-emerald-200 font-medium">prestataires</span>
+                <p className="text-lg text-gray-700">
+                  Une approche <span className="font-semibold text-blue-600">économiquement rationnelle</span> qui aligne les intérêts des <span className="text-blue-600 font-medium">clients</span> et des <span className="text-emerald-600 font-medium">prestataires</span>
                 </p>
               </div>
             </div>
