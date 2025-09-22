@@ -87,10 +87,10 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">Mise en relation payante</h3>
                 <p className="text-gray-600 mb-4">
-                  Un système d'accès payant qui filtre automatiquement les profils sérieux et qualifiés.
+                  Au lieu de prospecter pendant des semaines, payez quelqu'un qui a déjà le contact pour vous mettre en relation directement.
                 </p>
                 <div className="text-sm text-emerald-700 bg-emerald-50 rounded-lg p-3">
-                  Résultat : plus de qualité, moins de spam
+                  Résultat : votre réseau devient rentable, les contacts sont immédiats
                 </div>
               </div>
             </div>
@@ -98,7 +98,7 @@ export default function Home() {
             {/* Pourquoi ça marche */}
             <div className="text-center">
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Pourquoi cette combinaison fonctionne</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="text-orange-600 font-semibold mb-1">Économiquement logique</div>
                   <div className="text-sm text-gray-600">La concurrence optimise les prix</div>
@@ -108,8 +108,12 @@ export default function Home() {
                   <div className="text-sm text-gray-600">Moins de recherche, plus de résultats</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-blue-600 font-semibold mb-1">Qualité assurée</div>
-                  <div className="text-sm text-gray-600">Profils vérifiés et motivés</div>
+                  <div className="text-emerald-600 font-semibold mb-1">Réseau rentable</div>
+                  <div className="text-sm text-gray-600">Chacun peut devenir apporteur d'affaires</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-blue-600 font-semibold mb-1">Contacts immédiats</div>
+                  <div className="text-sm text-gray-600">Fini la prospection longue</div>
                 </div>
               </div>
             </div>
