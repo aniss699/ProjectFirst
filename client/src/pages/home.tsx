@@ -55,14 +55,81 @@ export default function Home() {
 
         {/* Notre concept */}
         <div className="mb-16 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white text-center">
-            <h2 className="text-3xl font-bold mb-6" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>Notre concept</h2>
-            <p className="text-lg leading-relaxed max-w-4xl mx-auto">
-              SWIDEAL révolutionne la mise en relation professionnelle grâce à l'intelligence artificielle. 
-              Notre plateforme d'enchères inversées permettra aux <span className="text-blue-200 font-semibold">clients</span> de recevoir des devis personnalisés 
-              en temps record, tandis que les <span className="text-green-200 font-semibold">prestataires</span> accèderont à des opportunités qualifiées 
-              correspondant exactement à leurs compétences.
-            </p>
+          <div className="relative overflow-hidden">
+            {/* Effets de fond dynamiques */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-3xl"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-3xl animate-pulse"></div>
+            
+            {/* Motifs décoratifs */}
+            <div className="absolute top-4 right-4 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+            <div className="absolute bottom-4 left-4 w-16 h-16 bg-emerald-400/20 rounded-full blur-lg"></div>
+            <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-bounce"></div>
+            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-emerald-300/60 rounded-full animate-pulse"></div>
+            
+            <div className="relative z-10 p-8 md:p-12 text-white">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-6 py-2 mb-6">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full mr-3 animate-pulse"></div>
+                  <span className="text-sm font-semibold text-white/90">Innovation • IA • Enchères Inversées</span>
+                </div>
+                
+                <h2 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
+                  Notre concept révolutionnaire
+                </h2>
+                
+                <p className="text-lg md:text-xl leading-relaxed max-w-4xl mx-auto text-white/90 mb-8">
+                  SWIDEAL transforme la mise en relation professionnelle en plaçant l'intelligence artificielle au cœur du processus. 
+                  Fini les recherches fastidieuses : notre plateforme d'enchères inversées fait que <span className="text-blue-200 font-semibold">les meilleurs prestataires viennent à vous</span> avec leurs meilleures offres.
+                </p>
+              </div>
+
+              {/* Points clés avec icônes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🤖</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">IA Intelligente</h3>
+                    <p className="text-white/80 text-sm">
+                      Notre IA optimise automatiquement votre projet et attire les meilleurs talents
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">💰</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">Enchères Inversées</h3>
+                    <p className="text-white/80 text-sm">
+                      Les prestataires se disputent votre projet avec leurs meilleures offres
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">⚡</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">Gain de Temps</h3>
+                    <p className="text-white/80 text-sm">
+                      Recevez plusieurs devis qualifiés en quelques heures au lieu de semaines
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Call to action subtil */}
+              <div className="text-center mt-8">
+                <p className="text-white/70 text-sm">
+                  Une approche unique qui fait gagner du temps aux <span className="text-blue-200 font-medium">clients</span> 
+                  et offre plus d'opportunités aux <span className="text-emerald-200 font-medium">prestataires</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
