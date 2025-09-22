@@ -51,29 +51,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Missions en cours */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>Missions en cours</h2>
-            <p className="text-gray-600">Découvrez quelques projets actuellement ouverts sur la plateforme</p>
-          </div>
-
-          <div className="text-center py-12 bg-white rounded-xl">
-            <div className="text-gray-500 mb-4">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune mission pour le moment</h3>
-              <p className="text-gray-600">Les premières missions apparaîtront ici une fois la plateforme lancée</p>
-            </div>
-            <button 
-              onClick={() => setLocation('/marketplace')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              Explorer la plateforme
-            </button>
-          </div>
-        </div>
+        
 
         {/* Notre concept */}
         <div className="mb-16 px-2 sm:px-0">
