@@ -97,13 +97,11 @@ export default function Navbar() {
               className="group flex items-center space-x-3 sm:space-x-4 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
             >
               <div className="relative mobile-logo-wrapper">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
-                  <img
-                    src="/swideal-logo.jpeg"
-                    alt="Swideal Logo"
-                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
+                <img
+                  src="/swideal-logo.jpeg"
+                  alt="Swideal Logo"
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                />
                 <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </div>
               <div className="flex flex-col items-start justify-center mobile-brand-text ml-1">
@@ -299,13 +297,11 @@ export default function Navbar() {
           <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
             <div className="flex items-center space-x-3 mb-3">
               <div className="relative">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-1.5 shadow-sm">
-                  <img
-                    src="/swideal-logo.jpeg"
-                    alt="Swideal Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <img
+                  src="/swideal-logo.jpeg"
+                  alt="Swideal Logo"
+                  className="w-8 h-8 object-contain rounded-lg"
+                />
                 <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
               </div>
               <div className="flex flex-col">
