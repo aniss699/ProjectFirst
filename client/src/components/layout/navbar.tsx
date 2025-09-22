@@ -95,25 +95,26 @@ export default function Navbar() {
             <button
               onClick={() => handleNavigation(ROUTES.HOME)}
               className="group flex items-center space-x-3 sm:space-x-4 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
+              data-testid="button-logo-navbar"
             >
               <div className="relative mobile-logo-wrapper">
                 <img
                   src="/swideal-logo.jpeg"
                   alt="Swideal Logo"
-                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain group-hover:scale-110 transition-transform duration-300 rounded-xl shadow-lg"
                 />
-                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                <div className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse shadow-md"></div>
               </div>
-              <div className="flex flex-col items-start justify-center mobile-brand-text ml-1">
-                <span className="text-base sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title">
+              <div className="flex flex-col items-start justify-center mobile-brand-text ml-2">
+                <span className="text-lg sm:text-3xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title drop-shadow-sm" data-testid="text-brand-navbar">
                   SWIDEAL
                 </span>
-                <span className="text-[0.6rem] sm:text-sm font-semibold tracking-wide leading-none mt-0.5 mobile-brand-subtitle">
-                  <span className="text-gray-900">Le meilleur </span>
-                  <span className="text-emerald-600">deal</span>
-                  <span className="text-gray-900"> vient à toi</span>
+                <span className="text-[0.7rem] sm:text-base font-bold tracking-wide leading-none mt-1 mobile-brand-subtitle">
+                  <span className="text-gray-800">Le meilleur </span>
+                  <span className="text-emerald-700 font-black">deal</span>
+                  <span className="text-gray-800"> vient à toi</span>
                 </span>
-                <span className="text-xs text-gray-500 hidden lg:block font-medium leading-none mt-1 mobile-brand-description">
+                <span className="text-xs sm:text-sm text-gray-600 hidden lg:block font-semibold leading-none mt-1.5 mobile-brand-description">
                   IA • Missions • Talents
                 </span>
               </div>
@@ -300,15 +301,15 @@ export default function Navbar() {
                 <img
                   src="/swideal-logo.jpeg"
                   alt="Swideal Logo"
-                  className="w-8 h-8 object-contain rounded-lg"
+                  className="w-10 h-10 object-contain rounded-xl shadow-md"
                 />
-                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                <span className="text-xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent drop-shadow-sm" data-testid="text-brand-mobile">
                   SWIDEAL
                 </span>
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xs text-gray-600 font-semibold">
                   Navigation
                 </span>
               </div>

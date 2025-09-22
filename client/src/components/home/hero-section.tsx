@@ -7,20 +7,20 @@ export function HeroSection() {
     <div className="text-center mb-12 sm:mb-16 px-2 sm:px-0">
       <div className="space-y-6">
         {/* Logo et nom SWIDEAL */}
-        <div className="flex items-center justify-center space-x-3 mb-8">
+        <div className="flex items-center justify-center space-x-4 mb-8" data-testid="logo-hero">
           <div className="relative">
             <img 
               src="/swideal-logo.jpeg" 
               alt="Swideal Logo" 
-              className="w-12 h-12 object-contain rounded-xl"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl shadow-xl"
             />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg"></div>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent tracking-tight">
+            <span className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent tracking-tight drop-shadow-md" data-testid="text-brand-hero">
               SWIDEAL
             </span>
-            <span className="text-sm text-gray-500 font-medium">
+            <span className="text-base sm:text-lg text-gray-600 dark:text-gray-300 font-bold">
               IA • Missions • Talents
             </span>
           </div>
