@@ -132,31 +132,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Chiffres clés */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4">SWIDEAL en chiffres</h2>
-              <p className="text-lg opacity-90">Une plateforme en construction</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold mb-2">0</div>
-                <div className="text-lg opacity-90">Projets réalisés</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold mb-2">0</div>
-                <div className="text-lg opacity-90">Prestataires actifs</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold mb-2">-</div>
-                <div className="text-lg opacity-90">Taux de satisfaction</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* FAQ */}
         <div className="mb-12 px-2 sm:px-0">
           <div className="text-center mb-8">
