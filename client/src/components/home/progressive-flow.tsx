@@ -297,9 +297,9 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   // Étape -1: Présentation professionnelle de SwipDEAL
   const renderStepMinus1 = () => (
-    <div className="w-full h-screen max-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 overflow-hidden">
-      <div className="flex flex-col justify-center items-center h-full px-2 pt-1 pb-3 md:px-6 md:py-8">
-        <div className="text-center w-full max-w-5xl mx-auto space-y-2 md:space-y-8 flex flex-col justify-center min-h-0">
+    <div className="w-full min-h-[100svh] md:h-screen md:max-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 overflow-y-auto md:overflow-hidden">
+      <div className="flex flex-col justify-start md:justify-center items-center h-full px-2 pt-2 pb-4 md:px-6 md:py-8">
+        <div className="text-center w-full max-w-5xl mx-auto space-y-2 md:space-y-8 flex flex-col md:justify-center min-h-0">
           
           {/* En-tête principal avec effet visuel */}
           <div className="space-y-2 md:space-y-6 relative flex-shrink-0">
@@ -320,7 +320,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           </div>
 
           {/* Propositions de valeur avec disposition améliorée */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-6 max-w-4xl mx-auto flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-6 max-w-4xl mx-auto flex-none md:flex-1 md:min-h-0">
             
             {/* Enchère inversée */}
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-3 md:p-6 text-center space-y-2 md:space-y-3 group hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-blue-100/50 dark:border-gray-700/50">
