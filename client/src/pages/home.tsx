@@ -27,9 +27,8 @@ export default function Home() {
           </div>
         </div>
 
-        
-
-        
+        {/* Espacement important entre les sections */}
+        <div className="h-24 md:h-32"></div>
 
         {/* Notre concept */}
         <div className="mb-16 px-2 sm:px-0">
@@ -46,8 +45,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               {/* Enchères inversées */}
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">⚖️</span>
+                <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg group hover:scale-105 transition-transform duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <svg className="relative w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.3" />
+                  </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">Enchères inversées</h3>
                 <p className="text-gray-600 mb-4">
@@ -60,8 +63,11 @@ export default function Home() {
 
               {/* Mise en relation payante */}
               <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">🤝</span>
+                <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg group hover:scale-105 transition-transform duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <svg className="relative w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">Mise en relation payante</h3>
                 <p className="text-gray-600 mb-4">
