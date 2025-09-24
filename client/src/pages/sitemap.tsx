@@ -61,7 +61,7 @@ export default function Sitemap() {
           Plan du site
         </h1>
         <p className="text-gray-600">
-          Retrouvez toutes les pages et fonctionnalités d'AppelsPro
+          Retrouvez toutes les pages et fonctionnalités de SwipDEAL
         </p>
       </div>
 
