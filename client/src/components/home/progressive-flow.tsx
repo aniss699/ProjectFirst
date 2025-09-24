@@ -425,8 +425,8 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               Contact direct avec des prestataires sélectionnés
             </p>
             <div className="space-y-2">
-              <Badge variant="secondary" className="text-xs px-3 py-1">Nous identifions les experts adaptés</Badge>
-              <Badge variant="secondary" className="text-xs px-3 py-1">Contact direct facilité</Badge>
+              <Badge variant="secondary" className="text-xs px-3 py-1">Fini la recherche de contact infructueuse</Badge>
+              <Badge variant="secondary" className="text-xs px-3 py-1">Notre réseau vous recommande</Badge>
             </div>
           </CardContent>
         </Card>
