@@ -421,8 +421,11 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               clickedCard === 'mise-en-relation' ? 'scale-125 animate-pulse text-purple-800' : ''
             }`} />
             <h3 className="text-xl font-semibold mb-2">Mise en relation</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-2">
               Contact direct avec des prestataires sélectionnés
+            </p>
+            <p className="text-gray-500 text-sm mb-4">
+              Comment ça marche : Nous identifions les experts adaptés à votre besoin et facilitons le contact direct
             </p>
             <div className="space-y-2">
               <Badge variant="secondary">Contact immédiat</Badge>
@@ -449,8 +452,11 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               clickedCard === 'appel-offres' ? 'scale-125 animate-pulse text-orange-800' : ''
             }`} />
             <h3 className="text-xl font-semibold mb-2">Appel d'offres</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-2">
               Recevez plusieurs propositions et choisissez la meilleure
+            </p>
+            <p className="text-gray-500 text-sm mb-4">
+              Comment ça marche : Publiez votre projet, les prestataires soumettent leurs offres, vous comparez et sélectionnez
             </p>
             <div className="space-y-2">
               <Badge variant="secondary">Enchère inversée</Badge>
