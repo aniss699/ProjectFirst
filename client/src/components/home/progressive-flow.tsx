@@ -333,6 +333,9 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
               <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
                 Les prestataires rivalisent pour vous offrir le meilleur
               </p>
+              <p className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                Ne cherche plus le meilleur prix il vient à toi !
+              </p>
             </div>
 
             {/* Mise en relation */}
