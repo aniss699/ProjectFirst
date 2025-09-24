@@ -6641,7 +6641,7 @@ app.use("/api/auth", (req, res, next) => {
 app.all("/api", (req, res) => {
   res.status(200).json({
     status: "ok",
-    service: "SwipDEAL API",
+    service: "SWIDEAL API",
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     version: "1.0.0"
   });
@@ -6720,7 +6720,7 @@ app.get("/api/health", async (req, res) => {
     await Promise.race([queryPromise, timeoutPromise]);
     res.status(200).json({
       status: "healthy",
-      message: "SwipDEAL API is running",
+      message: "SWIDEAL API is running",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       uptime: process.uptime(),
       env: process.env.NODE_ENV || "development",
@@ -6798,7 +6798,7 @@ async function startServerWithRetry() {
       await new Promise((resolve, reject) => {
         const serverInstance = server.listen(port, "0.0.0.0", async () => {
           writePidFile();
-          console.log(`\u{1F680} SwipDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
+          console.log(`\u{1F680} SWIDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
           console.log(`\u{1F4F1} Frontend: http://0.0.0.0:${port}`);
           console.log(`\u{1F527} API Health: http://0.0.0.0:${port}/api/health`);
           console.log(`\u{1F3AF} AI Provider: Gemini API Only`);
