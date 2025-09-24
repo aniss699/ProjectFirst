@@ -298,7 +298,7 @@ import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middlewar
 app.all('/api', (req, res) => {
   res.status(200).json({
     status: 'ok',
-    service: 'SwipDEAL API',
+    service: 'SWIDEAL API',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });
@@ -401,7 +401,7 @@ app.get('/api/health', async (req, res) => {
 
     res.status(200).json({
       status: 'healthy',
-      message: 'SwipDEAL API is running',
+      message: 'SWIDEAL API is running',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       env: process.env.NODE_ENV || 'development',
@@ -503,7 +503,7 @@ async function startServerWithRetry(): Promise<void> {
       await new Promise<void>((resolve, reject) => {
         const serverInstance = server.listen(port, '0.0.0.0', async () => {
           writePidFile();
-          console.log(`🚀 SwipDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
+          console.log(`🚀 SWIDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
           console.log(`📱 Frontend: http://0.0.0.0:${port}`);
           console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
           console.log(`🎯 AI Provider: Gemini API Only`);

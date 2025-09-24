@@ -68,7 +68,7 @@ const LoadingSpinner = () => (
 function App() {
   useEffect(() => {
     // Debug pour Replit - affichage dans la console
-    console.log('🚀 SwipDEAL App chargée avec succès');
+    console.log('🚀 SWIDEAL App chargée avec succès');
     console.log('📍 URL actuelle:', window.location.href);
     console.log('🔧 User Agent:', navigator.userAgent);
     console.log('📱 Viewport:', window.innerWidth + 'x' + window.innerHeight);
