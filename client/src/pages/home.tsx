@@ -120,71 +120,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Comment ça marche */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Comment ça marche</h2>
-            <p className="text-gray-600">Deux approches simples selon vos besoins</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Appels d'offres */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-xl font-bold text-blue-600 mb-6 text-center">Appels d'offres inversés</h3>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">1</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Publiez votre projet</h4>
-                    <p className="text-gray-600 text-sm">Décrivez votre besoin en détail avec l'aide de notre IA</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">2</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Recevez des devis</h4>
-                    <p className="text-gray-600 text-sm">Les <span className="text-green-600 font-medium">prestataires</span> qualifiés soumettent leurs propositions</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">3</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Choisissez le meilleur</h4>
-                    <p className="text-gray-600 text-sm">Comparez et sélectionnez l'offre qui vous convient</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Mise en relation directe */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-xl font-bold text-green-600 mb-6 text-center">Mise en relation directe</h3>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">1</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Choisissez un expert</h4>
-                    <p className="text-gray-600 text-sm">Parcourez les profils vérifiés dans votre domaine</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">2</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Contactez directement</h4>
-                    <p className="text-gray-600 text-sm">Échangez immédiatement avec le professionnel choisi</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4 mt-1">3</div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Démarrez votre projet</h4>
-                    <p className="text-gray-600 text-sm">Négociez et lancez votre collaboration rapidement</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         {/* FAQ */}
         <div className="mb-12 px-2 sm:px-0">
