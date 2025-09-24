@@ -122,47 +122,7 @@ export default function Home() {
 
         
 
-        {/* FAQ */}
-        <div className="mb-12 px-2 sm:px-0">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Questions fréquentes</h2>
-            <p className="text-gray-600">Tout ce que vous devez savoir sur SWIDEAL</p>
-          </div>
-
-          <div className="max-w-3xl mx-auto space-y-3">
-            {[
-              {
-                question: "Comment fonctionne l'enchère inversée ?",
-                answer: "Le <span className=\"text-blue-600 font-medium\">client</span> publie son besoin et les <span className=\"text-green-600 font-medium\">prestataires</span> proposent leurs prix. L'offre la plus compétitive et qualitative remporte le projet."
-              },
-              {
-                question: "Les prestataires sont-ils vérifiés ?",
-                answer: "Le système de vérification des <span className=\"text-green-600 font-medium\">prestataires</span> sera mis en place lors du lancement : vérification des compétences, références et identité."
-              },
-              {
-                question: "Y a-t-il des frais pour utiliser SWIDEAL ?",
-                answer: "L'inscription sera gratuite. Le modèle économique final (commission sur projets finalisés) sera défini lors du lancement."
-              },
-              {
-                question: "Combien de temps pour recevoir des propositions ?",
-                answer: "Une fois la plateforme lancée, notre IA sera optimisée pour vous connecter rapidement avec les <span className=\"text-green-600 font-medium\">prestataires</span> adaptés."
-              },
-              {
-                question: "Puis-je annuler un projet en cours ?",
-                answer: "Oui, vous pouvez annuler avant validation finale. Notre équipe support vous accompagne pour résoudre tout malentendu avec le <span className=\"text-green-600 font-medium\">prestataire</span>."
-              },
-              {
-                question: "Comment l'IA m'aide-t-elle à créer mon projet ?",
-                answer: "Notre IA analyse votre brief, suggère des améliorations, estime le budget optimal et identifie les <span className=\"text-green-600 font-medium\">prestataires</span> les plus adaptés à vos besoins."
-              }
-            ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="font-semibold text-base mb-2 text-gray-900">{faq.question}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: faq.answer }}></p>
-              </div>
-            ))}
-          </div>
-        </div>
+        
       </div>
 
 
