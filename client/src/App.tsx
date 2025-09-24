@@ -108,6 +108,10 @@ function App() {
                     <Route path="/services/groupe" component={GroupRequestPage} />
                     <Route path="/services/ia" component={IaHumanPage} />
                     <Route path="/services/opportunites" component={OpportunitiesPage} />
+                    {/* Added routes for new services */}
+                    <Route path="/services/construction-equipe" component={lazy(() => import('@/pages/services/TeamBuildingPage'))} />
+                    <Route path="/services/concours-creatif" component={lazy(() => import('@/pages/services/CreativeContestPage'))} />
+                    <Route path="/services/mission-miroir" component={lazy(() => import('@/pages/services/MirrorMissionPage'))} />
                     <Route path="/notre-concept" component={NotreConcept} />
                     <Route path="/legal" component={Legal} />
                     <Route path="/sitemap" component={Sitemap} />

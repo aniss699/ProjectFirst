@@ -5,28 +5,28 @@ import type { ServiceMode } from '@/lib/types/services';
 
 const serviceModes: ServiceMode[] = [
   {
-    id: 'flash',
-    title: 'Flash Deals Services',
-    description: 'Besoin urgent ? Obtenez des devis en temps record avec nos prestataires disponibles immédiatement.',
-    emoji: '⚡',
-    href: '/services/flash',
-    color: 'text-orange-600'
-  },
-  {
-    id: 'abonnement',
-    title: 'Abonnement Inversé',
-    description: 'Définissez votre besoin récurrent et laissez les experts se positionner sur votre planning.',
-    emoji: '📅',
-    href: '/services/abonnement',
-    color: 'text-green-600'
-  },
-  {
-    id: 'groupe',
-    title: 'Demandes Groupées',
-    description: 'Mutualisez vos besoins avec d\'autres clients pour obtenir des tarifs préférentiels.',
-    emoji: '🤝',
-    href: '/services/groupe',
+    id: 'construction-equipe',
+    title: 'Construction d\'Équipe',
+    description: 'Créez une équipe professionnelle où d\'autres experts peuvent vous rejoindre. Une fois complète, votre équipe sera disponible pour d\'autres missions.',
+    emoji: '👥',
+    href: '/services/construction-equipe',
     color: 'text-blue-600'
+  },
+  {
+    id: 'concours-creatif',
+    title: 'Concours Créatif',
+    description: 'Plusieurs créatifs travaillent en parallèle sur votre projet. Vous choisissez la meilleure proposition et récompensez tous les participants.',
+    emoji: '🏆',
+    href: '/services/concours-creatif',
+    color: 'text-purple-600'
+  },
+  {
+    id: 'mission-miroir',
+    title: 'Mission Miroir',
+    description: 'Deux prestataires travaillent simultanément sur votre projet. Vous obtenez deux solutions et choisissez la meilleure.',
+    emoji: '🪞',
+    href: '/services/mission-miroir',
+    color: 'text-emerald-600'
   },
   {
     id: 'ia',
@@ -34,7 +34,7 @@ const serviceModes: ServiceMode[] = [
     description: 'Notre IA analyse votre besoin et le transforme en brief expert pour les meilleurs prestataires.',
     emoji: '🤖',
     href: '/services/ia',
-    color: 'text-purple-600'
+    color: 'text-orange-600'
   },
   {
     id: 'opportunites',
@@ -59,7 +59,7 @@ export default function ServicesPage() {
             Choisissez votre mode de service
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            5 façons révolutionnaires de trouver et collaborer avec les meilleurs prestataires
+            5 modes de collaboration innovants pour vos projets
           </p>
         </div>
 
