@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Search, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText, Brain } from 'lucide-react';
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText, Brain } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
@@ -315,19 +315,7 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Barre de recherche mobile */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                inputMode="none"
-                autoComplete="off"
-                className="mobile-nav-search w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            
           </div>
 
           {/* Actions rapides - disposition verticale */}
