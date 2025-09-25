@@ -14,15 +14,16 @@ import { pricingEngine, PricingRequest, PricingResponse } from './engines/Pricin
 import { matchingEngine, MatchingRequest, MatchingResult } from './engines/MatchingEngine';
 import { ExecutionPhase, IStandardizationEngine, INeuralPredictionEngine, ISmartBriefAnalyzer } from './types';
 
-// Feature flag pour contrôler les modules avancés
-const AI_ADVANCED_MODULES = process.env.AI_ADVANCED_MODULES === 'true' || false;
+// Feature flag pour contrôler les modules avancés (désactivé après simplification)
+const AI_ADVANCED_MODULES = false; // Simplifié : toujours utiliser les versions basiques
 
 type AllowedExecutionPhase = 'scoring' | 'pricing' | 'matching' | 'prediction' | 'analysis' | 'enhancement';
 
-// Import des moteurs spécialisés existants (seront refactorisés progressivement)
-// import { StandardizationEngine } from './standardization-engine';
-// import { NeuralPricingEngine } from './neural-pricing-engine';
-// import { AILearningEngine } from './learning-engine';
+// Import des moteurs spécialisés existants SUPPRIMÉS - remplacés par versions simples
+// Les imports suivants ont été supprimés après simplification :
+// - StandardizationEngine -> remplacé par logique simple dans fallbacks
+// - NeuralPricingEngine -> remplacé par PricingEngine simplifié  
+// - AILearningEngine -> supprimé, apprentissage désactivé
 
 export interface AIMetrics {
   requests: number;
