@@ -16,31 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function NotreConcept() {
   const [, setLocation] = useLocation();
   const [activeDemo, setActiveDemo] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeComparison, setActiveComparison] = useState('traditional');
-
-  // Statistiques en temps réel (simulées)
-  const [stats, setStats] = useState({
-    matchingAccuracy: 87,
-    avgTimeReduction: 76,
-    userSatisfaction: 94,
-    projectsCompleted: 1247
-  });
-
-  useEffect(() => {
-    // Animation des statistiques au chargement
-    const interval = setInterval(() => {
-      setStats(prev => ({
-        matchingAccuracy: prev.matchingAccuracy + Math.random() * 0.2 - 0.1,
-        avgTimeReduction: prev.avgTimeReduction + Math.random() * 0.3 - 0.15,
-        userSatisfaction: prev.userSatisfaction + Math.random() * 0.1 - 0.05,
-        projectsCompleted: prev.projectsCompleted + Math.floor(Math.random() * 3)
-      }));
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Données de démonstration
   const demoSteps = [
@@ -48,25 +25,25 @@ export default function NotreConcept() {
       title: "1. Vous décrivez votre projet",
       description: "En quelques mots, décrivez ce dont vous avez besoin",
       visual: "🎯",
-      details: "Notre IA analyse automatiquement votre demande et l'optimise pour attirer les meilleurs prestataires."
+      details: "Notre système analyse automatiquement votre demande pour attirer les meilleurs prestataires qui correspondent vraiment à votre projet."
     },
     {
-      title: "2. L'IA trouve les experts",
-      description: "Notre algorithme identifie les prestataires parfaits",
+      title: "2. Les experts vous trouvent",
+      description: "Les prestataires qualifiés viennent à vous",
       visual: "🧠",
-      details: "Matching intelligent basé sur 50+ critères : compétences, localisation, disponibilité, tarifs, réputation."
+      details: "Plus besoin de chercher ! Les professionnels adaptés à votre projet vous contactent directement avec leurs propositions."
     },
     {
-      title: "3. Les offres arrivent",
-      description: "Recevez des propositions personnalisées",
+      title: "3. Vous recevez des propositions",
+      description: "Comparez les offres personnalisées",
       visual: "📧",
-      details: "Les prestataires viennent à vous avec leurs meilleures offres, créant une compétition naturelle."
+      details: "Recevez plusieurs devis adaptés à votre besoin, créant une émulation naturelle entre les prestataires."
     },
     {
-      title: "4. Vous choisissez",
-      description: "Comparez et sélectionnez la meilleure offre",
+      title: "4. Vous choisissez facilement",
+      description: "Sélectionnez la meilleure offre en toute transparence",
       visual: "✨",
-      details: "Interface de comparaison intelligente avec scoring automatique et recommandations personnalisées."
+      details: "Interface claire pour comparer les propositions avec toutes les informations nécessaires pour faire le bon choix."
     }
   ];
 
@@ -77,8 +54,7 @@ export default function NotreConcept() {
       company: "TechStart",
       avatar: "SM",
       rating: 5,
-      text: "SWIDEAL a révolutionné notre façon de trouver des prestataires. En 2 heures, j'avais 5 propositions qualifiées au lieu de chercher pendant des semaines !",
-      savings: "85% de temps économisé",
+      text: "SWIDEAL a complètement changé ma façon de trouver des prestataires. En quelques heures, j'avais plusieurs propositions de qualité au lieu de chercher pendant des semaines !",
       project: "Refonte site web"
     },
     {
@@ -87,8 +63,7 @@ export default function NotreConcept() {
       company: "Innov Solutions",
       avatar: "MD",
       rating: 5,
-      text: "L'IA de SWIDEAL a identifié des prestataires que je n'aurais jamais trouvés seul. Le résultat final dépassait mes attentes !",
-      savings: "30% d'économies",
+      text: "J'ai découvert des prestataires excellents que je n'aurais jamais trouvés seul. Le résultat final a dépassé mes attentes !",
       project: "Application mobile"
     },
     {
@@ -97,8 +72,7 @@ export default function NotreConcept() {
       company: "Digital Corp",
       avatar: "CR",
       rating: 5,
-      text: "La qualité des matchs est impressionnante. Plus besoin de passer des heures à éplucher les profils !",
-      savings: "50% budget optimisé",
+      text: "Fini le temps perdu à éplucher des profils ! Les prestataires qui me contactent correspondent vraiment à mes besoins.",
       project: "Campagne digitale"
     }
   ];
@@ -108,32 +82,32 @@ export default function NotreConcept() {
       title: "Méthode traditionnelle",
       color: "red",
       items: [
-        { label: "Recherche manuelle", value: "2-3 semaines", icon: Clock },
-        { label: "Nombre de candidats", value: "3-5 profils", icon: Users },
-        { label: "Taux de matching", value: "40-60%", icon: Target },
-        { label: "Transparence prix", value: "Faible", icon: Eye },
+        { label: "Recherche manuelle", value: "Plusieurs semaines", icon: Clock },
+        { label: "Nombre de candidats", value: "Quelques profils", icon: Users },
+        { label: "Qualité des matchs", value: "Aléatoire", icon: Target },
+        { label: "Transparence prix", value: "Limitée", icon: Eye },
         { label: "Risque qualité", value: "Élevé", icon: Shield },
-        { label: "Support", value: "Limité", icon: MessageSquare }
+        { label: "Support", value: "Basique", icon: MessageSquare }
       ]
     },
     swideal: {
       title: "Avec SWIDEAL",
       color: "green",
       items: [
-        { label: "Analyse IA", value: "< 1 heure", icon: Clock },
-        { label: "Nombre de candidats", value: "8-12 profils", icon: Users },
-        { label: "Taux de matching", value: "85-95%", icon: Target },
+        { label: "Analyse intelligente", value: "Quelques heures", icon: Clock },
+        { label: "Nombre de candidats", value: "Sélection qualifiée", icon: Users },
+        { label: "Qualité des matchs", value: "Optimisée", icon: Target },
         { label: "Transparence prix", value: "Totale", icon: Eye },
         { label: "Risque qualité", value: "Minimal", icon: Shield },
-        { label: "Support", value: "IA + Humain", icon: MessageSquare }
+        { label: "Support", value: "Accompagnement complet", icon: MessageSquare }
       ]
     }
   };
 
   const faqData = [
     {
-      question: "Comment l'IA de SWIDEAL fonctionne-t-elle ?",
-      answer: "Notre IA analyse votre projet selon 50+ critères (compétences requises, complexité, budget, délais, localisation) puis compare avec notre base de 10,000+ prestataires vérifiés. L'algorithme utilise du machine learning pour s'améliorer en permanence."
+      question: "Comment SWIDEAL améliore-t-il la mise en relation ?",
+      answer: "SWIDEAL inverse le processus traditionnel : au lieu de chercher des prestataires, ce sont eux qui viennent à vous avec des propositions adaptées. Notre système analyse votre projet et le présente aux professionnels les plus qualifiés de notre réseau."
     },
     {
       question: "Que sont les 'enchères inversées' ?",
@@ -141,7 +115,7 @@ export default function NotreConcept() {
     },
     {
       question: "Comment garantissez-vous la qualité ?",
-      answer: "Triple vérification : (1) Validation des compétences, (2) Système de notation blockchain infalsifiable, (3) Détection anti-fraude par IA. Seuls les prestataires avec un score de confiance élevé peuvent soumissionner."
+      answer: "Nous vérifions les compétences de tous nos prestataires et utilisons un système de notation transparent. Seuls les professionnels avec une bonne réputation peuvent soumettre des propositions sur votre projet."
     },
     {
       question: "Combien ça coûte ?",
@@ -149,11 +123,11 @@ export default function NotreConcept() {
     },
     {
       question: "Dans quels domaines travaillez-vous ?",
-      answer: "Plus de 20 catégories : Développement web/mobile, Design, Marketing digital, Rédaction, Traduction, Conseil, Formation, et bien plus. Notre IA s'adapte à tous les secteurs."
+      answer: "Plus de 20 catégories : Développement web/mobile, Design, Marketing digital, Rédaction, Traduction, Conseil, Formation, et bien plus. Notre plateforme s'adapte à tous les secteurs."
     },
     {
       question: "Combien de temps pour avoir des propositions ?",
-      answer: "En moyenne 2-4 heures pour les premières propositions, 24-48h pour avoir un panel complet. Les projets urgents peuvent être traités en mode 'Flash' (réponse en 1h)."
+      answer: "En moyenne quelques heures pour les premières propositions, 1-2 jours pour avoir un panel complet. Les projets urgents peuvent être traités en mode prioritaire."
     }
   ];
 
@@ -161,44 +135,43 @@ export default function NotreConcept() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Hero Section - Version améliorée */}
+        {/* Hero Section - Version simplifiée et humaine */}
         <div className="relative text-center py-16 px-2 sm:px-0 overflow-hidden">
           {/* Effets de fond animés */}
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-500/10 to-purple-600/10 rounded-3xl blur-3xl animate-pulse"></div>
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/20 via-transparent to-blue-200/20 rounded-3xl transform rotate-1"></div>
           
           <div className="relative z-10">
-            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold mb-8 animate-bounce">
+            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold mb-8">
               <Sparkles className="w-4 h-4 mr-2" />
-              Révolution en cours
+              Une nouvelle façon de trouver des prestataires
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-emerald-700 to-blue-800 mb-6 leading-tight">
-              L'IA qui révolutionne la mise en relation
+              Ils viennent à vous, pas l'inverse
             </h1>
             
             <p className="text-xl sm:text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-8">
-              Fini les recherches fastidieuses ! SWIDEAL utilise l'intelligence artificielle pour vous connecter 
-              instantanément avec les meilleurs prestataires.
+              Fini les recherches fastidieuses ! SWIDEAL connecte automatiquement votre projet 
+              avec les meilleurs prestataires qui vous contactent directement.
             </p>
 
-            {/* Statistiques en temps réel */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-10">
-              <div className="bg-white/80 backdrop-blur rounded-lg p-4 shadow-lg">
-                <div className="text-2xl font-bold text-blue-600">{Math.round(stats.matchingAccuracy)}%</div>
-                <div className="text-sm text-gray-600">Précision IA</div>
+            {/* Avantages clés */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
+              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
+                <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                <div className="font-bold text-lg mb-2">Gain de temps</div>
+                <div className="text-sm text-gray-600">Plus de recherche manuelle</div>
               </div>
-              <div className="bg-white/80 backdrop-blur rounded-lg p-4 shadow-lg">
-                <div className="text-2xl font-bold text-emerald-600">{Math.round(stats.avgTimeReduction)}%</div>
-                <div className="text-sm text-gray-600">Temps économisé</div>
+              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
+                <Star className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
+                <div className="font-bold text-lg mb-2">Qualité garantie</div>
+                <div className="text-sm text-gray-600">Prestataires vérifiés</div>
               </div>
-              <div className="bg-white/80 backdrop-blur rounded-lg p-4 shadow-lg">
-                <div className="text-2xl font-bold text-purple-600">{Math.round(stats.userSatisfaction)}%</div>
-                <div className="text-sm text-gray-600">Satisfaction</div>
-              </div>
-              <div className="bg-white/80 backdrop-blur rounded-lg p-4 shadow-lg">
-                <div className="text-2xl font-bold text-orange-600">{stats.projectsCompleted}+</div>
-                <div className="text-sm text-gray-600">Projets réalisés</div>
+              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
+                <DollarSign className="w-8 h-8 text-purple-600 mx-auto mb-3" />
+                <div className="font-bold text-lg mb-2">Prix compétitifs</div>
+                <div className="text-sm text-gray-600">Émulation naturelle</div>
               </div>
             </div>
 
@@ -208,30 +181,30 @@ export default function NotreConcept() {
                 className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-4 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300"
               >
                 <Rocket className="w-5 h-5 mr-2" />
-                Essayer gratuitement
+                Publier mon projet
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setLocation('/ai-hub')}
+                onClick={() => setLocation('/demo-missions')}
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-4 rounded-full"
               >
                 <Play className="w-5 h-5 mr-2" />
-                Voir l'IA en action
+                Voir des exemples
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Démonstration interactive */}
+        {/* Démonstration simple du processus */}
         <div className="mb-20 px-2 sm:px-0">
           <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Comment ça marche ?</h2>
-              <p className="text-xl text-gray-600">4 étapes simples pour transformer votre projet en succès</p>
+              <p className="text-xl text-gray-600">4 étapes simples pour réussir votre projet</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* Contrôles de démonstration */}
+              {/* Étapes du processus */}
               <div className="space-y-6">
                 {demoSteps.map((step, index) => (
                   <div 
@@ -281,7 +254,7 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Comparaison interactive */}
+        {/* Comparaison Avant/Après */}
         <div className="mb-20 px-2 sm:px-0">
           <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
             <div className="text-center mb-12">
@@ -346,11 +319,11 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Témoignages */}
+        {/* Témoignages authentiques */}
         <div className="mb-20 px-2 sm:px-0">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ils ont testé, ils approuvent</h2>
-            <p className="text-xl text-gray-600">Découvrez leurs témoignages authentiques</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ils ont testé, ils recommandent</h2>
+            <p className="text-xl text-gray-600">Des témoignages authentiques d'utilisateurs satisfaits</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -379,10 +352,9 @@ export default function NotreConcept() {
                   <Quote className="w-6 h-6 text-gray-300 mb-2" />
                   <p className="text-gray-700 mb-4 italic">{testimonial.text}</p>
                   <div className="flex justify-between items-center text-sm">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {testimonial.savings}
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {testimonial.project}
                     </Badge>
-                    <span className="text-gray-500">{testimonial.project}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -390,34 +362,25 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Technologies IA */}
+        {/* Pourquoi choisir SWIDEAL */}
         <div className="mb-20 px-2 sm:px-0">
           <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-3xl p-8 md:p-12 text-white">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Notre arsenal technologique</h2>
-              <p className="text-xl opacity-90">12+ algorithmes d'IA pour une performance maximale</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Pourquoi choisir SWIDEAL ?</h2>
+              <p className="text-xl opacity-90">Les avantages qui font la différence</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { name: "Neural Matching", accuracy: "94%", speed: "< 30ms", icon: Brain, color: "emerald" },
-                { name: "Smart Pricing", accuracy: "91%", speed: "< 50ms", icon: TrendingUp, color: "blue" },
-                { name: "Fraud Detection", accuracy: "97%", speed: "< 20ms", icon: Shield, color: "red" },
-                { name: "Quality Scoring", accuracy: "89%", speed: "< 25ms", icon: Star, color: "purple" },
-              ].map((tech, index) => (
+                { name: "Gain de temps", description: "Plus de recherche manuelle", icon: Clock, color: "emerald" },
+                { name: "Qualité assurée", description: "Prestataires vérifiés", icon: Star, color: "blue" },
+                { name: "Sécurité", description: "Paiements protégés", icon: Shield, color: "red" },
+                { name: "Support", description: "Accompagnement personnalisé", icon: Heart, color: "purple" },
+              ].map((feature, index) => (
                 <div key={index} className="bg-white/10 backdrop-blur rounded-xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                  <tech.icon className="w-8 h-8 text-white mx-auto mb-4" />
-                  <h3 className="font-bold text-lg mb-3">{tech.name}</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="opacity-80">Précision:</span>
-                      <span className="font-semibold text-green-400">{tech.accuracy}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="opacity-80">Vitesse:</span>
-                      <span className="font-semibold text-blue-400">{tech.speed}</span>
-                    </div>
-                  </div>
+                  <feature.icon className="w-8 h-8 text-white mx-auto mb-4" />
+                  <h3 className="font-bold text-lg mb-3">{feature.name}</h3>
+                  <p className="text-sm opacity-90">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -457,7 +420,7 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Call to Action Final amélioré */}
+        {/* Call to Action Final */}
         <div className="mb-12 px-2 sm:px-0">
           <div className="bg-gradient-to-r from-emerald-500 to-blue-600 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden">
             {/* Effets de fond */}
@@ -465,9 +428,9 @@ export default function NotreConcept() {
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
             
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Prêt à révolutionner vos projets ?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Prêt à transformer vos projets ?</h2>
               <p className="text-xl mb-8 opacity-90">
-                Rejoignez les 1000+ entreprises qui ont choisi l'intelligence artificielle
+                Rejoignez les entreprises qui ont choisi la simplicité et l'efficacité
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -475,21 +438,21 @@ export default function NotreConcept() {
                   onClick={() => setLocation('/marketplace')}
                   className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-lg px-8 py-4 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300"
                 >
-                  Commencer gratuitement
+                  Publier mon projet
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button 
-                  onClick={() => setLocation('/ai-hub')}
+                  onClick={() => setLocation('/available-providers')}
                   variant="outline"
                   className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold text-lg px-8 py-4 rounded-full"
                 >
-                  <Brain className="w-5 h-5 mr-2" />
-                  Tester l'IA maintenant
+                  <Users className="w-5 h-5 mr-2" />
+                  Découvrir les prestataires
                 </Button>
               </div>
 
               <p className="text-sm opacity-80">
-                ✨ Gratuit • ⚡ Instantané • 🎯 Garanti efficace
+                ✨ Gratuit • ⚡ Simple • 🎯 Efficace
               </p>
             </div>
           </div>
