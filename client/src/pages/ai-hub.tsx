@@ -508,90 +508,354 @@ export default function AIHub() {
 
           {/* Onglet Market Intelligence */}
           <TabsContent value="market" className="space-y-6">
-            <Card>
+            {/* Overview du marché global */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-700">Volume Global</p>
+                      <p className="text-2xl font-bold text-blue-900">47.2M€</p>
+                      <p className="text-xs text-blue-600">+18% vs 2023</p>
+                    </div>
+                    <Globe className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-700">Projets Actifs</p>
+                      <p className="text-2xl font-bold text-green-900">12,847</p>
+                      <p className="text-xs text-green-600">+12% cette semaine</p>
+                    </div>
+                    <Activity className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-700">Prestataires</p>
+                      <p className="text-2xl font-bold text-purple-900">8,523</p>
+                      <p className="text-xs text-purple-600">+247 ce mois</p>
+                    </div>
+                    <Users className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-orange-700">Taux de Succès</p>
+                      <p className="text-2xl font-bold text-orange-900">87.4%</p>
+                      <p className="text-xs text-orange-600">+2.1% amélioration</p>
+                    </div>
+                    <Star className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Analyse détaillée du marché */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    Secteurs en Forte Croissance
+                  </CardTitle>
+                  <CardDescription>
+                    Évolution de la demande par catégorie (12 derniers mois)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="font-medium text-green-900">Intelligence Artificielle</div>
+                          <div className="text-sm text-green-700">Automatisation, ML, Chatbots</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-green-600">+187%</div>
+                        <div className="text-xs text-green-500">2,341 projets</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="font-medium text-blue-900">No-Code/Low-Code</div>
+                          <div className="text-sm text-blue-700">Bubble, Webflow, Zapier</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-blue-600">+134%</div>
+                        <div className="text-xs text-blue-500">1,876 projets</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-50 rounded-lg border border-purple-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="font-medium text-purple-900">E-commerce Avancé</div>
+                          <div className="text-sm text-purple-700">Shopify Plus, WooCommerce</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-purple-600">+89%</div>
+                        <div className="text-xs text-purple-500">3,127 projets</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-orange-50 rounded-lg border border-orange-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="font-medium text-orange-900">Cybersécurité</div>
+                          <div className="text-sm text-orange-700">Audit, RGPD, Protection</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-orange-600">+76%</div>
+                        <div className="text-xs text-orange-500">967 projets</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Euro className="w-5 h-5 text-green-600" />
+                    Analyse Tarifaire Globale
+                  </CardTitle>
+                  <CardDescription>
+                    Prix moyens et évolutions par secteur d'activité
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-l-green-500 pl-4 py-2 bg-green-50 rounded-r-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-green-900">Intelligence Artificielle</div>
+                          <div className="text-sm text-green-700">7,500€ - 25,000€</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">12,500€</div>
+                          <div className="text-xs text-green-500 flex items-center">
+                            <TrendingUp className="w-3 h-3 mr-1" />+15%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-l-4 border-l-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-blue-900">Développement Web</div>
+                          <div className="text-sm text-blue-700">2,000€ - 12,000€</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">5,800€</div>
+                          <div className="text-xs text-blue-500 flex items-center">
+                            <TrendingUp className="w-3 h-3 mr-1" />+8%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-l-4 border-l-purple-500 pl-4 py-2 bg-purple-50 rounded-r-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-purple-900">Application Mobile</div>
+                          <div className="text-sm text-purple-700">3,500€ - 18,000€</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-purple-600">8,200€</div>
+                          <div className="text-xs text-purple-500 flex items-center">
+                            <TrendingUp className="w-3 h-3 mr-1" />+12%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-l-4 border-l-orange-500 pl-4 py-2 bg-orange-50 rounded-r-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-orange-900">Design UX/UI</div>
+                          <div className="text-sm text-orange-700">1,200€ - 6,000€</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-orange-600">3,100€</div>
+                          <div className="text-xs text-orange-500 flex items-center">
+                            <TrendingUp className="w-3 h-3 mr-1" />+5%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-l-4 border-l-red-500 pl-4 py-2 bg-red-50 rounded-r-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-red-900">Marketing Digital</div>
+                          <div className="text-sm text-red-700">800€ - 5,000€</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-red-600">2,400€</div>
+                          <div className="text-xs text-red-500 flex items-center">
+                            <Minus className="w-3 h-3 mr-1" />-2%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Indicateurs temps réel */}
+            <Card className="bg-gradient-to-r from-gray-900 to-blue-900 text-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                  Analyse Marché en Temps Réel
+                  <Activity className="w-5 h-5 text-green-400" />
+                  Tension du Marché en Temps Réel
+                  <Badge className="bg-green-500 text-white animate-pulse">LIVE</Badge>
                 </CardTitle>
-                <CardDescription>
-                  Insights et tendances détectés par notre IA
+                <CardDescription className="text-gray-300">
+                  Indicateurs de performance et d'activité actualisés en continu
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Secteurs en Croissance</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        <span className="text-sm">IA & Machine Learning</span>
-                        <Badge className="bg-green-100 text-green-800">+150%</Badge>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <div className="text-3xl font-bold text-green-400 mb-2">🔥 Élevée</div>
+                    <div className="text-sm text-gray-300">Tension Globale</div>
+                    <div className="text-xs text-green-300 mt-1">+15% vs semaine dernière</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <div className="text-3xl font-bold text-blue-400 mb-2">⚡ 1.7h</div>
+                    <div className="text-sm text-gray-300">Temps Réponse Moyen</div>
+                    <div className="text-xs text-blue-300 mt-1">Très réactif</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <div className="text-3xl font-bold text-purple-400 mb-2">📈 +28%</div>
+                    <div className="text-sm text-gray-300">Croissance Demande</div>
+                    <div className="text-xs text-purple-300 mt-1">Tendance haussière</div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                  <h4 className="font-medium text-white mb-3 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-yellow-400" />
+                    Recommandations Stratégiques Actuelles
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5"></div>
+                        <span className="text-gray-300">Spécialisez-vous en IA - demande explosive</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm">Applications No-Code</span>
-                        <Badge className="bg-blue-100 text-blue-800">+89%</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm">E-commerce Mobile</span>
-                        <Badge className="bg-purple-100 text-purple-800">+67%</Badge>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5"></div>
+                        <span className="text-gray-300">Augmentez vos tarifs Cloud/DevOps (+20%)</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Prix Moyens</h4>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span>Développement</span>
-                        <span className="font-medium">2500-8000€</span>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5"></div>
+                        <span className="text-gray-300">Positionnement premium sur No-Code</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Design</span>
-                        <span className="font-medium">800-3000€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Marketing</span>
-                        <span className="font-medium">1200-4000€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>IA/ML</span>
-                        <span className="font-medium">5000-15000€</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Demande par Secteur</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Développement Web</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={80} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">80%</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Design UX/UI</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={65} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">65%</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Marketing Digital</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={55} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">55%</span>
-                        </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5"></div>
+                        <span className="text-gray-300">Moment idéal pour publier vos projets</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Prévisions et insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    Prévisions Marché Q2 2024
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 className="font-medium text-blue-900 mb-2">🚀 Croissance Attendue</h5>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Volume global: +25% (projection 59M€)</li>
+                      <li>• Nouveaux prestataires: +30% entrées</li>
+                      <li>• Projets IA: triplement prévu</li>
+                      <li>• Budgets moyens: +12% d'augmentation</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <h5 className="font-medium text-orange-900 mb-2">⚠️ Points d'Attention</h5>
+                    <ul className="text-sm text-orange-800 space-y-1">
+                      <li>• Saturation possible sur le web classique</li>
+                      <li>• Concurrence accrue en design</li>
+                      <li>• Évolution réglementaire IA à surveiller</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    Compétences les Plus Demandées
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[
+                      { skill: 'ChatGPT/IA Integration', demand: 95, growth: '+320%', color: 'bg-red-500' },
+                      { skill: 'React/Next.js', demand: 88, growth: '+45%', color: 'bg-blue-500' },
+                      { skill: 'No-Code (Bubble, Webflow)', demand: 82, growth: '+156%', color: 'bg-green-500' },
+                      { skill: 'DevOps/Cloud AWS', demand: 79, growth: '+67%', color: 'bg-purple-500' },
+                      { skill: 'Flutter/React Native', demand: 74, growth: '+89%', color: 'bg-orange-500' },
+                      { skill: 'Figma/UI Design', demand: 71, growth: '+23%', color: 'bg-pink-500' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 ${item.color} rounded-full`}></div>
+                          <span className="font-medium text-gray-900">{item.skill}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Progress value={item.demand} className="w-20 h-2" />
+                          <Badge variant="outline" className="text-xs">
+                            {item.growth}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Onglet Documentation */}
