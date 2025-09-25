@@ -38,7 +38,7 @@ import SmartBidAnalyzer from '@/components/ai/smart-bid-analyzer';
 import MissionMatchingEngine from '@/components/ai/mission-matching-engine';
 import RevenuePredictor from '@/components/ai/revenue-predictor';
 import AdvancedScoringEngine from '@/components/ai/advanced-scoring-engine';
-import { AIDashboardOverview } from '@/components/ai/ai-dashboard-overview';
+
 import { aiService } from '@/services/aiService';
 
 export default function AIHub() {
@@ -48,7 +48,7 @@ export default function AIHub() {
   const getInitialTab = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    return tabParam && ['demo', 'algorithms', 'dashboard', 'market', 'docs'].includes(tabParam) 
+    return tabParam && ['demo', 'algorithms', 'market', 'docs'].includes(tabParam) 
       ? tabParam 
       : 'demo';
   };
@@ -188,7 +188,7 @@ export default function AIHub() {
           const newUrl = `/ai-hub?tab=${value}`;
           window.history.pushState({}, '', newUrl);
         }} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 p-1">
+          <TabsList className="grid w-full grid-cols-4 p-1">
             <TabsTrigger value="demo" className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
               <span className="hidden sm:inline">Démo Interactive</span>
@@ -198,11 +198,6 @@ export default function AIHub() {
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Algorithmes</span>
               <span className="sm:hidden">Algo</span>
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Tableau de Bord</span>
-              <span className="sm:hidden">Dashboard</span>
             </TabsTrigger>
             <TabsTrigger value="market" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -509,76 +504,7 @@ export default function AIHub() {
             </Tabs>
           </TabsContent>
 
-          {/* Onglet Tableau de Bord */}
-          <TabsContent value="dashboard" className="space-y-6">
-            <AIDashboardOverview />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Analyses Totales</p>
-                      <p className="text-2xl font-bold text-blue-600">1,247</p>
-                      <div className="flex items-center mt-1 text-sm text-green-600">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        +12.5%
-                      </div>
-                    </div>
-                    <Activity className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Précision IA</p>
-                      <p className="text-2xl font-bold text-green-600">89.6%</p>
-                      <div className="flex items-center mt-1 text-sm text-green-600">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        +2.1%
-                      </div>
-                    </div>
-                    <Target className="w-8 h-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Abus Détectés</p>
-                      <p className="text-2xl font-bold text-red-600">23</p>
-                      <div className="flex items-center mt-1 text-sm text-red-600">
-                        <TrendingUp className="w-3 h-3 mr-1 rotate-180" />
-                        -8.3%
-                      </div>
-                    </div>
-                    <Shield className="w-8 h-8 text-red-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Santé Système</p>
-                      <p className="text-2xl font-bold text-green-600">98.7%</p>
-                      <div className="flex items-center mt-1 text-sm text-green-600">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        +0.5%
-                      </div>
-                    </div>
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+          
 
           {/* Onglet Market Intelligence */}
           <TabsContent value="market" className="space-y-6">
