@@ -12,9 +12,9 @@ export function HeroSection() {
             <img 
               src="/swideal-logo.jpeg" 
               alt="Swideal Logo" 
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl shadow-xl"
+              className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-2xl shadow-xl"
             />
-            <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg"></div>
+            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg"></div>
           </div>
           <div className="flex flex-col items-start">
             <span className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent tracking-tight drop-shadow-md" data-testid="text-brand-hero">

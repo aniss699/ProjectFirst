@@ -301,9 +301,9 @@ export default function Navbar() {
                 <img
                   src="/swideal-logo.jpeg"
                   alt="Swideal Logo"
-                  className="w-10 h-10 object-contain rounded-xl shadow-md"
+                  className="w-14 h-14 object-contain rounded-xl shadow-md"
                 />
-                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent drop-shadow-sm" data-testid="text-brand-mobile">
