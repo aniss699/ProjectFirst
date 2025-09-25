@@ -6,7 +6,8 @@ import {
   ArrowRight, CheckCircle, TrendingUp, Globe, Play, ChevronDown, ChevronUp, 
   Award, Lightbulb, Eye, Coffee, Timer, DollarSign, Gauge, BarChart3, 
   Heart, ThumbsUp, Calendar, MapPin, Phone, Mail, Briefcase, Building2,
-  ArrowDown, ArrowUp, Minus, Plus, Quote, User, Camera, Video
+  ArrowDown, ArrowUp, Minus, Plus, Quote, User, Camera, Video, Smile, 
+  Handshake, Megaphone, Gift, Compass, Zap as Lightning, PartyPopper
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,116 +19,172 @@ export default function NotreConcept() {
   const [activeDemo, setActiveDemo] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeComparison, setActiveComparison] = useState('traditional');
+  const [hoveredBenefit, setHoveredBenefit] = useState<number | null>(null);
 
-  // Données de démonstration
+  // Animation pour les étapes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveDemo((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Données de démonstration améliorées
   const demoSteps = [
     {
-      title: "1. Vous décrivez votre projet",
-      description: "En quelques mots, décrivez ce dont vous avez besoin",
+      title: "Décrivez votre rêve",
+      subtitle: "En quelques mots simples",
+      description: "Racontez-nous votre projet comme si vous en parliez à un ami",
+      visual: "💫",
+      emotion: "Facile et naturel",
+      details: "Pas de formulaires compliqués ! Décrivez simplement ce dont vous rêvez, notre système comprend et trouve les bons experts pour vous."
+    },
+    {
+      title: "Ils se manifestent",
+      subtitle: "Les experts viennent à vous",
+      description: "Recevez des propositions de professionnels motivés",
       visual: "🎯",
-      details: "Notre système analyse automatiquement votre demande pour attirer les meilleurs prestataires qui correspondent vraiment à votre projet."
+      emotion: "Rassurant et efficace",
+      details: "Fini l'angoisse de chercher ! Les meilleurs prestataires vous trouvent et vous contactent avec des propositions personnalisées."
     },
     {
-      title: "2. Les experts vous trouvent",
-      description: "Les prestataires qualifiés viennent à vous",
-      visual: "🧠",
-      details: "Plus besoin de chercher ! Les professionnels adaptés à votre projet vous contactent directement avec leurs propositions."
+      title: "Comparez sereinement",
+      subtitle: "Tout est clair et transparent",
+      description: "Des propositions détaillées pour choisir en toute confiance",
+      visual: "⚖️",
+      emotion: "Confiant et éclairé",
+      details: "Comparez facilement les offres avec tous les détails : prix, délais, références. Vous avez toutes les cartes en main."
     },
     {
-      title: "3. Vous recevez des propositions",
-      description: "Comparez les offres personnalisées",
-      visual: "📧",
-      details: "Recevez plusieurs devis adaptés à votre besoin, créant une émulation naturelle entre les prestataires."
-    },
-    {
-      title: "4. Vous choisissez facilement",
-      description: "Sélectionnez la meilleure offre en toute transparence",
-      visual: "✨",
-      details: "Interface claire pour comparer les propositions avec toutes les informations nécessaires pour faire le bon choix."
+      title: "Réalisez vos ambitions",
+      subtitle: "Votre projet prend vie",
+      description: "Collaborez avec le prestataire parfait pour votre vision",
+      visual: "🚀",
+      emotion: "Excité et accompagné",
+      details: "Travaillez avec un professionnel qui comprend vraiment votre vision. Support inclus pour que tout se passe parfaitement."
     }
   ];
 
+  // Témoignages plus émotionnels
   const testimonials = [
     {
-      name: "Sophie Martin",
-      role: "Directrice Marketing",
-      company: "TechStart",
-      avatar: "SM",
+      name: "Sarah Dubois",
+      role: "Créatrice de mode",
+      company: "Atelier Sarah",
+      avatar: "SD",
       rating: 5,
-      text: "SWIDEAL a complètement changé ma façon de trouver des prestataires. En quelques heures, j'avais plusieurs propositions de qualité au lieu de chercher pendant des semaines !",
-      project: "Refonte site web"
+      text: "J'avais peur de ne jamais trouver le bon développeur pour ma boutique en ligne. En 2 heures, j'avais 5 propositions parfaites ! Mon site est maintenant exactement comme je l'imaginais.",
+      project: "E-commerce créatif",
+      emotion: "😍",
+      before: "Paralysée par le choix",
+      after: "Confiante et ravie"
     },
     {
-      name: "Marc Dubois",
-      role: "Entrepreneur",
-      company: "Innov Solutions",
-      avatar: "MD",
+      name: "Thomas Martin",
+      role: "Chef d'entreprise",
+      company: "EcoTech Solutions",
+      avatar: "TM",
       rating: 5,
-      text: "J'ai découvert des prestataires excellents que je n'aurais jamais trouvés seul. Le résultat final a dépassé mes attentes !",
-      project: "Application mobile"
+      text: "Fini les recherches interminables sur Google ! SWIDEAL m'a connecté avec un consultant marketing extraordinaire. Mon chiffre d'affaires a doublé en 6 mois.",
+      project: "Stratégie marketing",
+      emotion: "🤩",
+      before: "Perdu dans mes recherches",
+      after: "Business en croissance"
     },
     {
-      name: "Claire Rousseau",
-      role: "Chef de projet",
-      company: "Digital Corp",
-      avatar: "CR",
+      name: "Emma Rousseau",
+      role: "Blogueuse lifestyle",
+      company: "Emma's World",
+      avatar: "ER",
       rating: 5,
-      text: "Fini le temps perdu à éplucher des profils ! Les prestataires qui me contactent correspondent vraiment à mes besoins.",
-      project: "Campagne digitale"
+      text: "J'ai découvert des talents créatifs incroyables que je n'aurais jamais trouvés seule. Mon nouveau logo et ma charte graphique font sensation !",
+      project: "Identité visuelle",
+      emotion: "✨",
+      before: "Cherchait l'inspiration",
+      after: "Image de marque au top"
     }
   ];
 
-  const comparisonData = {
-    traditional: {
-      title: "Méthode traditionnelle",
+  // Bénéfices émotionnels
+  const emotionalBenefits = [
+    {
+      icon: Heart,
+      title: "Fini le stress de chercher",
+      subtitle: "Ils viennent à vous",
+      description: "Plus jamais d'heures perdues à éplucher des profils. Relaxez-vous, les experts vous trouvent.",
       color: "red",
-      items: [
-        { label: "Recherche manuelle", value: "Plusieurs semaines", icon: Clock },
-        { label: "Nombre de candidats", value: "Quelques profils", icon: Users },
-        { label: "Qualité des matchs", value: "Aléatoire", icon: Target },
-        { label: "Transparence prix", value: "Limitée", icon: Eye },
-        { label: "Risque qualité", value: "Élevé", icon: Shield },
-        { label: "Support", value: "Basique", icon: MessageSquare }
-      ]
+      stat: "90% moins de stress"
     },
-    swideal: {
-      title: "Avec SWIDEAL",
+    {
+      icon: Smile,
+      title: "Des rencontres inspirantes",
+      subtitle: "Découvrez des talents cachés",
+      description: "Connectez-vous avec des professionnels passionnés qui comprennent votre vision.",
+      color: "yellow",
+      stat: "Des collaborations magiques"
+    },
+    {
+      icon: Rocket,
+      title: "Réalisez vos rêves plus vite",
+      subtitle: "Concrétisez rapidement",
+      description: "De l'idée à la réalisation en quelques jours au lieu de plusieurs semaines.",
+      color: "blue",
+      stat: "3x plus rapide"
+    },
+    {
+      icon: Shield,
+      title: "Dormez sur vos deux oreilles",
+      subtitle: "Qualité garantie",
+      description: "Tous nos prestataires sont vérifiés. Votre projet est entre de bonnes mains.",
       color: "green",
-      items: [
-        { label: "Analyse intelligente", value: "Quelques heures", icon: Clock },
-        { label: "Nombre de candidats", value: "Sélection qualifiée", icon: Users },
-        { label: "Qualité des matchs", value: "Optimisée", icon: Target },
-        { label: "Transparence prix", value: "Totale", icon: Eye },
-        { label: "Risque qualité", value: "Minimal", icon: Shield },
-        { label: "Support", value: "Accompagnement complet", icon: MessageSquare }
-      ]
+      stat: "100% sécurisé"
     }
-  };
+  ];
+
+  const successStories = [
+    {
+      client: "Restaurant Le Bistrot",
+      challenge: "Site web vieillot, pas de visibilité online",
+      solution: "Design moderne + référencement local",
+      result: "+150% de réservations en 3 mois",
+      icon: "🍽️"
+    },
+    {
+      client: "Coach Wellness Maya",
+      challenge: "Difficile de trouver des clients",
+      solution: "Stratégie réseaux sociaux + site vitrine",
+      result: "Agenda complet pendant 6 mois",
+      icon: "🧘‍♀️"
+    },
+    {
+      client: "Startup GreenTech",
+      challenge: "Application mobile complexe",
+      solution: "Équipe de développeurs experts",
+      result: "Levée de fonds de 500k€ réussie",
+      icon: "📱"
+    }
+  ];
 
   const faqData = [
     {
-      question: "Comment SWIDEAL améliore-t-il la mise en relation ?",
-      answer: "SWIDEAL inverse le processus traditionnel : au lieu de chercher des prestataires, ce sont eux qui viennent à vous avec des propositions adaptées. Notre système analyse votre projet et le présente aux professionnels les plus qualifiés de notre réseau."
+      question: "Concrètement, comment SWIDEAL va changer ma vie ?",
+      answer: "Imaginez : vous décrivez votre projet en 5 minutes, puis vous recevez des propositions de qualité sans rien faire d'autre. Plus de recherche fastidieuse, plus de doutes sur le choix du prestataire. Vous gagnez des heures et dormez tranquille."
     },
     {
-      question: "Que sont les 'enchères inversées' ?",
-      answer: "Contrairement aux enchères classiques, ce sont les prestataires qui viennent à vous avec leurs meilleures offres. Vous publiez votre projet, et les experts qualifiés vous proposent leurs services avec des tarifs compétitifs."
+      question: "Pourquoi les prestataires seraient-ils meilleurs sur SWIDEAL ?",
+      answer: "Nos prestataires sont motivés ! Ils savent qu'ils sont en compétition loyale et donnent le meilleur d'eux-mêmes. De plus, seuls ceux avec une excellente réputation peuvent vous proposer leurs services."
     },
     {
-      question: "Comment garantissez-vous la qualité ?",
-      answer: "Nous vérifions les compétences de tous nos prestataires et utilisons un système de notation transparent. Seuls les professionnels avec une bonne réputation peuvent soumettre des propositions sur votre projet."
+      question: "Est-ce que ça marche vraiment pour tous les types de projets ?",
+      answer: "Absolument ! Que vous ayez besoin d'un site web, d'un logo, d'une stratégie marketing, d'une formation, ou même d'aide pour vos démarches administratives, notre réseau couvre plus de 20 domaines d'expertise."
     },
     {
-      question: "Combien ça coûte ?",
-      answer: "Gratuit pour les clients ! Vous payez uniquement le prestataire choisi. Les prestataires paient une commission uniquement en cas de mission réalisée (pas d'abonnement, pas de frais cachés)."
+      question: "Combien ça coûte et y a-t-il des frais cachés ?",
+      answer: "C'est 100% gratuit pour vous ! Aucun frais d'inscription, aucun abonnement, aucune commission sur votre projet. Vous ne payez que le prestataire que vous choisissez, au prix convenu avec lui."
     },
     {
-      question: "Dans quels domaines travaillez-vous ?",
-      answer: "Plus de 20 catégories : Développement web/mobile, Design, Marketing digital, Rédaction, Traduction, Conseil, Formation, et bien plus. Notre plateforme s'adapte à tous les secteurs."
-    },
-    {
-      question: "Combien de temps pour avoir des propositions ?",
-      answer: "En moyenne quelques heures pour les premières propositions, 1-2 jours pour avoir un panel complet. Les projets urgents peuvent être traités en mode prioritaire."
+      question: "Que se passe-t-il si je ne suis pas satisfait ?",
+      answer: "Notre équipe vous accompagne jusqu'à la réussite de votre projet. En cas de problème, nous trouvons une solution : médiation, remplacement du prestataire, ou remboursement selon les cas."
     }
   ];
 
@@ -135,226 +192,194 @@ export default function NotreConcept() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Hero Section - Version simplifiée et humaine */}
-        <div className="relative text-center py-16 px-2 sm:px-0 overflow-hidden">
-          {/* Effets de fond animés */}
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-500/10 to-purple-600/10 rounded-3xl blur-3xl animate-pulse"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/20 via-transparent to-blue-200/20 rounded-3xl transform rotate-1"></div>
+        {/* Hero Section Ultra-Engageant */}
+        <div className="relative text-center py-20 px-2 sm:px-0 overflow-hidden">
+          {/* Effets de fond animés améliorés */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-blue-500/20 to-purple-600/20 rounded-3xl blur-3xl animate-pulse"></div>
+          <div className="absolute top-10 left-10 text-6xl animate-bounce">✨</div>
+          <div className="absolute top-20 right-20 text-4xl animate-pulse">🚀</div>
+          <div className="absolute bottom-20 left-1/4 text-5xl animate-spin-slow">⭐</div>
           
           <div className="relative z-10">
-            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold mb-8">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Une nouvelle façon de trouver des prestataires
+            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-8 shadow-lg animate-pulse-glow">
+              <PartyPopper className="w-6 h-6 mr-3" />
+              La révolution de la mise en relation est là !
             </div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-emerald-700 to-blue-800 mb-6 leading-tight">
-              Ils viennent à vous, pas l'inverse
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-emerald-700 to-blue-800 mb-8 leading-tight">
+              Transformez vos idées 
+              <br />
+              <span className="text-emerald-600">en succès</span>
             </h1>
             
-            <p className="text-xl sm:text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-8">
-              Fini les recherches fastidieuses ! SWIDEAL connecte automatiquement votre projet 
-              avec les meilleurs prestataires qui vous contactent directement.
+            <p className="text-2xl sm:text-3xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-10 font-medium">
+              Arrêtez de chercher des prestataires.
+              <br />
+              <span className="text-emerald-600 font-bold">Laissez-les vous trouver !</span>
             </p>
 
-            {/* Avantages clés */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
-              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
-                <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                <div className="font-bold text-lg mb-2">Gain de temps</div>
-                <div className="text-sm text-gray-600">Plus de recherche manuelle</div>
-              </div>
-              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
-                <Star className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
-                <div className="font-bold text-lg mb-2">Qualité garantie</div>
-                <div className="text-sm text-gray-600">Prestataires vérifiés</div>
-              </div>
-              <div className="bg-white/80 backdrop-blur rounded-lg p-6 shadow-lg">
-                <DollarSign className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-                <div className="font-bold text-lg mb-2">Prix compétitifs</div>
-                <div className="text-sm text-gray-600">Émulation naturelle</div>
+            {/* Promesse émotionnelle */}
+            <div className="bg-white/90 backdrop-blur rounded-2xl p-8 max-w-3xl mx-auto mb-10 shadow-xl">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Notre promesse :</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <div className="flex items-start space-x-3">
+                  <div className="text-2xl">⏰</div>
+                  <div>
+                    <h3 className="font-bold text-lg">Gain de temps garanti</h3>
+                    <p className="text-gray-600">Des heures de recherche → 5 minutes de description</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="text-2xl">💎</div>
+                  <div>
+                    <h3 className="font-bold text-lg">Qualité premium</h3>
+                    <p className="text-gray-600">Seuls les meilleurs prestataires vous contactent</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="text-2xl">💝</div>
+                  <div>
+                    <h3 className="font-bold text-lg">Totalement gratuit</h3>
+                    <p className="text-gray-600">Aucun frais, aucune commission pour vous</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="text-2xl">🛡️</div>
+                  <div>
+                    <h3 className="font-bold text-lg">Accompagnement total</h3>
+                    <p className="text-gray-600">Support jusqu'à la réussite de votre projet</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
               <Button 
-                onClick={() => setLocation('/marketplace')}
-                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-4 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300"
+                onClick={() => setLocation('/create-mission')}
+                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-xl px-10 py-6 rounded-full shadow-2xl transform hover:scale-110 transition-all duration-300 animate-bounce-slow"
               >
-                <Rocket className="w-5 h-5 mr-2" />
-                Publier mon projet
+                <Rocket className="w-6 h-6 mr-3" />
+                Commencer mon projet maintenant
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setLocation('/demo-missions')}
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-4 rounded-full"
+                className="border-3 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-bold text-xl px-10 py-6 rounded-full transition-all duration-300"
               >
-                <Play className="w-5 h-5 mr-2" />
-                Voir des exemples
+                <Eye className="w-6 h-6 mr-3" />
+                Voir des exemples concrets
               </Button>
             </div>
+
+            <p className="text-lg text-gray-500 mb-4">Plus de 1000+ projets réussis</p>
+            <div className="flex justify-center items-center space-x-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+              ))}
+              <span className="text-gray-600 ml-2">4.9/5 - Note moyenne des clients</span>
+            </div>
           </div>
         </div>
 
-        {/* Démonstration simple du processus */}
-        <div className="mb-20 px-2 sm:px-0">
-          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Comment ça marche ?</h2>
-              <p className="text-xl text-gray-600">4 étapes simples pour réussir votre projet</p>
-            </div>
+        {/* Bénéfices émotionnels */}
+        <div className="mb-24 px-2 sm:px-0">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Pourquoi nos utilisateurs adorent SWIDEAL</h2>
+            <p className="text-2xl text-gray-600">Découvrez ce qui va changer dans votre quotidien</p>
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* Étapes du processus */}
-              <div className="space-y-6">
-                {demoSteps.map((step, index) => (
-                  <div 
-                    key={index}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                      activeDemo === index 
-                        ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' 
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setActiveDemo(index)}
-                  >
-                    <div className="flex items-start space-x-4">
-                      <div className="text-3xl">{step.visual}</div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
-                        <p className="text-gray-600 mb-3">{step.description}</p>
-                        {activeDemo === index && (
-                          <p className="text-sm text-blue-700 bg-blue-100 p-3 rounded-lg animate-fadeIn">
-                            {step.details}
-                          </p>
-                        )}
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {emotionalBenefits.map((benefit, index) => (
+              <div 
+                key={index}
+                className={`bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 cursor-pointer ${
+                  hoveredBenefit === index ? 'ring-4 ring-blue-200' : ''
+                }`}
+                onMouseEnter={() => setHoveredBenefit(index)}
+                onMouseLeave={() => setHoveredBenefit(null)}
+              >
+                <div className="flex items-start space-x-6">
+                  <div className={`p-4 rounded-2xl bg-${benefit.color}-100`}>
+                    <benefit.icon className={`w-8 h-8 text-${benefit.color}-600`} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{benefit.title}</h3>
+                    <p className={`text-lg font-semibold text-${benefit.color}-600 mb-3`}>{benefit.subtitle}</p>
+                    <p className="text-gray-700 mb-4 leading-relaxed">{benefit.description}</p>
+                    <div className={`inline-block bg-${benefit.color}-50 text-${benefit.color}-700 px-4 py-2 rounded-full font-bold text-sm`}>
+                      {benefit.stat}
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Visualisation */}
-              <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl p-8 text-center">
-                <div className="text-6xl mb-4 animate-bounce">
-                  {demoSteps[activeDemo].visual}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  {demoSteps[activeDemo].title}
-                </h3>
-                <p className="text-gray-700 mb-6">
-                  {demoSteps[activeDemo].details}
-                </p>
-                <Button 
-                  onClick={() => setLocation('/create-mission')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Commencer maintenant
-                </Button>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Comparaison Avant/Après */}
-        <div className="mb-20 px-2 sm:px-0">
-          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Avant vs Après</h2>
-              <p className="text-xl text-gray-600">Découvrez la différence SWIDEAL</p>
+        {/* Processus simplifié et émotionnel */}
+        <div className="mb-24 px-2 sm:px-0">
+          <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-3xl p-12 text-white">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Comment ça marche ?</h2>
+              <p className="text-2xl opacity-90">4 étapes pour transformer votre idée en réalité</p>
             </div>
 
-            <div className="flex justify-center mb-8">
-              <div className="bg-gray-100 rounded-lg p-1 flex">
-                <button
-                  onClick={() => setActiveComparison('traditional')}
-                  className={`px-6 py-2 rounded-md font-medium transition-all ${
-                    activeComparison === 'traditional' 
-                      ? 'bg-red-500 text-white shadow-md' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Méthode traditionnelle
-                </button>
-                <button
-                  onClick={() => setActiveComparison('swideal')}
-                  className={`px-6 py-2 rounded-md font-medium transition-all ${
-                    activeComparison === 'swideal' 
-                      ? 'bg-green-500 text-white shadow-md' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Avec SWIDEAL
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {Object.entries(comparisonData).map(([key, data]) => (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {demoSteps.map((step, index) => (
                 <div 
-                  key={key}
-                  className={`p-6 rounded-xl border-2 transition-all duration-300 ${
-                    activeComparison === key 
-                      ? `border-${data.color}-500 bg-${data.color}-50 shadow-lg scale-105` 
-                      : 'border-gray-200 opacity-60'
+                  key={index}
+                  className={`text-center p-6 rounded-2xl transition-all duration-500 ${
+                    activeDemo === index 
+                      ? 'bg-white/20 shadow-2xl scale-110 transform' 
+                      : 'bg-white/10 hover:bg-white/15'
                   }`}
                 >
-                  <h3 className={`text-xl font-bold mb-6 text-${data.color}-700`}>
-                    {data.title}
-                  </h3>
-                  <div className="space-y-4">
-                    {data.items.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <item.icon className={`w-5 h-5 text-${data.color}-600`} />
-                          <span className="text-gray-700">{item.label}</span>
-                        </div>
-                        <span className={`font-semibold text-${data.color}-700`}>
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="text-6xl mb-4 animate-bounce">{step.visual}</div>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-blue-200 font-semibold mb-3">{step.subtitle}</p>
+                  <p className="text-gray-200 mb-4">{step.description}</p>
+                  <div className="bg-emerald-500/20 text-emerald-200 px-3 py-1 rounded-full text-sm font-semibold">
+                    {step.emotion}
                   </div>
+                  {activeDemo === index && (
+                    <p className="mt-4 text-sm text-blue-100 bg-white/10 p-3 rounded-lg animate-fadeIn">
+                      {step.details}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Témoignages authentiques */}
-        <div className="mb-20 px-2 sm:px-0">
+        {/* Histoires de réussite */}
+        <div className="mb-24 px-2 sm:px-0">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ils ont testé, ils recommandent</h2>
-            <p className="text-xl text-gray-600">Des témoignages authentiques d'utilisateurs satisfaits</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Histoires de réussite</h2>
+            <p className="text-2xl text-gray-600">Des projets qui ont changé des vies</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="relative overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {testimonial.avatar}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                        <div className="text-sm text-gray-600">{testimonial.role}</div>
-                        <div className="text-xs text-gray-500">{testimonial.company}</div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-1">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                  </div>
+            {successStories.map((story, index) => (
+              <Card key={index} className="overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                <CardHeader className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+                  <div className="text-4xl mb-2">{story.icon}</div>
+                  <CardTitle className="text-xl">{story.client}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Quote className="w-6 h-6 text-gray-300 mb-2" />
-                  <p className="text-gray-700 mb-4 italic">{testimonial.text}</p>
-                  <div className="flex justify-between items-center text-sm">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      {testimonial.project}
-                    </Badge>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-bold text-red-600 mb-1">😟 Problème :</h4>
+                      <p className="text-gray-700">{story.challenge}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-blue-600 mb-1">💡 Solution SWIDEAL :</h4>
+                      <p className="text-gray-700">{story.solution}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-green-600 mb-1">🚀 Résultat :</h4>
+                      <p className="text-gray-700 font-bold">{story.result}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -362,56 +387,83 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Pourquoi choisir SWIDEAL */}
-        <div className="mb-20 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-3xl p-8 md:p-12 text-white">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Pourquoi choisir SWIDEAL ?</h2>
-              <p className="text-xl opacity-90">Les avantages qui font la différence</p>
-            </div>
+        {/* Témoignages améliorés */}
+        <div className="mb-24 px-2 sm:px-0">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Ils ont osé, ils ont réussi !</h2>
+            <p className="text-2xl text-gray-600">Des témoignages authentiques qui font chaud au cœur</p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { name: "Gain de temps", description: "Plus de recherche manuelle", icon: Clock, color: "emerald" },
-                { name: "Qualité assurée", description: "Prestataires vérifiés", icon: Star, color: "blue" },
-                { name: "Sécurité", description: "Paiements protégés", icon: Shield, color: "red" },
-                { name: "Support", description: "Accompagnement personnalisé", icon: Heart, color: "purple" },
-              ].map((feature, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur rounded-xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                  <feature.icon className="w-8 h-8 text-white mx-auto mb-4" />
-                  <h3 className="font-bold text-lg mb-3">{feature.name}</h3>
-                  <p className="text-sm opacity-90">{feature.description}</p>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="relative overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                <div className="absolute top-4 right-4 text-3xl">{testimonial.emotion}</div>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      {testimonial.avatar}
+                    </div>
+                    <div>
+                      <div className="font-bold text-lg text-gray-900">{testimonial.name}</div>
+                      <div className="text-sm text-gray-600">{testimonial.role}</div>
+                      <div className="text-xs text-gray-500">{testimonial.company}</div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Quote className="w-8 h-8 text-gray-300 mb-3" />
+                  <p className="text-gray-700 mb-6 italic text-lg leading-relaxed">"{testimonial.text}"</p>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                      <span className="text-sm font-semibold text-red-700">Avant :</span>
+                      <span className="text-sm text-red-600">{testimonial.before}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm font-semibold text-green-700">Après :</span>
+                      <span className="text-sm text-green-600">{testimonial.after}</span>
+                    </div>
+                  </div>
+
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 mt-4">
+                    📁 {testimonial.project}
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* FAQ Interactive */}
-        <div className="mb-20 px-2 sm:px-0">
-          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+        {/* FAQ améliorée */}
+        <div className="mb-24 px-2 sm:px-0">
+          <div className="bg-white rounded-3xl shadow-xl p-12">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Questions fréquentes</h2>
-              <p className="text-xl text-gray-600">Tout ce que vous devez savoir sur SWIDEAL</p>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Vos questions, nos réponses</h2>
+              <p className="text-2xl text-gray-600">Tout ce que vous devez savoir pour vous lancer en toute sérénité</p>
             </div>
 
             <div className="max-w-4xl mx-auto space-y-4">
               {faqData.map((faq, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div key={index} className="border-2 border-gray-200 rounded-xl overflow-hidden hover:border-blue-300 transition-colors">
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                    className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+                    className="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
                   >
-                    <span className="font-medium text-gray-900">{faq.question}</span>
+                    <span className="font-bold text-lg text-gray-900 pr-4">{faq.question}</span>
                     {expandedFaq === index ? (
-                      <ChevronUp className="w-5 h-5 text-gray-500" />
+                      <ChevronUp className="w-6 h-6 text-blue-500 flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-500" />
+                      <ChevronDown className="w-6 h-6 text-gray-400 flex-shrink-0" />
                     )}
                   </button>
                   {expandedFaq === index && (
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                      <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                    <div className="px-8 py-6 bg-blue-50 border-t-2 border-blue-100">
+                      <p className="text-gray-700 leading-relaxed text-lg">{faq.answer}</p>
                     </div>
                   )}
                 </div>
@@ -420,40 +472,69 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Call to Action Final */}
+        {/* Call to Action Final Ultra-Motivant */}
         <div className="mb-12 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-emerald-500 to-blue-600 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 rounded-3xl p-12 text-center text-white relative overflow-hidden">
             {/* Effets de fond */}
             <div className="absolute inset-0 bg-black opacity-10"></div>
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent"></div>
+            
+            {/* Éléments décoratifs */}
+            <div className="absolute top-10 left-10 text-4xl animate-spin-slow">⭐</div>
+            <div className="absolute top-10 right-10 text-4xl animate-bounce">🚀</div>
+            <div className="absolute bottom-10 left-1/4 text-4xl animate-pulse">✨</div>
+            <div className="absolute bottom-10 right-1/4 text-4xl animate-bounce">💎</div>
             
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Prêt à transformer vos projets ?</h2>
-              <p className="text-xl mb-8 opacity-90">
-                Rejoignez les entreprises qui ont choisi la simplicité et l'efficacité
+              <h2 className="text-4xl md:text-6xl font-black mb-8">Votre projet vous attend !</h2>
+              <p className="text-2xl md:text-3xl mb-8 opacity-90 leading-relaxed">
+                Arrêtez de rêver, commencez à réaliser.
+                <br />
+                <span className="font-bold">Votre succès commence maintenant !</span>
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              {/* Urgence et motivation */}
+              <div className="bg-white/20 backdrop-blur rounded-2xl p-6 mb-10 max-w-3xl mx-auto">
+                <h3 className="text-xl font-bold mb-4">🔥 Offre de lancement limitée :</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg">
+                  <div>✅ Accompagnement premium gratuit</div>
+                  <div>✅ Priorité sur les propositions</div>
+                  <div>✅ Support dédié inclus</div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-6 justify-center mb-10">
                 <Button 
-                  onClick={() => setLocation('/marketplace')}
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-lg px-8 py-4 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300"
+                  onClick={() => setLocation('/create-mission')}
+                  className="bg-white text-blue-600 hover:bg-gray-100 font-black text-2xl px-12 py-8 rounded-full shadow-2xl transform hover:scale-110 transition-all duration-300 animate-pulse-glow"
                 >
-                  Publier mon projet
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <Lightning className="w-8 h-8 mr-4" />
+                  JE LANCE MON PROJET MAINTENANT
                 </Button>
                 <Button 
-                  onClick={() => setLocation('/available-providers')}
+                  onClick={() => setLocation('/marketplace')}
                   variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold text-lg px-8 py-4 rounded-full"
+                  className="border-4 border-white text-white hover:bg-white hover:text-blue-600 font-bold text-xl px-10 py-8 rounded-full transition-all duration-300"
                 >
-                  <Users className="w-5 h-5 mr-2" />
-                  Découvrir les prestataires
+                  <Eye className="w-6 h-6 mr-3" />
+                  Explorer les possibilités
                 </Button>
               </div>
 
-              <p className="text-sm opacity-80">
-                ✨ Gratuit • ⚡ Simple • 🎯 Efficace
-              </p>
+              <div className="text-center space-y-3">
+                <p className="text-xl font-bold">
+                  ⚡ Gratuit • 🎯 Efficace • 💎 Premium
+                </p>
+                <p className="text-lg opacity-90">
+                  Rejoignez plus de 1000+ entrepreneurs qui ont déjà franchi le pas
+                </p>
+                <div className="flex justify-center items-center space-x-2 mt-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                  ))}
+                  <span className="ml-3 text-lg">4.9/5 - Ils recommandent !</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
