@@ -16,7 +16,28 @@ import {
   Euro,
   Calendar,
   MapPin,
-  PlusCircle
+  PlusCircle,
+  Hammer,
+  Home,
+  Baby,
+  BookOpen,
+  Heart,
+  Car,
+  ChefHat,
+  Globe,
+  Palette,
+  Laptop,
+  Settings,
+  Scale,
+  Star,
+  Cpu,
+  Crown,
+  Stethoscope,
+  Building,
+  PiggyBank,
+  Paintbrush,
+  Microscope,
+  GraduationCap
 } from 'lucide-react';
 // Removed unused import * as LucideIcons from 'lucide-react';
 import { CATEGORIES, connectionCategories } from '@/lib/categories';
@@ -55,18 +76,30 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
 
   // Function to get Lucide icon component from icon name
   const getIcon = (iconName: string) => {
-    // Simple icon mapping for most common icons
     const iconMap: {[key: string]: any} = {
-      'Hammer': Target,
-      'Home': Target,
-      'Baby': Target,
-      'BookOpen': FileText,
-      'Heart': Target,
-      'Car': Target,
-      'ChefHat': Target,
-      'Calendar': Calendar,
-      'Camera': Target,
-      'Briefcase': Target
+      'Hammer': Hammer, // Construction
+      'Home': Home,     // Services à domicile
+      'Baby': Baby,     // Garde d'enfants
+      'BookOpen': BookOpen, // Cours particuliers
+      'Heart': Heart,   // Bien-être & Santé
+      'Car': Car,       // Automobile
+      'ChefHat': ChefHat, // Restauration & Traiteur
+      'Calendar': Calendar, // Événementiel
+      'Globe': Globe,   // Web & Digital
+      'Palette': Palette, // Design & Créatif
+      'Laptop': Laptop, // Tech & Consulting
+      'Settings': Settings, // Autres Services
+      'Scale': Scale,   // Avocat
+      'Star': Star,     // Célébrité
+      'Cpu': Cpu,       // Expert Informatique
+      'Crown': Crown,   // Dirigeant
+      'Stethoscope': Stethoscope, // Médecin Spécialiste
+      'Target': Target, // Coach Personnel
+      'Building': Building, // Architecte
+      'PiggyBank': PiggyBank, // Conseiller Financier
+      'Paintbrush': Paintbrush, // Artiste
+      'Microscope': Microscope, // Scientifique
+      'GraduationCap': GraduationCap // Professeur/Formateur
     };
     return iconMap[iconName] || Target;
   };
