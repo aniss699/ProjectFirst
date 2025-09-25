@@ -48,7 +48,7 @@ export default function AIHub() {
   const getInitialTab = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    return tabParam && ['demo', 'algorithms', 'market', 'docs'].includes(tabParam) 
+    return tabParam && ['demo', 'algorithms', 'docs'].includes(tabParam) 
       ? tabParam 
       : 'demo';
   };
@@ -188,7 +188,7 @@ export default function AIHub() {
           const newUrl = `/ai-hub?tab=${value}`;
           window.history.pushState({}, '', newUrl);
         }} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 p-1">
+          <TabsList className="grid w-full grid-cols-3 p-1">
             <TabsTrigger value="demo" className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
               <span className="hidden sm:inline">Démo Interactive</span>
@@ -198,11 +198,6 @@ export default function AIHub() {
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Algorithmes</span>
               <span className="sm:hidden">Algo</span>
-            </TabsTrigger>
-            <TabsTrigger value="market" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Market Intel</span>
-              <span className="sm:hidden">Market</span>
             </TabsTrigger>
             <TabsTrigger value="docs" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
@@ -506,93 +501,7 @@ export default function AIHub() {
 
           
 
-          {/* Onglet Market Intelligence */}
-          <TabsContent value="market" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                  Analyse Marché en Temps Réel
-                </CardTitle>
-                <CardDescription>
-                  Insights et tendances détectés par notre IA
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Secteurs en Croissance</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        <span className="text-sm">IA & Machine Learning</span>
-                        <Badge className="bg-green-100 text-green-800">+150%</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm">Applications No-Code</span>
-                        <Badge className="bg-blue-100 text-blue-800">+89%</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm">E-commerce Mobile</span>
-                        <Badge className="bg-purple-100 text-purple-800">+67%</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Prix Moyens</h4>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span>Développement</span>
-                        <span className="font-medium">2500-8000€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Design</span>
-                        <span className="font-medium">800-3000€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Marketing</span>
-                        <span className="font-medium">1200-4000€</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>IA/ML</span>
-                        <span className="font-medium">5000-15000€</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Demande par Secteur</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Développement Web</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={80} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">80%</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Design UX/UI</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={65} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">65%</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Marketing Digital</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={55} className="w-16 h-2" />
-                          <span className="text-sm text-gray-600">55%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           {/* Onglet Documentation */}
           <TabsContent value="docs" className="space-y-6">
