@@ -1671,7 +1671,7 @@ function validateEnvironment() {
 }
 
 // server/index.ts
-import { Pool as Pool5 } from "pg";
+import { Pool as Pool4 } from "pg";
 import cors from "cors";
 import fs2 from "fs";
 import net from "net";
@@ -4939,533 +4939,22 @@ var ai_diagnostic_routes_default = router11;
 import { Router as Router7 } from "express";
 
 // apps/api/src/ai/learning-engine.ts
-init_schema();
-import { drizzle as drizzle6 } from "drizzle-orm/node-postgres";
-import { Pool as Pool4 } from "pg";
-import { desc as desc3, eq as eq7, and as and3, gte } from "drizzle-orm";
-var pool4 = new Pool4({ connectionString: process.env.DATABASE_URL });
-var db6 = drizzle6(pool4);
-var AILearningEngine = class {
-  patterns = /* @__PURE__ */ new Map();
-  insights = [];
-  /**
-   * Analyse les interactions passées avec Gemini pour identifier les patterns de succès
-   */
-  async analyzePastInteractions(limit = 1e3) {
-    try {
-      console.log("\u{1F9E0} D\xE9but de l'analyse des patterns d'apprentissage...");
-      const recentInteractions = await db6.select().from(aiEvents).where(and3(
-        eq7(aiEvents.provider, "gemini-api"),
-        gte(aiEvents.created_at, new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3))
-        // 30 jours
-      )).orderBy(desc3(aiEvents.created_at)).limit(limit);
-      console.log(`\u{1F4CA} Analyse de ${recentInteractions.length} interactions Gemini`);
-      for (const interaction of recentInteractions) {
-        await this.processInteraction(interaction);
-      }
-      this.generateLearningInsights();
-      console.log(`\u2705 Apprentissage termin\xE9: ${this.patterns.size} patterns identifi\xE9s`);
-    } catch (error) {
-      console.error("\u274C Erreur lors de l'apprentissage:", error);
-    }
+console.warn("\u26A0\uFE0F AI Learning Engine supprim\xE9 - syst\xE8me simplifi\xE9 sans apprentissage automatique");
+var SimpleLearningEngine = class {
+  async analyzePastInteractions() {
+    console.log("\u{1F4DA} Learning d\xE9sactiv\xE9 - syst\xE8me bas\xE9 sur r\xE8gles fixes");
   }
-  /**
-   * Traite une interaction individuelle pour extraire des patterns
-   */
-  async processInteraction(interaction) {
-    try {
-      const inputData = interaction.input_redacted || {};
-      const output = interaction.output;
-      const userFeedback = interaction.accepted ? "positive" : "neutral";
-      if (!output || !inputData.prompt) return;
-      const inputPattern = this.extractPattern(inputData.prompt);
-      if (!inputPattern) return;
-      const cleanOutput = this.cleanGeminiOutput(output);
-      const patternKey = this.generatePatternKey(inputPattern, interaction.phase);
-      if (this.patterns.has(patternKey)) {
-        const existing = this.patterns.get(patternKey);
-        existing.usage_count++;
-        existing.confidence_score = this.calculateConfidence(existing);
-        if (userFeedback === "positive" && cleanOutput.length > existing.successful_output.length) {
-          existing.successful_output = cleanOutput;
-        }
-      } else {
-        this.patterns.set(patternKey, {
-          input_pattern: inputPattern,
-          successful_output: cleanOutput,
-          context_category: this.detectCategory(inputData.prompt),
-          user_feedback: userFeedback,
-          confidence_score: userFeedback === "positive" ? 0.8 : 0.6,
-          usage_count: 1
-        });
-      }
-    } catch (error) {
-      console.error("\u274C Erreur traitement interaction:", error);
-    }
+  async recordInteraction() {
+    console.log("\u{1F4DD} Pas d'enregistrement d'interaction - apprentissage d\xE9sactiv\xE9");
   }
-  /**
-   * Génère des suggestions améliorées basées sur l'apprentissage
-   */
-  async generateImprovedSuggestion(inputText, fieldType, category) {
-    const inputPattern = this.extractPattern(inputText);
-    const patternKey = this.generatePatternKey(inputPattern, fieldType);
-    if (this.patterns.has(patternKey)) {
-      const pattern = this.patterns.get(patternKey);
-      if (pattern.confidence_score > 0.7) {
-        console.log(`\u{1F3AF} Pattern trouv\xE9 (confiance: ${pattern.confidence_score})`);
-        return this.adaptPattern(pattern.successful_output, inputText);
-      }
-    }
-    const similarPatterns = this.findSimilarPatterns(inputPattern, fieldType);
-    if (similarPatterns.length > 0) {
-      const bestPattern = similarPatterns[0];
-      console.log(`\u{1F50D} Pattern similaire trouv\xE9 (confiance: ${bestPattern.confidence_score})`);
-      return this.adaptPattern(bestPattern.successful_output, inputText);
-    }
-    return null;
+  async getInsights() {
+    return [];
   }
-  /**
-   * Apprend d'une nouvelle réponse Gemini réussie
-   */
-  async learnFromSuccess(originalText, improvedText, fieldType, category, userFeedback = "positive") {
-    try {
-      console.log("\u{1F4DA} Apprentissage d'un nouveau pattern de succ\xE8s...");
-      console.log("\u{1F916} Consultation Gemini pour enrichir l'apprentissage...");
-      const geminiAnalysis = await this.consultGeminiForLearning(originalText, improvedText, fieldType, category || this.detectCategory(originalText));
-      const pattern = this.extractPattern(originalText);
-      const patternKey = this.generatePatternKey(pattern, fieldType);
-      this.patterns.set(patternKey, {
-        input_pattern: pattern,
-        successful_output: this.cleanGeminiOutput(improvedText),
-        context_category: category || this.detectCategory(originalText),
-        user_feedback: userFeedback,
-        confidence_score: this.calculateConfidenceForNewPattern(userFeedback, geminiAnalysis),
-        usage_count: 1,
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        last_used: (/* @__PURE__ */ new Date()).toISOString(),
-        gemini_analysis: geminiAnalysis,
-        // Nouvel enrichissement Gemini
-        improvement_factors: geminiAnalysis?.improvement_factors || [],
-        semantic_keywords: geminiAnalysis?.semantic_keywords || []
-      });
-      console.log(`\u2705 Nouveau pattern appris avec aide Gemini: ${patternKey}`);
-    } catch (error) {
-      console.error("\u274C Erreur lors de l'apprentissage:", error);
-    }
-  }
-  /**
-   * Nettoyage des réponses Gemini (enlever JSON wrapper, etc.)
-   */
-  cleanGeminiOutput(output) {
-    let cleaned = output;
-    if (cleaned.includes("```json")) {
-      const match = cleaned.match(/```json\s*\{\s*"enhancedText":\s*"([^"]+)"/);
-      if (match) {
-        cleaned = match[1];
-      }
-    }
-    cleaned = cleaned.replace(/\\n/g, "\n").replace(/\\"/g, '"');
-    return cleaned.trim();
-  }
-  extractPattern(text2) {
-    return text2.toLowerCase().split(" ").filter((word) => word.length > 3).slice(0, 5).join(" ");
-  }
-  generatePatternKey(pattern, type) {
-    return `${type}:${pattern}`;
-  }
-  detectCategory(text2) {
-    const categories = {
-      "d\xE9veloppement": ["site", "web", "app", "code", "javascript"],
-      "design": ["logo", "graphique", "design", "ui", "ux"],
-      "travaux": ["peinture", "travaux", "r\xE9novation", "construction"],
-      "marketing": ["marketing", "pub", "seo", "social"],
-      "r\xE9daction": ["article", "contenu", "texte", "blog"]
-    };
-    for (const [cat, keywords] of Object.entries(categories)) {
-      if (keywords.some((kw) => text2.toLowerCase().includes(kw))) {
-        return cat;
-      }
-    }
-    return "g\xE9n\xE9ral";
-  }
-  calculateConfidence(pattern) {
-    let confidence = 0.5;
-    confidence += Math.min(0.3, pattern.usage_count * 0.05);
-    if (pattern.user_feedback === "positive") confidence += 0.2;
-    if (pattern.user_feedback === "negative") confidence -= 0.3;
-    return Math.max(0.1, Math.min(0.95, confidence));
-  }
-  calculateConfidenceForNewPattern(userFeedback, geminiAnalysis) {
-    let confidence = userFeedback === "positive" ? 0.8 : 0.6;
-    if (geminiAnalysis) {
-      confidence += (geminiAnalysis.quality_score || 0.8) * 0.1;
-      confidence += (geminiAnalysis.reusability_score || 0.7) * 0.1;
-    }
-    return Math.max(0.1, Math.min(0.95, confidence));
-  }
-  findSimilarPatterns(inputPattern, fieldType) {
-    const similar = [];
-    const inputWords = inputPattern.split(" ");
-    for (const [key, pattern] of Array.from(this.patterns.entries())) {
-      if (!key.startsWith(fieldType)) continue;
-      const patternWords = pattern.input_pattern.split(" ");
-      const commonWords = inputWords.filter((word) => patternWords.includes(word));
-      const similarity = commonWords.length / Math.max(inputWords.length, patternWords.length);
-      if (similarity > 0.3) {
-        similar.push({ ...pattern, similarity });
-      }
-    }
-    return similar.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
-  }
-  adaptPattern(patternOutput, newInput) {
-    return patternOutput.replace(/\[CONTEXTE\]/g, newInput.substring(0, 50));
-  }
-  generateLearningInsights() {
-    this.insights = [];
-    const categoryStats = /* @__PURE__ */ new Map();
-    for (const pattern of Array.from(this.patterns.values())) {
-      const cat = pattern.context_category;
-      if (categoryStats.has(cat)) {
-        const stats = categoryStats.get(cat);
-        stats.count++;
-        stats.avgConfidence = (stats.avgConfidence + pattern.confidence_score) / 2;
-      } else {
-        categoryStats.set(cat, { count: 1, avgConfidence: pattern.confidence_score });
-      }
-    }
-    for (const [category, stats] of Array.from(categoryStats.entries())) {
-      if (stats.count > 5 && stats.avgConfidence > 0.7) {
-        this.insights.push({
-          pattern_type: "enhancement",
-          improvement_suggestion: `Cat\xE9gorie ${category}: ${stats.count} patterns fiables identifi\xE9s`,
-          confidence: stats.avgConfidence,
-          based_on_samples: stats.count
-        });
-      }
-    }
-  }
-  /**
-   * Consultation Gemini pour enrichir l'apprentissage
-   */
-  async consultGeminiForLearning(originalText, improvedText, fieldType, category) {
-    try {
-      const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
-      const prompt = {
-        role: "expert_learning_analyst",
-        task: "improvement_pattern_analysis",
-        original: originalText,
-        improved: improvedText,
-        field_type: fieldType,
-        category,
-        request: "Analyse ce pattern d'am\xE9lioration et identifie les facteurs cl\xE9s de succ\xE8s"
-      };
-      console.log("\u{1F393} Gemini analyse du pattern d'am\xE9lioration...");
-      const response = await geminiCall2("learning_analysis", prompt);
-      if (response && response.output) {
-        console.log("\u2705 Analyse Gemini re\xE7ue pour apprentissage");
-        return {
-          improvement_factors: this.extractImprovementFactors(response.output),
-          semantic_keywords: this.extractSemanticKeywords(response.output),
-          quality_score: this.extractQualityScore(response.output),
-          reusability_score: this.extractReusabilityScore(response.output),
-          pattern_type: this.classifyPatternType(response.output),
-          raw_analysis: response.output
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error("Erreur consultation Gemini apprentissage:", error);
-      return null;
-    }
-  }
-  extractImprovementFactors(output) {
-    if (typeof output === "string") {
-      const lines = output.split("\n").filter(
-        (line) => line.includes("facteur") || line.includes("am\xE9lior") || line.includes("cl\xE9")
-      );
-      return lines.slice(0, 5);
-    }
-    return output.improvement_factors || [];
-  }
-  extractSemanticKeywords(output) {
-    if (typeof output === "string") {
-      const words = output.toLowerCase().split(/\s+/).filter(
-        (word) => word.length > 4 && !["dans", "avec", "pour", "sans", "plus"].includes(word)
-      );
-      return words.slice(0, 10);
-    }
-    return output.semantic_keywords || [];
-  }
-  extractQualityScore(output) {
-    if (typeof output === "string") {
-      const match = output.match(/qualité.*?(\d+)/i);
-      return match ? parseInt(match[1]) / 100 : 0.8;
-    }
-    return output.quality_score || 0.8;
-  }
-  extractReusabilityScore(output) {
-    if (typeof output === "string") {
-      const match = output.match(/réutilis.*?(\d+)/i);
-      return match ? parseInt(match[1]) / 100 : 0.7;
-    }
-    return output.reusability_score || 0.7;
-  }
-  classifyPatternType(output) {
-    if (typeof output === "string") {
-      const types = ["structuration", "clarification", "enrichissement", "simplification"];
-      const found = types.find((type) => output.toLowerCase().includes(type));
-      return found || "general";
-    }
-    return output.pattern_type || "general";
-  }
-  /**
-   * Apprentissage universel pour TOUTES les interactions Gemini
-   */
-  async learnFromGeminiInteraction(interactionType, inputData, geminiResponse, finalResult, userFeedback = "positive") {
-    try {
-      console.log(`\u{1F393} Apprentissage du pattern ${interactionType} de Gemini...`);
-      const geminiMetaAnalysis = await this.consultGeminiForMetaLearning(
-        interactionType,
-        inputData,
-        geminiResponse,
-        finalResult
-      );
-      const pattern = this.generateUniversalPattern(inputData, interactionType);
-      const patternKey = this.generatePatternKey(pattern, interactionType);
-      const qualityScore = this.assessGeminiResponseQuality(geminiResponse, finalResult);
-      const confidenceScore = this.calculateConfidenceForGeminiInteraction(
-        userFeedback,
-        qualityScore,
-        geminiMetaAnalysis
-      );
-      this.patterns.set(patternKey, {
-        input_pattern: pattern,
-        successful_output: this.extractSuccessfulOutput(geminiResponse, finalResult),
-        context_category: this.detectCategoryFromInput(inputData),
-        user_feedback: userFeedback,
-        confidence_score: confidenceScore,
-        usage_count: 1,
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        last_used: (/* @__PURE__ */ new Date()).toISOString(),
-        gemini_analysis: geminiResponse,
-        improvement_factors: this.extractImprovementFactorsUniversal(geminiResponse),
-        semantic_keywords: this.extractSemanticKeywordsUniversal(inputData),
-        interaction_type: interactionType,
-        quality_metrics: {
-          response_quality: qualityScore,
-          relevance_score: geminiMetaAnalysis?.relevance_score || 0.8,
-          innovation_factor: geminiMetaAnalysis?.innovation_factor || 0.7,
-          reusability_potential: geminiMetaAnalysis?.reusability_potential || 0.8
-        },
-        meta_analysis: geminiMetaAnalysis
-      });
-      console.log(`\u2705 Pattern ${interactionType} appris avec m\xE9tadonn\xE9es Gemini: ${patternKey}`);
-      this.updateInsightsFromNewPattern(interactionType, confidenceScore);
-    } catch (error) {
-      console.error(`\u274C Erreur apprentissage ${interactionType}:`, error);
-    }
-  }
-  /**
-   * Génère un pattern universel à partir de n'importe quel input
-   */
-  generateUniversalPattern(inputData, type) {
-    let extractedText = "";
-    if (typeof inputData === "string") {
-      extractedText = inputData;
-    } else if (inputData.description) {
-      extractedText = inputData.description;
-    } else if (inputData.mission?.description) {
-      extractedText = inputData.mission.description;
-    } else if (inputData.title) {
-      extractedText = inputData.title;
-    } else {
-      extractedText = JSON.stringify(inputData).substring(0, 200);
-    }
-    return this.extractPattern(extractedText);
-  }
-  /**
-   * Évalue la qualité de la réponse Gemini
-   */
-  assessGeminiResponseQuality(geminiResponse, finalResult) {
-    let quality = 0.7;
-    if (geminiResponse && typeof geminiResponse === "object") {
-      const responseFields = Object.keys(geminiResponse).length;
-      quality += Math.min(0.2, responseFields * 0.05);
-    }
-    if (finalResult && geminiResponse) {
-      quality += 0.1;
-    }
-    return Math.min(0.95, quality);
-  }
-  /**
-   * Calcul de confiance pour interactions Gemini
-   */
-  calculateConfidenceForGeminiInteraction(userFeedback, qualityScore, metaAnalysis) {
-    let confidence = 0.8;
-    if (userFeedback === "positive") confidence += 0.1;
-    if (userFeedback === "negative") confidence -= 0.2;
-    confidence += (qualityScore - 0.7) * 0.5;
-    if (metaAnalysis) {
-      confidence += (metaAnalysis.relevance_score || 0.8) * 0.1;
-      confidence += (metaAnalysis.innovation_factor || 0.7) * 0.05;
-    }
-    return Math.max(0.3, Math.min(0.98, confidence));
-  }
-  /**
-   * Extrait le résultat réussi pour apprentissage
-   */
-  extractSuccessfulOutput(geminiResponse, finalResult) {
-    if (typeof geminiResponse === "string") {
-      return geminiResponse.substring(0, 500);
-    }
-    if (geminiResponse && typeof geminiResponse === "object") {
-      return JSON.stringify(geminiResponse).substring(0, 500);
-    }
-    if (finalResult) {
-      return JSON.stringify(finalResult).substring(0, 500);
-    }
-    return "R\xE9sultat Gemini trait\xE9";
-  }
-  /**
-   * Détecte la catégorie depuis n'importe quel input
-   */
-  detectCategoryFromInput(inputData) {
-    let textToAnalyze = "";
-    if (typeof inputData === "string") {
-      textToAnalyze = inputData;
-    } else if (inputData.category) {
-      return inputData.category;
-    } else if (inputData.mission?.category) {
-      return inputData.mission.category;
-    } else if (inputData.description) {
-      textToAnalyze = inputData.description;
-    } else {
-      textToAnalyze = JSON.stringify(inputData);
-    }
-    return this.detectCategory(textToAnalyze);
-  }
-  /**
-   * Extraction universelle de facteurs d'amélioration
-   */
-  extractImprovementFactorsUniversal(geminiResponse) {
-    const factors = [];
-    if (typeof geminiResponse === "string") {
-      const lines = geminiResponse.split("\n").filter(
-        (line) => line.includes("am\xE9liorer") || line.includes("optimiser") || line.includes("recommand")
-      );
-      factors.push(...lines.slice(0, 3));
-    } else if (geminiResponse && typeof geminiResponse === "object") {
-      if (geminiResponse.recommendations) factors.push(...geminiResponse.recommendations);
-      if (geminiResponse.suggestions) factors.push(...geminiResponse.suggestions);
-      if (geminiResponse.improvements) factors.push(...geminiResponse.improvements);
-    }
-    return factors.slice(0, 5);
-  }
-  /**
-   * Extraction universelle de mots-clés sémantiques
-   */
-  extractSemanticKeywordsUniversal(inputData) {
-    let textToAnalyze = "";
-    if (typeof inputData === "string") {
-      textToAnalyze = inputData;
-    } else if (inputData.description) {
-      textToAnalyze = inputData.description;
-    } else {
-      textToAnalyze = JSON.stringify(inputData);
-    }
-    const words = textToAnalyze.toLowerCase().split(/\s+/).filter((word) => word.length > 3).filter((word) => !["dans", "avec", "pour", "sans", "plus", "cette", "tous"].includes(word));
-    return Array.from(new Set(words)).slice(0, 10);
-  }
-  /**
-   * Met à jour les insights globaux
-   */
-  updateInsightsFromNewPattern(interactionType, confidenceScore) {
-    if (confidenceScore > 0.85) {
-      this.insights.push({
-        pattern_type: "enhancement",
-        improvement_suggestion: `Nouveau pattern ${interactionType} de haute qualit\xE9 identifi\xE9`,
-        confidence: confidenceScore,
-        based_on_samples: 1
-      });
-    }
-  }
-  /**
-   * Consultation Gemini pour méta-apprentissage
-   */
-  async consultGeminiForMetaLearning(interactionType, inputData, geminiResponse, finalResult) {
-    try {
-      const { geminiCall: geminiCall2 } = await Promise.resolve().then(() => (init_geminiAdapter(), geminiAdapter_exports));
-      const prompt = {
-        role: "expert_meta_learning_analyst",
-        task: "self_analysis_and_improvement",
-        interaction_type: interactionType,
-        original_input: inputData,
-        my_response: geminiResponse,
-        final_outcome: finalResult,
-        request: "Analyse ta propre contribution et identifie les patterns d'am\xE9lioration pour mes futurs apprentissages"
-      };
-      console.log("\u{1F504} Gemini m\xE9ta-analyse de sa propre contribution...");
-      const response = await geminiCall2("meta_learning_analysis", prompt);
-      if (response && response.output) {
-        console.log("\u2705 M\xE9ta-analyse Gemini re\xE7ue");
-        return {
-          relevance_score: this.extractMetaScore(response.output, "relevance"),
-          innovation_factor: this.extractMetaScore(response.output, "innovation"),
-          reusability_potential: this.extractMetaScore(response.output, "reusability"),
-          improvement_areas: this.extractImprovementAreas(response.output),
-          pattern_insights: this.extractPatternInsights(response.output),
-          raw_meta_analysis: response.output
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error("Erreur m\xE9ta-apprentissage Gemini:", error);
-      return null;
-    }
-  }
-  extractMetaScore(output, scoreType) {
-    if (typeof output === "string") {
-      const match = output.match(new RegExp(`${scoreType}.*?(\\d+)`, "i"));
-      return match ? parseInt(match[1]) / 100 : 0.8;
-    }
-    return output[`${scoreType}_score`] || 0.8;
-  }
-  extractImprovementAreas(output) {
-    if (typeof output === "string") {
-      const lines = output.split("\n").filter(
-        (line) => line.includes("am\xE9liorer") || line.includes("d\xE9velopper") || line.includes("renforcer")
-      );
-      return lines.slice(0, 3);
-    }
-    return output.improvement_areas || [];
-  }
-  extractPatternInsights(output) {
-    if (typeof output === "string") {
-      const lines = output.split("\n").filter(
-        (line) => line.includes("pattern") || line.includes("tendance") || line.includes("r\xE9current")
-      );
-      return lines.slice(0, 3);
-    }
-    return output.pattern_insights || [];
-  }
-  /**
-   * API publique pour obtenir les statistiques d'apprentissage
-   */
-  getLearningStats() {
-    const stats = {
-      total_patterns: this.patterns.size,
-      insights_generated: this.insights.length,
-      high_confidence_patterns: Array.from(this.patterns.values()).filter((p) => p.confidence_score > 0.8).length,
-      categories_learned: Array.from(new Set(Array.from(this.patterns.values()).map((p) => p.context_category))).length,
-      interaction_types: Array.from(new Set(Array.from(this.patterns.values()).map((p) => p.interaction_type || "unknown"))),
-      gemini_contributions: Array.from(this.patterns.values()).filter((p) => p.gemini_analysis).length,
-      avg_confidence: Array.from(this.patterns.values()).reduce((sum, p) => sum + p.confidence_score, 0) / this.patterns.size || 0
-    };
-    console.log("\u{1F4CA} Statistiques d'apprentissage Gemini:", stats);
-    return stats;
+  async improveRecommendations() {
+    console.log("\u{1F3AF} Recommandations bas\xE9es sur r\xE8gles fixes - pas d'am\xE9lioration ML");
   }
 };
-var aiLearningEngine = new AILearningEngine();
+var aiLearningEngine = new SimpleLearningEngine();
 
 // server/routes/ai-learning-routes.ts
 var router12 = Router7();
@@ -5638,13 +5127,13 @@ init_database();
 init_schema();
 init_schema();
 import { Router as Router9 } from "express";
-import { eq as eq9, desc as desc4, and as and4 } from "drizzle-orm";
+import { eq as eq8, desc as desc3, and as and3 } from "drizzle-orm";
 import { randomUUID as randomUUID2 } from "crypto";
 
 // server/middleware/auth.ts
 init_database();
 init_schema();
-import { eq as eq8 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 var requireAuth = async (req, res, next) => {
   try {
     const userIdHeader = req.headers["x-user-id"];
@@ -5667,7 +5156,7 @@ var requireAuth = async (req, res, next) => {
       name: users.name,
       role: users.role,
       rating_mean: users.rating_mean
-    }).from(users).where(eq8(users.id, userId)).limit(1);
+    }).from(users).where(eq7(users.id, userId)).limit(1);
     if (!user) {
       return res.status(401).json({
         error: "Authentication required",
@@ -5696,7 +5185,7 @@ var optionalAuth = async (req, res, next) => {
           name: users.name,
           role: users.role,
           rating_mean: users.rating_mean
-        }).from(users).where(eq8(users.id, userId)).limit(1);
+        }).from(users).where(eq7(users.id, userId)).limit(1);
         if (user) {
           req.user = user;
         }
@@ -5725,7 +5214,7 @@ router14.post("/", requireAuth, asyncHandler2(async (req, res) => {
   }));
   try {
     const validatedData = insertOpenTeamSchema.parse(req.body);
-    const missionExists = await db.select().from(missions).where(eq9(missions.id, validatedData.mission_id));
+    const missionExists = await db.select().from(missions).where(eq8(missions.id, validatedData.mission_id));
     if (missionExists.length === 0) {
       return res.status(404).json({
         error: "Mission introuvable",
@@ -5783,9 +5272,9 @@ router14.post("/", requireAuth, asyncHandler2(async (req, res) => {
 router14.get("/", asyncHandler2(async (req, res) => {
   const missionId = req.query.mission_id;
   try {
-    const whereConditions = [eq9(openTeams.visibility, "public")];
+    const whereConditions = [eq8(openTeams.visibility, "public")];
     if (missionId && !isNaN(parseInt(missionId))) {
-      whereConditions.push(eq9(openTeams.mission_id, parseInt(missionId)));
+      whereConditions.push(eq8(openTeams.mission_id, parseInt(missionId)));
     }
     const teams = await db.select({
       id: openTeams.id,
@@ -5809,7 +5298,7 @@ router14.get("/", asyncHandler2(async (req, res) => {
       // Informations de la mission
       mission_title: missions.title,
       mission_budget: missions.budget_value_cents
-    }).from(openTeams).leftJoin(users, eq9(openTeams.creator_id, users.id)).leftJoin(missions, eq9(openTeams.mission_id, missions.id)).where(and4(...whereConditions)).orderBy(desc4(openTeams.created_at));
+    }).from(openTeams).leftJoin(users, eq8(openTeams.creator_id, users.id)).leftJoin(missions, eq8(openTeams.mission_id, missions.id)).where(and3(...whereConditions)).orderBy(desc3(openTeams.created_at));
     res.json({
       success: true,
       teams: teams.map((team) => ({
@@ -5858,7 +5347,7 @@ router14.get("/:id", asyncHandler2(async (req, res) => {
       mission_description: missions.description,
       mission_budget: missions.budget_value_cents,
       mission_status: missions.status
-    }).from(openTeams).leftJoin(users, eq9(openTeams.creator_id, users.id)).leftJoin(missions, eq9(openTeams.mission_id, missions.id)).where(eq9(openTeams.id, teamId));
+    }).from(openTeams).leftJoin(users, eq8(openTeams.creator_id, users.id)).leftJoin(missions, eq8(openTeams.mission_id, missions.id)).where(eq8(openTeams.id, teamId));
     if (!team) {
       return res.status(404).json({
         error: "\xC9quipe introuvable"
@@ -5893,7 +5382,7 @@ router14.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
   try {
-    const [team] = await db.select().from(openTeams).where(eq9(openTeams.id, teamId));
+    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
     if (!team) {
       return res.status(404).json({
         error: "\xC9quipe introuvable",
@@ -5933,7 +5422,7 @@ router14.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
     const [updatedTeam] = await db.update(openTeams).set({
       members: updatedMembers,
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq9(openTeams.id, teamId)).returning();
+    }).where(eq8(openTeams.id, teamId)).returning();
     console.log(JSON.stringify({
       level: "info",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -5972,7 +5461,7 @@ router14.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
   try {
-    const [team] = await db.select().from(openTeams).where(eq9(openTeams.id, teamId));
+    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
     if (!team) {
       return res.status(404).json({
         error: "\xC9quipe introuvable"
@@ -5996,7 +5485,7 @@ router14.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
     const updates = Object.fromEntries(
       Object.entries(allowedUpdates).filter(([_, value]) => value !== void 0)
     );
-    const [updatedTeam] = await db.update(openTeams).set(updates).where(eq9(openTeams.id, teamId)).returning();
+    const [updatedTeam] = await db.update(openTeams).set(updates).where(eq8(openTeams.id, teamId)).returning();
     res.json({
       success: true,
       team: updatedTeam
@@ -6016,7 +5505,7 @@ router14.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
   try {
-    const [team] = await db.select().from(openTeams).where(eq9(openTeams.id, teamId));
+    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
     if (!team) {
       return res.status(404).json({
         error: "\xC9quipe introuvable"
@@ -6027,7 +5516,7 @@ router14.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
         error: "Seul le cr\xE9ateur peut supprimer cette \xE9quipe"
       });
     }
-    await db.delete(openTeams).where(eq9(openTeams.id, teamId));
+    await db.delete(openTeams).where(eq8(openTeams.id, teamId));
     res.json({
       success: true,
       message: "\xC9quipe supprim\xE9e avec succ\xE8s"
@@ -6045,7 +5534,7 @@ var open_teams_default = router14;
 init_database();
 init_schema();
 import { Router as Router10 } from "express";
-import { eq as eq10, and as and5, desc as desc5 } from "drizzle-orm";
+import { eq as eq9, and as and4, desc as desc4 } from "drizzle-orm";
 import { z as z6 } from "zod";
 var router15 = Router10();
 var createBidSchema = z6.object({
@@ -6074,7 +5563,7 @@ router15.post("/", requireAuth, async (req, res) => {
       bidType: req.body.bid_type
     });
     const validatedData = createBidSchema.parse(req.body);
-    const [mission] = await db.select().from(missions).where(eq10(missions.id, validatedData.mission_id)).limit(1);
+    const [mission] = await db.select().from(missions).where(eq9(missions.id, validatedData.mission_id)).limit(1);
     if (!mission) {
       return res.status(404).json({
         error: "Mission not found",
@@ -6088,9 +5577,9 @@ router15.post("/", requireAuth, async (req, res) => {
       });
     }
     const [existingBid] = await db.select().from(bids).where(
-      and5(
-        eq10(bids.mission_id, validatedData.mission_id),
-        eq10(bids.provider_id, req.user.id)
+      and4(
+        eq9(bids.mission_id, validatedData.mission_id),
+        eq9(bids.provider_id, req.user.id)
       )
     ).limit(1);
     if (existingBid) {
@@ -6158,28 +5647,28 @@ router15.get("/", optionalAuth, async (req, res) => {
       // Informations du prestataire
       provider_name: users.name,
       provider_rating: users.rating_mean
-    }).from(bids).leftJoin(users, eq10(bids.provider_id, users.id)).orderBy(desc5(bids.created_at));
+    }).from(bids).leftJoin(users, eq9(bids.provider_id, users.id)).orderBy(desc4(bids.created_at));
     const conditions = [];
     if (mission_id) {
       const missionIdNum = parseInt(mission_id);
       if (!isNaN(missionIdNum)) {
-        conditions.push(eq10(bids.mission_id, missionIdNum));
+        conditions.push(eq9(bids.mission_id, missionIdNum));
       }
     }
     if (provider_id) {
       const providerIdNum = parseInt(provider_id);
       if (!isNaN(providerIdNum)) {
-        conditions.push(eq10(bids.provider_id, providerIdNum));
+        conditions.push(eq9(bids.provider_id, providerIdNum));
       }
     }
     if (status && typeof status === "string") {
-      conditions.push(eq10(bids.status, status));
+      conditions.push(eq9(bids.status, status));
     }
     if (bid_type && typeof bid_type === "string") {
-      conditions.push(eq10(bids.bid_type, bid_type));
+      conditions.push(eq9(bids.bid_type, bid_type));
     }
     if (conditions.length > 0) {
-      query = query.where(and5(...conditions));
+      query = query.where(and4(...conditions));
     }
     const results = await query;
     console.log(`\u2705 ${results.length} candidatures trouv\xE9es`);
@@ -6223,7 +5712,7 @@ router15.get("/:id", optionalAuth, async (req, res) => {
       // Informations du prestataire
       provider_name: users.name,
       provider_rating: users.rating_mean
-    }).from(bids).leftJoin(users, eq10(bids.provider_id, users.id)).where(eq10(bids.id, bidId)).limit(1);
+    }).from(bids).leftJoin(users, eq9(bids.provider_id, users.id)).where(eq9(bids.id, bidId)).limit(1);
     if (!bid) {
       return res.status(404).json({
         error: "Bid not found",
@@ -6257,7 +5746,7 @@ router15.put("/:id", requireAuth, async (req, res) => {
       userId: req.user?.id
     });
     const validatedData = updateBidSchema.parse(req.body);
-    const [existingBid] = await db.select().from(bids).where(eq10(bids.id, bidId)).limit(1);
+    const [existingBid] = await db.select().from(bids).where(eq9(bids.id, bidId)).limit(1);
     if (!existingBid) {
       return res.status(404).json({
         error: "Bid not found",
@@ -6280,7 +5769,7 @@ router15.put("/:id", requireAuth, async (req, res) => {
     const [updatedBid] = await db.update(bids).set({
       ...validatedData,
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq10(bids.id, bidId)).returning();
+    }).where(eq9(bids.id, bidId)).returning();
     console.log("\u2705 Candidature mise \xE0 jour:", { bidId: updatedBid.id });
     res.json({
       ok: true,
@@ -6315,7 +5804,7 @@ router15.delete("/:id", requireAuth, async (req, res) => {
       bidId,
       userId: req.user?.id
     });
-    const [existingBid] = await db.select().from(bids).where(eq10(bids.id, bidId)).limit(1);
+    const [existingBid] = await db.select().from(bids).where(eq9(bids.id, bidId)).limit(1);
     if (!existingBid) {
       return res.status(404).json({
         error: "Bid not found",
@@ -6338,7 +5827,7 @@ router15.delete("/:id", requireAuth, async (req, res) => {
     const [updatedBid] = await db.update(bids).set({
       status: "withdrawn",
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq10(bids.id, bidId)).returning();
+    }).where(eq9(bids.id, bidId)).returning();
     console.log("\u2705 Candidature retir\xE9e:", { bidId: updatedBid.id });
     res.json({
       ok: true,
@@ -6550,7 +6039,7 @@ function removePidFile() {
 var databaseUrl2 = process.env.DATABASE_URL || "postgresql://localhost:5432/swideal";
 console.log("\u{1F517} Using Replit PostgreSQL connection");
 var missionSyncService = new MissionSyncService(databaseUrl2);
-var pool5 = new Pool5({
+var pool4 = new Pool4({
   connectionString: databaseUrl2,
   connectionTimeoutMillis: 5e3,
   // 5 second timeout
@@ -6571,7 +6060,7 @@ async function validateDatabaseConnection() {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Database connection timeout")), timeout);
     });
-    const connectionPromise = pool5.query("SELECT 1 as test");
+    const connectionPromise = pool4.query("SELECT 1 as test");
     await Promise.race([connectionPromise, timeoutPromise]);
     console.log("\u2705 Database connection validated successfully");
     return true;
@@ -6716,7 +6205,7 @@ app.get("/api/health", async (req, res) => {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Database query timeout")), 5e3);
     });
-    const queryPromise = pool5.query("SELECT 1");
+    const queryPromise = pool4.query("SELECT 1");
     await Promise.race([queryPromise, timeoutPromise]);
     res.status(200).json({
       status: "healthy",
