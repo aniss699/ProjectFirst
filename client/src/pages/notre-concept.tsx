@@ -194,87 +194,87 @@ export default function NotreConcept() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Hero Section plus humain et moins encombré */}
-        <div className="relative text-center py-12 px-2 sm:px-0 overflow-hidden">
+        <div className="relative text-center py-8 px-2 sm:px-0 overflow-hidden">
           {/* Effets de fond plus subtils */}
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-500/10 to-purple-600/10 rounded-2xl blur-2xl"></div>
-          <div className="absolute top-6 left-10 text-2xl opacity-60">✨</div>
-          <div className="absolute top-8 right-16 text-2xl opacity-50">💫</div>
-          <div className="absolute bottom-10 left-1/4 text-2xl opacity-40">⭐</div>
+          <div className="absolute top-4 left-8 text-xl opacity-60">✨</div>
+          <div className="absolute top-6 right-12 text-xl opacity-50">💫</div>
+          <div className="absolute bottom-6 left-1/4 text-xl opacity-40">⭐</div>
           
           <div className="relative z-10">
-            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold mb-6 shadow-md">
-              <Smile className="w-4 h-4 mr-2" />
+            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold mb-4 shadow-md">
+              <Smile className="w-3 h-3 mr-1.5" />
               La solution qui change tout !
             </div>
             
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
               Arrêtez de chercher,
               <br />
               <span className="text-emerald-600">laissez-vous trouver !</span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8">
+            <p className="text-base sm:text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-6">
               Vous avez un projet ? Fantastique ! 
               <br />
               <span className="text-emerald-600 font-semibold">Les meilleurs pros viennent à vous.</span>
             </p>
 
             {/* Promesse plus concise */}
-            <div className="bg-white/90 backdrop-blur rounded-xl p-6 max-w-2xl mx-auto mb-8 shadow-lg">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Notre promesse simple :</h2>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="bg-white/90 backdrop-blur rounded-lg p-4 max-w-xl mx-auto mb-6 shadow-lg">
+              <h2 className="text-base font-bold text-gray-900 mb-3">Notre promesse simple :</h2>
+              <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center space-x-2">
-                  <div className="text-lg">⏰</div>
+                  <div className="text-base">⏰</div>
                   <div className="text-left">
-                    <div className="font-semibold">5 min max</div>
+                    <div className="font-semibold text-xs">5 min max</div>
                     <div className="text-gray-600 text-xs">pour tout expliquer</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="text-lg">💎</div>
+                  <div className="text-base">💎</div>
                   <div className="text-left">
-                    <div className="font-semibold">Que du premium</div>
+                    <div className="font-semibold text-xs">Que du premium</div>
                     <div className="text-gray-600 text-xs">pros vérifiés</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="text-lg">💝</div>
+                  <div className="text-base">💝</div>
                   <div className="text-left">
-                    <div className="font-semibold">100% gratuit</div>
+                    <div className="font-semibold text-xs">100% gratuit</div>
                     <div className="text-gray-600 text-xs">pour vous</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="text-lg">🤝</div>
+                  <div className="text-base">🤝</div>
                   <div className="text-left">
-                    <div className="font-semibold">Support inclus</div>
+                    <div className="font-semibold text-xs">Support inclus</div>
                     <div className="text-gray-600 text-xs">jusqu'au succès</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
               <Button 
                 onClick={() => setLocation('/create-mission')}
-                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-base px-6 py-2.5 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
               >
-                <Rocket className="w-5 h-5 mr-2" />
+                <Rocket className="w-4 h-4 mr-2" />
                 Je lance mon projet
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setLocation('/demo-missions')}
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold px-6 py-3 rounded-full transition-all duration-300"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold px-5 py-2.5 rounded-full transition-all duration-300"
               >
-                <Eye className="w-4 h-4 mr-2" />
+                <Eye className="w-3 h-3 mr-2" />
                 Voir des exemples
               </Button>
             </div>
 
-            <div className="flex justify-center items-center space-x-2 text-sm">
+            <div className="flex justify-center items-center space-x-2 text-xs">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
               ))}
               <span className="text-gray-600 ml-1">4.9/5 • Plus de 1000 projets réussis</span>
             </div>
@@ -282,31 +282,31 @@ export default function NotreConcept() {
         </div>
 
         {/* Bénéfices plus compacts */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Pourquoi nos utilisateurs nous adorent</h2>
-            <p className="text-lg text-gray-600">Ce qui va changer dans votre quotidien</p>
+        <div className="mb-12 px-2 sm:px-0">
+          <div className="text-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Pourquoi nos utilisateurs nous adorent</h2>
+            <p className="text-base text-gray-600">Ce qui va changer dans votre quotidien</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {emotionalBenefits.map((benefit, index) => (
               <div 
                 key={index}
-                className={`bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-102 cursor-pointer ${
+                className={`bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-102 cursor-pointer ${
                   hoveredBenefit === index ? 'ring-2 ring-blue-200' : ''
                 }`}
                 onMouseEnter={() => setHoveredBenefit(index)}
                 onMouseLeave={() => setHoveredBenefit(null)}
               >
-                <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-xl bg-${benefit.color}-100`}>
-                    <benefit.icon className={`w-6 h-6 text-${benefit.color}-600`} />
+                <div className="flex items-start space-x-3">
+                  <div className={`p-2 rounded-lg bg-${benefit.color}-100`}>
+                    <benefit.icon className={`w-5 h-5 text-${benefit.color}-600`} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{benefit.title}</h3>
-                    <p className={`text-sm font-semibold text-${benefit.color}-600 mb-2`}>{benefit.subtitle}</p>
-                    <p className="text-gray-700 text-sm mb-3 leading-relaxed">{benefit.description}</p>
-                    <div className={`inline-block bg-${benefit.color}-50 text-${benefit.color}-700 px-3 py-1 rounded-full font-semibold text-xs`}>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">{benefit.title}</h3>
+                    <p className={`text-xs font-semibold text-${benefit.color}-600 mb-2`}>{benefit.subtitle}</p>
+                    <p className="text-gray-700 text-xs mb-2 leading-relaxed">{benefit.description}</p>
+                    <div className={`inline-block bg-${benefit.color}-50 text-${benefit.color}-700 px-2 py-0.5 rounded-full font-semibold text-xs`}>
                       {benefit.stat}
                     </div>
                   </div>
@@ -317,32 +317,32 @@ export default function NotreConcept() {
         </div>
 
         {/* Processus plus compact et conversationnel */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-2xl p-8 text-white">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">Comment ça se passe ?</h2>
-              <p className="text-lg opacity-90">4 étapes toutes simples</p>
+        <div className="mb-12 px-2 sm:px-0">
+          <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-xl p-6 text-white">
+            <div className="text-center mb-8">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Comment ça se passe ?</h2>
+              <p className="text-base opacity-90">4 étapes toutes simples</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {demoSteps.map((step, index) => (
                 <div 
                   key={index}
-                  className={`text-center p-4 rounded-xl transition-all duration-500 ${
+                  className={`text-center p-3 rounded-lg transition-all duration-500 ${
                     activeDemo === index 
                       ? 'bg-white/20 shadow-xl scale-105 transform' 
                       : 'bg-white/10 hover:bg-white/15'
                   }`}
                 >
-                  <div className="text-4xl mb-3">{step.visual}</div>
-                  <h3 className="text-lg font-bold mb-1">{step.title}</h3>
-                  <p className="text-blue-200 font-medium mb-2 text-sm">{step.subtitle}</p>
-                  <p className="text-gray-200 mb-3 text-sm">{step.description}</p>
-                  <div className="bg-emerald-500/20 text-emerald-200 px-2 py-1 rounded-full text-xs font-medium">
+                  <div className="text-3xl mb-2">{step.visual}</div>
+                  <h3 className="text-base font-bold mb-1">{step.title}</h3>
+                  <p className="text-blue-200 font-medium mb-2 text-xs">{step.subtitle}</p>
+                  <p className="text-gray-200 mb-2 text-xs">{step.description}</p>
+                  <div className="bg-emerald-500/20 text-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium">
                     {step.emotion}
                   </div>
                   {activeDemo === index && (
-                    <p className="mt-3 text-xs text-blue-100 bg-white/10 p-2 rounded animate-fadeIn">
+                    <p className="mt-2 text-xs text-blue-100 bg-white/10 p-2 rounded animate-fadeIn">
                       {step.details}
                     </p>
                   )}
@@ -353,21 +353,21 @@ export default function NotreConcept() {
         </div>
 
         {/* Histoires de réussite plus compactes */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Ils l'ont fait !</h2>
-            <p className="text-lg text-gray-600">Des histoires vraies qui donnent le sourire</p>
+        <div className="mb-12 px-2 sm:px-0">
+          <div className="text-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Ils l'ont fait !</h2>
+            <p className="text-base text-gray-600">Des histoires vraies qui donnent le sourire</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {successStories.map((story, index) => (
               <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-102">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white pb-4">
-                  <div className="text-2xl mb-1">{story.icon}</div>
-                  <CardTitle className="text-lg">{story.client}</CardTitle>
+                <CardHeader className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white pb-3">
+                  <div className="text-xl mb-1">{story.icon}</div>
+                  <CardTitle className="text-base">{story.client}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3 text-sm">
+                <CardContent className="p-3">
+                  <div className="space-y-2 text-xs">
                     <div>
                       <span className="font-semibold text-red-600">😟 Souci : </span>
                       <span className="text-gray-700">{story.challenge}</span>
@@ -388,49 +388,49 @@ export default function NotreConcept() {
         </div>
 
         {/* Témoignages plus intimes */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Paroles d'utilisateurs</h2>
-            <p className="text-lg text-gray-600">Des témoignages du cœur</p>
+        <div className="mb-12 px-2 sm:px-0">
+          <div className="text-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Paroles d'utilisateurs</h2>
+            <p className="text-base text-gray-600">Des témoignages du cœur</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-102">
-                <div className="absolute top-3 right-3 text-2xl">{testimonial.emotion}</div>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                <div className="absolute top-2 right-2 text-lg">{testimonial.emotion}</div>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                       {testimonial.avatar}
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900">{testimonial.name}</div>
-                      <div className="text-sm text-gray-600">{testimonial.role}</div>
+                      <div className="font-bold text-gray-900 text-sm">{testimonial.name}</div>
+                      <div className="text-xs text-gray-600">{testimonial.role}</div>
                       <div className="text-xs text-gray-500">{testimonial.company}</div>
                     </div>
                   </div>
-                  <div className="flex space-x-1 mb-3">
+                  <div className="flex space-x-1 mb-2">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <Quote className="w-6 h-6 text-gray-300 mb-2" />
-                  <p className="text-gray-700 mb-4 italic leading-relaxed text-sm">"{testimonial.text}"</p>
+                  <Quote className="w-4 h-4 text-gray-300 mb-1" />
+                  <p className="text-gray-700 mb-3 italic leading-relaxed text-xs">"{testimonial.text}"</p>
                   
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="flex justify-between items-center p-2 bg-red-50 rounded text-xs">
+                  <div className="grid grid-cols-1 gap-1">
+                    <div className="flex justify-between items-center p-1.5 bg-red-50 rounded text-xs">
                       <span className="font-semibold text-red-700">Avant :</span>
-                      <span className="text-red-600">{testimonial.before}</span>
+                      <span className="text-red-600 text-xs">{testimonial.before}</span>
                     </div>
-                    <div className="flex justify-between items-center p-2 bg-green-50 rounded text-xs">
+                    <div className="flex justify-between items-center p-1.5 bg-green-50 rounded text-xs">
                       <span className="font-semibold text-green-700">Après :</span>
-                      <span className="text-green-600">{testimonial.after}</span>
+                      <span className="text-green-600 text-xs">{testimonial.after}</span>
                     </div>
                   </div>
 
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 mt-3 text-xs">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 mt-2 text-xs">
                     📁 {testimonial.project}
                   </Badge>
                 </CardContent>
@@ -440,30 +440,30 @@ export default function NotreConcept() {
         </div>
 
         {/* FAQ plus décontractée */}
-        <div className="mb-16 px-2 sm:px-0">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Les questions qu'on nous pose</h2>
-              <p className="text-lg text-gray-600">Tout ce que vous voulez savoir (sans tabou !)</p>
+        <div className="mb-12 px-2 sm:px-0">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Les questions qu'on nous pose</h2>
+              <p className="text-base text-gray-600">Tout ce que vous voulez savoir (sans tabou !)</p>
             </div>
 
-            <div className="max-w-3xl mx-auto space-y-3">
+            <div className="max-w-2xl mx-auto space-y-2">
               {faqData.map((faq, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition-colors">
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                    className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+                    className="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
                   >
-                    <span className="font-semibold text-gray-900 pr-4">{faq.question}</span>
+                    <span className="font-semibold text-gray-900 pr-3 text-sm">{faq.question}</span>
                     {expandedFaq === index ? (
-                      <ChevronUp className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                      <ChevronUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     )}
                   </button>
                   {expandedFaq === index && (
-                    <div className="px-6 py-4 bg-blue-50 border-t border-blue-100">
-                      <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                    <div className="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                      <p className="text-gray-700 leading-relaxed text-sm">{faq.answer}</p>
                     </div>
                   )}
                 </div>
@@ -473,66 +473,66 @@ export default function NotreConcept() {
         </div>
 
         {/* Call to Action final plus convivial */}
-        <div className="mb-8 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white relative overflow-hidden">
+        <div className="mb-6 px-2 sm:px-0">
+          <div className="bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 rounded-xl p-6 text-center text-white relative overflow-hidden">
             {/* Effets de fond plus subtils */}
             <div className="absolute inset-0 bg-black opacity-10"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
             
             {/* Éléments décoratifs plus discrets */}
-            <div className="absolute top-4 left-6 text-2xl opacity-60">⭐</div>
-            <div className="absolute top-4 right-6 text-2xl opacity-60">✨</div>
-            <div className="absolute bottom-4 left-1/4 text-2xl opacity-50">💫</div>
-            <div className="absolute bottom-4 right-1/4 text-2xl opacity-50">🚀</div>
+            <div className="absolute top-3 left-4 text-lg opacity-60">⭐</div>
+            <div className="absolute top-3 right-4 text-lg opacity-60">✨</div>
+            <div className="absolute bottom-3 left-1/4 text-lg opacity-50">💫</div>
+            <div className="absolute bottom-3 right-1/4 text-lg opacity-50">🚀</div>
             
             <div className="relative z-10">
-              <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à vous lancer ?</h2>
-              <p className="text-lg md:text-xl mb-6 opacity-90 leading-relaxed">
+              <h2 className="text-xl md:text-3xl font-bold mb-3">Prêt à vous lancer ?</h2>
+              <p className="text-base md:text-lg mb-4 opacity-90 leading-relaxed">
                 Votre projet mérite les meilleurs talents.
                 <br />
                 <span className="font-semibold">Et ils n'attendent que vous !</span>
               </p>
               
               {/* Motivation plus douce */}
-              <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-6 max-w-2xl mx-auto">
-                <h3 className="font-bold mb-2">🎉 Offre de bienvenue :</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+              <div className="bg-white/20 backdrop-blur rounded-lg p-3 mb-4 max-w-xl mx-auto">
+                <h3 className="font-bold mb-2 text-sm">🎉 Offre de bienvenue :</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-1 text-xs">
                   <div>✅ Accompagnement gratuit</div>
                   <div>✅ Réponses prioritaires</div>
                   <div>✅ Support personnalisé</div>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
                 <Button 
                   onClick={() => setLocation('/create-mission')}
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-lg px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
+                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-base px-6 py-2.5 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
                 >
-                  <Lightning className="w-5 h-5 mr-2" />
+                  <Lightning className="w-4 h-4 mr-2" />
                   Je commence maintenant
                 </Button>
                 <Button 
                   onClick={() => setLocation('/marketplace')}
                   variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-6 py-3 rounded-full transition-all duration-300"
+                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-5 py-2.5 rounded-full transition-all duration-300"
                 >
-                  <Eye className="w-4 h-4 mr-2" />
+                  <Eye className="w-3 h-3 mr-2" />
                   Découvrir les talents
                 </Button>
               </div>
 
-              <div className="text-center space-y-2">
-                <p className="font-semibold">
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-sm">
                   ⚡ Gratuit • 🎯 Efficace • 💎 Premium
                 </p>
-                <p className="opacity-90">
+                <p className="opacity-90 text-sm">
                   Rejoignez plus de 1000 entrepreneurs satisfaits
                 </p>
-                <div className="flex justify-center items-center space-x-1 mt-3">
+                <div className="flex justify-center items-center space-x-1 mt-2">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   ))}
-                  <span className="ml-2 text-sm">4.9/5 - Ils recommandent !</span>
+                  <span className="ml-2 text-xs">4.9/5 - Ils recommandent !</span>
                 </div>
               </div>
             </div>
