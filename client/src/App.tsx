@@ -21,7 +21,7 @@ const Legal = React.lazy(() => import('@/pages/legal'));
 const Sitemap = React.lazy(() => import('@/pages/sitemap'));
 const Features = React.lazy(() => import('@/pages/features'));
 const NotreConcept = React.lazy(() => import('@/pages/notre-concept'));
-const AIHubPage = React.lazy(() => import('@/pages/ai-hub'));
+
 const DemoMissions = React.lazy(() => import('@/pages/demo-missions'));
 const AvailableProviders = React.lazy(() => import('@/pages/available-providers'));
 const AIMonitoring = React.lazy(() => import('@/pages/AIMonitoring'));
@@ -116,23 +116,7 @@ function App() {
                     <Route path="/legal" component={Legal} />
                     <Route path="/sitemap" component={Sitemap} />
                     <Route path="/features" component={Features} />
-                    <Route path="/ai-hub" component={AIHubPage} />
-                    {/* Redirects des anciennes pages IA vers le hub unifié */}
-                    <Route path="/ai-features">
-                      {() => { window.location.href = '/ai-hub?tab=algorithms'; return null; }}
-                    </Route>
-                    <Route path="/ai-dashboard">
-                      {() => { window.location.href = '/ai-hub?tab=dashboard'; return null; }}
-                    </Route>
-                    <Route path="/ai-advanced">
-                      {() => { window.location.href = '/ai-hub?tab=algorithms'; return null; }}
-                    </Route>
-                    <Route path="/ai-test">
-                      {() => { window.location.href = '/ai-hub?tab=demo'; return null; }}
-                    </Route>
-                    <Route path="/demo/ia">
-                      {() => { window.location.href = '/ai-hub?tab=demo'; return null; }}
-                    </Route>
+                    
                     <Route path="/available-providers" component={AvailableProviders} />
                     <Route path="/demo/missions" component={DemoMissions} />
                     <Route path="/monitoring" component={AIMonitoring} />

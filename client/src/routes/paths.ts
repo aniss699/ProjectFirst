@@ -24,15 +24,7 @@ export const ROUTES = {
   CREATE_MISSION: '/create-mission',
   MESSAGES: '/messages',
 
-  // Routes AI - Consolidées vers AI Hub
-  AI: {
-    HUB: '/ai-hub',
-    // Routes héritées (pour compatibilité)
-    FEATURES: '/ai-features',
-    DASHBOARD: '/ai-dashboard',
-    ADVANCED: '/ai-advanced',
-    TEST: '/ai-test',
-  },
+  
 
   // Routes API
   API: {
@@ -76,17 +68,7 @@ export const routeConfigs: Record<string, RouteConfig> = {
     title: 'Créer une mission - AppelsPro',
     requiresAuth: true
   },
-  [ROUTES.AI.HUB]: {
-    path: ROUTES.AI.HUB,
-    title: 'Hub Intelligence Artificielle - Swideal',
-    description: 'Centre unifié des fonctionnalités IA : démonstrations, algorithmes, tableaux de bord et documentation',
-    requiresAuth: false
-  },
-  [ROUTES.AI.DASHBOARD]: {
-    path: ROUTES.AI.DASHBOARD,
-    title: 'Dashboard IA - Swideal',
-    requiresAuth: true
-  },
+  
   [ROUTES.NOTRE_CONCEPT]: {
     path: ROUTES.NOTRE_CONCEPT,
     title: 'Notre concept - Swideal',
@@ -122,13 +104,7 @@ export const navigationGroups = {
     { path: ROUTES.PROFILE, label: 'Profil' },
     { path: ROUTES.MESSAGES, label: 'Messages' }
   ],
-  ai: [
-    { path: ROUTES.AI.HUB, label: 'Hub IA' },
-    // Routes héritées - conservées pour navigation existante
-    { path: ROUTES.AI.FEATURES, label: 'IA Features' },
-    { path: ROUTES.AI.DASHBOARD, label: 'Dashboard IA' },
-    { path: ROUTES.AI.ADVANCED, label: 'IA Avancée' }
-  ]
+  
 };
 
 export const paths = {
