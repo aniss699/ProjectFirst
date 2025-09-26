@@ -87,9 +87,9 @@ export default function Navbar() {
   );
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
+    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-18">
           {/* Logo */}
           <div className="flex items-center">
             <button
@@ -98,25 +98,31 @@ export default function Navbar() {
               data-testid="button-logo-navbar"
             >
               <div className="relative mobile-logo-wrapper">
-                <img
-                  src="/swideal-logo.jpeg"
-                  alt="Swideal Logo"
-                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain group-hover:scale-110 transition-transform duration-300 rounded-xl shadow-lg"
-                />
-                <div className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse shadow-md"></div>
+                <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-md group-hover:shadow-lg transition-all duration-300">
+                  <img
+                    src="/swideal-logo.jpeg"
+                    alt="Swideal Logo"
+                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                  />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-80 group-hover:opacity-100 transition-opacity duration-300 animate-pulse shadow-lg border-2 border-white"></div>
               </div>
-              <div className="flex flex-col items-start justify-center mobile-brand-text ml-2">
-                <span className="text-lg sm:text-3xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title drop-shadow-sm" data-testid="text-brand-navbar">
+              <div className="flex flex-col items-start justify-center mobile-brand-text ml-3">
+                <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-slate-800 via-blue-700 to-purple-700 bg-clip-text text-transparent tracking-tight leading-none mobile-brand-title" data-testid="text-brand-navbar">
                   SWIDEAL
                 </span>
-                <span className="text-[0.7rem] sm:text-base font-bold tracking-wide leading-none mt-1 mobile-brand-subtitle">
-                  <span className="text-gray-800">Le meilleur </span>
-                  <span className="text-emerald-700 font-black">deal</span>
-                  <span className="text-gray-800"> vient à toi</span>
+                <span className="text-[0.65rem] sm:text-sm font-semibold tracking-wide leading-none mt-0.5 mobile-brand-subtitle">
+                  <span className="text-gray-700">Le meilleur </span>
+                  <span className="text-emerald-600 font-bold">deal</span>
+                  <span className="text-gray-700"> vient à toi</span>
                 </span>
-                <span className="text-xs sm:text-sm text-gray-600 hidden lg:block font-semibold leading-none mt-1.5 mobile-brand-description">
-                  IA • Missions • Talents
-                </span>
+                <div className="flex items-center space-x-1 text-xs text-gray-500 hidden lg:flex mt-1">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">IA</span>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full font-medium">Missions</span>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-medium">Talents</span>
+                </div>
               </div>
             </button>
           </div>
@@ -127,7 +133,7 @@ export default function Navbar() {
             {/* Desktop quick mission creator button */}
             {location !== ROUTES.HOME && (
               <div className="hidden sm:flex">
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200 px-3 sm:px-4 rounded-lg font-medium">
                   <Plus className="w-4 h-4 mr-1 xl:mr-2" />
                   <span className="hidden xl:inline">Nouvelle mission</span>
                   <span className="hidden lg:inline xl:hidden">Mission</span>
@@ -138,19 +144,19 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-2 sm:space-x-4">
                 {/* Desktop User Menu - Nettoyé */}
-                <div className="hidden xl:flex items-center space-x-3">
-                  <Button variant="ghost" onClick={() => setLocation('/marketplace')} className="text-gray-700 hover:text-blue-600">
+                <div className="hidden xl:flex items-center space-x-2">
+                  <Button variant="ghost" onClick={() => setLocation('/marketplace')} className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-2 font-medium transition-all duration-200">
                     Marketplace
                   </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/missions')} className="text-gray-700 hover:text-blue-600">
+                  <Button variant="ghost" onClick={() => setLocation('/missions')} className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-2 font-medium transition-all duration-200">
                     Mes Missions
                   </Button>
-                  <Button variant="ghost" onClick={() => setLocation('/')} className="text-gray-700 hover:text-blue-600">
+                  <Button variant="ghost" onClick={() => setLocation('/')} className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-2 font-medium transition-all duration-200">
                     Créer Mission
                   </Button>
                   <button
                     onClick={() => handleNavigation('/messages')}
-                    className="text-gray-700 hover:text-blue-600 transition-colors relative px-2 py-2 text-sm"
+                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 relative px-3 py-2 text-sm font-medium rounded-lg"
                   >
                     Messages
                   </button>
@@ -159,14 +165,14 @@ export default function Navbar() {
                 {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 px-2 sm:px-3">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-medium text-xs sm:text-sm">
+                    <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+                        <span className="text-white font-semibold text-sm">
                           {user.email.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="hidden sm:block text-gray-700 text-sm max-w-20 truncate">{user.email.split('@')[0]}</span>
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:block text-gray-700 text-sm font-medium max-w-20 truncate">{user.email.split('@')[0]}</span>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -251,17 +257,17 @@ export default function Navbar() {
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="flex items-center space-x-3">
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('/login')}
-                  className="hidden sm:flex text-sm px-3"
+                  className="hidden sm:flex text-sm px-4 py-2 font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                 >
                   Se connecter
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap min-w-fit"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm px-4 py-2 font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
                 >
                   <span className="hidden xs:inline sm:inline">Créer un compte</span>
                   <span className="xs:hidden sm:hidden text-xs">S'inscrire</span>
@@ -295,22 +301,24 @@ export default function Navbar() {
           <div className="mobile-nav-swipe-indicator"></div>
 
           {/* Header avec recherche */}
-          <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="flex items-center space-x-3 mb-3">
+          <div className="px-4 py-4 border-b bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50">
+            <div className="flex items-center space-x-4">
               <div className="relative">
-                <img
-                  src="/swideal-logo.jpeg"
-                  alt="Swideal Logo"
-                  className="w-14 h-14 object-contain rounded-xl shadow-md"
-                />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+                <div className="p-2 bg-white rounded-2xl shadow-lg">
+                  <img
+                    src="/swideal-logo.jpeg"
+                    alt="Swideal Logo"
+                    className="w-12 h-12 object-contain rounded-lg"
+                  />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg border-2 border-white"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent drop-shadow-sm" data-testid="text-brand-mobile">
+                <span className="text-xl font-black bg-gradient-to-r from-slate-800 via-blue-700 to-purple-700 bg-clip-text text-transparent" data-testid="text-brand-mobile">
                   SWIDEAL
                 </span>
-                <span className="text-xs text-gray-600 font-semibold">
-                  Navigation
+                <span className="text-xs text-gray-600 font-medium">
+                  Menu navigation
                 </span>
               </div>
             </div>
