@@ -15,9 +15,6 @@ import {
   CheckCircle,
   Euro,
   Sparkles,
-  BarChart3,
-  Activity,
-  AlertTriangle,
   Loader2,
   BookOpen,
   Target,
@@ -123,7 +120,7 @@ export default function AIHub() {
           </p>
           <div className="flex items-center justify-center gap-4 mt-4">
             <Badge className="bg-green-100 text-green-800">
-              <Activity className="w-4 h-4 mr-2" />
+              <CheckCircle className="w-4 h-4 mr-2" />
               Système actif
             </Badge>
             <Badge className="bg-blue-100 text-blue-800">
@@ -133,16 +130,12 @@ export default function AIHub() {
           </div>
         </div>
 
-        {/* Navigation 3 onglets */}
+        {/* Navigation 2 onglets */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 p-1 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 p-1 bg-white shadow-sm">
             <TabsTrigger value="essentiels" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               🎯 Essentiels
-            </TabsTrigger>
-            <TabsTrigger value="metriques" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              📊 Métriques
             </TabsTrigger>
             <TabsTrigger value="aide" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
@@ -293,93 +286,6 @@ export default function AIHub() {
             </Card>
           </TabsContent>
 
-          {/* Onglet Métriques simplifié */}
-          <TabsContent value="metriques" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl">
-                  <BarChart3 className="w-6 h-6 mr-3 text-green-600" />
-                  Métriques Système
-                </CardTitle>
-                <CardDescription>
-                  État de santé et performances de la plateforme IA
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  
-                  <Card className="border-green-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">Santé Système</h4>
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">IA Disponible</span>
-                          <Badge className="bg-green-100 text-green-800">Actif</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Latence</span>
-                          <span className="text-sm font-medium">&lt; 2s</span>
-                        </div>
-                        <Progress value={95} className="h-2" />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-blue-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">Performance</h4>
-                        <Activity className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Précision</span>
-                          <span className="text-sm font-medium">94%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Requêtes/h</span>
-                          <span className="text-sm font-medium">1,250</span>
-                        </div>
-                        <Progress value={94} className="h-2" />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-orange-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">Alertes</h4>
-                        <AlertTriangle className="w-5 h-5 text-orange-500" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Critiques</span>
-                          <Badge variant="outline" className="text-orange-600">0</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Warnings</span>
-                          <Badge variant="outline" className="text-yellow-600">1</Badge>
-                        </div>
-                        <Progress value={10} className="h-2" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="mt-6 border-blue-200 bg-blue-50">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">📈 Résumé Performance</h4>
-                    <p className="text-sm text-blue-700">
-                      Système opérationnel • IA fonctionnelle • Performance optimale • 1 alerte mineure
-                    </p>
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Onglet Aide simplifié */}
           <TabsContent value="aide" className="space-y-6">
