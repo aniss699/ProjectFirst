@@ -36,7 +36,7 @@ localPort = 46765
 externalPort = 3000
 
 [workflows]
-runButton = "Project"
+runButton = "SwipDEAL Production"
 
 [[workflows.workflow]]
 name = "Project"
@@ -75,6 +75,32 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Production Start"
+author = 48014459
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run start"
+
+[[workflows.workflow]]
+name = "SwipDEAL Production"
+author = 48014459
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run start"
 
 [deployment]
 deploymentTarget = "autoscale"
