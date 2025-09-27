@@ -12,16 +12,9 @@ export const AdvancedAIDashboard = lazy(() =>
   import('./advanced-ai-dashboard').then(module => ({ default: module.AdvancedAIDashboard }))
 );
 
-export const CollaborativeAIWorkspace = lazy(() => 
-  import('./collaborative-ai-workspace').then(module => ({ default: module.CollaborativeAIWorkspace }))
-);
-
-export const RevenuePredictor = lazy(() => 
-  import('./revenue-predictor').then(module => ({ default: module.RevenuePredictor }))
-);
 
 export const MarketIntelligenceDashboard = lazy(() => 
-  import('./market-intelligence-dashboard').then(module => ({ default: module.MarketIntelligenceDashboard }))
+  import('./market-intelligence-dashboard').then(module => ({ default: module.default }))
 );
 
 export const SmartBidAnalyzer = lazy(() => 
@@ -29,7 +22,7 @@ export const SmartBidAnalyzer = lazy(() =>
 );
 
 export const ProfileCompletenessAnalyzer = lazy(() => 
-  import('./profile-completeness-analyzer').then(module => ({ default: module.default }))
+  import('./profile-completeness-analyzer').then(module => ({ default: module.ProfileCompletenessAnalyzer }))
 );
 
 export const MissionMatchingEngine = lazy(() => 
@@ -37,7 +30,7 @@ export const MissionMatchingEngine = lazy(() =>
 );
 
 export const IntelligentDashboard = lazy(() => 
-  import('./intelligent-dashboard').then(module => ({ default: module.default }))
+  import('./intelligent-dashboard').then(module => ({ default: module.IntelligentDashboard }))
 );
 
 // Types

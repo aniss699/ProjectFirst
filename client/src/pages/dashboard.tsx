@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import type { Mission, Bid } from '@shared/schema';
+import type { Mission } from '@shared/schema';
 import { formatBudget, formatDate } from '@/lib/categories';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +45,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const { data: userBids = [] } = useQuery<Bid[]>({
+  const { data: userBids = [] } = useQuery({
     queryKey: ['/api/users', user?.id, 'bids'],
     enabled: !!user && user.role === 'PRO',
   });
@@ -88,11 +88,11 @@ export default function Dashboard() {
 
   const totalBids = userMissions.reduce((acc, mission) => acc + (mission.bids?.length || 0), 0);
   const averageBudget = userMissions.length > 0 
-    ? userMissions.reduce((acc, mission) => acc + parseInt(mission.budget || '0'), 0) / userMissions.length 
+    ? userMissions.reduce((acc, mission) => acc + parseInt(String(mission.budget_value_cents || 0)), 0) / userMissions.length 
     : 0;
 
   const completedMissions = userMissions.filter(m => m.status === 'completed').length;
-  const activeProjects = userMissions.filter(m => m.status === 'active').length;
+  const activeProjects = userMissions.filter(m => m.status === 'open' || m.status === 'in_progress').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -397,7 +397,7 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right ml-6">
                         <div className="text-2xl font-bold text-transparent bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text mb-2">
-                          {formatBudget(mission.budget || '0')}
+                          {formatBudget(String(mission.budget_value_cents || 0))}
                         </div>
                         <p className="text-sm text-gray-500">Budget estimé</p>
                       </div>
