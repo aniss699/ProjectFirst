@@ -99,107 +99,115 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* En-tête simple */}
-        <div className="mb-8">
+        {/* En-tête élégant */}
+        <div className="mb-10">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent">
                 Bonjour {user.name} !
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 Voici un aperçu de votre activité
               </p>
             </div>
             <Button 
               onClick={() => setLocation('/create-mission')}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-6 py-3 text-base font-semibold"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5 mr-2" />
               Nouvelle demande
             </Button>
           </div>
         </div>
 
-        {/* Statistiques principales - simples */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Statistiques principales - design amélioré */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
 
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-blue-100 hover:to-blue-150">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Demandes totales</p>
-                  <p className="text-2xl font-bold text-blue-600">{metrics.totalMissions}</p>
+                  <p className="text-sm font-medium text-blue-700">Demandes totales</p>
+                  <p className="text-3xl font-bold text-blue-800 mt-2">{metrics.totalMissions}</p>
                 </div>
-                <ClipboardList className="w-8 h-8 text-blue-500" />
+                <div className="p-3 bg-blue-500 rounded-xl shadow-md">
+                  <ClipboardList className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-orange-100 hover:to-orange-150">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">En cours</p>
-                  <p className="text-2xl font-bold text-orange-600">{metrics.activeMissions}</p>
+                  <p className="text-sm font-medium text-orange-700">En cours</p>
+                  <p className="text-3xl font-bold text-orange-800 mt-2">{metrics.activeMissions}</p>
                 </div>
-                <Clock className="w-8 h-8 text-orange-500" />
+                <div className="p-3 bg-orange-500 rounded-xl shadow-md">
+                  <Clock className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-green-100 hover:to-green-150">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Terminées</p>
-                  <p className="text-2xl font-bold text-green-600">{metrics.completedMissions}</p>
+                  <p className="text-sm font-medium text-green-700">Terminées</p>
+                  <p className="text-3xl font-bold text-green-800 mt-2">{metrics.completedMissions}</p>
                 </div>
-                <CheckCircle className="w-8 h-8 text-green-500" />
+                <div className="p-3 bg-green-500 rounded-xl shadow-md">
+                  <CheckCircle className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-purple-100 hover:to-purple-150">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Budget moyen</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="text-sm font-medium text-purple-700">Budget moyen</p>
+                  <p className="text-3xl font-bold text-purple-800 mt-2">
                     {metrics.averageBudget > 0 ? `€${Math.round(metrics.averageBudget)}` : '€0'}
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-purple-500" />
+                <div className="p-3 bg-purple-500 rounded-xl shadow-md">
+                  <DollarSign className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Navigation par onglets */}
-        <Card className="mb-8 bg-white shadow-md">
+        {/* Navigation par onglets - design moderne */}
+        <Card className="mb-10 bg-white shadow-xl border-0 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5 w-full">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
+            <TabsList className="grid grid-cols-5 w-full bg-gradient-to-r from-gray-50 to-gray-100 p-2 rounded-none">
+              <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
                 <Activity className="w-4 h-4" />
                 Vue d'ensemble
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <TabsTrigger value="notifications" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
                 <Bell className="w-4 h-4" />
                 Notifications
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs animate-pulse">
                     {notifications.filter(n => !n.read).length}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <TabsTrigger value="calendar" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
                 <Calendar className="w-4 h-4" />
                 Calendrier
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <TabsTrigger value="achievements" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
                 <Award className="w-4 h-4" />
                 Succès
               </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center gap-2">
+              <TabsTrigger value="messages" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
                 <MessageSquare className="w-4 h-4" />
                 Messages
               </TabsTrigger>
@@ -207,44 +215,55 @@ export default function Dashboard() {
 
             {/* Onglet Vue d'ensemble */}
             <TabsContent value="overview">
-              {/* Actions rapides */}
-              <Card className="mb-8 bg-white shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-lg">Actions rapides</CardTitle>
+              {/* Actions rapides - design amélioré */}
+              <Card className="mb-10 bg-white shadow-xl border-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-blue-500" />
+                    Actions rapides
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Button 
                       variant="outline" 
-                      className="h-20 flex-col gap-2"
+                      className="h-24 flex-col gap-3 border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 group"
                       onClick={() => setLocation('/create-mission')}
                     >
-                      <Plus className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm">Nouvelle demande</span>
+                      <div className="p-2 bg-blue-500 rounded-lg group-hover:bg-blue-600 transition-colors">
+                        <Plus className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">Nouvelle demande</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="h-20 flex-col gap-2"
+                      className="h-24 flex-col gap-3 border-2 border-green-200 hover:border-green-400 hover:bg-green-50 transition-all duration-300 transform hover:scale-105 group"
                       onClick={() => setLocation('/missions')}
                     >
-                      <Eye className="w-5 h-5 text-green-500" />
-                      <span className="text-sm">Mes demandes</span>
+                      <div className="p-2 bg-green-500 rounded-lg group-hover:bg-green-600 transition-colors">
+                        <Eye className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">Mes demandes</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="h-20 flex-col gap-2"
+                      className="h-24 flex-col gap-3 border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all duration-300 transform hover:scale-105 group"
                       onClick={() => setLocation('/marketplace')}
                     >
-                      <Users className="w-5 h-5 text-purple-500" />
-                      <span className="text-sm">Trouver des pros</span>
+                      <div className="p-2 bg-purple-500 rounded-lg group-hover:bg-purple-600 transition-colors">
+                        <Users className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Trouver des pros</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="h-20 flex-col gap-2"
+                      className="h-24 flex-col gap-3 border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all duration-300 transform hover:scale-105 group"
                       onClick={() => setActiveTab('messages')}
                     >
-                      <MessageSquare className="w-5 h-5 text-orange-500" />
-                      <span className="text-sm">Messages</span>
+                      <div className="p-2 bg-orange-500 rounded-lg group-hover:bg-orange-600 transition-colors">
+                        <MessageSquare className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-orange-700">Messages</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -330,65 +349,72 @@ export default function Dashboard() {
           {/* Sidebar avec informations utiles */}
           <div className="space-y-6">
 
-            {/* Progression du profil */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Mon profil</CardTitle>
+            {/* Progression du profil - design amélioré */}
+            <Card className="bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-blue-500" />
+                  Mon profil
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Profil complété</span>
-                      <span>75%</span>
+                  <div className="p-4 bg-white rounded-xl shadow-sm">
+                    <div className="flex justify-between text-sm mb-3">
+                      <span className="font-medium text-gray-700">Profil complété</span>
+                      <span className="font-bold text-blue-600">75%</span>
                     </div>
-                    <Progress value={75} className="h-2" />
+                    <Progress value={75} className="h-3 bg-gray-200" />
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full"
+                    className="w-full border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 font-semibold"
                     onClick={() => setLocation('/profile')}
                   >
+                    <Settings className="w-4 h-4 mr-2" />
                     Compléter mon profil
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recommandations IA */}
-            <Card className="bg-gradient-to-br from-blue-50 to-purple-50 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-blue-500" />
+            {/* Recommandations IA - design premium */}
+            <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 shadow-xl border-0 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-bl-3xl"></div>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
                   Recommandations IA
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 bg-white/70 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">🎯 Optimisez votre profil</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                  <div className="p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <p className="text-sm font-semibold text-blue-700 mb-2">🎯 Optimisez votre profil</p>
+                    <p className="text-xs text-gray-600 mb-3 leading-relaxed">
                       Complétez vos compétences pour augmenter votre visibilité de 30%.
                     </p>
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="mt-2"
+                      className="border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-all"
                       onClick={() => setLocation('/profile')}
                     >
                       Améliorer
                     </Button>
                   </div>
-                  <div className="p-3 bg-white/70 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">📈 Prix suggéré</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                  <div className="p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <p className="text-sm font-semibold text-green-700 mb-2">📈 Prix suggéré</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">
                       Basé sur vos projets similaires : augmentez vos tarifs de 15%.
                     </p>
                   </div>
-                  <div className="p-3 bg-white/70 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">⚡ Actions rapides</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                  <div className="p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <p className="text-sm font-semibold text-orange-700 mb-2">⚡ Actions rapides</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">
                       Répondre aux messages en moins de 2h augmente vos chances de 40%.
                     </p>
                   </div>
