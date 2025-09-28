@@ -350,16 +350,7 @@ export default function Navbar() {
                 <Target className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium text-left">Missions</span>
               </button>
-              <button
-                onClick={() => {
-                  handleNavigation('/ai-hub');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <Brain className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Hub IA</span>
-              </button>
+              
             </div>
           </div>
 
