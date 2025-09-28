@@ -215,28 +215,6 @@ export default function Navbar() {
                         Messages
                       </button>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLocation('/missions')}
-                        className="justify-start"
-                      >
-                        <Briefcase className="mr-2 h-4 w-4" />
-                        Mes missions
-                      </Button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLocation('/mes-demandes')}
-                        className="justify-start"
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Mes demandes
-                      </Button>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <button
@@ -398,9 +376,6 @@ export default function Navbar() {
                 </MobileNavLink>
                 <MobileNavLink href="/missions" icon={Briefcase}>
                   Mes Missions
-                </MobileNavLink>
-                <MobileNavLink href="/mes-demandes" icon={FileText}>
-                  Mes demandes
                 </MobileNavLink>
                 <MobileNavLink href="/messages" icon={MessageSquare}>
                   Messages
