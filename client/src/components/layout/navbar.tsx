@@ -97,8 +97,10 @@ export default function Navbar() {
               className="group flex items-center space-x-3 sm:space-x-4 hover:scale-105 transition-all duration-300 ease-out mobile-logo-container"
               data-testid="button-logo-navbar"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 relative">
                 <span className="text-white font-bold text-lg">S</span>
+                <div className="absolute top-1 right-2 w-1 h-1 bg-white rounded-full"></div>
+                <div className="absolute bottom-1 left-2 w-1 h-1 bg-white rounded-full"></div>
               </div>
               <div className="flex flex-col items-start justify-center mobile-brand-text ml-2">
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent" data-testid="text-brand-navbar">
