@@ -8,6 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { NotificationCenter, useNotifications } from '@/components/notifications/notification-center';
+import { ChatSystem } from '@/components/messaging/chat-system';
+import { AchievementDashboard } from '@/components/gamification/achievement-dashboard';
+import { AvailabilityCalendar } from '@/components/calendar/availability-calendar';
 import { 
   ClipboardList, 
   DollarSign, 
@@ -23,13 +27,27 @@ import {
   TrendingUp,
   ArrowUpRight,
   Briefcase,
-  Star
+  Star,
+  Bell,
+  Settings,
+  Heart,
+  Target,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState('overview');
+  const { 
+    notifications, 
+    addNotification, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification 
+  } = useNotifications();
 
   const { data: userMissions = [] } = useQuery<Mission[]>({
     queryKey: ['/api/users', user?.id, 'missions'],
@@ -156,51 +174,83 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Actions rapides */}
+        {/* Navigation par onglets */}
         <Card className="mb-8 bg-white shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">Actions rapides</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2"
-                onClick={() => setLocation('/create-mission')}
-              >
-                <Plus className="w-5 h-5 text-blue-500" />
-                <span className="text-sm">Nouvelle demande</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2"
-                onClick={() => setLocation('/missions')}
-              >
-                <Eye className="w-5 h-5 text-green-500" />
-                <span className="text-sm">Mes demandes</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2"
-                onClick={() => setLocation('/marketplace')}
-              >
-                <Users className="w-5 h-5 text-purple-500" />
-                <span className="text-sm">Trouver des pros</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2"
-                onClick={() => setLocation('/messages')}
-              >
-                <MessageSquare className="w-5 h-5 text-orange-500" />
-                <span className="text-sm">Messages</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-5 w-full">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Vue d'ensemble
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                Notifications
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
+                    {notifications.filter(n => !n.read).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Calendrier
+              </TabsTrigger>
+              <TabsTrigger value="achievements" className="flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                Succès
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Messages
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Contenu principal simplifié */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Onglet Vue d'ensemble */}
+            <TabsContent value="overview">
+              {/* Actions rapides */}
+              <Card className="mb-8 bg-white shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-lg">Actions rapides</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex-col gap-2"
+                      onClick={() => setLocation('/create-mission')}
+                    >
+                      <Plus className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm">Nouvelle demande</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex-col gap-2"
+                      onClick={() => setLocation('/missions')}
+                    >
+                      <Eye className="w-5 h-5 text-green-500" />
+                      <span className="text-sm">Mes demandes</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex-col gap-2"
+                      onClick={() => setLocation('/marketplace')}
+                    >
+                      <Users className="w-5 h-5 text-purple-500" />
+                      <span className="text-sm">Trouver des pros</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-20 flex-col gap-2"
+                      onClick={() => setActiveTab('messages')}
+                    >
+                      <MessageSquare className="w-5 h-5 text-orange-500" />
+                      <span className="text-sm">Messages</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Liste des demandes récentes */}
           <div className="lg:col-span-2">
@@ -306,26 +356,40 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Conseils pratiques */}
+            {/* Recommandations IA */}
             <Card className="bg-gradient-to-br from-blue-50 to-purple-50 shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Award className="w-5 h-5 text-blue-500" />
-                  Conseils
+                  <Zap className="w-5 h-5 text-blue-500" />
+                  Recommandations IA
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="p-3 bg-white/70 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">💡 Soyez précis</p>
+                    <p className="text-sm font-medium text-blue-700">🎯 Optimisez votre profil</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      Plus votre demande est détaillée, plus vous recevrez de propositions adaptées.
+                      Complétez vos compétences pour augmenter votre visibilité de 30%.
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="mt-2"
+                      onClick={() => setLocation('/profile')}
+                    >
+                      Améliorer
+                    </Button>
+                  </div>
+                  <div className="p-3 bg-white/70 rounded-lg">
+                    <p className="text-sm font-medium text-blue-700">📈 Prix suggéré</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Basé sur vos projets similaires : augmentez vos tarifs de 15%.
                     </p>
                   </div>
                   <div className="p-3 bg-white/70 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">⏱️ Répondez rapidement</p>
+                    <p className="text-sm font-medium text-blue-700">⚡ Actions rapides</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      Une réponse rapide améliore vos chances de trouver le bon professionnel.
+                      Répondre aux messages en moins de 2h augmente vos chances de 40%.
                     </p>
                   </div>
                 </div>
@@ -333,6 +397,86 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
+            </TabsContent>
+
+            {/* Onglet Notifications */}
+            <TabsContent value="notifications">
+              <div className="max-w-2xl mx-auto">
+                <NotificationCenter
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                  onDelete={deleteNotification}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Onglet Calendrier */}
+            <TabsContent value="calendar">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Gestion de vos disponibilités
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AvailabilityCalendar userId={user?.id?.toString() || ''} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Onglet Succès */}
+            <TabsContent value="achievements">
+              <AchievementDashboard />
+            </TabsContent>
+
+            {/* Onglet Messages */}
+            <TabsContent value="messages">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Conversations récentes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                            JD
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">Jean Dupont</p>
+                            <p className="text-xs text-gray-600">Projet développement web...</p>
+                            <p className="text-xs text-gray-500">Il y a 2h</p>
+                          </div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-medium">
+                            ML
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">Marie Lefebvre</p>
+                            <p className="text-xs text-gray-600">Design graphique terminé</p>
+                            <p className="text-xs text-gray-500">Il y a 1j</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="lg:col-span-2">
+                  <ChatSystem
+                    conversationId="demo-conv"
+                    currentUserId={user?.id?.toString() || ''}
+                    otherUser={{ id: '2', name: 'Jean Dupont' }}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </Card>
       </div>
     </div>
   );
