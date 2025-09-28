@@ -182,34 +182,39 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Navigation par onglets - design moderne */}
+        {/* Navigation par onglets - design moderne et responsive */}
         <Card className="mb-10 bg-white shadow-xl border-0 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5 w-full bg-gradient-to-r from-gray-50 to-gray-100 p-2 rounded-none">
-              <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
-                <Activity className="w-4 h-4" />
-                Vue d'ensemble
+            <TabsList className="grid grid-cols-5 w-full bg-gradient-to-r from-gray-50 to-gray-100 p-1 md:p-2 rounded-none min-h-[50px] md:min-h-[60px]">
+              <TabsTrigger value="overview" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300 px-1 md:px-3 py-2 md:py-3 text-xs md:text-sm">
+                <Activity className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                <span className="hidden sm:block">Vue d'ensemble</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">Vue</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
-                <Bell className="w-4 h-4" />
-                Notifications
+              <TabsTrigger value="notifications" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300 px-1 md:px-3 py-2 md:py-3 text-xs md:text-sm relative">
+                <Bell className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                <span className="hidden sm:block">Notifications</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">Notifs</span>
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs animate-pulse">
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 md:relative md:top-0 md:right-0 md:ml-1 h-4 w-4 md:h-5 md:w-5 p-0 text-[10px] md:text-xs animate-pulse flex items-center justify-center">
                     {notifications.filter(n => !n.read).length}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
-                <Calendar className="w-4 h-4" />
-                Calendrier
+              <TabsTrigger value="calendar" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300 px-1 md:px-3 py-2 md:py-3 text-xs md:text-sm">
+                <Calendar className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                <span className="hidden sm:block">Calendrier</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">Agenda</span>
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
-                <Award className="w-4 h-4" />
-                Succès
+              <TabsTrigger value="achievements" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300 px-1 md:px-3 py-2 md:py-3 text-xs md:text-sm">
+                <Award className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                <span className="hidden sm:block">Succès</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">Succès</span>
               </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300">
-                <MessageSquare className="w-4 h-4" />
-                Messages
+              <TabsTrigger value="messages" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-blue-600 transition-all duration-300 px-1 md:px-3 py-2 md:py-3 text-xs md:text-sm">
+                <MessageSquare className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                <span className="hidden sm:block">Messages</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">Msg</span>
               </TabsTrigger>
             </TabsList>
 
