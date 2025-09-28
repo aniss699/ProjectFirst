@@ -109,9 +109,6 @@ export default function Navbar() {
                   <span className="text-emerald-400 font-black">deal</span>
                   <span className="text-gray-300"> vient à toi</span>
                 </span>
-                <span className="text-xs sm:text-sm text-gray-400 hidden lg:block font-semibold leading-none mt-1.5 mobile-brand-description">
-                  IA • Missions • Talents
-                </span>
               </div>
             </button>
           </div>
@@ -242,8 +239,8 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile Menu */}
-            <div className="flex sm:hidden">
+            {/* Menu Burger */}
+            <div className="flex">
               <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-700/50" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="w-6 h-6 text-gray-300" />
               </Button>
