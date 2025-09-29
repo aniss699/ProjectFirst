@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 export default function Navbar() {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -117,6 +117,21 @@ export default function Navbar() {
             </button>
           </div>
 
+
+          {/* Language Selector */}
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
+              className="flex items-center space-x-1 px-2 sm:px-3 text-gray-300 hover:text-blue-300 hover:bg-gray-700/50"
+              title={language === 'fr' ? 'Switch to English' : 'Passer en français'}
+            >
+              <span className="text-xs sm:text-sm font-medium">
+                {language === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}
+              </span>
+            </Button>
+          </div>
 
           {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-4">
