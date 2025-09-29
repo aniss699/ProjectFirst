@@ -164,10 +164,10 @@ export default function Marketplace() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-          {t('marketplace.title')}
+          Marketplace des Projets
         </h1>
         <p className="text-base sm:text-lg text-gray-600 mb-4">
-          {t('marketplace.subtitle')}
+          Découvrez et soumissionnez sur les projets disponibles
         </p>
         
         {/* Bannière de statut système */}
@@ -192,21 +192,21 @@ export default function Marketplace() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">{t('marketplace.filterTitle')}</h3>
+            <h3 className="text-xl font-bold text-gray-900">Filtrer les projets</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                {t('marketplace.category')}
+                Catégorie
               </Label>
               <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
                 <SelectTrigger className="bg-white/80 border-gray-200 hover:border-blue-400 transition-colors">
-                  <SelectValue placeholder={t('marketplace.allCategories')} />
+                  <SelectValue placeholder="Toutes les catégories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('marketplace.allCategories')}</SelectItem>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -219,18 +219,18 @@ export default function Marketplace() {
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                {t('marketplace.budget')}
+                Budget
               </Label>
               <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
                 <SelectTrigger className="bg-white/80 border-gray-200 hover:border-green-400 transition-colors">
-                  <SelectValue placeholder={t('marketplace.allBudgets')} />
+                  <SelectValue placeholder="Tous les budgets" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('marketplace.allBudgets')}</SelectItem>
-                  <SelectItem value="0-500">{t('budget.range.0-500')}</SelectItem>
-                  <SelectItem value="500-2000">{t('budget.range.500-2000')}</SelectItem>
-                  <SelectItem value="2000-5000">{t('budget.range.2000-5000')}</SelectItem>
-                  <SelectItem value="5000+">{t('budget.range.5000+')}</SelectItem>
+                  <SelectItem value="all">Tous les budgets</SelectItem>
+                  <SelectItem value="0-500">0 - 500€</SelectItem>
+                  <SelectItem value="500-2000">500 - 2 000€</SelectItem>
+                  <SelectItem value="2000-5000">2 000 - 5 000€</SelectItem>
+                  <SelectItem value="5000+">5 000€+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -238,11 +238,11 @@ export default function Marketplace() {
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                {t('marketplace.location')}
+                Localisation
               </Label>
               <Input
                 type="text"
-                placeholder={t('marketplace.locationPlaceholder')}
+                placeholder="Ville, région..."
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
                 className="bg-white/80 border-gray-200 hover:border-purple-400 focus:border-purple-500 transition-colors"
@@ -255,7 +255,7 @@ export default function Marketplace() {
             variant="outline"
             className="w-full border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
           >
-            {t('marketplace.resetFilters')}
+            🔄 Réinitialiser les filtres
           </Button>
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function Marketplace() {
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 sm:mb-0">
             <h2 className="text-2xl font-bold text-gray-900">
-              {t('marketplace.allMissions')} ({filteredAndSortedMissions.length})
+              Toutes les missions ({filteredAndSortedMissions.length})
             </h2>
             
             {/* Indicateurs de santé du système */}
@@ -272,27 +272,27 @@ export default function Marketplace() {
               {isLoading && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  {t('marketplace.serviceStatus.loading')}
+                  Chargement...
                 </div>
               )}
               
               {!isLoading && !error && !isFallbackMode && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  {t('marketplace.serviceStatus.active')}
+                  Service actif
                 </div>
               )}
               
               {isFallbackMode && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  {t('marketplace.serviceStatus.degraded')}
+                  Mode dégradé
                 </div>
               )}
               
               {metadata?.total !== undefined && (
                 <div className="text-sm text-gray-500">
-                  {metadata.total} {t('marketplace.total')}{metadata.has_errors && ` ${t('marketplace.withErrors')}`}
+                  {metadata.total} total{metadata.has_errors && ' (avec erreurs)'}
                 </div>
               )}
             </div>
@@ -307,16 +307,16 @@ export default function Marketplace() {
               </Button>
             )}
             <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="text-sm text-gray-500 whitespace-nowrap">{t('marketplace.sortBy')}</span>
+              <span className="text-sm text-gray-500 whitespace-nowrap">Trier par:</span>
               <Select value={filters.sort} onValueChange={(value) => handleFilterChange('sort', value)}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">{t('marketplace.newest')}</SelectItem>
-                  <SelectItem value="budget-high">{t('marketplace.budgetHigh')}</SelectItem>
-                  <SelectItem value="budget-low">{t('marketplace.budgetLow')}</SelectItem>
-                  <SelectItem value="bids">{t('marketplace.bidsCount')}</SelectItem>
+                  <SelectItem value="newest">Plus récent</SelectItem>
+                  <SelectItem value="budget-high">Budget décroissant</SelectItem>
+                  <SelectItem value="budget-low">Budget croissant</SelectItem>
+                  <SelectItem value="bids">Nombre d'offres</SelectItem>
                 </SelectContent>
               </Select>
             </div>

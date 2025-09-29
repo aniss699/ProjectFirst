@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth';
 import type { MissionView, BidView } from '@shared/types';
 import { dataApi } from '@/lib/api/services';
 import { formatBudget, formatDate } from '@/lib/categories';
-import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,6 @@ type MissionWithBids = MissionView;
 
 export default function Missions() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'posted' | 'bids'>('posted');
   const queryClient = useQueryClient();
@@ -76,32 +74,32 @@ export default function Missions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userMissions'] });
       toast({
-        title: t('toast.mission.deleted.title'),
-        description: t('toast.mission.deleted.description'),
+        title: "Mission supprimée",
+        description: "Votre mission a été supprimée avec succès.",
       });
     },
     onError: (error) => {
       toast({
-        title: t('toast.error.title'),
-        description: t('toast.error.deleteMission'),
+        title: "Erreur",
+        description: "Impossible de supprimer la mission.",
         variant: "destructive",
       });
     },
   });
 
   const handleDeleteMission = (missionId: number) => {
-    if (window.confirm(t('missions.deleteConfirm'))) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette mission ?')) {
       deleteMissionMutation.mutate(missionId);
     }
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      published: { label: t('status.published'), variant: 'default' as const },
-      open: { label: t('status.open'), variant: 'default' as const },
-      in_progress: { label: t('status.in_progress'), variant: 'secondary' as const },
-      completed: { label: t('status.completed'), variant: 'outline' as const },
-      closed: { label: t('status.closed'), variant: 'destructive' as const },
+      published: { label: 'Publiée', variant: 'default' as const },
+      open: { label: 'Ouverte', variant: 'default' as const },
+      in_progress: { label: 'En cours', variant: 'secondary' as const },
+      completed: { label: 'Terminée', variant: 'outline' as const },
+      closed: { label: 'Fermée', variant: 'destructive' as const },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.published;
@@ -116,10 +114,10 @@ export default function Missions() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('missions.loginRequired')}</h2>
-          <p className="text-gray-600 mb-8">{t('missions.loginRequiredDesc')}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Connexion requise</h2>
+          <p className="text-gray-600 mb-8">Veuillez vous connecter pour voir vos missions</p>
           <Button onClick={() => setLocation('/')}>
-            {t('missions.backHome')}
+            Retour à l'accueil
           </Button>
         </div>
       </div>
