@@ -184,21 +184,20 @@ export default function Marketplace() {
         />
       </div>
 
-      <div className="mb-4 sm:mb-6">
-        <div className="bg-white/90 rounded-xl shadow-md border border-gray-200 p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="mb-3 sm:mb-4">
+        <div className="bg-white/90 rounded-lg shadow-sm border border-gray-200 p-2 backdrop-blur-sm">
+          <div className="flex items-center gap-1 mb-2">
+            <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
             </svg>
-            <h3 className="text-md font-semibold text-gray-800">Filtrer</h3>
+            <h3 className="text-xs font-medium text-gray-700">Filtres</h3>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-            <div className="space-y-1">
-              <Label className="text-xs font-medium text-gray-600">Catégorie</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div>
               <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Toutes" />
+                <SelectTrigger className="h-6 text-xs">
+                  <SelectValue placeholder="Catégorie" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes</SelectItem>
@@ -211,11 +210,10 @@ export default function Marketplace() {
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-medium text-gray-600">Budget</Label>
+            <div>
               <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Tous" />
+                <SelectTrigger className="h-6 text-xs">
+                  <SelectValue placeholder="Budget" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
@@ -227,23 +225,21 @@ export default function Marketplace() {
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-medium text-gray-600">Lieu</Label>
+            <div>
               <Input
                 type="text"
-                placeholder="Ville..."
+                placeholder="Lieu..."
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
-                className="h-8 text-sm"
+                className="h-6 text-xs"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-medium text-gray-600 invisible">Action</Label>
+            <div>
               <Button
                 onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })}
                 variant="outline"
-                className="h-8 text-xs"
+                className="h-6 text-xs px-2"
                 size="sm"
               >
                 Effacer

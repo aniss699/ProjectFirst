@@ -229,18 +229,17 @@ export default function AvailableProviders() {
       <div className="grid lg:grid-cols-4 gap-8">
         {/* Filtres et Calendrier */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white/90 rounded-lg shadow-md border border-gray-200 p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <h3 className="text-md font-semibold text-gray-800">Filtres</h3>
+          <div className="bg-white/90 rounded-lg shadow-sm border border-gray-200 p-2 backdrop-blur-sm">
+            <div className="flex items-center gap-1 mb-2">
+              <Filter className="w-3 h-3 text-blue-600" />
+              <h3 className="text-xs font-medium text-gray-700">Filtres</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600">Catégorie</label>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div>
                 <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({...prev, category: value}))}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Toutes" />
+                  <SelectTrigger className="h-6 text-xs">
+                    <SelectValue placeholder="Catégorie" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes</SelectItem>
@@ -251,32 +250,29 @@ export default function AvailableProviders() {
                 </Select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600">Lieu</label>
+              <div>
                 <Input
                   placeholder="Ville..."
                   value={filters.location}
                   onChange={(e) => setFilters(prev => ({...prev, location: e.target.value}))}
-                  className="h-8 text-sm"
+                  className="h-6 text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600">Max €/h</label>
+              <div>
                 <Input
                   type="number"
-                  placeholder="€"
+                  placeholder="Max €/h"
                   value={filters.maxRate}
                   onChange={(e) => setFilters(prev => ({...prev, maxRate: e.target.value}))}
-                  className="h-8 text-sm"
+                  className="h-6 text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600">Dispo</label>
+              <div>
                 <Select value={filters.availability} onValueChange={(value) => setFilters(prev => ({...prev, availability: value}))}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
+                  <SelectTrigger className="h-6 text-xs">
+                    <SelectValue placeholder="Dispo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="today">Aujourd'hui</SelectItem>
@@ -290,7 +286,7 @@ export default function AvailableProviders() {
             <Button 
               variant="outline" 
               size="sm"
-              className="w-full mt-3 h-7 text-xs"
+              className="w-full h-5 text-xs px-2"
               onClick={() => setFilters({category: 'all', location: '', maxRate: '', availability: 'today'})}
             >
               Effacer
