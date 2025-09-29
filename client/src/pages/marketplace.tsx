@@ -26,6 +26,7 @@ export default function Marketplace() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [showAIMatching, setShowAIMatching] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastRetryTime, setLastRetryTime] = useState<number>(0);
   const [filters, setFilters] = useState({
@@ -185,78 +186,100 @@ export default function Marketplace() {
       </div>
 
       <div className="mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+        <Button
+          onClick={() => setShowFilters(!showFilters)}
+          variant="outline"
+          className="mb-4 gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+          </svg>
+          Filtres
+          {showFilters ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-            <h3 className="text-sm font-semibold text-gray-800">Filtres de recherche</h3>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          )}
+        </Button>
+
+        {showFilters && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+              </svg>
+              <h3 className="text-sm font-semibold text-gray-800">Filtres de recherche</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="category-filter" className="text-xs font-medium text-gray-600 mb-1 block">
+                  Catégorie
+                </Label>
+                <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Toutes les catégories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les catégories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="budget-filter" className="text-xs font-medium text-gray-600 mb-1 block">
+                  Budget
+                </Label>
+                <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Tous les budgets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les budgets</SelectItem>
+                    <SelectItem value="0-500">0 - 500€</SelectItem>
+                    <SelectItem value="500-2000">500€ - 2 000€</SelectItem>
+                    <SelectItem value="2000-5000">2 000€ - 5 000€</SelectItem>
+                    <SelectItem value="5000+">5 000€+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="location-filter" className="text-xs font-medium text-gray-600 mb-1 block">
+                  Localisation
+                </Label>
+                <Input
+                  id="location-filter"
+                  type="text"
+                  placeholder="Ville, région..."
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  className="h-8"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })}
+                  variant="outline"
+                  className="h-8 w-full"
+                  size="sm"
+                >
+                  Réinitialiser
+                </Button>
+              </div>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="category-filter" className="text-xs font-medium text-gray-600 mb-1 block">
-                Catégorie
-              </Label>
-              <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Toutes les catégories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="budget-filter" className="text-xs font-medium text-gray-600 mb-1 block">
-                Budget
-              </Label>
-              <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Tous les budgets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les budgets</SelectItem>
-                  <SelectItem value="0-500">0 - 500€</SelectItem>
-                  <SelectItem value="500-2000">500€ - 2 000€</SelectItem>
-                  <SelectItem value="2000-5000">2 000€ - 5 000€</SelectItem>
-                  <SelectItem value="5000+">5 000€+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="location-filter" className="text-xs font-medium text-gray-600 mb-1 block">
-                Localisation
-              </Label>
-              <Input
-                id="location-filter"
-                type="text"
-                placeholder="Ville, région..."
-                value={filters.location}
-                onChange={(e) => handleFilterChange('location', e.target.value)}
-                className="h-8"
-              />
-            </div>
-
-            <div className="flex items-end">
-              <Button
-                onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })}
-                variant="outline"
-                className="h-8 w-full"
-                size="sm"
-              >
-                Réinitialiser
-              </Button>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="lg:w-3/4 w-full">

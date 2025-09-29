@@ -57,6 +57,7 @@ interface AvailableProvider {
 
 export default function AvailableProviders() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     category: 'all',
     location: '',
@@ -229,81 +230,101 @@ export default function AvailableProviders() {
       <div className="grid lg:grid-cols-4 gap-8">
         {/* Filtres et Calendrier */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-semibold text-gray-800">Filtres de recherche</h3>
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            variant="outline"
+            className="w-full gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filtres
+            {showFilters ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+          </Button>
+
+          {showFilters && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-semibold text-gray-800">Filtres de recherche</h3>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs font-medium text-gray-600 mb-1 block">
+                    Catégorie
+                  </Label>
+                  <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({...prev, category: value}))}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Toutes les catégories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les catégories</SelectItem>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-gray-600 mb-1 block">
+                    Localisation
+                  </Label>
+                  <Input
+                    placeholder="Ville, région..."
+                    value={filters.location}
+                    onChange={(e) => setFilters(prev => ({...prev, location: e.target.value}))}
+                    className="h-8"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-gray-600 mb-1 block">
+                    Tarif maximum
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="€/heure"
+                    value={filters.maxRate}
+                    onChange={(e) => setFilters(prev => ({...prev, maxRate: e.target.value}))}
+                    className="h-8"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-gray-600 mb-1 block">
+                    Disponibilité
+                  </Label>
+                  <Select value={filters.availability} onValueChange={(value) => setFilters(prev => ({...prev, availability: value}))}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Période" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Aujourd'hui</SelectItem>
+                      <SelectItem value="week">Cette semaine</SelectItem>
+                      <SelectItem value="all">Toutes les disponibilités</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full h-8"
+                  onClick={() => setFilters({category: 'all', location: '', maxRate: '', availability: 'today'})}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              </div>
             </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs font-medium text-gray-600 mb-1 block">
-                  Catégorie
-                </Label>
-                <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({...prev, category: value}))}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Toutes les catégories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les catégories</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-xs font-medium text-gray-600 mb-1 block">
-                  Localisation
-                </Label>
-                <Input
-                  placeholder="Ville, région..."
-                  value={filters.location}
-                  onChange={(e) => setFilters(prev => ({...prev, location: e.target.value}))}
-                  className="h-8"
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs font-medium text-gray-600 mb-1 block">
-                  Tarif maximum
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="€/heure"
-                  value={filters.maxRate}
-                  onChange={(e) => setFilters(prev => ({...prev, maxRate: e.target.value}))}
-                  className="h-8"
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs font-medium text-gray-600 mb-1 block">
-                  Disponibilité
-                </Label>
-                <Select value={filters.availability} onValueChange={(value) => setFilters(prev => ({...prev, availability: value}))}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Aujourd'hui</SelectItem>
-                    <SelectItem value="week">Cette semaine</SelectItem>
-                    <SelectItem value="all">Toutes les disponibilités</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full h-8"
-                onClick={() => setFilters({category: 'all', location: '', maxRate: '', availability: 'today'})}
-              >
-                Réinitialiser les filtres
-              </Button>
-            </div>
-          </div>
+          )}
 
           <Card>
             <CardHeader>
