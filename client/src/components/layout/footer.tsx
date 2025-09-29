@@ -22,8 +22,10 @@ export default function Footer() {
             {/* Brand Section */}
             <div className="lg:col-span-1">
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3 relative">
                   <span className="text-white font-bold text-lg">S</span>
+                  <div className="absolute top-1 right-2 w-1 h-1 bg-white rounded-full"></div>
+                  <div className="absolute bottom-1 left-2 w-1 h-1 bg-white rounded-full"></div>
                 </div>
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   Swideal
