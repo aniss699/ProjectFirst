@@ -12,18 +12,16 @@ import { ClipboardList, Hand, Plus, Eye, Edit, Trash2, MessageSquare, AlertCircl
 import { useLocation } from 'wouter';
 import { paths } from '../routes/paths';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/hooks/use-language';</old_str>
 
 // Utiliser le type normalisé MissionView qui inclut déjà les bids
 type MissionWithBids = MissionView;
 
 export default function Missions() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'posted' | 'bids'>('posted');
   const queryClient = useQueryClient();
-  const { toast } = useToast();</old_str>
+  const { toast } = useToast();
 
   const { data: userMissions = [], isLoading: missionsLoading, error: missionsError } = useQuery<MissionWithBids[]>({
     queryKey: ['userMissions', user?.id],
@@ -76,37 +74,37 @@ export default function Missions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userMissions'] });
       toast({
-        title: t('toast.mission.deleted'),
-        description: t('toast.mission.deleted.description'),
+        title: "Mission supprimée",
+        description: "Votre mission a été supprimée avec succès.",
       });
     },
     onError: (error) => {
       toast({
-        title: t('toast.error.title'),
-        description: t('toast.error.deleteMission'),
+        title: "Erreur",
+        description: "Impossible de supprimer la mission.",
         variant: "destructive",
       });
-    },</old_str>
+    },
   });
 
   const handleDeleteMission = (missionId: number) => {
-    if (window.confirm(t('missions.actions.delete.confirm'))) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette mission ?')) {
       deleteMissionMutation.mutate(missionId);
     }
-  };</old_str>
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      published: { label: t('missions.status.published'), variant: 'default' as const },
-      open: { label: t('missions.status.open'), variant: 'default' as const },
-      in_progress: { label: t('missions.status.inProgress'), variant: 'secondary' as const },
-      completed: { label: t('missions.status.completed'), variant: 'outline' as const },
-      closed: { label: t('missions.status.closed'), variant: 'destructive' as const },
+      published: { label: 'Publiée', variant: 'default' as const },
+      open: { label: 'Ouverte', variant: 'default' as const },
+      in_progress: { label: 'En cours', variant: 'secondary' as const },
+      completed: { label: 'Terminée', variant: 'outline' as const },
+      closed: { label: 'Fermée', variant: 'destructive' as const },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.published;
     return <Badge variant={config.variant}>{config.label}</Badge>;
-  };</old_str>
+  };
 
   // Debug: Log user info  
   console.log('👤 User actuel:', { id: user?.id, type: user?.type, name: user?.name });
@@ -116,25 +114,25 @@ export default function Missions() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('missions.loginRequired')}</h2>
-          <p className="text-gray-600 mb-8">{t('missions.loginRequired.description')}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Connexion requise</h2>
+          <p className="text-gray-600 mb-8">Veuillez vous connecter pour voir vos missions</p>
           <Button onClick={() => setLocation('/')}>
-            {t('missions.loginRequired.button')}
+            Retour à l'accueil
           </Button>
         </div>
       </div>
     );
-  }</old_str>
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-            {t('missions.title')}
+            Mes Missions
           </h1>
           <p className="text-base sm:text-lg text-gray-600">
-            {t('missions.description')}
+            Gérez vos missions et consultez les offres reçues
           </p>
         </div>
         <Button
@@ -143,8 +141,8 @@ export default function Missions() {
           className="w-full sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-          {t('missions.newMission')}
-        </Button></old_str>
+          Nouvelle Mission
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -158,7 +156,7 @@ export default function Missions() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t('missions.posted')} ({userMissions.length})
+            Missions publiées ({userMissions.length})
           </button>
           {user.type === 'provider' && (
             <button
@@ -169,9 +167,9 @@ export default function Missions() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              {t('missions.bids')} ({userBids.length})
+              Mes candidatures ({userBids.length})
             </button>
-          )}</old_str>
+          )}
         </nav>
       </div>
 
@@ -179,7 +177,7 @@ export default function Missions() {
       {(missionsLoading || bidsLoading) && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-500">{t('missions.loading')}</p>
+          <p className="text-gray-500">Chargement...</p>
         </div>
       )}
 
@@ -187,12 +185,12 @@ export default function Missions() {
       {missionsError && (
         <div className="text-center py-12">
           <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
-          <p className="text-red-500 text-lg mb-4">{t('missions.error.title')}</p>
+          <p className="text-red-500 text-lg mb-4">Erreur de chargement</p>
           <Button onClick={() => window.location.reload()} variant="outline">
-            {t('missions.error.retry')}
+            Réessayer
           </Button>
         </div>
-      )}</old_str>
+      )}
 
       {/* Posted Missions Tab */}
       {activeTab === 'posted' && !missionsLoading && (
@@ -223,13 +221,13 @@ export default function Missions() {
                 <CardContent>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
-                      <span>{t('missions.category')}: {mission.category}</span>
-                      <span>{t('missions.location')}: {mission.location || t('missions.location.notSpecified')}</span>
+                      <span>Catégorie: {mission.category}</span>
+                      <span>Lieu: {mission.location || 'Non spécifié'}</span>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="w-4 h-4" />
-                        <span>{mission.bids?.length || 0} {(mission.bids?.length || 0) === 1 ? t('missions.offers') : t('missions.offers.plural')}</span>
+                        <span>{mission.bids?.length || 0} offre{(mission.bids?.length || 0) !== 1 ? 's' : ''}</span>
                       </div>
-                    </div></old_str>
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -239,7 +237,7 @@ export default function Missions() {
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-4 h-4" />
-                        {t('missions.actions.viewOffers')}
+                        Voir les offres
                       </Button>
                       <Button
                         variant="outline"
@@ -248,7 +246,7 @@ export default function Missions() {
                         className="flex items-center gap-1"
                       >
                         <Edit className="w-4 h-4" />
-                        {t('missions.actions.edit')}
+                        Modifier
                       </Button>
                       <Button
                         variant="outline"
@@ -258,46 +256,46 @@ export default function Missions() {
                         disabled={deleteMissionMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4" />
-                        {t('missions.actions.delete')}
-                      </Button></old_str>
+                        Supprimer
+                      </Button>
                     </div>
                   </div>
 
                   {/* Aperçu des offres reçues */}
                   {mission.bids && mission.bids.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-2">{t('missions.latestOffers')}</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Dernières offres reçues :</p>
                       <div className="space-y-2">
                         {mission.bids.slice(0, 2).map((bid) => (
                           <div key={bid.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
-                            <span className="truncate flex-1">{bid.message || t('missions.candidature')}</span>
+                            <span className="truncate flex-1">{bid.message || 'Candidature soumise'}</span>
                             <span className="font-medium text-primary ml-2">{bid.price || formatBudget(bid.amount.toString())}</span>
                           </div>
                         ))}
                         {mission.bids.length > 2 && (
                           <p className="text-xs text-gray-500">
-                            +{mission.bids.length - 2} autre{mission.bids.length - 2 > 1 ? 's' : ''} {mission.bids.length - 2 === 1 ? t('missions.offers') : t('missions.offers.plural')}
+                            +{mission.bids.length - 2} autre{mission.bids.length - 2 > 1 ? 's' : ''} offre{mission.bids.length - 2 > 1 ? 's' : ''}
                           </p>
                         )}
                       </div>
                     </div>
-                  )}</old_str>
+                  )}
                 </CardContent>
               </Card>
             ))
           ) : (
             <div className="text-center py-12">
               <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-4">{t('missions.noMissions')}</p>
+              <p className="text-gray-500 text-lg mb-4">Vous n'avez pas encore publié de missions</p>
               <Button
                 onClick={() => setLocation(paths.createMission)}
                 className="bg-primary hover:bg-primary-dark text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {t('missions.createFirstMission')}
+                Créer ma première mission
               </Button>
             </div>
-          )}</old_str>
+          )}
         </div>
       )}
 
@@ -309,38 +307,38 @@ export default function Missions() {
               <Card key={bid.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {t('missions.candidature')}
+                    Candidature soumise
                   </h3>
                   <p className="text-gray-600 mb-4 text-sm sm:text-base">{bid.message || 'Aucun message fourni'}</p>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
-                      <span className="text-sm text-gray-500">{t('missions.yourOffer')}:</span>
+                      <span className="text-sm text-gray-500">Votre offre:</span>
                       <span className="text-xl font-bold text-primary ml-2">
                         {bid.price || formatBudget(bid.amount.toString())}
                       </span>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-500">{t('missions.deadline')}: {bid.timeline_days ? `${bid.timeline_days} ${t('missions.deadline.days')}` : t('missions.deadline.notSpecified')}</span>
+                      <span className="text-sm text-gray-500">Délai: {bid.timeline_days ? `${bid.timeline_days} jours` : 'Non spécifié'}</span>
                       <Badge variant="secondary">
-                        {t('missions.pending')}
+                        En attente
                       </Badge>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))</old_str>
+            ))
           ) : (
             <div className="text-center py-12">
               <Hand className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-4">{t('missions.noBids')}</p>
+              <p className="text-gray-500 text-lg mb-4">Vous n'avez pas encore postulé à des missions</p>
               <Button
                 onClick={() => setLocation('/marketplace')}
                 className="bg-primary hover:bg-primary-dark text-white"
               >
-                {t('missions.discoverMissions')}
+                Découvrir les missions
               </Button>
             </div>
-          )}</old_str>
+          )}
         </div>
       )}
 
