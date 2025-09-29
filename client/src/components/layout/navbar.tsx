@@ -286,20 +286,19 @@ export default function Navbar() {
           {/* Header avec recherche */}
           <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="relative">
-                <img
-                  src="/swideal-logo.jpeg"
-                  alt="Swideal Logo"
-                  className="w-14 h-14 object-contain rounded-xl shadow-md"
-                />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 relative">
+                <span className="text-white font-bold text-lg">S</span>
+                <div className="absolute top-1 right-2 w-1 h-1 bg-white rounded-full"></div>
+                <div className="absolute bottom-1 left-2 w-1 h-1 bg-white rounded-full"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent drop-shadow-sm" data-testid="text-brand-mobile">
-                  {t('brand.name').toUpperCase()}
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent" data-testid="text-brand-mobile">
+                  {t('brand.name')}
                 </span>
-                <span className="text-xs text-gray-600 font-semibold">
-                  {t('mobile.navigation')}
+                <span className="text-xs font-bold tracking-wide leading-none mt-1">
+                  <span className="text-gray-600">{t('brand.taglinePart1')}</span>
+                  <span className="text-emerald-500 font-black">{t('brand.taglinePart2')}</span>
+                  <span className="text-gray-600">{t('brand.taglinePart3')}</span>
                 </span>
               </div>
             </div>
