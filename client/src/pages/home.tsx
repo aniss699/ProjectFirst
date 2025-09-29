@@ -4,9 +4,11 @@ import { HeroSection } from '@/components/home/hero-section';
 import { ProgressiveFlow } from '@/components/home/progressive-flow';
 import { Zap, MessageSquare, Star, Users, Clock } from 'lucide-react';
 import { ROUTES } from '../routes/paths';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-white">
@@ -35,10 +37,10 @@ export default function Home() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3" style={{fontFamily: 'Inter, system-ui, -apple-system, sans-serif'}}>
-                Notre approche
+                {t('home.ourApproach.title')}
               </h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Nous améliorons le modèle de mise en relation existant avec deux mécanismes simples mais efficaces
+                {t('home.ourApproach.description')}
               </p>
             </div>
 
@@ -52,12 +54,12 @@ export default function Home() {
                     <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.3" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Enchères inversées</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.reverseAuction.title')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Au lieu de chercher des prestataires, publiez votre besoin et laissez-les venir à vous avec leurs meilleures offres.
+                  {t('home.reverseAuction.description')}
                 </p>
                 <div className="text-sm text-blue-700 bg-blue-50 rounded-lg p-3">
-                  Résultat : des prix plus compétitifs naturellement
+                  {t('home.reverseAuction.result')}
                 </div>
               </div>
 
@@ -69,35 +71,35 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Mise en relation payante</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.paidConnection.title')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Au lieu de prospecter pendant des semaines, payez quelqu'un qui a déjà le contact pour vous mettre en relation directement.
+                  {t('home.paidConnection.description')}
                 </p>
                 <div className="text-sm text-emerald-700 bg-emerald-50 rounded-lg p-3">
-                  Résultat : votre réseau devient rentable, les contacts sont immédiats
+                  {t('home.paidConnection.result')}
                 </div>
               </div>
             </div>
 
             {/* Pourquoi ça marche */}
             <div className="text-center">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Pourquoi cette combinaison fonctionne</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('home.whyItWorks.title')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-orange-600 font-semibold mb-1">Économiquement logique</div>
-                  <div className="text-sm text-gray-600">La concurrence optimise les prix</div>
+                  <div className="text-orange-600 font-semibold mb-1">{t('home.whyItWorks.economical.title')}</div>
+                  <div className="text-sm text-gray-600">{t('home.whyItWorks.economical.description')}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-purple-600 font-semibold mb-1">Efficace pour tous</div>
-                  <div className="text-sm text-gray-600">Moins de recherche, plus de résultats</div>
+                  <div className="text-purple-600 font-semibold mb-1">{t('home.whyItWorks.efficient.title')}</div>
+                  <div className="text-sm text-gray-600">{t('home.whyItWorks.efficient.description')}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-emerald-600 font-semibold mb-1">Réseau rentable</div>
-                  <div className="text-sm text-gray-600">Chacun peut devenir apporteur d'affaires</div>
+                  <div className="text-emerald-600 font-semibold mb-1">{t('home.whyItWorks.profitable.title')}</div>
+                  <div className="text-sm text-gray-600">{t('home.whyItWorks.profitable.description')}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-blue-600 font-semibold mb-1">Contacts immédiats</div>
-                  <div className="text-sm text-gray-600">Fini la prospection longue</div>
+                  <div className="text-blue-600 font-semibold mb-1">{t('home.whyItWorks.immediate.title')}</div>
+                  <div className="text-sm text-gray-600">{t('home.whyItWorks.immediate.description')}</div>
                 </div>
               </div>
             </div>

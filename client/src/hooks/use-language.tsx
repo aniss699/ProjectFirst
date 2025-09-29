@@ -36,13 +36,34 @@ const translations = {
     'home.title': 'La plateforme qui modernise la mise en relation',
     'home.subtitle': 'Swideal transforme chaque collaboration en opportunité gagnant-gagnant',
     'home.reverseAuction.title': 'Enchère inversée',
-    'home.reverseAuction.description': 'Les prestataires rivalisent pour vous offrir le meilleur',
+    'home.reverseAuction.description': 'Au lieu de chercher des prestataires, publiez votre besoin et laissez-les venir à vous avec leurs meilleures offres.',
     'home.reverseAuction.details': 'Ne cherche plus le meilleur prix il vient à toi !',
+    'home.reverseAuction.result': 'Résultat : des prix plus compétitifs naturellement',
     'home.directContact.title': 'Contact direct',
     'home.directContact.description': 'Accès immédiat aux experts du réseau et au-delà',
     'home.networkValue.title': 'Valorisez votre réseau',
     'home.networkValue.description': 'Générez des revenus en recommandant les bons contacts',
     'home.startButton': 'Commencer',
+    
+    // Our approach section
+    'home.ourApproach.title': 'Notre approche',
+    'home.ourApproach.description': 'Nous améliorons le modèle de mise en relation existant avec deux mécanismes simples mais efficaces',
+    
+    // Paid connection section  
+    'home.paidConnection.title': 'Mise en relation payante',
+    'home.paidConnection.description': 'Au lieu de prospecter pendant des semaines, payez quelqu\'un qui a déjà le contact pour vous mettre en relation directement.',
+    'home.paidConnection.result': 'Résultat : votre réseau devient rentable, les contacts sont immédiats',
+    
+    // Why it works section
+    'home.whyItWorks.title': 'Pourquoi cette combinaison fonctionne',
+    'home.whyItWorks.economical.title': 'Économiquement logique',
+    'home.whyItWorks.economical.description': 'La concurrence optimise les prix',
+    'home.whyItWorks.efficient.title': 'Efficace pour tous',
+    'home.whyItWorks.efficient.description': 'Moins de recherche, plus de résultats',
+    'home.whyItWorks.profitable.title': 'Réseau rentable',
+    'home.whyItWorks.profitable.description': 'Chacun peut devenir apporteur d\'affaires',
+    'home.whyItWorks.immediate.title': 'Contacts immédiats',
+    'home.whyItWorks.immediate.description': 'Fini la prospection longue',
 
     // Footer
     'footer.description': 'La plateforme qui connecte talents et opportunités dans tous les domaines. Trouvez le partenaire idéal pour concrétiser vos projets.',
@@ -100,13 +121,34 @@ const translations = {
     'home.title': 'The platform that modernizes networking',
     'home.subtitle': 'Swideal transforms every collaboration into a win-win opportunity',
     'home.reverseAuction.title': 'Reverse Auction',
-    'home.reverseAuction.description': 'Service providers compete to offer you the best',
+    'home.reverseAuction.description': 'Instead of searching for service providers, publish your need and let them come to you with their best offers.',
     'home.reverseAuction.details': 'No more searching for the best price, it comes to you!',
+    'home.reverseAuction.result': 'Result: naturally more competitive prices',
     'home.directContact.title': 'Direct Contact',
     'home.directContact.description': 'Immediate access to network experts and beyond',
     'home.networkValue.title': 'Monetize your network',
     'home.networkValue.description': 'Generate revenue by recommending the right contacts',
     'home.startButton': 'Get Started',
+    
+    // Our approach section
+    'home.ourApproach.title': 'Our Approach',
+    'home.ourApproach.description': 'We improve the existing networking model with two simple but effective mechanisms',
+    
+    // Paid connection section
+    'home.paidConnection.title': 'Paid Networking',
+    'home.paidConnection.description': 'Instead of prospecting for weeks, pay someone who already has the contact to connect you directly.',
+    'home.paidConnection.result': 'Result: your network becomes profitable, contacts are immediate',
+    
+    // Why it works section
+    'home.whyItWorks.title': 'Why this combination works',
+    'home.whyItWorks.economical.title': 'Economically logical',
+    'home.whyItWorks.economical.description': 'Competition optimizes prices',
+    'home.whyItWorks.efficient.title': 'Efficient for everyone',
+    'home.whyItWorks.efficient.description': 'Less searching, more results',
+    'home.whyItWorks.profitable.title': 'Profitable network',
+    'home.whyItWorks.profitable.description': 'Anyone can become a business broker',
+    'home.whyItWorks.immediate.title': 'Immediate contacts',
+    'home.whyItWorks.immediate.description': 'No more long prospecting',
 
     // Footer
     'footer.description': 'The platform that connects talents and opportunities in all domains. Find the ideal partner to bring your projects to life.',
