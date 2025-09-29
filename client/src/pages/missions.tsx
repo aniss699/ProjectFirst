@@ -146,29 +146,31 @@ export default function Missions() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-8 inline-flex">
-        <button
-          onClick={() => setActiveTab('posted')}
-          className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
-            activeTab === 'posted'
-              ? 'bg-blue-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          }`}
-        >
-          Missions publiées ({userMissions.length})
-        </button>
-        {user.type === 'provider' && (
+      <div className="border-b border-gray-200 mb-8">
+        <nav className="-mb-px flex space-x-6 sm:space-x-8">
           <button
-            onClick={() => setActiveTab('bids')}
-            className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
-              activeTab === 'bids'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            onClick={() => setActiveTab('posted')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm sm:text-base ${
+              activeTab === 'posted'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Mes candidatures ({userBids.length})
+            Missions publiées ({userMissions.length})
           </button>
-        )}
+          {user.type === 'provider' && (
+            <button
+              onClick={() => setActiveTab('bids')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm sm:text-base ${
+                activeTab === 'bids'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Mes candidatures ({userBids.length})
+            </button>
+          )}
+        </nav>
       </div>
 
       {/* Loading States */}
