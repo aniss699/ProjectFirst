@@ -2,9 +2,11 @@
 import { useLocation } from 'wouter';
 import { ROUTES } from '@/routes/paths';
 import { Heart, Mail, MapPin, Phone, Globe } from 'lucide-react';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function Footer() {
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white relative overflow-hidden">
@@ -28,24 +30,23 @@ export default function Footer() {
                   <div className="absolute bottom-1 left-2 w-1 h-1 bg-white rounded-full"></div>
                 </div>
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Swideal
+                  {t('brand.name')}
                 </h3>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                La plateforme qui connecte talents et opportunités dans tous les domaines. 
-                Trouvez le partenaire idéal pour concrétiser vos projets.
+                {t('footer.description')}
               </p>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center text-xs text-gray-400">
                   <Heart className="w-3 h-3 mr-1 text-red-400" />
-                  Fait avec passion
+                  {t('footer.madeWithPassion')}
                 </div>
               </div>
             </div>
 
             {/* Navigation rapide */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-200">Navigation</h4>
+              <h4 className="text-lg font-semibold mb-4 text-blue-200">{t('footer.navigation')}</h4>
               <ul className="space-y-3">
                 <li>
                   <button 
@@ -53,7 +54,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Découvrir les missions
+                    {t('footer.discoverMissions')}
                   </button>
                 </li>
                 <li>
@@ -62,7 +63,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Trouver des experts
+                    {t('footer.findExperts')}
                   </button>
                 </li>
                 <li>
@@ -71,7 +72,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Publier une mission
+                    {t('footer.publishMission')}
                   </button>
                 </li>
                 <li>
@@ -80,7 +81,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Notre concept
+                    {t('footer.ourConcept')}
                   </button>
                 </li>
               </ul>
@@ -88,7 +89,7 @@ export default function Footer() {
 
             {/* Mon espace */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-200">Mon espace</h4>
+              <h4 className="text-lg font-semibold mb-4 text-blue-200">{t('footer.mySpace')}</h4>
               <ul className="space-y-3">
                 <li>
                   <button 
@@ -96,7 +97,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Se connecter
+                    {t('navbar.login')}
                   </button>
                 </li>
                 <li>
@@ -105,7 +106,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Mon tableau de bord
+                    {t('navbar.dashboard')}
                   </button>
                 </li>
                 <li>
@@ -114,7 +115,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Mon profil
+                    {t('navbar.profile')}
                   </button>
                 </li>
                 <li>
@@ -123,7 +124,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Messages
+                    {t('navbar.messages')}
                   </button>
                 </li>
               </ul>
@@ -131,7 +132,7 @@ export default function Footer() {
 
             {/* Support et contact */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-200">Support</h4>
+              <h4 className="text-lg font-semibold mb-4 text-blue-200">{t('footer.support')}</h4>
               <ul className="space-y-3 mb-6">
                 <li>
                   <button 
@@ -139,7 +140,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-green-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Mentions légales
+                    {t('footer.legalNotices')}
                   </button>
                 </li>
                 <li>
@@ -148,7 +149,7 @@ export default function Footer() {
                     className="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm flex items-center group"
                   >
                     <span className="w-1 h-1 bg-green-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Plan du site
+                    {t('footer.sitemap')}
                   </button>
                 </li>
               </ul>
@@ -172,18 +173,18 @@ export default function Footer() {
         <div className="py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-400">
-              © 2024 Swideal. Tous droits réservés.
+              {t('footer.rightsReserved')}
             </div>
             
             <div className="flex items-center space-x-6 text-xs text-gray-400">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                Service disponible 24h/7j
+                {t('footer.service247')}
               </span>
               <span>|</span>
-              <span>🌍 Plateforme mondiale</span>
+              <span>{t('footer.globalPlatform')}</span>
               <span>|</span>
-              <span>🔒 Paiements sécurisés</span>
+              <span>{t('footer.securePayments')}</span>
             </div>
           </div>
         </div>
