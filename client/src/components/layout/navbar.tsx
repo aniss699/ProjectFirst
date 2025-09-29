@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Badge } from '@/components/ui/badge';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
+import { useLanguage } from '@/hooks/use-language';
 import { ROUTES } from '@/routes/paths';
 import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText, Brain } from 'lucide-react';
 import {
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button';
 export default function Navbar() {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -104,12 +106,12 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col items-start justify-center mobile-brand-text ml-2">
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent" data-testid="text-brand-navbar">
-                  Swideal
+                  {t('brand.name')}
                 </span>
                 <span className="text-[0.7rem] sm:text-base font-bold tracking-wide leading-none mt-1 mobile-brand-subtitle">
-                  <span className="text-gray-300">Le meilleur </span>
-                  <span className="text-emerald-400 font-black">deal</span>
-                  <span className="text-gray-300"> vient à toi</span>
+                  <span className="text-gray-300">{t('brand.taglinePart1')}</span>
+                  <span className="text-emerald-400 font-black">{t('brand.taglinePart2')}</span>
+                  <span className="text-gray-300">{t('brand.taglinePart3')}</span>
                 </span>
               </div>
             </button>
@@ -123,8 +125,8 @@ export default function Navbar() {
               <div className="hidden sm:flex">
                 <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
                   <Plus className="w-4 h-4 mr-1 xl:mr-2" />
-                  <span className="hidden xl:inline">Nouvelle mission</span>
-                  <span className="hidden lg:inline xl:hidden">Mission</span>
+                  <span className="hidden xl:inline">{t('navbar.newMission')}</span>
+                  <span className="hidden lg:inline xl:hidden">{t('navbar.mission')}</span>
                 </Button>
               </div>
             )}
@@ -134,19 +136,19 @@ export default function Navbar() {
                 {/* Desktop User Menu - Nettoyé */}
                 <div className="hidden xl:flex items-center space-x-3">
                   <Button variant="ghost" onClick={() => setLocation('/marketplace')} className="text-gray-300 hover:text-blue-300">
-                    Marketplace
+                    {t('navbar.marketplace')}
                   </Button>
                   <Button variant="ghost" onClick={() => setLocation('/missions')} className="text-gray-300 hover:text-blue-300">
-                    Mes Missions
+                    {t('navbar.myMissions')}
                   </Button>
                   <Button variant="ghost" onClick={() => setLocation('/')} className="text-gray-300 hover:text-blue-300">
-                    Créer Mission
+                    {t('navbar.createMission')}
                   </Button>
                   <button
                     onClick={() => handleNavigation('/messages')}
                     className="text-gray-300 hover:text-blue-300 transition-colors relative px-2 py-2 text-sm"
                   >
-                    Messages
+                    {t('navbar.messages')}
                   </button>
                 </div>
 
@@ -170,7 +172,7 @@ export default function Navbar() {
                         className="flex items-center w-full"
                       >
                         <User className="w-4 h-4 mr-2" />
-                        Profil
+                        {t('navbar.profile')}
                       </button>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -179,7 +181,7 @@ export default function Navbar() {
                         className="flex items-center w-full"
                       >
                         <BarChart3 className="w-4 h-4 mr-2" />
-                        Tableau de bord
+                        {t('navbar.dashboard')}
                       </button>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -188,7 +190,7 @@ export default function Navbar() {
                         className="flex items-center w-full"
                       >
                         <Heart className="w-4 h-4 mr-2" />
-                        Mes favoris
+                        {t('navbar.favorites')}
                       </button>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="lg:hidden">
@@ -197,7 +199,7 @@ export default function Navbar() {
                         className="flex items-center w-full"
                       >
                         <Briefcase className="w-4 h-4 mr-2" />
-                        Mes missions
+                        {t('navbar.myMissions')}
                       </button>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="lg:hidden">
@@ -206,7 +208,7 @@ export default function Navbar() {
                         className="flex items-center w-full"
                       >
                         <MessageSquare className="w-4 h-4 mr-2" />
-                        Messages
+                        {t('navbar.messages')}
                       </button>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -216,7 +218,7 @@ export default function Navbar() {
                         className="flex items-center w-full text-red-600"
                       >
                         <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
+                        {t('navbar.logout')}
                       </button>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -229,14 +231,14 @@ export default function Navbar() {
                   onClick={() => handleNavigation('/login')}
                   className="hidden sm:flex text-sm px-3 text-gray-300 hover:text-blue-300 hover:bg-gray-700/50"
                 >
-                  Se connecter
+                  {t('navbar.login')}
                 </Button>
                 <Button
                   onClick={() => handleAuthClick('register')}
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap min-w-fit"
                 >
-                  <span className="hidden xs:inline sm:inline">Créer un compte</span>
-                  <span className="xs:hidden sm:hidden text-xs">S'inscrire</span>
+                  <span className="hidden xs:inline sm:inline">{t('navbar.register')}</span>
+                  <span className="xs:hidden sm:hidden text-xs">{t('navbar.registerShort')}</span>
                 </Button>
               </div>
             )}
@@ -279,10 +281,10 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-gray-100 dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent drop-shadow-sm" data-testid="text-brand-mobile">
-                  SWIDEAL
+                  {t('brand.name').toUpperCase()}
                 </span>
                 <span className="text-xs text-gray-600 font-semibold">
-                  Navigation
+                  {t('mobile.navigation')}
                 </span>
               </div>
             </div>
@@ -301,7 +303,7 @@ export default function Navbar() {
                 className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <Smartphone className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Flux</span>
+                <span className="text-sm font-medium text-left">{t('mobile.feed')}</span>
               </button>
               <button
                 onClick={() => {
@@ -311,7 +313,7 @@ export default function Navbar() {
                 className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <Users className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Prestataires</span>
+                <span className="text-sm font-medium text-left">{t('mobile.providers')}</span>
               </button>
               <button
                 onClick={() => {
@@ -321,7 +323,7 @@ export default function Navbar() {
                 className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <Briefcase className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Services</span>
+                <span className="text-sm font-medium text-left">{t('mobile.services')}</span>
               </button>
 
               <button
@@ -332,7 +334,7 @@ export default function Navbar() {
                 className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <Sparkles className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Notre concept</span>
+                <span className="text-sm font-medium text-left">{t('mobile.concept')}</span>
               </button>
               <button
                 onClick={() => {
@@ -342,7 +344,7 @@ export default function Navbar() {
                 className="mobile-quick-action flex items-center space-x-2.5 bg-white rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <Target className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-left">Missions</span>
+                <span className="text-sm font-medium text-left">{t('mobile.missions')}</span>
               </button>
               
             </div>
@@ -352,21 +354,21 @@ export default function Navbar() {
             {/* Mon espace (si connecté) */}
             {user && (
               <div className="mobile-nav-category px-2 mb-4">
-                <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mon Espace</h3>
+                <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('mobile.mySpace')}</h3>
                 <MobileNavLink href="/dashboard" icon={BarChart3}>
-                  Dashboard
+                  {t('navbar.dashboard')}
                 </MobileNavLink>
                 <MobileNavLink href="/profile" icon={User}>
-                  Mon Profil
+                  {t('navbar.profile')}
                 </MobileNavLink>
                 <MobileNavLink href="/missions" icon={Briefcase}>
-                  Mes Missions
+                  {t('navbar.myMissions')}
                 </MobileNavLink>
                 <MobileNavLink href="/messages" icon={MessageSquare}>
-                  Messages
+                  {t('navbar.messages')}
                 </MobileNavLink>
                 <MobileNavLink href="/favorites" icon={Heart}>
-                  Mes favoris
+                  {t('mobile.myFavorites')}
                 </MobileNavLink>
               </div>
             )}
@@ -383,7 +385,7 @@ export default function Navbar() {
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nouvelle mission
+              {t('navbar.newMission')}
             </Button>
           </div>
 
@@ -399,7 +401,7 @@ export default function Navbar() {
                   variant="outline"
                   className="w-full"
                 >
-                  Se connecter
+                  {t('navbar.login')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -408,7 +410,7 @@ export default function Navbar() {
                   }}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Créer un compte
+                  {t('navbar.register')}
                 </Button>
               </div>
             </div>
