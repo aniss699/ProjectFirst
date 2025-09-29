@@ -7,6 +7,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/hooks/use-language';
 import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
+import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import { queryClient } from '@/lib/queryClient';
 
 // Lazy load pages for better performance
@@ -89,7 +90,7 @@ function App() {
             <Router>
             <div className="min-h-screen bg-background">
               <Navbar />
-              <main className="pt-0">
+              <main className="pt-0 pb-16 md:pb-0">
                 <Suspense fallback={<LoadingSpinner />}>
                   <Switch>
                     <Route path="/" component={Home} />
@@ -135,6 +136,7 @@ function App() {
                 </Suspense>
               </main>
               <Footer />
+              <MobileBottomNav />
               <Toaster />
             </div>
             </Router>
