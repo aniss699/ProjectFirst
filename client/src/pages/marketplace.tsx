@@ -184,29 +184,24 @@ export default function Marketplace() {
         />
       </div>
 
-      <div className="mb-6 sm:mb-8">
-        <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 rounded-3xl shadow-xl border border-blue-100/50 p-6 sm:p-8 sticky top-24 backdrop-blur-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Filtrer les projets</h3>
+      <div className="mb-4 sm:mb-6">
+        <div className="bg-white/90 rounded-xl shadow-md border border-gray-200 p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+            </svg>
+            <h3 className="text-md font-semibold text-gray-800">Filtrer</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Catégorie
-              </Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-gray-600">Catégorie</Label>
               <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
-                <SelectTrigger className="bg-white/80 border-gray-200 hover:border-blue-400 transition-colors">
-                  <SelectValue placeholder="Toutes les catégories" />
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Toutes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">Toutes</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -216,47 +211,45 @@ export default function Marketplace() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Budget
-              </Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-gray-600">Budget</Label>
               <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
-                <SelectTrigger className="bg-white/80 border-gray-200 hover:border-green-400 transition-colors">
-                  <SelectValue placeholder="Tous les budgets" />
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Tous" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les budgets</SelectItem>
-                  <SelectItem value="0-500">0 - 500€</SelectItem>
-                  <SelectItem value="500-2000">500 - 2 000€</SelectItem>
-                  <SelectItem value="2000-5000">2 000 - 5 000€</SelectItem>
-                  <SelectItem value="5000+">5 000€+</SelectItem>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="0-500">0-500€</SelectItem>
+                  <SelectItem value="500-2000">500-2K€</SelectItem>
+                  <SelectItem value="2000-5000">2K-5K€</SelectItem>
+                  <SelectItem value="5000+">5K€+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                Localisation
-              </Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-gray-600">Lieu</Label>
               <Input
                 type="text"
-                placeholder="Ville, région..."
+                placeholder="Ville..."
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
-                className="bg-white/80 border-gray-200 hover:border-purple-400 focus:border-purple-500 transition-colors"
+                className="h-8 text-sm"
               />
             </div>
-          </div>
 
-          <Button
-            onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })}
-            variant="outline"
-            className="w-full border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
-          >
-            🔄 Réinitialiser les filtres
-          </Button>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-gray-600 invisible">Action</Label>
+              <Button
+                onClick={() => setFilters({ category: 'all', budget: 'all', location: '', sort: 'newest' })}
+                variant="outline"
+                className="h-8 text-xs"
+                size="sm"
+              >
+                Effacer
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

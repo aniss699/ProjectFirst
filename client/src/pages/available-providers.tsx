@@ -229,23 +229,18 @@ export default function AvailableProviders() {
       <div className="grid lg:grid-cols-4 gap-8">
         {/* Filtres et Calendrier */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 rounded-3xl shadow-xl border border-blue-100/50 p-6 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Filter className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Filtrer les prestataires</h3>
+          <div className="bg-white/90 rounded-lg shadow-md border border-gray-200 p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <h3 className="text-md font-semibold text-gray-800">Filtres</h3>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Catégorie
-                </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Catégorie</label>
                 <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({...prev, category: value}))}>
-                  <SelectTrigger className="bg-white/80 border-gray-200 hover:border-blue-400 transition-colors">
-                    <SelectValue placeholder="Toutes les catégories" />
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Toutes" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes</SelectItem>
@@ -256,58 +251,50 @@ export default function AvailableProviders() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  Localisation
-                </label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Lieu</label>
                 <Input
-                  placeholder="Ville, région..."
+                  placeholder="Ville..."
                   value={filters.location}
                   onChange={(e) => setFilters(prev => ({...prev, location: e.target.value}))}
-                  className="bg-white/80 border-gray-200 hover:border-green-400 focus:border-green-500 transition-colors"
+                  className="h-8 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                  Tarif max/h
-                </label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Max €/h</label>
                 <Input
                   type="number"
                   placeholder="€"
                   value={filters.maxRate}
                   onChange={(e) => setFilters(prev => ({...prev, maxRate: e.target.value}))}
-                  className="bg-white/80 border-gray-200 hover:border-purple-400 focus:border-purple-500 transition-colors"
+                  className="h-8 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                  Disponibilité
-                </label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Dispo</label>
                 <Select value={filters.availability} onValueChange={(value) => setFilters(prev => ({...prev, availability: value}))}>
-                  <SelectTrigger className="bg-white/80 border-gray-200 hover:border-orange-400 transition-colors">
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="today">Aujourd'hui</SelectItem>
-                    <SelectItem value="week">Cette semaine</SelectItem>
+                    <SelectItem value="week">Semaine</SelectItem>
                     <SelectItem value="all">Toutes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              <Button 
-                variant="outline" 
-                className="w-full border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-md mt-4"
-                onClick={() => setFilters({category: 'all', location: '', maxRate: '', availability: 'today'})}
-              >
-                🔄 Réinitialiser les filtres
-              </Button>
             </div>
+
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full mt-3 h-7 text-xs"
+              onClick={() => setFilters({category: 'all', location: '', maxRate: '', availability: 'today'})}
+            >
+              Effacer
+            </Button>
           </div>
 
           <Card>
