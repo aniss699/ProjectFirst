@@ -258,8 +258,8 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Menu Burger */}
-            <div className="flex">
+            {/* Menu Burger - Maintenant masqué sur mobile, la barre de navigation est en bas */}
+            <div className="hidden md:flex">
               <Button variant="ghost" size="sm" className="p-2 hover:bg-blue-100" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="w-6 h-6 text-gray-700" />
               </Button>
