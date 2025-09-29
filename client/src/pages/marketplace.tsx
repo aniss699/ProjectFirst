@@ -18,13 +18,15 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import MissionMatchingEngine from '@/components/ai/mission-matching-engine';
 import { useAuth } from '@/hooks/use-auth';
+import { useLanguage } from '@/hooks/use-language';</old_str>
 
 // Utiliser le type normalisé MissionView qui inclut déjà les bids
 type MissionWithBids = MissionView;
 
 export default function Marketplace() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const { t } = useLanguage();
+  const [, setLocation] = useLocation();</old_str>
   const [showAIMatching, setShowAIMatching] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastRetryTime, setLastRetryTime] = useState<number>(0);
@@ -164,11 +166,11 @@ export default function Marketplace() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-          Marketplace des Projets
+          {t('marketplace.title')}
         </h1>
         <p className="text-base sm:text-lg text-gray-600 mb-4">
-          Découvrez et soumissionnez sur les projets disponibles
-        </p>
+          {t('marketplace.description')}
+        </p></old_str>
         
         {/* Bannière de statut système */}
         <SystemStatusBanner
@@ -192,21 +194,21 @@ export default function Marketplace() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Filtrer les projets</h3>
+            <h3 className="text-xl font-bold text-gray-900">{t('marketplace.filters.title')}</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Catégorie
+                {t('marketplace.filters.category')}
               </Label>
               <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
                 <SelectTrigger className="bg-white/80 border-gray-200 hover:border-blue-400 transition-colors">
-                  <SelectValue placeholder="Toutes les catégories" />
+                  <SelectValue placeholder={t('marketplace.filters.allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">{t('marketplace.filters.allCategories')}</SelectItem></old_str>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -219,35 +221,35 @@ export default function Marketplace() {
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Budget
+                {t('marketplace.filters.budget')}
               </Label>
               <Select value={filters.budget} onValueChange={(value) => handleFilterChange('budget', value)}>
                 <SelectTrigger className="bg-white/80 border-gray-200 hover:border-green-400 transition-colors">
-                  <SelectValue placeholder="Tous les budgets" />
+                  <SelectValue placeholder={t('marketplace.filters.allBudgets')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les budgets</SelectItem>
-                  <SelectItem value="0-500">0 - 500€</SelectItem>
-                  <SelectItem value="500-2000">500 - 2 000€</SelectItem>
-                  <SelectItem value="2000-5000">2 000 - 5 000€</SelectItem>
-                  <SelectItem value="5000+">5 000€+</SelectItem>
+                  <SelectItem value="all">{t('marketplace.filters.allBudgets')}</SelectItem>
+                  <SelectItem value="0-500">{t('budget.range.0-500')}</SelectItem>
+                  <SelectItem value="500-2000">{t('budget.range.500-2000')}</SelectItem>
+                  <SelectItem value="2000-5000">{t('budget.range.2000-5000')}</SelectItem>
+                  <SelectItem value="5000+">{t('budget.range.5000+')}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div></old_str>
 
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                Localisation
+                {t('marketplace.filters.location')}
               </Label>
               <Input
                 type="text"
-                placeholder="Ville, région..."
+                placeholder={t('marketplace.filters.locationPlaceholder')}
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
                 className="bg-white/80 border-gray-200 hover:border-purple-400 focus:border-purple-500 transition-colors"
               />
-            </div>
+            </div></old_str>
           </div>
 
           <Button
@@ -255,7 +257,7 @@ export default function Marketplace() {
             variant="outline"
             className="w-full border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
           >
-            🔄 Réinitialiser les filtres
+            {t('marketplace.filters.resetFilters')}
           </Button>
         </div>
       </div>
@@ -264,31 +266,31 @@ export default function Marketplace() {
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 sm:mb-0">
             <h2 className="text-2xl font-bold text-gray-900">
-              Toutes les missions ({filteredAndSortedMissions.length})
-            </h2>
+              {t('marketplace.allMissions')} ({filteredAndSortedMissions.length})
+            </h2></old_str>
             
             {/* Indicateurs de santé du système */}
             <div className="flex items-center gap-2">
               {isLoading && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  Chargement...
+                  {t('marketplace.status.loading')}
                 </div>
               )}
               
               {!isLoading && !error && !isFallbackMode && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Service actif
+                  {t('marketplace.status.active')}
                 </div>
               )}
               
               {isFallbackMode && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  Mode dégradé
+                  {t('marketplace.status.degraded')}
                 </div>
-              )}
+              )}</old_str>
               
               {metadata?.total !== undefined && (
                 <div className="text-sm text-gray-500">
@@ -303,23 +305,23 @@ export default function Marketplace() {
                 onClick={() => setShowAIMatching(!showAIMatching)}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 w-full sm:w-auto"
               >
-                🤖 Matching IA
+                {t('marketplace.aiMatching')}
               </Button>
             )}
             <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="text-sm text-gray-500 whitespace-nowrap">Trier par:</span>
+              <span className="text-sm text-gray-500 whitespace-nowrap">{t('marketplace.sort.label')}</span>
               <Select value={filters.sort} onValueChange={(value) => handleFilterChange('sort', value)}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Plus récent</SelectItem>
-                  <SelectItem value="budget-high">Budget décroissant</SelectItem>
-                  <SelectItem value="budget-low">Budget croissant</SelectItem>
-                  <SelectItem value="bids">Nombre d'offres</SelectItem>
+                  <SelectItem value="newest">{t('marketplace.sort.newest')}</SelectItem>
+                  <SelectItem value="budget-high">{t('marketplace.sort.budgetHigh')}</SelectItem>
+                  <SelectItem value="budget-low">{t('marketplace.sort.budgetLow')}</SelectItem>
+                  <SelectItem value="bids">{t('marketplace.sort.bids')}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div></old_str>
           </div>
         </div>
 
@@ -349,9 +351,9 @@ export default function Marketplace() {
           {isLoading && (
             <div className="text-center py-12 sm:col-span-2 lg:col-span-3">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Chargement des missions...</p>
+              <p className="text-gray-500">{t('marketplace.loading')}</p>
             </div>
-          )}
+          )}</old_str>
 
           {/* Mode dégradé avec messages d'erreur améliorés */}
           {(error || isFallbackMode) && !isLoading && (
@@ -362,15 +364,12 @@ export default function Marketplace() {
                 </div>
                 
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {isFallbackMode ? 'Mode dégradé activé' : 'Problème de chargement'}
+                  {isFallbackMode ? t('marketplace.status.degraded') : t('marketplace.error.title')}
                 </h3>
                 
                 <p className="text-gray-700 text-base mb-4">
-                  {isFallbackMode 
-                    ? 'Les missions ne peuvent pas être chargées normalement. Le système fonctionne en mode dégradé.'
-                    : 'Impossible de charger les missions pour le moment.'
-                  }
-                </p>
+                  {t('marketplace.error.description')}
+                </p></old_str>
 
                 {metadata.error_message && (
                   <div className="bg-white/70 rounded-lg p-4 mb-4 text-sm text-gray-600">
@@ -397,7 +396,7 @@ export default function Marketplace() {
                     }}
                     className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
                   >
-                    🔄 Réessayer
+                    {t('marketplace.error.retry')}
                   </button>
                   
                   <button 
@@ -407,8 +406,8 @@ export default function Marketplace() {
                     }}
                     className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
                   >
-                    🏠 Retour accueil
-                  </button>
+                    {t('marketplace.error.home')}
+                  </button></old_str>
                 </div>
 
                 {/* Suggestions d'action */}
@@ -487,10 +486,10 @@ export default function Marketplace() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L10 8.586 8.707 7.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
-              <p className="text-gray-500 text-lg">Aucune mission trouvée ({missions.length} missions totales)</p>
-              <p className="text-gray-400 text-sm mt-2">Essayez de modifier vos filtres</p>
+              <p className="text-gray-500 text-lg">{t('marketplace.noMissions')} ({missions.length} missions totales)</p>
+              <p className="text-gray-400 text-sm mt-2">{t('marketplace.noMissions.subtitle')}</p>
             </div>
-          )}
+          )}</old_str>
         </div>
       </div>
 
