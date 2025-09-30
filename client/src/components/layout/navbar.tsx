@@ -138,7 +138,12 @@ export default function Navbar() {
             {/* Desktop quick mission creator button */}
             {location !== ROUTES.HOME && (
               <div className="hidden sm:flex">
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3">
+                <Button 
+                  size="sm" 
+                  onClick={() => handleNavigation(ROUTES.CREATE_MISSION)}
+                  data-testid="button-new-mission"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-2 sm:px-3"
+                >
                   <Plus className="w-4 h-4 mr-1 xl:mr-2" />
                   <span className="hidden xl:inline">{t('navbar.newMission')}</span>
                   <span className="hidden lg:inline xl:hidden">{t('navbar.mission')}</span>

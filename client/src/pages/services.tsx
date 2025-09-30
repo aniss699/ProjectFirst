@@ -82,7 +82,11 @@ export default function ServicesPage() {
           <p className="text-gray-600 mb-6">
             Notre équipe peut vous conseiller le mode le plus adapté à votre projet
           </p>
-          <button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold px-8 py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg">
+          <button 
+            onClick={() => window.location.href = 'mailto:contact@swideal.com?subject=Conseil sur le choix du mode de service'}
+            data-testid="button-contact-expert"
+            className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold px-8 py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
+          >
             💬 Discuter avec un expert
           </button>
         </div>
