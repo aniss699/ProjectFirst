@@ -52,6 +52,72 @@ const skillCategories = [
   { value: 'other', label: 'Autres Services' }
 ];
 
+const popularSkills = [
+  // Développement & Tech
+  { name: 'Développement Web', category: 'web-development' },
+  { name: 'WordPress', category: 'web-development' },
+  { name: 'React', category: 'web-development' },
+  { name: 'Node.js', category: 'web-development' },
+  { name: 'PHP', category: 'web-development' },
+  { name: 'JavaScript', category: 'web-development' },
+  { name: 'Python', category: 'data-science' },
+  { name: 'Développement Mobile', category: 'mobile-development' },
+  { name: 'Flutter', category: 'mobile-development' },
+  { name: 'React Native', category: 'mobile-development' },
+  
+  // Design & Créatif
+  { name: 'Design Graphique', category: 'design' },
+  { name: 'UI/UX Design', category: 'design' },
+  { name: 'Logo Design', category: 'design' },
+  { name: 'Photoshop', category: 'design' },
+  { name: 'Illustrator', category: 'design' },
+  { name: 'Figma', category: 'design' },
+  
+  // Marketing & Communication
+  { name: 'Marketing Digital', category: 'marketing' },
+  { name: 'SEO', category: 'marketing' },
+  { name: 'Réseaux Sociaux', category: 'marketing' },
+  { name: 'Google Ads', category: 'marketing' },
+  { name: 'Facebook Ads', category: 'marketing' },
+  { name: 'Content Marketing', category: 'marketing' },
+  { name: 'Email Marketing', category: 'marketing' },
+  
+  // Rédaction & Contenu
+  { name: 'Rédaction Web', category: 'writing' },
+  { name: 'Copywriting', category: 'writing' },
+  { name: 'Traduction', category: 'translation' },
+  { name: 'Correction', category: 'writing' },
+  { name: 'Blogging', category: 'writing' },
+  
+  // Services Professionnels
+  { name: 'Consultation', category: 'consulting' },
+  { name: 'Gestion de Projet', category: 'consulting' },
+  { name: 'Comptabilité', category: 'accounting' },
+  { name: 'Juridique', category: 'legal' },
+  { name: 'Formation', category: 'tutoring' },
+  { name: 'Coaching', category: 'tutoring' },
+  
+  // Photo & Vidéo
+  { name: 'Photographie', category: 'photography' },
+  { name: 'Montage Vidéo', category: 'photography' },
+  { name: 'Animation', category: 'photography' },
+  
+  // Services Pratiques
+  { name: 'Plomberie', category: 'repair' },
+  { name: 'Électricité', category: 'repair' },
+  { name: 'Peinture', category: 'construction' },
+  { name: 'Menuiserie', category: 'construction' },
+  { name: 'Jardinage', category: 'construction' },
+  { name: 'Ménage', category: 'cleaning' },
+  { name: 'Maintenance', category: 'repair' },
+  
+  // Santé & Bien-être
+  { name: 'Massage', category: 'health' },
+  { name: 'Fitness', category: 'health' },
+  { name: 'Nutrition', category: 'health' },
+  { name: 'Yoga', category: 'health' }
+];
+
 const getCategoryColor = (category: string) => {
   const colors = {
     'web-development': 'bg-blue-100 text-blue-800 border-blue-200',
@@ -112,7 +178,7 @@ export function ProfileSkills({
             {skills.map((skill, index) => (
               <div 
                 key={index} 
-                className={`p-3 rounded-lg border ${getCategoryColor(skill.category || 'other')} transition-all hover:shadow-sm`}
+                className={`group p-3 rounded-lg border ${getCategoryColor(skill.category || 'other')} transition-all hover:shadow-sm`}
                 data-testid={`skill-item-${index}`}
               >
                 <div className="flex items-center justify-between">
@@ -132,7 +198,7 @@ export function ProfileSkills({
                         {skill.hourlyRate}€/h
                       </div>
                     )}
-                    {isEditing && (
+                    {isEditing ? (
                       <>
                         <Input
                           type="number"
@@ -149,6 +215,15 @@ export function ProfileSkills({
                           <X className="w-4 h-4" />
                         </button>
                       </>
+                    ) : (
+                      <button
+                        onClick={() => onRemoveSkill(skill.name)}
+                        className="text-red-400 hover:text-red-600 transition-colors p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        data-testid={`button-remove-skill-${index}`}
+                        title="Supprimer cette compétence"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -164,45 +239,99 @@ export function ProfileSkills({
             )}
           </div>
 
-          {isEditing && (
-            <div className="bg-gray-50 p-4 rounded-lg border" data-testid="add-skill-form">
-              <h4 className="font-medium mb-3">Ajouter une compétence</h4>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {/* Formulaire d'ajout - toujours visible */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200" data-testid="add-skill-form">
+            <h4 className="font-medium mb-3 text-blue-800">Ajouter une compétence</h4>
+            
+            {/* Compétences populaires */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Compétences populaires
+              </label>
+              <Select 
+                value="" 
+                onValueChange={(value) => {
+                  const skill = popularSkills.find(s => s.name === value);
+                  if (skill) {
+                    onNewSkillChange(skill.name);
+                    onNewSkillCategoryChange(skill.category);
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Choisir dans les compétences populaires..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {skillCategories.map(category => {
+                    const categorySkills = popularSkills.filter(s => s.category === category.value);
+                    if (categorySkills.length === 0) return null;
+                    
+                    return (
+                      <div key={category.value}>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 bg-gray-100 sticky top-0">
+                          {category.label}
+                        </div>
+                        {categorySkills.map(skill => (
+                          <SelectItem 
+                            key={skill.name} 
+                            value={skill.name}
+                            className="pl-4"
+                          >
+                            {skill.name}
+                          </SelectItem>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Formulaire manuel */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <Input
+                value={newSkill}
+                onChange={(e) => onNewSkillChange(e.target.value)}
+                placeholder="Ou saisir une compétence personnalisée..."
+                onKeyPress={(e) => e.key === 'Enter' && onAddSkill()}
+                data-testid="input-new-skill"
+                className="md:col-span-2 bg-white"
+              />
+              <Select value={newSkillCategory} onValueChange={onNewSkillCategoryChange}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {skillCategories.map(category => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex space-x-2">
                 <Input
-                  value={newSkill}
-                  onChange={(e) => onNewSkillChange(e.target.value)}
-                  placeholder="Nom de la compétence..."
-                  onKeyPress={(e) => e.key === 'Enter' && onAddSkill()}
-                  data-testid="input-new-skill"
-                  className="md:col-span-2"
+                  type="number"
+                  value={newSkillRate || ''}
+                  onChange={(e) => onNewSkillRateChange(parseInt(e.target.value) || 0)}
+                  placeholder="€/h"
+                  className="flex-1 bg-white"
                 />
-                <Select value={newSkillCategory} onValueChange={onNewSkillCategoryChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {skillCategories.map(category => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex space-x-2">
-                  <Input
-                    type="number"
-                    value={newSkillRate || ''}
-                    onChange={(e) => onNewSkillRateChange(parseInt(e.target.value) || 0)}
-                    placeholder="€/h"
-                    className="flex-1"
-                  />
-                  <Button onClick={onAddSkill} data-testid="button-add-skill">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button 
+                  onClick={onAddSkill} 
+                  data-testid="button-add-skill"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={!newSkill.trim()}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-          )}
+            
+            <div className="mt-3 text-xs text-blue-600">
+              💡 Sélectionnez une compétence populaire ou saisissez la vôtre
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
