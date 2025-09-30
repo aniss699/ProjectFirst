@@ -283,7 +283,7 @@ import aiMissionsRoutes from './routes/ai-missions-routes.js';
 // AI orchestrator routes will be imported dynamically
 import feedRoutes from './routes/feed-routes.js';
 import favoritesRoutes from './routes/favorites-routes.js';
-import missionDemoRoutes from './routes/mission-demo.js';
+// import missionDemoRoutes from './routes/mission-demo.js'; // Supprimé - mode démo retiré
 import aiQuickAnalysisRoutes from './routes/ai-quick-analysis.js';
 import aiDiagnosticRoutes from './routes/ai-diagnostic-routes.js';
 import aiLearningRoutes from './routes/ai-learning-routes.js';
@@ -347,7 +347,7 @@ app.use('/api/ai/learning', aiLearningRoutes);
 
 app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
-app.use('/api', missionDemoRoutes);
+// app.use('/api', missionDemoRoutes); // Supprimé - mode démo retiré
 app.use('/api/team', teamRoutes);
 
 console.log('🤝 Registering open teams routes...');

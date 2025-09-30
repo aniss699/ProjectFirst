@@ -446,50 +446,14 @@ export default function Marketplace() {
             </div>
           )}
 
-          {/* Mode dégradé avec missions de démonstration */}
+          {/* Aucune mission en mode dégradé - message simple */}
           {isFallbackMode && !isLoading && missions.length === 0 && (
             <div className="sm:col-span-2 lg:col-span-3">
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
-                <h4 className="text-lg font-semibold text-blue-900 mb-3">🎯 Missions de démonstration</h4>
+                <h4 className="text-lg font-semibold text-blue-900 mb-3">📡 Service temporairement indisponible</h4>
                 <p className="text-blue-800 mb-4">
-                  En attendant le retour du service, voici quelques exemples de missions typiques :
+                  Les missions ne peuvent pas être chargées pour le moment. Veuillez réessayer dans quelques instants.
                 </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    {
-                      id: 'demo-1',
-                      title: 'Développement site e-commerce',
-                      description: 'Création d\'un site e-commerce moderne avec React et Node.js',
-                      category: 'developpement',
-                      budget: '3500',
-                      location: 'Remote',
-                      status: 'open',
-                      createdAt: new Date().toISOString(),
-                      bids: []
-                    },
-                    {
-                      id: 'demo-2', 
-                      title: 'Design d\'application mobile',
-                      description: 'Design UI/UX pour une application de fitness',
-                      category: 'design',
-                      budget: '2200',
-                      location: 'Paris',
-                      status: 'open',
-                      createdAt: new Date().toISOString(),
-                      bids: []
-                    }
-                  ].map((demoMission, index) => (
-                    <div key={index} className="bg-white/80 rounded-lg p-4 border border-blue-100">
-                      <h5 className="font-medium text-gray-900 mb-2">{demoMission.title}</h5>
-                      <p className="text-gray-600 text-sm mb-3">{demoMission.description}</p>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-green-600 font-medium">{demoMission.budget}€</span>
-                        <span className="text-gray-500">{demoMission.location}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
