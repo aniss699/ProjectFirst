@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { Home, Briefcase, Users, User, MessageSquare, LayoutGrid, Lightbulb } from 'lucide-react';
+import { Home, Briefcase, Users, User, MessageSquare, LayoutGrid, Lightbulb, ScrollText } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLanguage } from '@/hooks/use-language';
 import { ROUTES } from '@/routes/paths';
@@ -15,6 +15,12 @@ export default function MobileBottomNav() {
       label: 'Accueil',
       path: ROUTES.HOME,
       testId: 'nav-home'
+    },
+    {
+      icon: ScrollText,
+      label: 'Flux',
+      path: '/feed',
+      testId: 'nav-feed'
     },
     {
       icon: Lightbulb,
