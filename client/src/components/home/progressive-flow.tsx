@@ -67,7 +67,23 @@ interface ProgressiveFlowProps {
 export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError, initialStep = -1 }: ProgressiveFlowProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(initialStep); // Commencer au niveau initial (par défaut -1: présentation)
+  
+  // Lire le paramètre step de l'URL immédiatement
+  const getInitialStep = () => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const stepParam = urlParams.get('step');
+      if (stepParam) {
+        const parsedStep = parseInt(stepParam);
+        if (!isNaN(parsedStep)) {
+          return parsedStep;
+        }
+      }
+    }
+    return initialStep;
+  };
+  
+  const [currentStep, setCurrentStep] = useState(getInitialStep()); // Commencer au niveau initial avec lecture URL
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();
