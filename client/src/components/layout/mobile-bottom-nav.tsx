@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { Home, Briefcase, Users, User, MessageSquare, LayoutGrid, Lightbulb, ScrollText } from 'lucide-react';
+import { Home, Briefcase, Users, User, MessageSquare, LayoutGrid, Lightbulb, Smartphone } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLanguage } from '@/hooks/use-language';
 import { ROUTES } from '@/routes/paths';
@@ -17,7 +17,7 @@ export default function MobileBottomNav() {
       testId: 'nav-home'
     },
     {
-      icon: ScrollText,
+      icon: Smartphone,
       label: 'Flux',
       path: '/feed',
       testId: 'nav-feed'
@@ -40,12 +40,12 @@ export default function MobileBottomNav() {
       path: '/available-providers',
       testId: 'nav-providers'
     },
-    {
-      icon: user ? User : MessageSquare,
-      label: user ? t('navbar.profile') : t('navbar.login'),
-      path: user ? '/profile' : '/login',
-      testId: user ? 'nav-profile' : 'nav-login'
-    }
+    ...(user ? [{
+      icon: User,
+      label: t('navbar.profile'),
+      path: '/profile',
+      testId: 'nav-profile'
+    }] : [])
   ];
 
   const handleNavigation = (path: string) => {
