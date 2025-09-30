@@ -867,10 +867,10 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
           {steps[currentStep + 1]()}
         </div>
 
-        {/* Bloc de progression compact sous le contenu - masqué pour le niveau présentation */}
+        {/* Barre de progression simplifiée - masquée pour le niveau présentation */}
         {currentStep >= 0 && (
-          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-3 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-4 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-700">
                 Étape {currentStep + 1} sur 3
               </span>
@@ -880,7 +880,7 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
             </div>
 
             {/* Barre de progression avec gradient et animation */}
-            <div className="w-full h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
+            <div className="w-full h-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm relative"
                 style={{ width: `${((currentStep + 1) / 3) * 100}%` }}
@@ -888,24 +888,6 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
                 {/* Effet de brillance */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
               </div>
-            </div>
-
-            {/* Points d'étapes réduits */}
-            <div className="flex justify-between mt-2">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className="flex flex-col items-center">
-                  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    step <= currentStep + 1 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm' 
-                      : 'bg-gray-300'
-                  }`}></div>
-                  <span className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                    step <= currentStep + 1 ? 'text-blue-600' : 'text-gray-400'
-                  }`}>
-                    {step}
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         )}
