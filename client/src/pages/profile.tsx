@@ -371,30 +371,40 @@ export default function Profile() {
 
         {/* Profile Content */}
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="general" className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
-              Informations
+          <TabsList className="tabs-list-mobile md:grid md:grid-cols-6 overflow-x-auto">
+            <TabsTrigger value="general" className="tabs-trigger-mobile md:flex md:items-center">
+              <User className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden xs:inline">Informations</span>
+              <span className="xs:hidden">Info</span>
             </TabsTrigger>
-            <TabsTrigger value="ai-analysis" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Assistant IA
+            <TabsTrigger value="ai-analysis" className="tabs-trigger-mobile md:flex md:items-center">
+              <Brain className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden xs:inline">Assistant IA</span>
+              <span className="xs:hidden">IA</span>
             </TabsTrigger>
-            <TabsTrigger value="skills" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Compétences
-            </TabsTrigger>
-            <TabsTrigger value="portfolio" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Portfolio
-            </TabsTrigger>
-            <TabsTrigger value="availability" className="flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              Disponibilités
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center">
-              <Star className="w-4 h-4 mr-2" />
-              Préférences
+            {activeProfile === 'provider' && (
+              <>
+                <TabsTrigger value="skills" className="tabs-trigger-mobile md:flex md:items-center">
+                  <Briefcase className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="hidden xs:inline">Compétences</span>
+                  <span className="xs:hidden">Skills</span>
+                </TabsTrigger>
+                <TabsTrigger value="portfolio" className="tabs-trigger-mobile md:flex md:items-center">
+                  <Lightbulb className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="hidden xs:inline">Portfolio</span>
+                  <span className="xs:hidden">Works</span>
+                </TabsTrigger>
+                <TabsTrigger value="availability" className="tabs-trigger-mobile md:flex md:items-center">
+                  <Clock className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="hidden xs:inline">Disponibilités</span>
+                  <span className="xs:hidden">Dispo</span>
+                </TabsTrigger>
+              </>
+            )}
+            <TabsTrigger value="preferences" className="tabs-trigger-mobile md:flex md:items-center">
+              <Star className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden xs:inline">Préférences</span>
+              <span className="xs:hidden">Prefs</span>
             </TabsTrigger>
           </TabsList>
 
@@ -633,8 +643,7 @@ export default function Profile() {
           </TabsContent>
 
           {activeProfile === 'provider' && (
-            <>
-              <TabsContent value="skills" className="space-y-6">
+            <TabsContent value="skills" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -825,7 +834,52 @@ export default function Profile() {
                   </CardContent>
                 </Card>
               </TabsContent>
-            </>
+            </TabsContent>
+
+            <TabsContent value="portfolio">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Portfolio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {profileData.portfolio.map((item, index) => (
+                        <Card key={index} className="border">
+                          <CardContent className="p-4">
+                            <h4 className="font-semibold mb-2">{item.title}</h4>
+                            <p className="text-gray-600 text-sm">{item.description}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {isEditing && (
+                      <div className="border rounded-lg p-4 bg-gray-50">
+                        <h4 className="font-medium mb-3">Ajouter un projet</h4>
+                        <div className="space-y-3">
+                          <Input
+                            value={newPortfolioItem.title}
+                            onChange={(e) => setNewPortfolioItem(prev => ({...prev, title: e.target.value}))}
+                            placeholder="Titre du projet"
+                          />
+                          <Textarea
+                            value={newPortfolioItem.description}
+                            onChange={(e) => setNewPortfolioItem(prev => ({...prev, description: e.target.value}))}
+                            placeholder="Description du projet"
+                            rows={3}
+                          />
+                          <Button onClick={addPortfolioItem}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Ajouter
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           )}
 
           <TabsContent value="preferences">
