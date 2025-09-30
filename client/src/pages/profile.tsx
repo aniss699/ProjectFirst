@@ -24,7 +24,9 @@ import {
   RefreshCw,
   Save,
   Zap,
-  Lightbulb
+  Lightbulb,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AvailabilityCalendar } from '@/components/calendar/availability-calendar';
