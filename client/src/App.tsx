@@ -109,7 +109,7 @@ function App() {
                     <Route path="/services/flash" component={FlashDealPage} />
                     <Route path="/services/abonnement" component={ReverseSubscriptionPage} />
                     <Route path="/services/groupe" component={GroupRequestPage} />
-                    <Route path="/services/ia" component={IaHumanPage} />
+                    <Route path="/services/cours" component={lazy(() => import('@/pages/services/CollectiveCoursesPage'))} />
                     <Route path="/services/opportunites" component={OpportunitiesPage} />
                     {/* Added routes for new services */}
                     <Route path="/services/construction-equipe" component={lazy(() => import('@/pages/services/TeamBuildingPage'))} />

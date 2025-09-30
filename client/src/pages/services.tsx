@@ -1,5 +1,3 @@
-
-
 import { ServiceModeCard } from '@/components/ServiceModeCard';
 import type { ServiceMode } from '@/lib/types/services';
 
@@ -29,12 +27,12 @@ const serviceModes: ServiceMode[] = [
     color: 'text-emerald-600'
   },
   {
-    id: 'ia',
-    title: 'IA + Humain',
-    description: 'Notre IA analyse votre besoin et le transforme en brief expert pour les meilleurs prestataires.',
-    emoji: '🤖',
-    href: '/services/ia',
-    color: 'text-orange-600'
+    id: 'cours-collectifs',
+    title: 'Cours Collectifs',
+    description: 'Apprenez ensemble, progressez plus vite avec des profs experts',
+    emoji: '🎓',
+    href: '/services/cours',
+    color: 'from-emerald-500 to-teal-500',
   },
   {
     id: 'opportunites',
