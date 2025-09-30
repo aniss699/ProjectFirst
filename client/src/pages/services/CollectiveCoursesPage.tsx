@@ -64,7 +64,7 @@ export default function CollectiveCoursesPage() {
   const [mode, setMode] = useState<'create' | 'browse'>('browse');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const { toast } = useToast();
 
   const form = useForm<CourseFormData>({
@@ -125,7 +125,7 @@ export default function CollectiveCoursesPage() {
         }
       ];
 
-      setAvailableCourses(selectedSubject 
+      setAvailableCourses(selectedSubject && selectedSubject !== 'all'
         ? mockCourses.filter(course => course.subject === selectedSubject)
         : mockCourses
       );
@@ -248,7 +248,7 @@ export default function CollectiveCoursesPage() {
                     <SelectValue placeholder="Tous les domaines" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les domaines</SelectItem>
+                    <SelectItem value="all">Tous les domaines</SelectItem>
                     {subjects.map(subject => (
                       <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                     ))}
