@@ -413,72 +413,7 @@ export default function NotreConcept() {
           </div>
         </div>
 
-        {/* Call to Action final plus convivial */}
-        <div className="mb-6 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-blue-500 via-purple-600 to-blue-700 rounded-xl p-6 text-center text-white relative overflow-hidden">
-            {/* Effets de fond plus subtils */}
-            <div className="absolute inset-0 bg-black opacity-10"></div>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-            
-            {/* Éléments décoratifs plus discrets */}
-            <div className="absolute top-3 left-4 text-lg opacity-60">⭐</div>
-            <div className="absolute top-3 right-4 text-lg opacity-60">✨</div>
-            <div className="absolute bottom-3 left-1/4 text-lg opacity-50">💫</div>
-            <div className="absolute bottom-3 right-1/4 text-lg opacity-50">🚀</div>
-            
-            <div className="relative z-10">
-              <h2 className="text-xl md:text-3xl font-bold mb-3">Prêt à vous lancer ?</h2>
-              <p className="text-base md:text-lg mb-4 opacity-90 leading-relaxed">
-                Votre projet mérite les meilleurs talents.
-                <br />
-                <span className="font-semibold">Et ils n'attendent que vous !</span>
-              </p>
-              
-              {/* Motivation plus douce */}
-              <div className="bg-white/20 backdrop-blur rounded-lg p-3 mb-4 max-w-xl mx-auto">
-                <h3 className="font-bold mb-2 text-sm">🎉 Offre de bienvenue :</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-1 text-xs">
-                  <div>✅ Accompagnement gratuit</div>
-                  <div>✅ Réponses prioritaires</div>
-                  <div>✅ Support personnalisé</div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
-                <Button 
-                  onClick={() => setLocation('/create-mission')}
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-base px-6 py-2.5 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
-                >
-                  <Lightning className="w-4 h-4 mr-2" />
-                  Je commence maintenant
-                </Button>
-                <Button 
-                  onClick={() => setLocation('/marketplace')}
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-5 py-2.5 rounded-full transition-all duration-300"
-                >
-                  <Eye className="w-3 h-3 mr-2" />
-                  Découvrir les talents
-                </Button>
-              </div>
-
-              <div className="text-center space-y-1">
-                <p className="font-semibold text-sm">
-                  ⚡ Gratuit • 🎯 Efficace • 💎 Premium
-                </p>
-                <p className="opacity-90 text-sm">
-                  Rejoignez plus de 1000 entrepreneurs satisfaits
-                </p>
-                <div className="flex justify-center items-center space-x-1 mt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  ))}
-                  <span className="ml-2 text-xs">4.9/5 - Ils recommandent !</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
       </div>
     </div>
