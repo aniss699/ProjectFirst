@@ -48,33 +48,25 @@ export default function Profile() {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '+33 6 12 34 56 78',
-    location: 'Paris, France',
-    bio: activeProfile === 'client' 
-      ? 'Nous recherchons des talents créatifs pour développer nos projets innovants.'
-      : 'Développeur full-stack passionné avec 5+ années d\'expérience en React, Node.js et design UX/UI.',
-    skills: activeProfile === 'provider' 
-      ? ['React', 'Node.js', 'TypeScript', 'MongoDB', 'Design UX/UI', 'Figma'] 
-      : [],
-    experience: 'Plus de 5 années d\'expérience dans le développement web full-stack...',
-    portfolio: activeProfile === 'provider' 
-      ? [
-          {title: 'E-commerce Platform', description: 'Application de vente en ligne complète avec paiement intégré'},
-          {title: 'Dashboard Analytics', description: 'Interface d\'analytics en temps réel avec graphiques interactifs'},
-          {title: 'Mobile App', description: 'Application mobile cross-platform en React Native'}
-        ] 
-      : [],
+    phone: '',
+    location: '',
+    bio: '',
+    skills: [] as Array<{ name: string; hourlyRate?: number; category?: string }>,
+    experience: '',
+    portfolio: [] as Array<{title: string; description: string}>,
     availability: true,
-    hourlyRate: '75',
-    company: 'TechStart Solutions',
-    industry: 'Technology & Innovation',
+    hourlyRate: '',
+    company: '',
+    industry: '',
     calendarAvailability: [] as Array<{ start: Date, end: Date }>,
-    keywords: [] as string[] // Added keywords state
+    keywords: [] as string[]
   });
 
   const [newSkill, setNewSkill] = useState('');
+  const [newSkillRate, setNewSkillRate] = useState(0);
+  const [newSkillCategory, setNewSkillCategory] = useState('');
   const [newPortfolioItem, setNewPortfolioItem] = useState({title: '', description: ''});
-  const [newAvailabilitySlot, setNewAvailabilitySlot] = useState<{ start: Date, end: Date } | undefined>(undefined); // State for new availability
+  const [newAvailabilitySlot, setNewAvailabilitySlot] = useState<{ start: Date, end: Date } | undefined>(undefined);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const handleAISuggestionApply = (field: string, value: string) => {
@@ -122,19 +114,34 @@ export default function Profile() {
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && !profileData.skills.includes(newSkill.trim())) {
+    if (newSkill.trim() && !profileData.skills.some(s => s.name === newSkill.trim())) {
       setProfileData(prev => ({
         ...prev,
-        skills: [...prev.skills, newSkill.trim()]
+        skills: [...prev.skills, {
+          name: newSkill.trim(),
+          hourlyRate: newSkillRate || undefined,
+          category: newSkillCategory || undefined
+        }]
       }));
       setNewSkill('');
+      setNewSkillRate(0);
+      setNewSkillCategory('');
     }
   };
 
-  const removeSkill = (skill: string) => {
+  const removeSkill = (skillName: string) => {
     setProfileData(prev => ({
       ...prev,
-      skills: prev.skills.filter(s => s !== skill)
+      skills: prev.skills.filter(s => s.name !== skillName)
+    }));
+  };
+
+  const updateSkillRate = (skillName: string, rate: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      skills: prev.skills.map(s => 
+        s.name === skillName ? { ...s, hourlyRate: rate } : s
+      )
     }));
   };
 
@@ -637,202 +644,20 @@ export default function Profile() {
           {activeProfile === 'provider' && (
             <>
               <TabsContent value="skills" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Compétences et Expertise</span>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleAIKeywordSuggestion}
-                          variant="outline"
-                          size="sm"
-                          className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 text-blue-700"
-                        >
-                          <Brain className="h-4 w-4 mr-2" />
-                          Suggestions IA
-                        </Button>
-                        {!isEditing && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:bg-blue-50"
-                          >
-                            <Target className="h-4 w-4 mr-2" />
-                            Analyser compétences
-                          </Button>
-                        )}
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Statistiques des compétences */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-blue-700">{profileData.skills.length}</div>
-                          <div className="text-sm text-blue-600">Compétences</div>
-                        </div>
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-green-700">
-                            {Math.round(profileData.skills.length > 0 ? (profileData.skills.length / 10) * 100 : 0)}%
-                          </div>
-                          <div className="text-sm text-green-600">Complétude</div>
-                        </div>
-                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-purple-700">
-                            {profileData.skills.filter(skill => ['React', 'Node.js', 'TypeScript', 'Python'].includes(skill)).length}
-                          </div>
-                          <div className="text-sm text-purple-600">Tech populaires</div>
-                        </div>
-                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg text-center">
-                          <div className="text-2xl font-bold text-orange-700">A+</div>
-                          <div className="text-sm text-orange-600">Score marché</div>
-                        </div>
-                      </div>
-
-                      {/* Liste des compétences avec niveaux */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-800 flex items-center">
-                          <Star className="h-4 w-4 mr-2 text-yellow-500" />
-                          Mes compétences
-                        </h4>
-                        
-                        {profileData.skills.length > 0 ? (
-                          <div className="space-y-3">
-                            {profileData.skills.map((skill, index) => {
-                              const skillLevel = Math.floor(Math.random() * 5) + 1; // Simulation niveau
-                              const skillDemand = Math.floor(Math.random() * 40) + 60; // Simulation demande marché
-                              
-                              return (
-                                <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-all group">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center space-x-3">
-                                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                      <span className="font-semibold text-gray-800">{skill}</span>
-                                      <Badge variant="outline" className="text-xs">
-                                        Demande: {skillDemand}%
-                                      </Badge>
-                                    </div>
-                                    {isEditing && (
-                                      <button
-                                        onClick={() => removeSkill(skill)}
-                                        className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-sm text-gray-600">Niveau:</span>
-                                      <div className="flex space-x-1">
-                                        {[1, 2, 3, 4, 5].map((level) => (
-                                          <Star
-                                            key={level}
-                                            className={`w-4 h-4 ${
-                                              level <= skillLevel 
-                                                ? 'text-yellow-400 fill-current' 
-                                                : 'text-gray-300'
-                                            }`}
-                                          />
-                                        ))}
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="text-sm text-gray-600">Tarif suggéré</div>
-                                      <div className="font-semibold text-green-600">
-                                        {45 + skillLevel * 10}€/h
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="mt-3">
-                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                      <span>Demande marché</span>
-                                      <span>{skillDemand}%</span>
-                                    </div>
-                                    <Progress value={skillDemand} className="h-2" />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                            <Star className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                            <p className="text-gray-600 mb-2">Aucune compétence ajoutée</p>
-                            <p className="text-sm text-gray-500">Ajoutez vos compétences pour améliorer votre visibilité</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Formulaire d'ajout */}
-                      {isEditing && (
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                          <h4 className="font-medium text-blue-800 mb-3">Ajouter une compétence</h4>
-                          <div className="flex space-x-2">
-                            <Input
-                              value={newSkill}
-                              onChange={(e) => setNewSkill(e.target.value)}
-                              placeholder="Ex: React, Design UX/UI, Gestion de projet..."
-                              onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                              className="flex-1"
-                            />
-                            <Button onClick={addSkill} className="bg-blue-600 hover:bg-blue-700">
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          
-                          {/* Suggestions rapides */}
-                          <div className="mt-3">
-                            <p className="text-xs text-blue-600 mb-2">Suggestions populaires:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {['JavaScript', 'Python', 'Design UI/UX', 'Marketing Digital', 'SEO', 'WordPress'].map((suggestion) => (
-                                <Button
-                                  key={suggestion}
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setNewSkill(suggestion);
-                                    addSkill();
-                                  }}
-                                  className="text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
-                                >
-                                  {suggestion}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Recommandations IA */}
-                      {!isEditing && profileData.skills.length > 0 && (
-                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                          <h4 className="font-medium text-purple-800 mb-3 flex items-center">
-                            <Brain className="h-4 w-4 mr-2" />
-                            Recommandations IA
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center text-purple-700">
-                              <Target className="h-3 w-3 mr-2" />
-                              Ajoutez "TypeScript" pour +15% de visibilité
-                            </div>
-                            <div className="flex items-center text-purple-700">
-                              <TrendingUp className="h-3 w-3 mr-2" />
-                              "Cloud Computing" est en forte demande (+40%)
-                            </div>
-                            <div className="flex items-center text-purple-700">
-                              <Zap className="h-3 w-3 mr-2" />
-                              Votre profil correspond à 85% des missions tech
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProfileSkills
+                  skills={profileData.skills}
+                  newSkill={newSkill}
+                  newSkillRate={newSkillRate}
+                  newSkillCategory={newSkillCategory}
+                  isEditing={isEditing}
+                  onNewSkillChange={setNewSkill}
+                  onNewSkillRateChange={setNewSkillRate}
+                  onNewSkillCategoryChange={setNewSkillCategory}
+                  onAddSkill={addSkill}
+                  onRemoveSkill={removeSkill}
+                  onUpdateSkillRate={updateSkillRate}
+                  onAIKeywordSuggestion={handleAIKeywordSuggestion}
+                />
               </TabsContent>
 
               <TabsContent value="portfolio">

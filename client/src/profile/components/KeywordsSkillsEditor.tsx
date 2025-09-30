@@ -9,9 +9,9 @@ import { normalizeTags, expandSynonyms, suggestKeywords } from '../../../shared/
 
 interface KeywordsSkillsEditorProps {
   keywords: string[];
-  skills: Array<{ name: string; level?: 1|2|3|4|5 }>;
+  skills: Array<{ name: string; level?: 1|2|3|4|5; hourlyRate?: number; category?: string }>;
   onKeywordsChange: (keywords: string[]) => void;
-  onSkillsChange: (skills: Array<{ name: string; level?: 1|2|3|4|5 }>) => void;
+  onSkillsChange: (skills: Array<{ name: string; level?: 1|2|3|4|5; hourlyRate?: number; category?: string }>) => void;
   suggestions?: string[];
   role: 'client' | 'provider';
 }
@@ -30,15 +30,20 @@ export function KeywordsSkillsEditor({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commonSuggestions = [
-    // Tech
-    'développement web', 'react', 'nodejs', 'typescript', 'javascript', 'python', 'php',
-    'wordpress', 'design web', 'ui/ux', 'mobile', 'e-commerce',
-    // Marketing
-    'seo', 'marketing digital', 'réseaux sociaux', 'google ads', 'content marketing',
-    // Services
-    'conseil', 'formation', 'audit', 'gestion projet', 'stratégie',
-    // Métiers
-    'plomberie', 'électricité', 'peinture', 'menuiserie', 'ménage', 'jardinage'
+    // Développement & Tech
+    'développement web', 'design web', 'ui/ux', 'wordpress', 'e-commerce',
+    // Marketing & Communication
+    'seo', 'marketing digital', 'réseaux sociaux', 'content marketing', 'copywriting',
+    // Services Professionnels
+    'conseil', 'formation', 'audit', 'gestion projet', 'stratégie', 'traduction',
+    // Créatif & Design
+    'photographie', 'montage vidéo', 'design graphique', 'illustration', 'logo',
+    // Travaux & Artisanat
+    'plomberie', 'électricité', 'peinture', 'menuiserie', 'jardinage', 'rénovation',
+    // Services à la personne
+    'ménage', 'garde d\'enfants', 'cours particuliers', 'assistance administrative',
+    // Santé & Bien-être
+    'massage', 'coaching', 'nutrition', 'fitness', 'relaxation'
   ];
 
   const addKeyword = (keyword: string) => {
@@ -54,20 +59,25 @@ export function KeywordsSkillsEditor({
     onKeywordsChange(keywords.filter(k => k !== keyword));
   };
 
-  const addSkill = (skillName: string, level: 1|2|3|4|5 = 3) => {
+  const addSkill = (skillName: string, level: 1|2|3|4|5 = 3, hourlyRate?: number, category?: string) => {
     if (!skillName.trim()) return;
     
     const normalized = normalizeTags([skillName])[0];
     const existingIndex = skills.findIndex(s => s.name === normalized);
     
     if (existingIndex >= 0) {
-      // Mettre à jour le niveau si la compétence existe
+      // Mettre à jour la compétence existante
       const newSkills = [...skills];
-      newSkills[existingIndex] = { name: normalized, level };
+      newSkills[existingIndex] = { 
+        name: normalized, 
+        level,
+        hourlyRate: hourlyRate || newSkills[existingIndex].hourlyRate,
+        category: category || newSkills[existingIndex].category
+      };
       onSkillsChange(newSkills);
     } else {
       // Ajouter nouvelle compétence
-      onSkillsChange([...skills, { name: normalized, level }]);
+      onSkillsChange([...skills, { name: normalized, level, hourlyRate, category }]);
     }
     setSkillInput('');
   };
