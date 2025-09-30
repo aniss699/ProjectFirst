@@ -270,11 +270,11 @@ export default function Navbar() {
 
       {/* Mobile Menu Sheet (Conditionally rendered based on isMobileMenuOpen) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
 
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-[75vw] max-w-xs transform transition-transform duration-300 ease-in-out bg-white shadow-xl flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} md:hidden`}
+        className={`fixed inset-y-0 right-0 z-50 w-[75vw] max-w-xs transform transition-transform duration-300 ease-in-out bg-white shadow-xl flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
