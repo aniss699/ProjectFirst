@@ -371,30 +371,30 @@ export default function Profile() {
 
         {/* Profile Content */}
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="general" className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
-              Informations
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 md:gap-0 h-auto md:h-10 p-1">
+            <TabsTrigger value="general" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <User className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">Infos</span>
             </TabsTrigger>
-            <TabsTrigger value="ai-analysis" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Assistant IA
+            <TabsTrigger value="ai-analysis" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <Brain className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">IA</span>
             </TabsTrigger>
-            <TabsTrigger value="skills" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Compétences
+            <TabsTrigger value="skills" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <Briefcase className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">Skills</span>
             </TabsTrigger>
-            <TabsTrigger value="portfolio" className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Portfolio
+            <TabsTrigger value="portfolio" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <Briefcase className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">Portfolio</span>
             </TabsTrigger>
-            <TabsTrigger value="availability" className="flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              Disponibilités
+            <TabsTrigger value="availability" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <Clock className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center">
-              <Star className="w-4 h-4 mr-2" />
-              Préférences
+            <TabsTrigger value="preferences" className="flex flex-col md:flex-row items-center justify-center px-1 md:px-3 py-2 md:py-1.5 text-xs md:text-sm min-w-0">
+              <Star className="w-3 h-3 md:w-4 md:h-4 md:mr-2 mb-1 md:mb-0 flex-shrink-0" />
+              <span className="text-center leading-tight">Prefs</span>
             </TabsTrigger>
           </TabsList>
 
