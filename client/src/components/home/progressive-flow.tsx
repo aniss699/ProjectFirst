@@ -870,12 +870,9 @@ export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoadi
         {/* Barre de progression simplifiée - masquée pour le niveau présentation */}
         {currentStep >= 0 && (
           <div className="bg-gradient-to-r from-blue-50/5 via-indigo-50/5 to-purple-50/5 p-4 rounded-xl mt-6 mb-6 border border-blue-200/20 backdrop-blur-sm progressive-flow-progress">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3">
               <span className="text-sm font-medium text-gray-700">
                 Étape {currentStep + 1} sur 3
-              </span>
-              <span className="text-sm font-semibold text-blue-600">
-                {Math.round(((currentStep + 1) / 3) * 100)}%
               </span>
             </div>
 
