@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { HeroSection } from '@/components/home/hero-section';
 import { ProgressiveFlow } from '@/components/home/progressive-flow';
@@ -9,6 +9,21 @@ import { useLanguage } from '@/hooks/use-language';
 export default function Home() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const [initialStep, setInitialStep] = useState(-1);
+
+  // Lire le paramètre step de l'URL de manière sûre
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const stepParam = urlParams.get('step');
+      if (stepParam) {
+        const parsedStep = parseInt(stepParam);
+        if (!isNaN(parsedStep)) {
+          setInitialStep(parsedStep);
+        }
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -20,6 +35,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-white rounded-3xl blur-xl transform rotate-1 scale-102"></div>
           <div className="relative z-10">
             <ProgressiveFlow 
+              initialStep={initialStep}
               onComplete={(data) => {
                 console.log('Données du projet:', data);
                 // Rediriger vers la page des missions après création

@@ -61,12 +61,13 @@ interface ProgressiveFlowProps {
   onSubmit?: (data: any) => void;
   isLoading?: boolean;
   error?: string | null;
+  initialStep?: number;
 }
 
-export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError }: ProgressiveFlowProps) {
+export function ProgressiveFlow({ onComplete, onSubmit, isLoading: externalLoading, error: externalError, initialStep = -1 }: ProgressiveFlowProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(-1); // Commencer au niveau -1 (présentation)
+  const [currentStep, setCurrentStep] = useState(initialStep); // Commencer au niveau initial (par défaut -1: présentation)
   const [isCreating, setIsCreating] = useState(false);
   const [clickedCard, setClickedCard] = useState<string | null>(null);
   const { toast } = useToast();

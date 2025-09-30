@@ -71,7 +71,7 @@ export default function MobileBottomNav() {
   };
 
   const handleNewMission = () => {
-    setLocation('/marketplace/new');
+    setLocation('/?step=0');
   };
 
   return (
