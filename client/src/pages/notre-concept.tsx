@@ -142,30 +142,6 @@ export default function NotreConcept() {
     }
   ];
 
-  const successStories = [
-    {
-      client: "Pizza Enzo (Toulouse)",
-      challenge: "Pas assez de clients le soir",
-      solution: "App de livraison + réseaux sociaux",
-      result: "Commandes x3 en 2 mois",
-      icon: "🍕"
-    },
-    {
-      client: "Claire, prof de yoga",
-      challenge: "Cours annulés après Covid",
-      solution: "Plateforme cours en ligne",
-      result: "150 élèves fidèles online",
-      icon: "🧘‍♀️"
-    },
-    {
-      client: "Les frères Tec (startup)",
-      challenge: "App trop compliquée à développer",
-      solution: "Équipe dev sur-mesure",
-      result: "Rachat par une grande boîte",
-      icon: "📱"
-    }
-  ];
-
   const faqData = [
     {
       question: "Sérieusement, ça marche vraiment ?",
@@ -196,13 +172,13 @@ export default function NotreConcept() {
         {/* Hero Section plus humain et moins encombré */}
         <div className="relative text-center py-8 px-2 sm:px-0 overflow-hidden">
           {/* Effets de fond plus subtils */}
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-500/10 to-purple-600/10 rounded-2xl blur-2xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 via-purple-500/10 to-blue-600/10 rounded-2xl blur-2xl"></div>
           <div className="absolute top-4 left-8 text-xl opacity-60">✨</div>
           <div className="absolute top-6 right-12 text-xl opacity-50">💫</div>
           <div className="absolute bottom-6 left-1/4 text-xl opacity-40">⭐</div>
           
           <div className="relative z-10">
-            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold mb-4 shadow-md">
+            <div className="inline-flex items-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold mb-4 shadow-md">
               <Smile className="w-3 h-3 mr-1.5" />
               La solution qui change tout !
             </div>
@@ -210,13 +186,13 @@ export default function NotreConcept() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
               Arrêtez de chercher,
               <br />
-              <span className="text-emerald-600">laissez-vous trouver !</span>
+              <span className="text-blue-600">laissez-vous trouver !</span>
             </h1>
             
             <p className="text-base sm:text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-6">
               Vous avez un projet ? Fantastique ! 
               <br />
-              <span className="text-emerald-600 font-semibold">Les meilleurs pros viennent à vous.</span>
+              <span className="text-blue-600 font-semibold">Les meilleurs pros viennent à vous.</span>
             </p>
 
             {/* Promesse plus concise */}
@@ -257,7 +233,7 @@ export default function NotreConcept() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
               <Button 
                 onClick={() => setLocation('/create-mission')}
-                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold text-base px-6 py-2.5 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold text-base px-6 py-2.5 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
               >
                 <Rocket className="w-4 h-4 mr-2" />
                 Je lance mon projet
@@ -338,7 +314,7 @@ export default function NotreConcept() {
                   <h3 className="text-base font-bold mb-1">{step.title}</h3>
                   <p className="text-blue-200 font-medium mb-2 text-xs">{step.subtitle}</p>
                   <p className="text-gray-200 mb-2 text-xs">{step.description}</p>
-                  <div className="bg-emerald-500/20 text-emerald-200 px-2 py-0.5 rounded-full text-xs font-medium">
+                  <div className="bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded-full text-xs font-medium">
                     {step.emotion}
                   </div>
                   {activeDemo === index && (
@@ -349,41 +325,6 @@ export default function NotreConcept() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Histoires de réussite plus compactes */}
-        <div className="mb-12 px-2 sm:px-0">
-          <div className="text-center mb-6">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Ils l'ont fait !</h2>
-            <p className="text-base text-gray-600">Des histoires vraies qui donnent le sourire</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {successStories.map((story, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-102">
-                <CardHeader className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white pb-3">
-                  <div className="text-xl mb-1">{story.icon}</div>
-                  <CardTitle className="text-base">{story.client}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="font-semibold text-red-600">😟 Souci : </span>
-                      <span className="text-gray-700">{story.challenge}</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-blue-600">💡 Solution : </span>
-                      <span className="text-gray-700">{story.solution}</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-green-600">🚀 Résultat : </span>
-                      <span className="text-gray-700 font-semibold">{story.result}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
 
@@ -474,7 +415,7 @@ export default function NotreConcept() {
 
         {/* Call to Action final plus convivial */}
         <div className="mb-6 px-2 sm:px-0">
-          <div className="bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-600 rounded-xl p-6 text-center text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 via-purple-600 to-blue-700 rounded-xl p-6 text-center text-white relative overflow-hidden">
             {/* Effets de fond plus subtils */}
             <div className="absolute inset-0 bg-black opacity-10"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
