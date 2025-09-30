@@ -1013,7 +1013,7 @@ __export(vite_exports, {
   serveStatic: () => serveStatic,
   setupVite: () => setupVite
 });
-import express6 from "express";
+import express5 from "express";
 import fs from "fs";
 import path2 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
@@ -1088,7 +1088,7 @@ function serveStatic(app2) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express6.static(distPath));
+  app2.use(express5.static(distPath));
   app2.use("*", (_req, res) => {
     res.sendFile(path2.resolve(distPath, "index.html"));
   });
@@ -1292,13 +1292,13 @@ __export(ai_exports, {
   default: () => ai_default
 });
 import { Router as Router11 } from "express";
-var router16, ai_default;
+var router15, ai_default;
 var init_ai = __esm({
   "apps/api/src/routes/ai.ts"() {
     "use strict";
     init_aiOrchestrator();
-    router16 = Router11();
-    router16.post("/pricing", async (req, res) => {
+    router15 = Router11();
+    router15.post("/pricing", async (req, res) => {
       try {
         const result = await getPricingSuggestion(req.body);
         res.json(result);
@@ -1307,7 +1307,7 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors du calcul de prix" });
       }
     });
-    router16.post("/brief", async (req, res) => {
+    router15.post("/brief", async (req, res) => {
       try {
         const result = await enhanceBrief(req.body);
         res.json(result);
@@ -1316,7 +1316,7 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
       }
     });
-    router16.post("/feedback", async (req, res) => {
+    router15.post("/feedback", async (req, res) => {
       try {
         const { phase, prompt, feedback } = req.body;
         await logUserFeedback(phase, prompt, feedback);
@@ -1326,12 +1326,12 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
       }
     });
-    ai_default = router16;
+    ai_default = router15;
   }
 });
 
 // server/index.ts
-import express7 from "express";
+import express6 from "express";
 import path3 from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
@@ -4363,96 +4363,8 @@ router8.delete("/favorites/:announcementId", async (req, res) => {
 });
 var favorites_routes_default = router8;
 
-// server/routes/mission-demo.ts
-import express4 from "express";
-var router9 = express4.Router();
-var getDemoMissions = () => [
-  {
-    id: "mission1",
-    title: "D\xE9veloppement d'une application mobile de e-commerce",
-    description: "Je recherche un d\xE9veloppeur exp\xE9riment\xE9 pour cr\xE9er une application mobile compl\xE8te de vente en ligne avec syst\xE8me de paiement int\xE9gr\xE9.",
-    category: "developpement",
-    budget: "5000",
-    location: "Paris, France",
-    clientId: "client1",
-    clientName: "Marie Dubois",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-15")).toISOString(),
-    bids: []
-  },
-  {
-    id: "mission2",
-    title: "Refonte compl\xE8te du site web d'entreprise",
-    description: "Modernisation du site vitrine de notre entreprise avec nouveau design responsive et optimisation SEO.",
-    category: "design",
-    budget: "3000",
-    location: "Lyon, France",
-    clientId: "client2",
-    clientName: "Pierre Martin",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-18")).toISOString(),
-    bids: []
-  },
-  {
-    id: "mission3",
-    title: "Campagne marketing digital et r\xE9seaux sociaux",
-    description: "Lancement d'une campagne compl\xE8te sur les r\xE9seaux sociaux pour augmenter la notori\xE9t\xE9 de notre marque.",
-    category: "marketing",
-    budget: "2000",
-    location: "Marseille, France",
-    clientId: "client3",
-    clientName: "Sophie Leclerc",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-20")).toISOString(),
-    bids: []
-  },
-  {
-    id: "mission4",
-    title: "D\xE9veloppement d'une plateforme SaaS",
-    description: "Cr\xE9ation d'une plateforme SaaS compl\xE8te avec tableau de bord, API, authentification et facturation.",
-    category: "developpement",
-    budget: "15000",
-    location: "Remote",
-    clientId: "client4",
-    clientName: "Tech Startup",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-22")).toISOString(),
-    bids: []
-  },
-  {
-    id: "mission5",
-    title: "Application mobile React Native",
-    description: "D\xE9veloppement d'une application mobile cross-platform avec React Native pour la gestion de t\xE2ches.",
-    category: "mobile",
-    budget: "8000",
-    location: "Lille, France",
-    clientId: "client5",
-    clientName: "Productivity Corp",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-25")).toISOString(),
-    bids: []
-  },
-  {
-    id: "mission6",
-    title: "Int\xE9gration IA et Machine Learning",
-    description: "Int\xE9gration d'intelligence artificielle dans une plateforme existante pour l'analyse pr\xE9dictive.",
-    category: "ai",
-    budget: "12000",
-    location: "Paris, France",
-    clientId: "client6",
-    clientName: "AI Solutions",
-    status: "open",
-    createdAt: (/* @__PURE__ */ new Date("2024-01-28")).toISOString(),
-    bids: []
-  }
-];
-router9.get("/missions-demo", (req, res) => {
-  res.json(getDemoMissions());
-});
-var mission_demo_default = router9;
-
 // server/routes/ai-quick-analysis.ts
-import express5 from "express";
+import express4 from "express";
 
 // server/services/ai-analysis.ts
 var AIAnalysisService = class {
@@ -4825,8 +4737,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router10 = express5.Router();
-router10.post("/ai/quick-analysis", async (req, res) => {
+var router9 = express4.Router();
+router9.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -4843,7 +4755,7 @@ router10.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router10.post("/ai/price-analysis", async (req, res) => {
+router9.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -4864,12 +4776,12 @@ router10.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router10;
+var ai_quick_analysis_default = router9;
 
 // server/routes/ai-diagnostic-routes.ts
 import { Router as Router6 } from "express";
-var router11 = Router6();
-router11.get("/diagnostic", async (req, res) => {
+var router10 = Router6();
+router10.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -4933,7 +4845,7 @@ router11.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router11;
+var ai_diagnostic_routes_default = router10;
 
 // server/routes/ai-learning-routes.ts
 import { Router as Router7 } from "express";
@@ -4957,8 +4869,8 @@ var SimpleLearningEngine = class {
 var aiLearningEngine = new SimpleLearningEngine();
 
 // server/routes/ai-learning-routes.ts
-var router12 = Router7();
-router12.post("/analyze-patterns", async (req, res) => {
+var router11 = Router7();
+router11.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -4976,7 +4888,7 @@ router12.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router12.get("/stats", (req, res) => {
+router11.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -4988,12 +4900,12 @@ router12.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router12;
+var ai_learning_routes_default = router11;
 
 // server/routes/team-routes.ts
 import { Router as Router8 } from "express";
 import { z as z5 } from "zod";
-var router13 = Router8();
+var router12 = Router8();
 var teamAnalysisSchema = z5.object({
   description: z5.string().min(10),
   title: z5.string().min(3),
@@ -5020,7 +4932,7 @@ var teamProjectSchema = z5.object({
     importance: z5.enum(["high", "medium", "low"])
   }))
 });
-router13.post("/analyze", async (req, res) => {
+router12.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -5065,7 +4977,7 @@ router13.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router13.post("/create-project", async (req, res) => {
+router12.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -5120,7 +5032,7 @@ router13.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router13;
+var team_routes_default = router12;
 
 // server/routes/open-teams.ts
 init_database();
@@ -5199,11 +5111,11 @@ var optionalAuth = async (req, res, next) => {
 };
 
 // server/routes/open-teams.ts
-var router14 = Router9();
+var router13 = Router9();
 var asyncHandler2 = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
-router14.post("/", requireAuth, asyncHandler2(async (req, res) => {
+router13.post("/", requireAuth, asyncHandler2(async (req, res) => {
   const requestId = randomUUID2();
   console.log(JSON.stringify({
     level: "info",
@@ -5269,7 +5181,7 @@ router14.post("/", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
 }));
-router14.get("/", asyncHandler2(async (req, res) => {
+router13.get("/", asyncHandler2(async (req, res) => {
   const missionId = req.query.mission_id;
   try {
     const whereConditions = [eq8(openTeams.visibility, "public")];
@@ -5314,7 +5226,7 @@ router14.get("/", asyncHandler2(async (req, res) => {
     });
   }
 }));
-router14.get("/:id", asyncHandler2(async (req, res) => {
+router13.get("/:id", asyncHandler2(async (req, res) => {
   const teamId = parseInt(req.params.id);
   if (isNaN(teamId)) {
     return res.status(400).json({
@@ -5371,7 +5283,7 @@ router14.get("/:id", asyncHandler2(async (req, res) => {
     });
   }
 }));
-router14.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
+router13.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
   const teamId = parseInt(req.params.id);
   const { role, experience_years } = req.body;
   const user_id = req.user.id;
@@ -5453,7 +5365,7 @@ router14.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
 }));
-router14.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
+router13.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
   const teamId = parseInt(req.params.id);
   if (isNaN(teamId)) {
     return res.status(400).json({
@@ -5497,7 +5409,7 @@ router14.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
 }));
-router14.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
+router13.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
   const teamId = parseInt(req.params.id);
   if (isNaN(teamId)) {
     return res.status(400).json({
@@ -5528,7 +5440,7 @@ router14.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
     });
   }
 }));
-var open_teams_default = router14;
+var open_teams_default = router13;
 
 // server/routes/bids.ts
 init_database();
@@ -5536,7 +5448,7 @@ init_schema();
 import { Router as Router10 } from "express";
 import { eq as eq9, and as and4, desc as desc4 } from "drizzle-orm";
 import { z as z6 } from "zod";
-var router15 = Router10();
+var router14 = Router10();
 var createBidSchema = z6.object({
   mission_id: z6.number().int().positive(),
   amount: z6.string().min(1),
@@ -5555,7 +5467,7 @@ var updateBidSchema = z6.object({
   status: z6.enum(["pending", "accepted", "rejected", "withdrawn"]).optional(),
   team_composition: z6.any().optional()
 });
-router15.post("/", requireAuth, async (req, res) => {
+router14.post("/", requireAuth, async (req, res) => {
   try {
     console.log("\u{1F3AF} POST /api/bids - Nouvelle candidature:", {
       userId: req.user?.id,
@@ -5621,7 +5533,7 @@ router15.post("/", requireAuth, async (req, res) => {
     });
   }
 });
-router15.get("/", optionalAuth, async (req, res) => {
+router14.get("/", optionalAuth, async (req, res) => {
   try {
     const { mission_id, provider_id, status, bid_type } = req.query;
     console.log("\u{1F4CB} GET /api/bids - Recherche candidatures:", {
@@ -5685,7 +5597,7 @@ router15.get("/", optionalAuth, async (req, res) => {
     });
   }
 });
-router15.get("/:id", optionalAuth, async (req, res) => {
+router14.get("/:id", optionalAuth, async (req, res) => {
   try {
     const bidId = parseInt(req.params.id);
     if (isNaN(bidId)) {
@@ -5732,7 +5644,7 @@ router15.get("/:id", optionalAuth, async (req, res) => {
     });
   }
 });
-router15.put("/:id", requireAuth, async (req, res) => {
+router14.put("/:id", requireAuth, async (req, res) => {
   try {
     const bidId = parseInt(req.params.id);
     if (isNaN(bidId)) {
@@ -5791,7 +5703,7 @@ router15.put("/:id", requireAuth, async (req, res) => {
     });
   }
 });
-router15.delete("/:id", requireAuth, async (req, res) => {
+router14.delete("/:id", requireAuth, async (req, res) => {
   try {
     const bidId = parseInt(req.params.id);
     if (isNaN(bidId)) {
@@ -5841,7 +5753,7 @@ router15.delete("/:id", requireAuth, async (req, res) => {
     });
   }
 });
-var bids_default = router15;
+var bids_default = router14;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -5943,7 +5855,7 @@ var monitoringRateLimit = rateLimit({
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
 validateEnvironment();
-var app = express7();
+var app = express6();
 var port = parseInt(process.env.PORT || "5000", 10);
 var PID_FILE = "/tmp/swideal-server.pid";
 function checkPortFree(port2) {
@@ -6122,7 +6034,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
-app.use("/api", limitRequestSize, validateRequest, performanceMonitor, express7.json({ limit: "10mb" }));
+app.use("/api", limitRequestSize, validateRequest, performanceMonitor, express6.json({ limit: "10mb" }));
 app.use("/api/auth", (req, res, next) => {
   console.log(`\u{1F510} Auth request: ${req.method} ${req.path}`, { body: req.body.email ? { email: req.body.email } : {} });
   next();
@@ -6164,7 +6076,6 @@ app.use("/api/ai/suggestions", ai_suggestions_routes_default);
 app.use("/api/ai/learning", ai_learning_routes_default);
 app.use("/api", feed_routes_default);
 app.use("/api", favorites_routes_default);
-app.use("/api", mission_demo_default);
 app.use("/api/team", team_routes_default);
 console.log("\u{1F91D} Registering open teams routes...");
 app.use("/api/open-teams", (req, res, next) => {
@@ -6298,7 +6209,7 @@ async function startServerWithRetry() {
             const { setupVite: setupVite2, serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
             const aiOrchestratorModule = await Promise.resolve().then(() => (init_ai(), ai_exports));
             const aiOrchestratorRoutes = aiOrchestratorModule.default;
-            app.use("/api-ai-orchestrator", express7.json({ limit: "10mb" }), strictAiRateLimit, aiOrchestratorRoutes);
+            app.use("/api-ai-orchestrator", express6.json({ limit: "10mb" }), strictAiRateLimit, aiOrchestratorRoutes);
             console.log("\u2705 AI orchestrator routes mounted");
             if (process.env.NODE_ENV === "production") {
               console.log("\u{1F3ED} Production mode: serving static files");
