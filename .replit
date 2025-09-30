@@ -60,19 +60,6 @@ task = "workflow.run"
 args = "Start application"
 
 [[workflows.workflow]]
-name = "Production Preview"
-author = 47514937
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start"
-
-[[workflows.workflow]]
 name = "Start application"
 author = "agent"
 
@@ -83,19 +70,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Production Start"
-author = 48014459
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start"
 
 [[workflows.workflow]]
 name = "SwipDEAL Production"
