@@ -123,10 +123,113 @@ export const favorites = pgTable('favorites', {
   created_at: timestamp('created_at').defaultNow()
 });
 
+// Tables pour le système de reviews
+export const reviews = pgTable('reviews', {
+  id: serial('id').primaryKey(),
+  mission_id: integer('mission_id').references(() => missions.id).notNull(),
+  reviewer_id: integer('reviewer_id').references(() => users.id).notNull(),
+  reviewee_id: integer('reviewee_id').references(() => users.id).notNull(),
+  rating: integer('rating').notNull(), // 1-5
+  comment: text('comment'),
+  response: text('response'), // Réponse du prestataire
+  criteria: jsonb('criteria'), // {communication: 5, quality: 4, deadline: 5, etc.}
+  is_public: boolean('is_public').default(true),
+  helpful_count: integer('helpful_count').default(0),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const reviewHelpful = pgTable('review_helpful', {
+  id: serial('id').primaryKey(),
+  review_id: integer('review_id').references(() => reviews.id).notNull(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  created_at: timestamp('created_at').defaultNow()
+});
+
+// Tables pour la gestion des contrats
+export const contracts = pgTable('contracts', {
+  id: serial('id').primaryKey(),
+  mission_id: integer('mission_id').references(() => missions.id).notNull(),
+  bid_id: integer('bid_id').references(() => bids.id).notNull(),
+  client_id: integer('client_id').references(() => users.id).notNull(),
+  provider_id: integer('provider_id').references(() => users.id).notNull(),
+
+  status: text('status').$type<
+    'pending_signature' | 'active' | 'in_progress' | 'under_review' |
+    'completed' | 'disputed' | 'cancelled'
+  >().default('pending_signature'),
+
+  terms: jsonb('terms'), // Conditions acceptées
+  deliverables: jsonb('deliverables'), // Liste des livrables attendus
+  milestones: jsonb('milestones'), // Jalons de paiement
+
+  // Signatures électroniques
+  client_signed_at: timestamp('client_signed_at'),
+  provider_signed_at: timestamp('provider_signed_at'),
+
+  // Dates importantes
+  start_date: timestamp('start_date'),
+  expected_end_date: timestamp('expected_end_date'),
+  actual_end_date: timestamp('actual_end_date'),
+
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const deliverables = pgTable('deliverables', {
+  id: serial('id').primaryKey(),
+  contract_id: integer('contract_id').references(() => contracts.id).notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  status: text('status').$type<'pending' | 'submitted' | 'approved' | 'rejected'>().default('pending'),
+  file_urls: jsonb('file_urls'), // URLs des fichiers livrés
+  submitted_at: timestamp('submitted_at'),
+  reviewed_at: timestamp('reviewed_at'),
+  feedback: text('feedback'),
+  created_at: timestamp('created_at').defaultNow()
+});
+
+// Tables pour les notifications
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  type: text('type').notNull(), // 'new_bid', 'message', 'payment', 'review', etc.
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  link: text('link'), // URL de redirection
+  metadata: jsonb('metadata'),
+  read_at: timestamp('read_at'),
+  created_at: timestamp('created_at').defaultNow()
+});
+
+// Tables pour les fichiers
+export const files = pgTable('files', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull(),
+  filename: text('filename').notNull(),
+  original_filename: text('original_filename').notNull(),
+  file_type: text('file_type').notNull(), // mime type
+  file_size: integer('file_size').notNull(), // en bytes
+  file_url: text('file_url').notNull(),
+
+  // Contexte d'utilisation
+  context_type: text('context_type'), // 'portfolio', 'bid', 'deliverable', 'profile_picture'
+  context_id: integer('context_id'), // ID de la mission, bid, etc.
+
+  metadata: jsonb('metadata'),
+  created_at: timestamp('created_at').defaultNow()
+});
+
 // Relations entre les tables
 export const usersRelations = relations(users, ({ many }) => ({
   missions: many(missions),
-  bids: many(bids)
+  bids: many(bids),
+  // teamMembers: many(teamMembers), // This seems to be a leftover from a previous or incomplete change. Removing it.
+  reviewsGiven: many(reviews, { relationName: "reviewer" }),
+  reviewsReceived: many(reviews, { relationName: "reviewee" }),
+  contracts: many(contracts),
+  notifications: many(notifications),
+  files: many(files)
 }));
 
 export const missionsRelations = relations(missions, ({ one, many }) => ({
@@ -134,7 +237,8 @@ export const missionsRelations = relations(missions, ({ one, many }) => ({
     fields: [missions.user_id],
     references: [users.id]
   }),
-  bids: many(bids)
+  bids: many(bids),
+  reviews: many(reviews)
 }));
 
 export const openTeamsRelations = relations(openTeams, ({ one, many }) => ({
@@ -211,144 +315,85 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   })
 }));
 
-// Types are now inferred from the schema via InferSelectModel in shared/index.ts
-// This removes duplication and ensures type consistency
-
-// Zod schemas for validation
-export const insertUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
-  password: z.string().min(8), // Added password validation, assuming a minimum of 8 characters
-  role: z.enum(['CLIENT', 'PRO', 'ADMIN']),
-  rating_mean: z.string().optional(),
-  rating_count: z.number().int().min(0).optional(),
-  profile_data: z.any().optional()
-});
-
-export const insertMissionSchema = z.object({
-  user_id: z.number().int().positive(),
-  title: z.string().min(1),
-  description: z.string().min(1),
-  category: z.string().min(1),
-  location: z.string().optional(),
-  postal_code: z.string().optional(), // Added postal_code validation
-  budget: z.number().int().min(0).optional(),
-  budget_value_cents: z.number().int().min(0).optional(),
-  budget_type: z.string().optional(),
-  urgency: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  status: z.enum(['draft', 'open', 'published', 'assigned', 'completed', 'cancelled']).optional(),
-  quality_target: z.enum(['basic', 'standard', 'premium', 'luxury']).optional()
-});
-
-export const insertBidSchema = z.object({
-  mission_id: z.number().int().positive(),
-  provider_id: z.number().int().positive(),
-  amount: z.string(),
-  timeline_days: z.number().int().min(1).optional(),
-  message: z.string().optional(),
-  score_breakdown: z.any().optional(),
-  is_leading: z.boolean().optional(),
-  status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).optional(),
-  // Extensions pour les équipes
-  bid_type: z.enum(['individual', 'team', 'open_team']).optional(),
-  team_composition: z.any().optional(), // Structure de l'équipe
-  team_lead_id: z.number().int().positive().optional(),
-  open_team_id: z.number().int().positive().optional()
-});
-
-// Schema pour les équipes ouvertes
-export const insertOpenTeamSchema = z.object({
-  mission_id: z.number().int().positive(),
-  name: z.string().min(1),
-  description: z.string().optional(),
-  // creator_id is set from authenticated user, not from client
-  estimated_budget: z.number().int().positive().optional(),
-  estimated_timeline_days: z.number().int().min(1).optional(),
-  members: z.any().optional(),
-  required_roles: z.any().optional(),
-  max_members: z.number().int().min(2).max(10).optional(),
-  status: z.enum(['recruiting', 'complete', 'submitted', 'cancelled']).optional(),
-  visibility: z.enum(['public', 'private']).optional(),
-  auto_accept: z.boolean().optional()
-});
-
-export const insertAnnouncementSchema = z.object({
-  title: z.string().min(1),
-  content: z.string().min(1),
-  type: z.enum(['info', 'warning', 'error', 'success']).optional(),
-  priority: z.number().int().min(1).optional(),
-  is_active: z.boolean().optional(),
-  status: z.enum(['active', 'completed', 'cancelled', 'draft']).optional(),
-  category: z.string().optional(),
-  budget: z.number().int().min(0).optional(),
-  location: z.string().optional(),
-  user_id: z.number().int().positive().optional(),
-  sponsored: z.boolean().optional()
-});
-
-export const insertFeedFeedbackSchema = z.object({
-  announcement_id: z.number().int().positive(),
-  user_id: z.number().int().positive(),
-  feedback_type: z.enum(['like', 'dislike', 'interested', 'not_relevant'])
-});
-
-export const insertFeedSeenSchema = z.object({
-  announcement_id: z.number().int().positive(),
-  user_id: z.number().int().positive()
-});
-
-export const insertFavoritesSchema = z.object({
-  user_id: z.number().int().positive(),
-  announcement_id: z.number().int().positive()
-});
-
-export const aiEvents = pgTable('ai_events', {
-  id: text('id').primaryKey(),
-  phase: text('phase').$type<'pricing' | 'brief_enhance' | 'matching' | 'scoring'>().notNull(),
-  provider: text('provider').notNull(),
-  model_family: text('model_family').$type<'gemini' | 'openai' | 'local' | 'other'>().notNull(),
-  model_name: text('model_name').notNull(),
-  allow_training: boolean('allow_training').notNull(),
-  input_redacted: jsonb('input_redacted'),
-  output: jsonb('output'),
-  confidence: text('confidence'),
-  tokens: integer('tokens'),
-  latency_ms: integer('latency_ms'),
-  provenance: text('provenance').$type<'auto' | 'human_validated' | 'ab_test_winner'>().notNull(),
-  prompt_hash: text('prompt_hash'),
-  accepted: boolean('accepted'),
-  rating: integer('rating'),
-  edits: jsonb('edits'),
-  created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow()
-});
-
-export const aiEventsRelations = relations(aiEvents, ({ one }) => ({
-  // Pas de relations directes pour l'instant
+// Relations pour reviews
+export const reviewsRelations = relations(reviews, ({ one, many }) => ({
+  mission: one(missions, {
+    fields: [reviews.mission_id],
+    references: [missions.id]
+  }),
+  reviewer: one(users, {
+    fields: [reviews.reviewer_id],
+    references: [users.id]
+  }),
+  reviewee: one(users, {
+    fields: [reviews.reviewee_id],
+    references: [users.id]
+  }),
+  helpfulMarks: many(reviewHelpful)
 }));
 
-export const insertAiEventSchema = z.object({
-  id: z.string(),
-  phase: z.enum(['pricing', 'brief_enhance', 'matching', 'scoring']),
-  provider: z.string(),
-  model_family: z.enum(['gemini', 'openai', 'local', 'other']),
-  model_name: z.string(),
-  allow_training: z.boolean(),
-  input_redacted: z.any().optional(),
-  output: z.any().optional(),
-  confidence: z.string().optional(),
-  tokens: z.number().int().optional(),
-  latency_ms: z.number().int().optional(),
-  provenance: z.enum(['auto', 'human_validated', 'ab_test_winner']),
-  prompt_hash: z.string().optional(),
-  accepted: z.boolean().optional(),
-  rating: z.number().int().min(1).max(5).optional(),
-  edits: z.any().optional()
-});
+export const reviewHelpfulRelations = relations(reviewHelpful, ({ one }) => ({
+  review: one(reviews, {
+    fields: [reviewHelpful.review_id],
+    references: [reviews.id]
+  }),
+  user: one(users, {
+    fields: [reviewHelpful.user_id],
+    references: [users.id]
+  })
+}));
+
+// Relations pour contrats
+export const contractsRelations = relations(contracts, ({ one, many }) => ({
+  mission: one(missions, {
+    fields: [contracts.mission_id],
+    references: [missions.id]
+  }),
+  bid: one(bids, {
+    fields: [contracts.bid_id],
+    references: [bids.id]
+  }),
+  client: one(users, {
+    fields: [contracts.client_id],
+    references: [users.id]
+  }),
+  provider: one(users, {
+    fields: [contracts.provider_id],
+    references: [users.id]
+  }),
+  deliverables: many(deliverables)
+}));
+
+export const deliverablesRelations = relations(deliverables, ({ one }) => ({
+  contract: one(contracts, {
+    fields: [deliverables.contract_id],
+    references: [contracts.id]
+  })
+}));
+
+// Relations pour notifications
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.user_id],
+    references: [users.id]
+  })
+}));
+
+// Relations pour fichiers
+export const filesRelations = relations(files, ({ one }) => ({
+  user: one(users, {
+    fields: [files.user_id],
+    references: [users.id]
+  })
+}));
 
 // Export types that might be used elsewhere
 export type FeedbackType = 'like' | 'dislike' | 'interested' | 'not_relevant';
 export type AnnouncementStatus = 'active' | 'completed' | 'cancelled' | 'draft';
+export type ContractStatus = 'pending_signature' | 'active' | 'in_progress' | 'under_review' | 'completed' | 'disputed' | 'cancelled';
+export type DeliverableStatus = 'pending' | 'submitted' | 'approved' | 'rejected';
+export type NotificationType = 'new_bid' | 'message' | 'payment' | 'review' | string;
+export type FileContextType = 'portfolio' | 'bid' | 'deliverable' | 'profile_picture' | string | null;
 
 // Types pour les équipes
 export interface TeamMember {
@@ -441,3 +486,203 @@ export namespace DeprecatedUITypes {
 // Re-exports for backward compatibility - to be removed
 export interface MissionWithBids extends DeprecatedUITypes.MissionWithBids {}
 export interface Announcement extends DeprecatedUITypes.Announcement {}
+
+// Zod schemas for validation (already present and seem fine, no changes requested)
+export const insertUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  password: z.string().min(8), // Added password validation, assuming a minimum of 8 characters
+  role: z.enum(['CLIENT', 'PRO', 'ADMIN']),
+  rating_mean: z.string().optional(),
+  rating_count: z.number().int().min(0).optional(),
+  profile_data: z.any().optional()
+});
+
+export const insertMissionSchema = z.object({
+  user_id: z.number().int().positive(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  location: z.string().optional(),
+  postal_code: z.string().optional(), // Added postal_code validation
+  budget: z.number().int().min(0).optional(),
+  budget_value_cents: z.number().int().min(0).optional(),
+  budget_type: z.string().optional(),
+  urgency: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  status: z.enum(['draft', 'open', 'published', 'assigned', 'completed', 'cancelled']).optional(),
+  quality_target: z.enum(['basic', 'standard', 'premium', 'luxury']).optional()
+});
+
+export const insertBidSchema = z.object({
+  mission_id: z.number().int().positive(),
+  provider_id: z.number().int().positive(),
+  amount: z.string(),
+  timeline_days: z.number().int().min(1).optional(),
+  message: z.string().optional(),
+  score_breakdown: z.any().optional(),
+  is_leading: z.boolean().optional(),
+  status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).optional(),
+  // Extensions pour les équipes
+  bid_type: z.enum(['individual', 'team', 'open_team']).optional(),
+  team_composition: z.any().optional(), // Structure de l'équipe
+  team_lead_id: z.number().int().positive().optional(),
+  open_team_id: z.number().int().positive().optional()
+});
+
+// Schema pour les équipes ouvertes
+export const insertOpenTeamSchema = z.object({
+  mission_id: z.number().int().positive(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  // creator_id is set from authenticated user, not from client
+  estimated_budget: z.number().int().positive().optional(),
+  estimated_timeline_days: z.number().int().min(1).optional(),
+  members: z.any().optional(),
+  required_roles: z.any().optional(),
+  max_members: z.number().int().min(2).max(10).optional(),
+  status: z.enum(['recruiting', 'complete', 'submitted', 'cancelled']).optional(),
+  visibility: z.enum(['public', 'private']).optional(),
+  auto_accept: z.boolean().optional()
+});
+
+// Schemas for new tables
+export const insertReviewSchema = z.object({
+  mission_id: z.number().int().positive(),
+  reviewer_id: z.number().int().positive(),
+  reviewee_id: z.number().int().positive(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().optional(),
+  response: z.string().optional(),
+  criteria: z.any().optional(),
+  is_public: z.boolean().optional(),
+  helpful_count: z.number().int().min(0).optional(),
+});
+
+export const insertReviewHelpfulSchema = z.object({
+  review_id: z.number().int().positive(),
+  user_id: z.number().int().positive(),
+});
+
+export const insertContractSchema = z.object({
+  mission_id: z.number().int().positive(),
+  bid_id: z.number().int().positive(),
+  client_id: z.number().int().positive(),
+  provider_id: z.number().int().positive(),
+  status: z.enum(['pending_signature', 'active', 'in_progress', 'under_review', 'completed', 'disputed', 'cancelled']).optional(),
+  terms: z.any().optional(),
+  deliverables: z.any().optional(),
+  milestones: z.any().optional(),
+  client_signed_at: z.string().datetime().optional(),
+  provider_signed_at: z.string().datetime().optional(),
+  start_date: z.string().datetime().optional(),
+  expected_end_date: z.string().datetime().optional(),
+  actual_end_date: z.string().datetime().optional(),
+});
+
+export const insertDeliverableSchema = z.object({
+  contract_id: z.number().int().positive(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  status: z.enum(['pending', 'submitted', 'approved', 'rejected']).optional(),
+  file_urls: z.any().optional(),
+  submitted_at: z.string().datetime().optional(),
+  reviewed_at: z.string().datetime().optional(),
+  feedback: z.string().optional(),
+});
+
+export const insertNotificationSchema = z.object({
+  user_id: z.number().int().positive(),
+  type: z.string().min(1),
+  title: z.string().min(1),
+  message: z.string().min(1),
+  link: z.string().url().optional(),
+  metadata: z.any().optional(),
+  read_at: z.string().datetime().optional(),
+});
+
+export const insertFileSchema = z.object({
+  user_id: z.number().int().positive(),
+  filename: z.string().min(1),
+  original_filename: z.string().min(1),
+  file_type: z.string().min(1),
+  file_size: z.number().int().min(0),
+  file_url: z.string().url().min(1),
+  context_type: z.string().optional(),
+  context_id: z.number().int().positive().optional(),
+  metadata: z.any().optional(),
+});
+
+
+export const insertAnnouncementSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  type: z.enum(['info', 'warning', 'error', 'success']).optional(),
+  priority: z.number().int().min(1).optional(),
+  is_active: z.boolean().optional(),
+  status: z.enum(['active', 'completed', 'cancelled', 'draft']).optional(),
+  category: z.string().optional(),
+  budget: z.number().int().min(0).optional(),
+  location: z.string().optional(),
+  user_id: z.number().int().positive().optional(),
+  sponsored: z.boolean().optional()
+});
+
+export const insertFeedFeedbackSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive(),
+  feedback_type: z.enum(['like', 'dislike', 'interested', 'not_relevant'])
+});
+
+export const insertFeedSeenSchema = z.object({
+  announcement_id: z.number().int().positive(),
+  user_id: z.number().int().positive()
+});
+
+export const insertFavoritesSchema = z.object({
+  user_id: z.number().int().positive(),
+  announcement_id: z.number().int().positive()
+});
+
+export const aiEvents = pgTable('ai_events', {
+  id: text('id').primaryKey(),
+  phase: text('phase').$type<'pricing' | 'brief_enhance' | 'matching' | 'scoring'>().notNull(),
+  provider: text('provider').notNull(),
+  model_family: text('model_family').$type<'gemini' | 'openai' | 'local' | 'other'>().notNull(),
+  model_name: text('model_name').notNull(),
+  allow_training: boolean('allow_training').notNull(),
+  input_redacted: jsonb('input_redacted'),
+  output: jsonb('output'),
+  confidence: text('confidence'),
+  tokens: integer('tokens'),
+  latency_ms: integer('latency_ms'),
+  provenance: text('provenance').$type<'auto' | 'human_validated' | 'ab_test_winner'>().notNull(),
+  prompt_hash: text('prompt_hash'),
+  accepted: boolean('accepted'),
+  rating: integer('rating'),
+  edits: jsonb('edits'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const aiEventsRelations = relations(aiEvents, ({ one }) => ({
+  // Pas de relations directes pour l'instant
+}));
+
+export const insertAiEventSchema = z.object({
+  id: z.string(),
+  phase: z.enum(['pricing', 'brief_enhance', 'matching', 'scoring']),
+  provider: z.string(),
+  model_family: z.enum(['gemini', 'openai', 'local', 'other']),
+  model_name: z.string(),
+  allow_training: z.boolean(),
+  input_redacted: z.any().optional(),
+  output: z.any().optional(),
+  confidence: z.string().optional(),
+  tokens: z.number().int().optional(),
+  latency_ms: z.number().int().optional(),
+  provenance: z.enum(['auto', 'human_validated', 'ab_test_winner']),
+  prompt_hash: z.string().optional(),
+  accepted: z.boolean().optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  edits: z.any().optional()
+});

@@ -4,10 +4,28 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { users, bids } from '../shared/schema.js';
 
+// Import routes
+import missionsRoutes from './routes/missions.js';
+import bidsRoutes from './routes/bids.js';
+import teamsRoutes from './routes/open-teams.js';
+import feedRoutes from './routes/feed-routes.js';
+import favoritesRoutes from './routes/favorites-routes.js';
+import reviewsRoutes from './routes/reviews.js';
+import contractsRoutes from './routes/contracts.js';
+import filesRoutes from './routes/files.js';
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
 
 const router = express.Router();
+
+// Placeholder for authMiddleware - replace with your actual authentication middleware
+const authMiddleware = (req, res, next) => {
+  // In a real application, you would verify the user's token here
+  // For demo purposes, we'll assume the user is authenticated
+  console.log('Authentication middleware placeholder passed.');
+  next();
+};
 
 // Get all demo providers
 router.get('/demo-providers', async (req, res) => {
@@ -186,5 +204,15 @@ router.get('/ai-analysis-demo', async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
+
+// Mount routes with auth middleware where needed
+  router.use('/missions', authMiddleware, missionsRoutes);
+  router.use('/bids', authMiddleware, bidsRoutes);
+  router.use('/teams', authMiddleware, teamsRoutes);
+  router.use('/feed', feedRoutes);
+  router.use('/favorites', authMiddleware, favoritesRoutes);
+  router.use('/reviews', authMiddleware, reviewsRoutes);
+  router.use('/contracts', authMiddleware, contractsRoutes);
+  router.use('/files', authMiddleware, filesRoutes);
 
 export default router;
