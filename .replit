@@ -44,7 +44,7 @@ localPort = 46765
 externalPort = 3000
 
 [workflows]
-runButton = "SwipDEAL Server"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -79,15 +79,6 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start"
-
-[[workflows.workflow]]
-name = "SwipDEAL Server"
-author = 48180891
-mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
