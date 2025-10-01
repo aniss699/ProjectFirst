@@ -888,7 +888,7 @@ export default function CollectiveCoursesPage() {
               </CardContent>
             </Card>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
