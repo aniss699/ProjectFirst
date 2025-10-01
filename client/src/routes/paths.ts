@@ -23,8 +23,8 @@ export const ROUTES = {
   MISSIONS: '/missions',
   CREATE_MISSION: '/create-mission',
   MESSAGES: '/messages',
+  SETTINGS: '/settings',
 
-  
 
   // Routes API
   API: {
@@ -68,7 +68,12 @@ export const routeConfigs: Record<string, RouteConfig> = {
     title: 'Créer une mission - AppelsPro',
     requiresAuth: true
   },
-  
+  [ROUTES.SETTINGS]: {
+    path: ROUTES.SETTINGS,
+    title: 'Paramètres - AppelsPro',
+    requiresAuth: true
+  },
+
   [ROUTES.NOTRE_CONCEPT]: {
     path: ROUTES.NOTRE_CONCEPT,
     title: 'Notre concept - Swideal',
@@ -102,9 +107,10 @@ export const navigationGroups = {
     { path: ROUTES.DASHBOARD, label: 'Dashboard' },
     { path: ROUTES.MISSIONS, label: 'Missions' },
     { path: ROUTES.PROFILE, label: 'Profil' },
-    { path: ROUTES.MESSAGES, label: 'Messages' }
+    { path: ROUTES.MESSAGES, label: 'Messages' },
+    { path: ROUTES.SETTINGS, label: 'Paramètres' }
   ],
-  
+
 };
 
 export const paths = {
@@ -117,5 +123,6 @@ export const paths = {
   login: '/login',
   dashboard: '/dashboard',
   messages: '/messages',
-  favorites: '/favorites'
+  favorites: '/favorites',
+  settings: '/settings'
 };

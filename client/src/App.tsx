@@ -119,7 +119,7 @@ function App() {
                     <Route path="/legal" component={Legal} />
                     <Route path="/sitemap" component={Sitemap} />
                     <Route path="/features" component={Features} />
-                    
+
                     <Route path="/available-providers" component={AvailableProviders} />
                     <Route path="/demo/missions" component={DemoMissions} />
                     <Route path="/monitoring" component={AIMonitoring} />
@@ -131,6 +131,8 @@ function App() {
                     <Route path="/favorites" component={Favorites} />
                     {/* Added route for Mes demandes */}
                     <Route path="/mes-demandes" component={MesDemandes} />
+                    {/* Added route for Settings */}
+                    <Route path="/settings" component={lazy(() => import('./pages/settings'))} />
                     <Route component={NotFoundPage} />
                   </Switch>
                 </Suspense>

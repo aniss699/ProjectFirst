@@ -5,7 +5,7 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { useLanguage } from '@/hooks/use-language';
 import { ROUTES } from '@/routes/paths';
-import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText, Brain } from 'lucide-react';
+import { User, LogOut, Menu, X, Briefcase, Users, BarChart3, Target, MessageSquare, Zap, TrendingUp, Plus, MonitorPlay, ChevronDown, PlusCircle, Smartphone, Sparkles, Lightbulb, Heart, FileText, Brain, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,6 +213,15 @@ export default function Navbar() {
                         {t('navbar.favorites')}
                       </button>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button
+                        onClick={() => handleNavigation('/settings')}
+                        className="flex items-center w-full"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Paramètres
+                      </button>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="lg:hidden">
                       <button
                         onClick={() => handleNavigation('/missions')}
@@ -388,6 +397,9 @@ export default function Navbar() {
                 </MobileNavLink>
                 <MobileNavLink href="/favorites" icon={Heart}>
                   {t('mobile.myFavorites')}
+                </MobileNavLink>
+                <MobileNavLink href="/settings" icon={Settings}>
+                  Paramètres
                 </MobileNavLink>
               </div>
             )}
