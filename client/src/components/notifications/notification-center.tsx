@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Bell, X, Check, Clock, AlertCircle, MessageSquare, Trophy, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -122,7 +121,7 @@ export function NotificationCenter({
                         <div className={`p-2 rounded-full ${getPriorityColor(notification.priority)}`}>
                           <IconComponent className="h-4 w-4" />
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <h4 className={`text-sm font-medium ${
@@ -151,16 +150,16 @@ export function NotificationCenter({
                               </Button>
                             </div>
                           </div>
-                          
+
                           <p className="text-sm text-muted-foreground mt-1">
                             {notification.description}
                           </p>
-                          
+
                           <div className="flex items-center justify-between mt-2">
                             <span className="text-xs text-muted-foreground">
                               {formatRelativeTime(notification.timestamp)}
                             </span>
-                            
+
                             {notification.priority === 'high' && (
                               <Badge variant="destructive" className="text-xs">
                                 Urgent
@@ -192,9 +191,9 @@ export function useNotifications() {
       timestamp: new Date(),
       read: false
     };
-    
+
     setNotifications(prev => [newNotification, ...prev]);
-    
+
     // Notification browser si permission accordée
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {

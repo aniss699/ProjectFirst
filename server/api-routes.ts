@@ -13,6 +13,8 @@ import favoritesRoutes from './routes/favorites-routes.js';
 import reviewsRoutes from './routes/reviews.js';
 import contractsRoutes from './routes/contracts.js';
 import filesRoutes from './routes/files.js';
+import messagingRoutes from './routes/messaging-routes.js'; // Import messaging routes
+import notificationsRoutes from './routes/notifications-routes.js'; // Import notifications routes
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
@@ -214,5 +216,9 @@ router.get('/ai-analysis-demo', async (req, res) => {
   router.use('/reviews', authMiddleware, reviewsRoutes);
   router.use('/contracts', authMiddleware, contractsRoutes);
   router.use('/files', authMiddleware, filesRoutes);
+
+// Add new routes for messaging and notifications
+router.use('/api', messagingRoutes);
+router.use('/api', notificationsRoutes);
 
 export default router;

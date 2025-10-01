@@ -290,6 +290,9 @@ import aiLearningRoutes from './routes/ai-learning-routes.js';
 import teamRoutes from './routes/team-routes.js';
 import openTeamsRoutes from './routes/open-teams.js';
 import bidsRoutes from './routes/bids.js';
+import messagingRoutes from './routes/messaging.js';
+import notificationsRoutes from './routes/notifications.js';
+import { websocketManager } from './websocket.js';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -363,6 +366,18 @@ app.use('/api/bids', (req, res, next) => {
   });
   next();
 }, bidsRoutes);
+
+console.log('💬 Registering messaging routes...');
+app.use('/api', (req, res, next) => {
+  console.log(`💬 Messaging request: ${req.method} ${req.path}`);
+  next();
+}, messagingRoutes);
+
+console.log('🔔 Registering notifications routes...');
+app.use('/api', (req, res, next) => {
+  console.log(`🔔 Notifications request: ${req.method} ${req.path}`);
+  next();
+}, notificationsRoutes);
 
 // Performance stats endpoint
 app.get('/api/performance', (req, res) => {
@@ -506,9 +521,14 @@ async function startServerWithRetry(): Promise<void> {
           console.log(`🚀 SWIDEAL server running on http://0.0.0.0:${port} (attempt ${attempt})`);
           console.log(`📱 Frontend: http://0.0.0.0:${port}`);
           console.log(`🔧 API Health: http://0.0.0.0:${port}/api/health`);
+          console.log(`💬 WebSocket: ws://0.0.0.0:${port}/ws`);
           console.log(`🎯 AI Provider: Gemini API Only`);
           console.log(`🔍 Process ID: ${process.pid}`);
           console.log(`🔍 Node Environment: ${process.env.NODE_ENV || 'development'}`);
+
+          // Initialiser WebSocket
+          websocketManager.initialize(server);
+          console.log('✅ WebSocket server initialized');
 
           // Dynamic imports to avoid side effects during startup
           console.log('📦 Loading Vite and AI modules dynamically...');

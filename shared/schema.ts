@@ -189,6 +189,27 @@ export const deliverables = pgTable('deliverables', {
   created_at: timestamp('created_at').defaultNow()
 });
 
+// Tables pour la messagerie
+export const conversations = pgTable('conversations', {
+  id: serial('id').primaryKey(),
+  mission_id: integer('mission_id').references(() => missions.id),
+  participant1_id: integer('participant1_id').references(() => users.id).notNull(),
+  participant2_id: integer('participant2_id').references(() => users.id).notNull(),
+  last_message_at: timestamp('last_message_at').defaultNow(),
+  created_at: timestamp('created_at').defaultNow()
+});
+
+export const messages = pgTable('messages', {
+  id: serial('id').primaryKey(),
+  conversation_id: integer('conversation_id').references(() => conversations.id).notNull(),
+  sender_id: integer('sender_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  message_type: text('message_type').$type<'text' | 'image' | 'file' | 'system'>().default('text'),
+  file_url: text('file_url'),
+  read_at: timestamp('read_at'),
+  created_at: timestamp('created_at').defaultNow()
+});
+
 // Tables pour les notifications
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
@@ -368,6 +389,34 @@ export const deliverablesRelations = relations(deliverables, ({ one }) => ({
   contract: one(contracts, {
     fields: [deliverables.contract_id],
     references: [contracts.id]
+  })
+}));
+
+// Relations pour conversations
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  mission: one(missions, {
+    fields: [conversations.mission_id],
+    references: [missions.id]
+  }),
+  participant1: one(users, {
+    fields: [conversations.participant1_id],
+    references: [users.id]
+  }),
+  participant2: one(users, {
+    fields: [conversations.participant2_id],
+    references: [users.id]
+  }),
+  messages: many(messages)
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversation_id],
+    references: [conversations.id]
+  }),
+  sender: one(users, {
+    fields: [messages.sender_id],
+    references: [users.id]
   })
 }));
 
