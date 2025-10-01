@@ -23,32 +23,50 @@ __export(schema_exports, {
   announcementsRelations: () => announcementsRelations,
   bids: () => bids,
   bidsRelations: () => bidsRelations,
+  contracts: () => contracts,
+  contractsRelations: () => contractsRelations,
+  deliverables: () => deliverables,
+  deliverablesRelations: () => deliverablesRelations,
   favorites: () => favorites,
   favoritesRelations: () => favoritesRelations,
   feedFeedback: () => feedFeedback,
   feedFeedbackRelations: () => feedFeedbackRelations,
   feedSeen: () => feedSeen,
   feedSeenRelations: () => feedSeenRelations,
+  files: () => files,
+  filesRelations: () => filesRelations,
   insertAiEventSchema: () => insertAiEventSchema,
   insertAnnouncementSchema: () => insertAnnouncementSchema,
   insertBidSchema: () => insertBidSchema,
+  insertContractSchema: () => insertContractSchema,
+  insertDeliverableSchema: () => insertDeliverableSchema,
   insertFavoritesSchema: () => insertFavoritesSchema,
   insertFeedFeedbackSchema: () => insertFeedFeedbackSchema,
   insertFeedSeenSchema: () => insertFeedSeenSchema,
+  insertFileSchema: () => insertFileSchema,
   insertMissionSchema: () => insertMissionSchema,
+  insertNotificationSchema: () => insertNotificationSchema,
   insertOpenTeamSchema: () => insertOpenTeamSchema,
+  insertReviewHelpfulSchema: () => insertReviewHelpfulSchema,
+  insertReviewSchema: () => insertReviewSchema,
   insertUserSchema: () => insertUserSchema,
   missions: () => missions,
   missionsRelations: () => missionsRelations,
+  notifications: () => notifications,
+  notificationsRelations: () => notificationsRelations,
   openTeams: () => openTeams,
   openTeamsRelations: () => openTeamsRelations,
+  reviewHelpful: () => reviewHelpful,
+  reviewHelpfulRelations: () => reviewHelpfulRelations,
+  reviews: () => reviews,
+  reviewsRelations: () => reviewsRelations,
   users: () => users,
   usersRelations: () => usersRelations
 });
 import { pgTable, serial, integer, text, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
-var users, missions, openTeams, bids, announcements, feedFeedback, feedSeen, favorites, usersRelations, missionsRelations, openTeamsRelations, bidsRelations, announcementsRelations, feedFeedbackRelations, feedSeenRelations, favoritesRelations, insertUserSchema, insertMissionSchema, insertBidSchema, insertOpenTeamSchema, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoritesSchema, aiEvents, aiEventsRelations, insertAiEventSchema;
+var users, missions, openTeams, bids, announcements, feedFeedback, feedSeen, favorites, reviews, reviewHelpful, contracts, deliverables, notifications, files, usersRelations, missionsRelations, openTeamsRelations, bidsRelations, announcementsRelations, feedFeedbackRelations, feedSeenRelations, favoritesRelations, reviewsRelations, reviewHelpfulRelations, contractsRelations, deliverablesRelations, notificationsRelations, filesRelations, insertUserSchema, insertMissionSchema, insertBidSchema, insertOpenTeamSchema, insertReviewSchema, insertReviewHelpfulSchema, insertContractSchema, insertDeliverableSchema, insertNotificationSchema, insertFileSchema, insertAnnouncementSchema, insertFeedFeedbackSchema, insertFeedSeenSchema, insertFavoritesSchema, aiEvents, aiEventsRelations, insertAiEventSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -169,16 +187,113 @@ var init_schema = __esm({
       announcement_id: integer("announcement_id").references(() => announcements.id).notNull(),
       created_at: timestamp("created_at").defaultNow()
     });
+    reviews = pgTable("reviews", {
+      id: serial("id").primaryKey(),
+      mission_id: integer("mission_id").references(() => missions.id).notNull(),
+      reviewer_id: integer("reviewer_id").references(() => users.id).notNull(),
+      reviewee_id: integer("reviewee_id").references(() => users.id).notNull(),
+      rating: integer("rating").notNull(),
+      // 1-5
+      comment: text("comment"),
+      response: text("response"),
+      // Réponse du prestataire
+      criteria: jsonb("criteria"),
+      // {communication: 5, quality: 4, deadline: 5, etc.}
+      is_public: boolean("is_public").default(true),
+      helpful_count: integer("helpful_count").default(0),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    reviewHelpful = pgTable("review_helpful", {
+      id: serial("id").primaryKey(),
+      review_id: integer("review_id").references(() => reviews.id).notNull(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      created_at: timestamp("created_at").defaultNow()
+    });
+    contracts = pgTable("contracts", {
+      id: serial("id").primaryKey(),
+      mission_id: integer("mission_id").references(() => missions.id).notNull(),
+      bid_id: integer("bid_id").references(() => bids.id).notNull(),
+      client_id: integer("client_id").references(() => users.id).notNull(),
+      provider_id: integer("provider_id").references(() => users.id).notNull(),
+      status: text("status").$type().default("pending_signature"),
+      terms: jsonb("terms"),
+      // Conditions acceptées
+      deliverables: jsonb("deliverables"),
+      // Liste des livrables attendus
+      milestones: jsonb("milestones"),
+      // Jalons de paiement
+      // Signatures électroniques
+      client_signed_at: timestamp("client_signed_at"),
+      provider_signed_at: timestamp("provider_signed_at"),
+      // Dates importantes
+      start_date: timestamp("start_date"),
+      expected_end_date: timestamp("expected_end_date"),
+      actual_end_date: timestamp("actual_end_date"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    });
+    deliverables = pgTable("deliverables", {
+      id: serial("id").primaryKey(),
+      contract_id: integer("contract_id").references(() => contracts.id).notNull(),
+      title: text("title").notNull(),
+      description: text("description"),
+      status: text("status").$type().default("pending"),
+      file_urls: jsonb("file_urls"),
+      // URLs des fichiers livrés
+      submitted_at: timestamp("submitted_at"),
+      reviewed_at: timestamp("reviewed_at"),
+      feedback: text("feedback"),
+      created_at: timestamp("created_at").defaultNow()
+    });
+    notifications = pgTable("notifications", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      type: text("type").notNull(),
+      // 'new_bid', 'message', 'payment', 'review', etc.
+      title: text("title").notNull(),
+      message: text("message").notNull(),
+      link: text("link"),
+      // URL de redirection
+      metadata: jsonb("metadata"),
+      read_at: timestamp("read_at"),
+      created_at: timestamp("created_at").defaultNow()
+    });
+    files = pgTable("files", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").references(() => users.id).notNull(),
+      filename: text("filename").notNull(),
+      original_filename: text("original_filename").notNull(),
+      file_type: text("file_type").notNull(),
+      // mime type
+      file_size: integer("file_size").notNull(),
+      // en bytes
+      file_url: text("file_url").notNull(),
+      // Contexte d'utilisation
+      context_type: text("context_type"),
+      // 'portfolio', 'bid', 'deliverable', 'profile_picture'
+      context_id: integer("context_id"),
+      // ID de la mission, bid, etc.
+      metadata: jsonb("metadata"),
+      created_at: timestamp("created_at").defaultNow()
+    });
     usersRelations = relations(users, ({ many }) => ({
       missions: many(missions),
-      bids: many(bids)
+      bids: many(bids),
+      // teamMembers: many(teamMembers), // This seems to be a leftover from a previous or incomplete change. Removing it.
+      reviewsGiven: many(reviews, { relationName: "reviewer" }),
+      reviewsReceived: many(reviews, { relationName: "reviewee" }),
+      contracts: many(contracts),
+      notifications: many(notifications),
+      files: many(files)
     }));
     missionsRelations = relations(missions, ({ one, many }) => ({
       user: one(users, {
         fields: [missions.user_id],
         references: [users.id]
       }),
-      bids: many(bids)
+      bids: many(bids),
+      reviews: many(reviews)
     }));
     openTeamsRelations = relations(openTeams, ({ one, many }) => ({
       mission: one(missions, {
@@ -248,6 +363,68 @@ var init_schema = __esm({
         references: [users.id]
       })
     }));
+    reviewsRelations = relations(reviews, ({ one, many }) => ({
+      mission: one(missions, {
+        fields: [reviews.mission_id],
+        references: [missions.id]
+      }),
+      reviewer: one(users, {
+        fields: [reviews.reviewer_id],
+        references: [users.id]
+      }),
+      reviewee: one(users, {
+        fields: [reviews.reviewee_id],
+        references: [users.id]
+      }),
+      helpfulMarks: many(reviewHelpful)
+    }));
+    reviewHelpfulRelations = relations(reviewHelpful, ({ one }) => ({
+      review: one(reviews, {
+        fields: [reviewHelpful.review_id],
+        references: [reviews.id]
+      }),
+      user: one(users, {
+        fields: [reviewHelpful.user_id],
+        references: [users.id]
+      })
+    }));
+    contractsRelations = relations(contracts, ({ one, many }) => ({
+      mission: one(missions, {
+        fields: [contracts.mission_id],
+        references: [missions.id]
+      }),
+      bid: one(bids, {
+        fields: [contracts.bid_id],
+        references: [bids.id]
+      }),
+      client: one(users, {
+        fields: [contracts.client_id],
+        references: [users.id]
+      }),
+      provider: one(users, {
+        fields: [contracts.provider_id],
+        references: [users.id]
+      }),
+      deliverables: many(deliverables)
+    }));
+    deliverablesRelations = relations(deliverables, ({ one }) => ({
+      contract: one(contracts, {
+        fields: [deliverables.contract_id],
+        references: [contracts.id]
+      })
+    }));
+    notificationsRelations = relations(notifications, ({ one }) => ({
+      user: one(users, {
+        fields: [notifications.user_id],
+        references: [users.id]
+      })
+    }));
+    filesRelations = relations(files, ({ one }) => ({
+      user: one(users, {
+        fields: [files.user_id],
+        references: [users.id]
+      })
+    }));
     insertUserSchema = z.object({
       email: z.string().email(),
       name: z.string().min(1),
@@ -302,6 +479,66 @@ var init_schema = __esm({
       status: z.enum(["recruiting", "complete", "submitted", "cancelled"]).optional(),
       visibility: z.enum(["public", "private"]).optional(),
       auto_accept: z.boolean().optional()
+    });
+    insertReviewSchema = z.object({
+      mission_id: z.number().int().positive(),
+      reviewer_id: z.number().int().positive(),
+      reviewee_id: z.number().int().positive(),
+      rating: z.number().int().min(1).max(5),
+      comment: z.string().optional(),
+      response: z.string().optional(),
+      criteria: z.any().optional(),
+      is_public: z.boolean().optional(),
+      helpful_count: z.number().int().min(0).optional()
+    });
+    insertReviewHelpfulSchema = z.object({
+      review_id: z.number().int().positive(),
+      user_id: z.number().int().positive()
+    });
+    insertContractSchema = z.object({
+      mission_id: z.number().int().positive(),
+      bid_id: z.number().int().positive(),
+      client_id: z.number().int().positive(),
+      provider_id: z.number().int().positive(),
+      status: z.enum(["pending_signature", "active", "in_progress", "under_review", "completed", "disputed", "cancelled"]).optional(),
+      terms: z.any().optional(),
+      deliverables: z.any().optional(),
+      milestones: z.any().optional(),
+      client_signed_at: z.string().datetime().optional(),
+      provider_signed_at: z.string().datetime().optional(),
+      start_date: z.string().datetime().optional(),
+      expected_end_date: z.string().datetime().optional(),
+      actual_end_date: z.string().datetime().optional()
+    });
+    insertDeliverableSchema = z.object({
+      contract_id: z.number().int().positive(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      status: z.enum(["pending", "submitted", "approved", "rejected"]).optional(),
+      file_urls: z.any().optional(),
+      submitted_at: z.string().datetime().optional(),
+      reviewed_at: z.string().datetime().optional(),
+      feedback: z.string().optional()
+    });
+    insertNotificationSchema = z.object({
+      user_id: z.number().int().positive(),
+      type: z.string().min(1),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      link: z.string().url().optional(),
+      metadata: z.any().optional(),
+      read_at: z.string().datetime().optional()
+    });
+    insertFileSchema = z.object({
+      user_id: z.number().int().positive(),
+      filename: z.string().min(1),
+      original_filename: z.string().min(1),
+      file_type: z.string().min(1),
+      file_size: z.number().int().min(0),
+      file_url: z.string().url().min(1),
+      context_type: z.string().optional(),
+      context_id: z.number().int().positive().optional(),
+      metadata: z.any().optional()
     });
     insertAnnouncementSchema = z.object({
       title: z.string().min(1),
@@ -958,7 +1195,7 @@ var init_geminiAdapter = __esm({
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path";
+import path2 from "path";
 var vite_config_default;
 var init_vite_config = __esm({
   "vite.config.ts"() {
@@ -970,14 +1207,14 @@ var init_vite_config = __esm({
       base: "/",
       resolve: {
         alias: {
-          "@": path.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path.resolve(import.meta.dirname, "shared"),
-          "@assets": path.resolve(import.meta.dirname, "attached_assets")
+          "@": path2.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path2.resolve(import.meta.dirname, "shared"),
+          "@assets": path2.resolve(import.meta.dirname, "attached_assets")
         }
       },
-      root: path.resolve(import.meta.dirname, "client"),
+      root: path2.resolve(import.meta.dirname, "client"),
       build: {
-        outDir: path.resolve(import.meta.dirname, "dist"),
+        outDir: path2.resolve(import.meta.dirname, "dist"),
         emptyOutDir: true,
         sourcemap: false,
         rollupOptions: {
@@ -1014,8 +1251,8 @@ __export(vite_exports, {
   setupVite: () => setupVite
 });
 import express5 from "express";
-import fs from "fs";
-import path2 from "path";
+import fs2 from "fs";
+import path3 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { nanoid } from "nanoid";
 function log(message, source = "express") {
@@ -1057,13 +1294,13 @@ async function setupVite(app2, server) {
       return next();
     }
     try {
-      const clientTemplate = path2.resolve(
+      const clientTemplate = path3.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -1082,15 +1319,15 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "..", "dist");
-  if (!fs.existsSync(distPath)) {
+  const distPath = path3.resolve(import.meta.dirname, "..", "dist");
+  if (!fs2.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express5.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
+    res.sendFile(path3.resolve(distPath, "index.html"));
   });
 }
 var viteLogger;
@@ -1291,14 +1528,14 @@ var ai_exports = {};
 __export(ai_exports, {
   default: () => ai_default
 });
-import { Router as Router11 } from "express";
-var router15, ai_default;
+import { Router as Router14 } from "express";
+var router18, ai_default;
 var init_ai = __esm({
   "apps/api/src/routes/ai.ts"() {
     "use strict";
     init_aiOrchestrator();
-    router15 = Router11();
-    router15.post("/pricing", async (req, res) => {
+    router18 = Router14();
+    router18.post("/pricing", async (req, res) => {
       try {
         const result = await getPricingSuggestion(req.body);
         res.json(result);
@@ -1307,7 +1544,7 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors du calcul de prix" });
       }
     });
-    router15.post("/brief", async (req, res) => {
+    router18.post("/brief", async (req, res) => {
       try {
         const result = await enhanceBrief(req.body);
         res.json(result);
@@ -1316,7 +1553,7 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors de l'am\xE9lioration du brief" });
       }
     });
-    router15.post("/feedback", async (req, res) => {
+    router18.post("/feedback", async (req, res) => {
       try {
         const { phase, prompt, feedback } = req.body;
         await logUserFeedback(phase, prompt, feedback);
@@ -1326,13 +1563,13 @@ var init_ai = __esm({
         res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
       }
     });
-    ai_default = router15;
+    ai_default = router18;
   }
 });
 
 // server/index.ts
 import express6 from "express";
-import path3 from "path";
+import path4 from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
 
@@ -1673,7 +1910,7 @@ function validateEnvironment() {
 // server/index.ts
 import { Pool as Pool4 } from "pg";
 import cors from "cors";
-import fs2 from "fs";
+import fs3 from "fs";
 import net from "net";
 
 // server/middleware/request-validator.ts
@@ -3066,820 +3303,738 @@ var missions_default = router2;
 
 // server/api-routes.ts
 init_schema();
-import express2 from "express";
+import express3 from "express";
 import { Pool as Pool3 } from "pg";
-import { drizzle as drizzle3 } from "drizzle-orm/node-postgres";
+import { drizzle as drizzle5 } from "drizzle-orm/node-postgres";
+import { eq as eq13 } from "drizzle-orm";
+
+// server/routes/bids.ts
+init_database();
+init_schema();
+import { Router as Router2 } from "express";
+import { eq as eq5, and, desc as desc2 } from "drizzle-orm";
+
+// server/middleware/auth.ts
+init_database();
+init_schema();
 import { eq as eq4 } from "drizzle-orm";
-var pool3 = new Pool3({ connectionString: process.env.DATABASE_URL });
-var db3 = drizzle3(pool3);
-var router3 = express2.Router();
-router3.get("/demo-providers", async (req, res) => {
+var requireAuth = async (req, res, next) => {
   try {
-    const providers = await db3.select({
+    const userIdHeader = req.headers["x-user-id"];
+    if (!userIdHeader) {
+      return res.status(401).json({
+        error: "Authentication required",
+        message: "No user ID provided"
+      });
+    }
+    const userId = parseInt(userIdHeader);
+    if (isNaN(userId)) {
+      return res.status(401).json({
+        error: "Authentication required",
+        message: "Invalid user ID format"
+      });
+    }
+    const [user] = await db.select({
       id: users.id,
       email: users.email,
       name: users.name,
       role: users.role,
-      rating_mean: users.rating_mean,
-      rating_count: users.rating_count,
-      profile_data: users.profile_data,
-      created_at: users.created_at
-    }).from(users).where(eq4(users.role, "PRO"));
-    res.json({ providers });
-  } catch (error) {
-    console.error("Erreur get demo providers:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-router3.get("/demo-projects", async (req, res) => {
-  try {
-    const projectsWithClients = await db3.select({
-      id: users.id,
-      title: users.name,
-      description: users.email,
-      budget: users.role,
-      category: users.rating_mean,
-      quality_target: users.rating_count,
-      status: users.profile_data,
-      created_at: users.created_at,
-      client_name: users.name,
-      client_email: users.email
-    }).from(users).leftJoin(users, eq4(users.id, users.id));
-    res.json({ projects: projectsWithClients });
-  } catch (error) {
-    console.error("Erreur get demo projects:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-router3.get("/demo-bids", async (req, res) => {
-  try {
-    const bidsWithInfo = await db3.select({
-      id: bids.id,
-      amount: bids.amount,
-      timeline_days: bids.timeline_days,
-      message: bids.message,
-      score_breakdown: bids.score_breakdown,
-      is_leading: bids.is_leading,
-      created_at: bids.created_at,
-      project_title: users.name,
-      project_budget: users.email,
-      provider_name: users.name,
-      provider_email: users.email,
-      provider_profile: users.profile_data
-    }).from(bids).leftJoin(users, eq4(bids.project_id, users.id)).leftJoin(users, eq4(bids.provider_id, users.id));
-    res.json({ bids: bidsWithInfo });
-  } catch (error) {
-    console.error("Erreur get demo bids:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-router3.get("/provider/:id", async (req, res) => {
-  try {
-    const providerId = parseInt(req.params.id);
-    const provider = await db3.select().from(users).where(eq4(users.id, providerId)).limit(1);
-    if (provider.length === 0) {
-      return res.status(404).json({ error: "Prestataire non trouv\xE9" });
-    }
-    const providerData = provider[0];
-    const providerBids = await db3.select({
-      id: bids.id,
-      amount: bids.amount,
-      timeline_days: bids.timeline_days,
-      message: bids.message,
-      is_leading: bids.is_leading,
-      created_at: bids.created_at,
-      project_title: users.name,
-      project_budget: users.email
-    }).from(bids).leftJoin(users, eq4(bids.project_id, users.id)).where(eq4(bids.provider_id, providerId));
-    res.json({
-      provider: {
-        id: providerData.id,
-        email: providerData.email,
-        name: providerData.name,
-        role: providerData.role,
-        rating_mean: providerData.rating_mean,
-        rating_count: providerData.rating_count,
-        profile_data: providerData.profile_data,
-        created_at: providerData.created_at,
-        bids: providerBids
-      }
-    });
-  } catch (error) {
-    console.error("Erreur get provider:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-router3.get("/ai-analysis-demo", async (req, res) => {
-  try {
-    const recentProjects = await db3.select({
-      id: users.id,
-      title: users.name,
-      description: users.email,
-      budget: users.role,
-      category: users.rating_mean,
-      created_at: users.created_at
-    }).from(users).limit(3);
-    const recentBids = await db3.select({
-      id: bids.id,
-      amount: bids.amount,
-      timeline_days: bids.timeline_days,
-      score_breakdown: bids.score_breakdown,
-      created_at: bids.created_at
-    }).from(bids).limit(5);
-    const aiAnalysis = {
-      totalProjects: recentProjects.length,
-      totalBids: recentBids.length,
-      averageProjectBudget: recentProjects.reduce((sum, p) => {
-        const budgetRange = p.budget?.split("-") || ["0"];
-        const avgBudget = budgetRange.length > 1 ? (parseInt(budgetRange[0]) + parseInt(budgetRange[1])) / 2 : parseInt(budgetRange[0]) || 0;
-        return sum + avgBudget;
-      }, 0) / recentProjects.length || 0,
-      popularCategories: Array.from(new Set(recentProjects.map((p) => p.category))),
-      averageBidAmount: recentBids.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0) / recentBids.length || 0,
-      successRate: 0.87,
-      timeToMatch: 2.3,
-      // days
-      projects: recentProjects,
-      bids: recentBids
-    };
-    res.json({ analysis: aiAnalysis });
-  } catch (error) {
-    console.error("Erreur get AI analysis:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-var api_routes_default = router3;
-
-// server/routes/ai-monitoring-routes.ts
-init_event_logger();
-import { Router as Router2 } from "express";
-var router4 = Router2();
-router4.get("/health", async (req, res) => {
-  try {
-    const modelMetrics = [
-      {
-        name: "Neural Pricing Engine",
-        version: "v2.1.0",
-        accuracy: 91.2 + (Math.random() * 2 - 1),
-        // Simule variations réelles
-        latency_ms: 45 + Math.round(Math.random() * 10 - 5),
-        error_rate: 0.8 + (Math.random() * 0.4 - 0.2),
-        requests_24h: 2847 + Math.round(Math.random() * 200 - 100),
-        uptime: 99.7 + (Math.random() * 0.3 - 0.1),
-        last_update: new Date(Date.now() - Math.random() * 6e5).toISOString(),
-        drift_score: 0.12 + (Math.random() * 0.08 - 0.04),
-        confidence_avg: 85.4 + (Math.random() * 4 - 2),
-        status: Math.random() > 0.1 ? "healthy" : "warning"
-      },
-      {
-        name: "Semantic Matching Engine",
-        version: "v3.2.1",
-        accuracy: 92.1 + (Math.random() * 2 - 1),
-        latency_ms: 38 + Math.round(Math.random() * 8 - 4),
-        error_rate: 0.6 + (Math.random() * 0.3 - 0.15),
-        requests_24h: 4231 + Math.round(Math.random() * 300 - 150),
-        uptime: 99.9 + (Math.random() * 0.1 - 0.05),
-        last_update: new Date(Date.now() - Math.random() * 3e5).toISOString(),
-        drift_score: 0.08 + (Math.random() * 0.06 - 0.03),
-        confidence_avg: 88.7 + (Math.random() * 3 - 1.5),
-        status: Math.random() > 0.05 ? "healthy" : "warning"
-      },
-      {
-        name: "Feed Ranker",
-        version: "v2.1.0",
-        accuracy: 87.9 + (Math.random() * 3 - 1.5),
-        latency_ms: 22 + Math.round(Math.random() * 6 - 3),
-        error_rate: 1.2 + (Math.random() * 0.6 - 0.3),
-        requests_24h: 15632 + Math.round(Math.random() * 1e3 - 500),
-        uptime: 99.5 + (Math.random() * 0.4 - 0.2),
-        last_update: new Date(Date.now() - Math.random() * 24e4).toISOString(),
-        drift_score: 0.23 + (Math.random() * 0.12 - 0.06),
-        confidence_avg: 82.1 + (Math.random() * 5 - 2.5),
-        status: Math.random() > 0.15 ? "warning" : "healthy"
-      },
-      {
-        name: "Fraud Detection",
-        version: "v1.8.2",
-        accuracy: 95.1 + (Math.random() * 1 - 0.5),
-        latency_ms: 28 + Math.round(Math.random() * 4 - 2),
-        error_rate: 0.3 + (Math.random() * 0.2 - 0.1),
-        requests_24h: 1456 + Math.round(Math.random() * 100 - 50),
-        uptime: 100,
-        last_update: new Date(Date.now() - Math.random() * 18e4).toISOString(),
-        drift_score: 0.05 + (Math.random() * 0.04 - 0.02),
-        confidence_avg: 94.2 + (Math.random() * 2 - 1),
-        status: "healthy"
-      },
-      {
-        name: "Predictive Analytics",
-        version: "v1.9.1",
-        accuracy: 89.3 + (Math.random() * 2 - 1),
-        latency_ms: 52 + Math.round(Math.random() * 12 - 6),
-        error_rate: 1.8 + (Math.random() * 0.8 - 0.4),
-        requests_24h: 892 + Math.round(Math.random() * 80 - 40),
-        uptime: 98.2 + (Math.random() * 1.5 - 0.5),
-        last_update: new Date(Date.now() - Math.random() * 9e5).toISOString(),
-        drift_score: 0.31 + (Math.random() * 0.15 - 0.075),
-        confidence_avg: 79.8 + (Math.random() * 6 - 3),
-        status: Math.random() > 0.7 ? "critical" : "warning"
-      }
-    ];
-    res.json({
-      success: true,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      models: modelMetrics.map((model) => ({
-        ...model,
-        accuracy: Math.round(model.accuracy * 10) / 10,
-        uptime: Math.round(model.uptime * 10) / 10,
-        drift_score: Math.round(model.drift_score * 100) / 100,
-        confidence_avg: Math.round(model.confidence_avg * 10) / 10,
-        error_rate: Math.round(model.error_rate * 10) / 10
-      }))
-    });
-  } catch (error) {
-    console.error("Erreur r\xE9cup\xE9ration sant\xE9 mod\xE8les:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques des mod\xE8les"
-    });
-  }
-});
-router4.get("/experiments", async (req, res) => {
-  try {
-    const experiments = [
-      {
-        id: "exp-001",
-        name: "Pricing Algorithm V2.1 vs V2.0",
-        model_variant: "Neural Pricing V2.1",
-        conversion_lift: 8.7 + (Math.random() * 2 - 1),
-        confidence_interval: [4.2, 13.1],
-        sample_size: 2847,
-        significance: 0.95,
-        status: "completed",
-        duration_days: 14,
-        created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1e3).toISOString()
-      },
-      {
-        id: "exp-002",
-        name: "Enhanced Semantic Matching",
-        model_variant: "Semantic V3.2.1",
-        conversion_lift: 12.4 + (Math.random() * 1.5 - 0.75),
-        confidence_interval: [7.8, 16.9],
-        sample_size: 1923,
-        significance: 0.99,
-        status: "running",
-        duration_days: 7,
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3).toISOString()
-      },
-      {
-        id: "exp-003",
-        name: "Feed Ranking Optimization",
-        model_variant: "FeedRanker V2.1",
-        conversion_lift: -2.1 + (Math.random() * 1 - 0.5),
-        confidence_interval: [-5.7, 1.5],
-        sample_size: 4521,
-        significance: 0.68,
-        status: "failed",
-        duration_days: 10,
-        created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1e3).toISOString()
-      }
-    ];
-    res.json({
-      success: true,
-      experiments: experiments.map((exp) => ({
-        ...exp,
-        conversion_lift: Math.round(exp.conversion_lift * 10) / 10
-      }))
-    });
-  } catch (error) {
-    console.error("Erreur r\xE9cup\xE9ration exp\xE9riences:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de r\xE9cup\xE9rer les exp\xE9riences"
-    });
-  }
-});
-router4.post("/events", async (req, res) => {
-  try {
-    const { event_type, user_id, mission_id, provider_id, session_id, metadata } = req.body;
-    if (!event_type || !session_id) {
-      return res.status(400).json({
-        success: false,
-        error: "event_type et session_id sont requis"
+      rating_mean: users.rating_mean
+    }).from(users).where(eq4(users.id, userId)).limit(1);
+    if (!user) {
+      return res.status(401).json({
+        error: "Authentication required",
+        message: "Invalid user"
       });
     }
-    switch (event_type) {
-      case "view":
-        eventLogger.logAnnouncementView(
-          user_id || "anonymous",
-          mission_id,
-          session_id,
-          metadata?.dwell_time_ms || 0,
-          metadata
-        );
-        break;
-      case "save":
-        eventLogger.logSave(
-          user_id,
-          mission_id,
-          session_id,
-          metadata
-        );
-        break;
-      case "proposal":
-        eventLogger.logProposal(
-          provider_id,
-          mission_id,
-          session_id,
-          metadata
-        );
-        break;
-      case "win":
-        eventLogger.logWin(
-          provider_id,
-          mission_id,
-          session_id,
-          metadata
-        );
-        break;
-      case "dispute":
-        eventLogger.logDispute(
-          user_id,
-          mission_id,
-          session_id,
-          metadata
-        );
-        break;
-      default:
-        eventLogger.logUserEvent(
-          event_type,
-          user_id || "anonymous",
-          session_id,
-          metadata
-        );
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    return res.status(500).json({
+      error: "Authentication error",
+      message: "Internal server error"
+    });
+  }
+};
+var optionalAuth = async (req, res, next) => {
+  try {
+    const userIdHeader = req.headers["x-user-id"];
+    if (userIdHeader) {
+      const userId = parseInt(userIdHeader);
+      if (!isNaN(userId)) {
+        const [user] = await db.select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          rating_mean: users.rating_mean
+        }).from(users).where(eq4(users.id, userId)).limit(1);
+        if (user) {
+          req.user = user;
+        }
+      }
     }
-    res.json({
-      success: true,
-      message: "\xC9v\xE9nement enregistr\xE9",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
+    next();
   } catch (error) {
-    console.error("Erreur logging \xE9v\xE9nement:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible d'enregistrer l'\xE9v\xE9nement"
-    });
+    console.error("Optional auth middleware error:", error);
+    next();
   }
-});
-router4.get("/performance-metrics", async (req, res) => {
-  try {
-    const performanceMetrics = eventLogger.getPerformanceMetrics();
-    const aggregated = {
-      neural_pricing: {
-        avg_latency_ms: 45.2,
-        accuracy_rate: 0.912,
-        prediction_count_24h: 2847,
-        success_rate: 0.876,
-        last_updated: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      semantic_matching: {
-        avg_latency_ms: 38.1,
-        accuracy_rate: 0.921,
-        prediction_count_24h: 4231,
-        success_rate: 0.903,
-        last_updated: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      feed_ranking: {
-        avg_latency_ms: 22.3,
-        accuracy_rate: 0.879,
-        prediction_count_24h: 15632,
-        success_rate: 0.823,
-        last_updated: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    };
-    res.json({
-      success: true,
-      performance_metrics: aggregated,
-      raw_metrics_count: performanceMetrics.size
-    });
-  } catch (error) {
-    console.error("Erreur m\xE9triques performance:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques de performance"
-    });
-  }
-});
-router4.post("/clear-cache", async (req, res) => {
-  try {
-    const maxAgeMs = req.body.max_age_ms || 36e5;
-    eventLogger.cleanupOldMetrics(maxAgeMs);
-    res.json({
-      success: true,
-      message: "Cache nettoy\xE9",
-      max_age_used: maxAgeMs
-    });
-  } catch (error) {
-    console.error("Erreur nettoyage cache:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de nettoyer le cache"
-    });
-  }
-});
-router4.get("/business-metrics", async (req, res) => {
-  try {
-    const { period = "7d" } = req.query;
-    const businessMetrics = {
-      revenue: {
-        total: 45280 + Math.round(Math.random() * 5e3),
-        growth: 12.5 + (Math.random() * 3 - 1.5),
-        aiContribution: 28.7 + (Math.random() * 2 - 1),
-        projectedNext30Days: 52e3 + Math.round(Math.random() * 8e3)
-      },
-      conversions: {
-        totalMissions: 342 + Math.round(Math.random() * 50),
-        aiAssistedMissions: 287 + Math.round(Math.random() * 30),
-        conversionRate: 76.3 + (Math.random() * 4 - 2),
-        avgMissionValue: 523 + Math.round(Math.random() * 100)
-      },
-      userEngagement: {
-        activeUsers: 1847 + Math.round(Math.random() * 200),
-        aiFeatureUsage: 68.4 + (Math.random() * 5 - 2.5),
-        sessionDuration: 8.7 + (Math.random() * 1 - 0.5),
-        retentionRate: 82.1 + (Math.random() * 3 - 1.5)
-      },
-      aiROI: {
-        costSavings: 34.2 + (Math.random() * 5 - 2.5),
-        timeReduction: 45.8 + (Math.random() * 4 - 2),
-        qualityImprovement: 23.5 + (Math.random() * 3 - 1.5),
-        customerSatisfaction: 91.2 + (Math.random() * 2 - 1)
-      },
-      trends: {
-        hourlyActivity: Array.from({ length: 24 }, () => Math.round(Math.random() * 100)),
-        categoryGrowth: [
-          { category: "D\xE9veloppement", growth: 18.5 + (Math.random() * 2 - 1), aiImpact: 12.3 },
-          { category: "Design", growth: 15.2 + (Math.random() * 2 - 1), aiImpact: 8.7 },
-          { category: "Marketing", growth: 22.1 + (Math.random() * 2 - 1), aiImpact: 15.4 },
-          { category: "R\xE9daction", growth: 9.8 + (Math.random() * 2 - 1), aiImpact: 6.2 }
-        ],
-        regionalPerformance: [
-          { region: "\xCEle-de-France", missions: 156 + Math.round(Math.random() * 20), revenue: 18200 + Math.round(Math.random() * 2e3) },
-          { region: "Auvergne-Rh\xF4ne-Alpes", missions: 89 + Math.round(Math.random() * 15), revenue: 12400 + Math.round(Math.random() * 1500) },
-          { region: "Provence-Alpes-C\xF4te d'Azur", missions: 73 + Math.round(Math.random() * 10), revenue: 9800 + Math.round(Math.random() * 1200) },
-          { region: "Nouvelle-Aquitaine", missions: 45 + Math.round(Math.random() * 8), revenue: 6100 + Math.round(Math.random() * 800) }
-        ]
-      },
-      period_info: {
-        period,
-        start_date: new Date(Date.now() - (period === "24h" ? 864e5 : period === "7d" ? 6048e5 : period === "30d" ? 2592e6 : 7776e6)),
-        end_date: /* @__PURE__ */ new Date(),
-        data_freshness: "live"
-      }
-    };
-    res.json({
-      success: true,
-      metrics: businessMetrics,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  } catch (error) {
-    console.error("Erreur m\xE9triques business:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques business"
-    });
-  }
-});
-router4.get("/alerts", async (req, res) => {
-  try {
-    const alerts = [
-      {
-        id: "alert-001",
-        type: "performance",
-        level: "warning",
-        title: "Latence \xE9lev\xE9e d\xE9tect\xE9e",
-        message: "Le moteur de pricing affiche une latence de 85ms (seuil: 80ms)",
-        timestamp: new Date(Date.now() - 3e5).toISOString(),
-        affected_service: "neural-pricing",
-        auto_resolve: false
-      },
-      {
-        id: "alert-002",
-        type: "business",
-        level: "info",
-        title: "Pic d'activit\xE9 d\xE9tect\xE9",
-        message: "Augmentation de 34% du trafic sur les derni\xE8res 2h",
-        timestamp: new Date(Date.now() - 12e4).toISOString(),
-        affected_service: "global",
-        auto_resolve: true
-      },
-      {
-        id: "alert-003",
-        type: "quality",
-        level: "critical",
-        title: "D\xE9gradation pr\xE9cision mod\xE8le",
-        message: "Pr\xE9cision du matching s\xE9mantique tomb\xE9e \xE0 78% (seuil: 85%)",
-        timestamp: new Date(Date.now() - 6e5).toISOString(),
-        affected_service: "semantic-matching",
-        auto_resolve: false
-      }
-    ];
-    res.json({
-      success: true,
-      alerts,
-      total_count: alerts.length,
-      critical_count: alerts.filter((a) => a.level === "critical").length,
-      warning_count: alerts.filter((a) => a.level === "warning").length
-    });
-  } catch (error) {
-    console.error("Erreur r\xE9cup\xE9ration alertes:", error);
-    res.status(500).json({
-      success: false,
-      error: "Impossible de r\xE9cup\xE9rer les alertes"
-    });
-  }
-});
-var ai_monitoring_routes_default = router4;
+};
 
-// server/routes/ai-suggestions-routes.ts
-import { Router as Router3 } from "express";
+// server/routes/bids.ts
 import { z as z2 } from "zod";
-var router5 = Router3();
-var assistantSuggestionsSchema = z2.object({
-  page: z2.string(),
-  userContext: z2.object({
-    isClient: z2.boolean().optional(),
-    isProvider: z2.boolean().optional(),
-    missions: z2.number().optional(),
-    completedProjects: z2.number().optional(),
-    completeness: z2.number().optional(),
-    hasContent: z2.object({
-      bio: z2.boolean().optional(),
-      headline: z2.boolean().optional(),
-      skills: z2.boolean().optional(),
-      portfolio: z2.boolean().optional()
-    }).optional()
-  }).optional()
+var router3 = Router2();
+var createBidSchema = z2.object({
+  mission_id: z2.number().int().positive(),
+  amount: z2.string().min(1),
+  // Amount as string to match schema
+  timeline_days: z2.number().int().min(1).optional(),
+  message: z2.string().optional(),
+  bid_type: z2.enum(["individual", "team", "open_team"]).default("individual"),
+  team_composition: z2.any().optional(),
+  team_lead_id: z2.number().int().positive().optional(),
+  open_team_id: z2.number().int().positive().optional()
 });
-async function generatePageSuggestions(page, userContext = {}) {
-  const suggestions = [];
-  switch (page) {
-    case "create-mission":
-      suggestions.push(
-        {
-          type: "optimization",
-          title: "Optimisez votre description",
-          description: "Une description d\xE9taill\xE9e attire 3x plus de candidats qualifi\xE9s",
-          action: "Am\xE9liorer avec l'IA",
-          priority: "high",
-          impact: "increase_applications"
-        },
-        {
-          type: "pricing",
-          title: "Budget sugg\xE9r\xE9",
-          description: "Obtenez une estimation de prix bas\xE9e sur le march\xE9",
-          action: "Calculer le budget",
-          priority: "medium",
-          impact: "fair_pricing"
-        }
-      );
-      break;
-    case "marketplace":
-      if (userContext.isProvider) {
-        suggestions.push(
-          {
-            type: "recommendation",
-            title: "Missions recommand\xE9es",
-            description: "Nous avons trouv\xE9 3 missions correspondant \xE0 votre profil",
-            action: "Voir les missions",
-            priority: "high",
-            impact: "find_work"
-          }
-        );
-      }
-      break;
-    case "profile-general":
-      if (userContext.completeness < 50) {
-        suggestions.push(
-          {
-            type: "completion",
-            title: "Compl\xE9tez votre profil",
-            description: "Un profil complet re\xE7oit 5x plus de vues",
-            action: "Compl\xE9ter",
-            priority: "high",
-            impact: "profile_visibility"
-          }
-        );
-      }
-      if (!userContext.hasContent?.headline) {
-        suggestions.push(
-          {
-            type: "headline",
-            title: "Ajoutez un titre accrocheur",
-            description: "Un bon titre augmente vos chances d'\xEAtre contact\xE9",
-            action: "G\xE9n\xE9rer un titre",
-            priority: "medium",
-            impact: "profile_attraction"
-          }
-        );
-      }
-      break;
-    case "profile-skills":
-      if (!userContext.hasContent?.skills || userContext.hasContent.skills === 0) {
-        suggestions.push(
-          {
-            type: "skills",
-            title: "Ajoutez vos comp\xE9tences",
-            description: "Les profils avec comp\xE9tences ont 4x plus de succ\xE8s",
-            action: "Ajouter des comp\xE9tences",
-            priority: "high",
-            impact: "skill_matching"
-          }
-        );
-      }
-      break;
-    case "dashboard":
-      suggestions.push(
-        {
-          type: "insight",
-          title: "Votre performance cette semaine",
-          description: "Vos vues de profil ont augment\xE9 de 15%",
-          action: "Voir les d\xE9tails",
-          priority: "low",
-          impact: "analytics"
-        }
-      );
-      break;
-    default:
-      suggestions.push(
-        {
-          type: "general",
-          title: "Optimisez votre pr\xE9sence",
-          description: "L'IA peut vous aider \xE0 am\xE9liorer votre profil",
-          action: "Analyser mon profil",
-          priority: "medium",
-          impact: "general_improvement"
-        }
-      );
-  }
-  return suggestions;
-}
-router5.post("/assistant-suggestions", async (req, res) => {
+var updateBidSchema = z2.object({
+  amount: z2.string().min(1).optional(),
+  timeline_days: z2.number().int().min(1).optional(),
+  message: z2.string().optional(),
+  status: z2.enum(["pending", "accepted", "rejected", "withdrawn"]).optional(),
+  team_composition: z2.any().optional()
+});
+router3.post("/", requireAuth, async (req, res) => {
   try {
-    const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
-    const suggestions = await generatePageSuggestions(page, userContext);
-    res.json({
-      success: true,
-      suggestions,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    console.log("\u{1F3AF} POST /api/bids - Nouvelle candidature:", {
+      userId: req.user?.id,
+      missionId: req.body.mission_id,
+      bidType: req.body.bid_type
+    });
+    const validatedData = createBidSchema.parse(req.body);
+    const [mission] = await db.select().from(missions).where(eq5(missions.id, validatedData.mission_id)).limit(1);
+    if (!mission) {
+      return res.status(404).json({
+        error: "Mission not found",
+        message: "La mission sp\xE9cifi\xE9e n'existe pas"
+      });
+    }
+    if (mission.status !== "open") {
+      return res.status(400).json({
+        error: "Mission not open",
+        message: "Cette mission n'accepte plus de candidatures"
+      });
+    }
+    const [existingBid] = await db.select().from(bids).where(
+      and(
+        eq5(bids.mission_id, validatedData.mission_id),
+        eq5(bids.provider_id, req.user.id)
+      )
+    ).limit(1);
+    if (existingBid) {
+      return res.status(409).json({
+        error: "Bid already exists",
+        message: "Vous avez d\xE9j\xE0 soumis une candidature pour cette mission"
+      });
+    }
+    const [newBid] = await db.insert(bids).values({
+      mission_id: validatedData.mission_id,
+      provider_id: req.user.id,
+      amount: validatedData.amount,
+      timeline_days: validatedData.timeline_days,
+      message: validatedData.message,
+      bid_type: validatedData.bid_type,
+      team_composition: validatedData.team_composition,
+      team_lead_id: validatedData.team_lead_id,
+      open_team_id: validatedData.open_team_id,
+      status: "pending"
+    }).returning();
+    console.log("\u2705 Candidature cr\xE9\xE9e:", { bidId: newBid.id, amount: newBid.amount });
+    res.status(201).json({
+      ok: true,
+      bid: newBid,
+      message: "Candidature cr\xE9\xE9e avec succ\xE8s"
     });
   } catch (error) {
+    console.error("\u274C Erreur cr\xE9ation candidature:", error);
     if (error instanceof z2.ZodError) {
       return res.status(400).json({
-        success: false,
-        error: "Donn\xE9es invalides",
+        error: "Validation error",
+        message: "Donn\xE9es invalides",
         details: error.errors
       });
     }
-    console.error("Erreur suggestions assistant:", error);
-    res.json({
-      success: false,
-      suggestions: [
-        {
-          type: "fallback",
-          title: "Suggestions temporairement indisponibles",
-          description: "R\xE9essayez dans quelques instants",
-          action: "R\xE9essayer",
-          priority: "low",
-          impact: "fallback"
-        }
-      ],
-      fallback: true
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Erreur lors de la cr\xE9ation de la candidature"
     });
   }
 });
-var ai_suggestions_routes_default = router5;
-
-// server/routes/ai-missions-routes.ts
-import { Router as Router4 } from "express";
-import { z as z3 } from "zod";
-var router6 = Router4();
-var missionSuggestionSchema = z3.object({
-  title: z3.string().min(3, "Titre trop court"),
-  description: z3.string().min(10, "Description trop courte"),
-  category: z3.string().min(1, "Cat\xE9gorie requise"),
-  budget_min: z3.number().optional(),
-  budget_max: z3.number().optional(),
-  deadline_ts: z3.string().optional(),
-  geo_required: z3.boolean().optional(),
-  onsite_radius_km: z3.number().optional()
-});
-router6.post("/suggest", async (req, res) => {
+router3.get("/", optionalAuth, async (req, res) => {
   try {
-    console.log("Requ\xEAte re\xE7ue:", req.body);
-    const { title, description, category } = missionSuggestionSchema.parse(req.body);
-    console.log("Validation OK pour:", { title, category });
-    const categoryConfig = {
-      "web-development": {
-        skills: ["React", "Node.js", "TypeScript", "CSS"],
-        minPrice: 1500,
-        medPrice: 4e3,
-        maxPrice: 8e3,
-        avgDays: 21,
-        criteria: ["Interface responsive", "Tests fonctionnels", "D\xE9ploiement"]
-      },
-      "mobile-development": {
-        skills: ["React Native", "Flutter", "iOS", "Android"],
-        minPrice: 3e3,
-        medPrice: 7e3,
-        maxPrice: 15e3,
-        avgDays: 35,
-        criteria: ["Compatibilit\xE9 multi-plateformes", "Tests sur appareils", "Publication stores"]
-      },
-      "design": {
-        skills: ["Figma", "Adobe XD", "UI/UX", "Photoshop"],
-        minPrice: 800,
-        medPrice: 2500,
-        maxPrice: 5e3,
-        avgDays: 14,
-        criteria: ["Maquettes haute fid\xE9lit\xE9", "Guide de style", "Prototypes interactifs"]
-      },
-      "marketing": {
-        skills: ["SEO", "Google Ads", "Analytics", "Copywriting"],
-        minPrice: 1e3,
-        medPrice: 3e3,
-        maxPrice: 6e3,
-        avgDays: 28,
-        criteria: ["Strat\xE9gie d\xE9finie", "KPIs mesurables", "Rapport de performance"]
-      },
-      "data-science": {
-        skills: ["Python", "Machine Learning", "SQL", "Visualisation"],
-        minPrice: 2e3,
-        medPrice: 6e3,
-        maxPrice: 12e3,
-        avgDays: 42,
-        criteria: ["Nettoyage des donn\xE9es", "Mod\xE8le valid\xE9", "Dashboard interactif"]
+    const { mission_id, provider_id, status, bid_type } = req.query;
+    console.log("\u{1F4CB} GET /api/bids - Recherche candidatures:", {
+      mission_id,
+      provider_id,
+      status,
+      userId: req.user?.id
+    });
+    let query = db.select({
+      id: bids.id,
+      mission_id: bids.mission_id,
+      provider_id: bids.provider_id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      message: bids.message,
+      status: bids.status,
+      bid_type: bids.bid_type,
+      team_composition: bids.team_composition,
+      team_lead_id: bids.team_lead_id,
+      open_team_id: bids.open_team_id,
+      created_at: bids.created_at,
+      updated_at: bids.updated_at,
+      // Informations du prestataire
+      provider_name: users.name,
+      provider_rating: users.rating_mean
+    }).from(bids).leftJoin(users, eq5(bids.provider_id, users.id)).orderBy(desc2(bids.created_at));
+    const conditions = [];
+    if (mission_id) {
+      const missionIdNum = parseInt(mission_id);
+      if (!isNaN(missionIdNum)) {
+        conditions.push(eq5(bids.mission_id, missionIdNum));
       }
-    };
-    const config = categoryConfig[category] || categoryConfig["web-development"];
+    }
+    if (provider_id) {
+      const providerIdNum = parseInt(provider_id);
+      if (!isNaN(providerIdNum)) {
+        conditions.push(eq5(bids.provider_id, providerIdNum));
+      }
+    }
+    if (status && typeof status === "string") {
+      conditions.push(eq5(bids.status, status));
+    }
+    if (bid_type && typeof bid_type === "string") {
+      conditions.push(eq5(bids.bid_type, bid_type));
+    }
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    const results = await query;
+    console.log(`\u2705 ${results.length} candidatures trouv\xE9es`);
     res.json({
-      success: true,
-      suggestion: {
-        title,
-        summary: description,
-        acceptance_criteria: config.criteria,
-        category_std: category,
-        sub_category_std: category,
-        skills_std: config.skills,
-        tags_std: config.skills.map((s) => s.toLowerCase()),
-        brief_quality_score: 0.7 + description.length / 1e3,
-        richness_score: 0.6 + description.split(" ").length / 200,
-        missing_info: [
-          { id: "budget", q: `Quel est votre budget ? (${config.minPrice}\u20AC - ${config.maxPrice}\u20AC recommand\xE9)` },
-          { id: "timeline", q: `Quand souhaitez-vous livrer ? (${config.avgDays} jours en moyenne)` }
-        ],
-        price_suggested_min: config.minPrice,
-        price_suggested_med: config.medPrice,
-        price_suggested_max: config.maxPrice,
-        delay_suggested_days: config.avgDays,
-        loc_base: Math.floor(config.medPrice / 80),
-        // Estimation lignes de code
-        loc_uplift_reco: {
-          new_budget: Math.floor(config.maxPrice * 0.9),
-          new_delay: Math.floor(config.avgDays * 1.3),
-          delta_loc: Math.floor(config.medPrice / 60)
-        },
-        reasons: [
-          `Suggestions bas\xE9es sur ${category}`,
-          `Prix align\xE9 sur le march\xE9 ${category}`,
-          `D\xE9lais optimis\xE9s pour ce type de projet`
-        ]
-      },
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      ok: true,
+      bids: results,
+      count: results.length
     });
   } catch (error) {
-    if (error instanceof z3.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    console.error("Erreur suggestions mission:", error);
+    console.error("\u274C Erreur r\xE9cup\xE9ration candidatures:", error);
     res.status(500).json({
-      success: false,
-      error: "Erreur lors de la g\xE9n\xE9ration des suggestions de mission"
+      error: "Internal server error",
+      message: "Erreur lors de la r\xE9cup\xE9ration des candidatures"
     });
   }
 });
-var ai_missions_routes_default = router6;
+router3.get("/:id", optionalAuth, async (req, res) => {
+  try {
+    const bidId = parseInt(req.params.id);
+    if (isNaN(bidId)) {
+      return res.status(400).json({
+        error: "Invalid bid ID",
+        message: "ID de candidature invalide"
+      });
+    }
+    console.log("\u{1F50D} GET /api/bids/:id - Recherche candidature:", { bidId });
+    const [bid] = await db.select({
+      id: bids.id,
+      mission_id: bids.mission_id,
+      provider_id: bids.provider_id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      message: bids.message,
+      status: bids.status,
+      bid_type: bids.bid_type,
+      team_composition: bids.team_composition,
+      team_lead_id: bids.team_lead_id,
+      open_team_id: bids.open_team_id,
+      created_at: bids.created_at,
+      updated_at: bids.updated_at,
+      // Informations du prestataire
+      provider_name: users.name,
+      provider_rating: users.rating_mean
+    }).from(bids).leftJoin(users, eq5(bids.provider_id, users.id)).where(eq5(bids.id, bidId)).limit(1);
+    if (!bid) {
+      return res.status(404).json({
+        error: "Bid not found",
+        message: "Candidature non trouv\xE9e"
+      });
+    }
+    console.log("\u2705 Candidature trouv\xE9e:", { bidId: bid.id, amount: bid.amount });
+    res.json({
+      ok: true,
+      bid
+    });
+  } catch (error) {
+    console.error("\u274C Erreur r\xE9cup\xE9ration candidature:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Erreur lors de la r\xE9cup\xE9ration de la candidature"
+    });
+  }
+});
+router3.put("/:id", requireAuth, async (req, res) => {
+  try {
+    const bidId = parseInt(req.params.id);
+    if (isNaN(bidId)) {
+      return res.status(400).json({
+        error: "Invalid bid ID",
+        message: "ID de candidature invalide"
+      });
+    }
+    console.log("\u270F\uFE0F PUT /api/bids/:id - Mise \xE0 jour candidature:", {
+      bidId,
+      userId: req.user?.id
+    });
+    const validatedData = updateBidSchema.parse(req.body);
+    const [existingBid] = await db.select().from(bids).where(eq5(bids.id, bidId)).limit(1);
+    if (!existingBid) {
+      return res.status(404).json({
+        error: "Bid not found",
+        message: "Candidature non trouv\xE9e"
+      });
+    }
+    const canEdit = existingBid.provider_id === req.user.id || existingBid.team_lead_id === req.user.id;
+    if (!canEdit) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Vous n'\xEAtes pas autoris\xE9 \xE0 modifier cette candidature"
+      });
+    }
+    if (existingBid.status === "accepted" || existingBid.status === "rejected") {
+      return res.status(400).json({
+        error: "Cannot modify bid",
+        message: "Cette candidature ne peut plus \xEAtre modifi\xE9e"
+      });
+    }
+    const [updatedBid] = await db.update(bids).set({
+      ...validatedData,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq5(bids.id, bidId)).returning();
+    console.log("\u2705 Candidature mise \xE0 jour:", { bidId: updatedBid.id });
+    res.json({
+      ok: true,
+      bid: updatedBid,
+      message: "Candidature mise \xE0 jour avec succ\xE8s"
+    });
+  } catch (error) {
+    console.error("\u274C Erreur mise \xE0 jour candidature:", error);
+    if (error instanceof z2.ZodError) {
+      return res.status(400).json({
+        error: "Validation error",
+        message: "Donn\xE9es invalides",
+        details: error.errors
+      });
+    }
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Erreur lors de la mise \xE0 jour de la candidature"
+    });
+  }
+});
+router3.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const bidId = parseInt(req.params.id);
+    if (isNaN(bidId)) {
+      return res.status(400).json({
+        error: "Invalid bid ID",
+        message: "ID de candidature invalide"
+      });
+    }
+    console.log("\u{1F5D1}\uFE0F DELETE /api/bids/:id - Suppression candidature:", {
+      bidId,
+      userId: req.user?.id
+    });
+    const [existingBid] = await db.select().from(bids).where(eq5(bids.id, bidId)).limit(1);
+    if (!existingBid) {
+      return res.status(404).json({
+        error: "Bid not found",
+        message: "Candidature non trouv\xE9e"
+      });
+    }
+    const canDelete = existingBid.provider_id === req.user.id || existingBid.team_lead_id === req.user.id;
+    if (!canDelete) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Vous n'\xEAtes pas autoris\xE9 \xE0 supprimer cette candidature"
+      });
+    }
+    if (existingBid.status === "accepted") {
+      return res.status(400).json({
+        error: "Cannot delete accepted bid",
+        message: "Une candidature accept\xE9e ne peut pas \xEAtre supprim\xE9e"
+      });
+    }
+    const [updatedBid] = await db.update(bids).set({
+      status: "withdrawn",
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq5(bids.id, bidId)).returning();
+    console.log("\u2705 Candidature retir\xE9e:", { bidId: updatedBid.id });
+    res.json({
+      ok: true,
+      message: "Candidature retir\xE9e avec succ\xE8s"
+    });
+  } catch (error) {
+    console.error("\u274C Erreur suppression candidature:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Erreur lors de la suppression de la candidature"
+    });
+  }
+});
+var bids_default = router3;
+
+// server/routes/open-teams.ts
+init_database();
+init_schema();
+init_schema();
+import { Router as Router3 } from "express";
+import { eq as eq6, desc as desc3, and as and2 } from "drizzle-orm";
+import { randomUUID as randomUUID2 } from "crypto";
+var router4 = Router3();
+var asyncHandler2 = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+router4.post("/", requireAuth, asyncHandler2(async (req, res) => {
+  const requestId = randomUUID2();
+  console.log(JSON.stringify({
+    level: "info",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    request_id: requestId,
+    action: "open_team_create_start",
+    body_size: JSON.stringify(req.body).length
+  }));
+  try {
+    const validatedData = insertOpenTeamSchema.parse(req.body);
+    const missionExists = await db.select().from(missions).where(eq6(missions.id, validatedData.mission_id));
+    if (missionExists.length === 0) {
+      return res.status(404).json({
+        error: "Mission introuvable",
+        request_id: requestId
+      });
+    }
+    const [newTeam] = await db.insert(openTeams).values({
+      mission_id: validatedData.mission_id,
+      name: validatedData.name,
+      description: validatedData.description,
+      creator_id: req.user.id,
+      estimated_budget: validatedData.estimated_budget,
+      estimated_timeline_days: validatedData.estimated_timeline_days,
+      members: validatedData.members,
+      required_roles: validatedData.required_roles,
+      max_members: validatedData.max_members,
+      status: validatedData.status || "recruiting",
+      visibility: validatedData.visibility || "public",
+      auto_accept: validatedData.auto_accept !== void 0 ? validatedData.auto_accept : true
+    }).returning();
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "open_team_created",
+      team_id: newTeam.id,
+      team_name: newTeam.name
+    }));
+    res.status(201).json({
+      success: true,
+      team: newTeam,
+      request_id: requestId
+    });
+  } catch (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "open_team_create_error",
+      error: error instanceof Error ? error.message : "Unknown error"
+    }));
+    if (error instanceof Error && error.message.includes("validation")) {
+      return res.status(400).json({
+        error: "Donn\xE9es invalides",
+        details: error.message,
+        request_id: requestId
+      });
+    }
+    res.status(500).json({
+      error: "Erreur serveur",
+      request_id: requestId
+    });
+  }
+}));
+router4.get("/", asyncHandler2(async (req, res) => {
+  const missionId = req.query.mission_id;
+  try {
+    const whereConditions = [eq6(openTeams.visibility, "public")];
+    if (missionId && !isNaN(parseInt(missionId))) {
+      whereConditions.push(eq6(openTeams.mission_id, parseInt(missionId)));
+    }
+    const teams = await db.select({
+      id: openTeams.id,
+      mission_id: openTeams.mission_id,
+      name: openTeams.name,
+      description: openTeams.description,
+      creator_id: openTeams.creator_id,
+      estimated_budget: openTeams.estimated_budget,
+      estimated_timeline_days: openTeams.estimated_timeline_days,
+      members: openTeams.members,
+      required_roles: openTeams.required_roles,
+      max_members: openTeams.max_members,
+      status: openTeams.status,
+      visibility: openTeams.visibility,
+      auto_accept: openTeams.auto_accept,
+      created_at: openTeams.created_at,
+      // Informations du créateur
+      creator_name: users.name,
+      creator_email: users.email,
+      creator_rating: users.rating_mean,
+      // Informations de la mission
+      mission_title: missions.title,
+      mission_budget: missions.budget_value_cents
+    }).from(openTeams).leftJoin(users, eq6(openTeams.creator_id, users.id)).leftJoin(missions, eq6(openTeams.mission_id, missions.id)).where(and2(...whereConditions)).orderBy(desc3(openTeams.created_at));
+    res.json({
+      success: true,
+      teams: teams.map((team) => ({
+        ...team,
+        members_count: team.members ? team.members.length : 0,
+        required_roles_count: team.required_roles ? team.required_roles.length : 0
+      }))
+    });
+  } catch (error) {
+    console.error("Erreur get open teams:", error);
+    res.status(500).json({
+      error: "Erreur serveur"
+    });
+  }
+}));
+router4.get("/:id", asyncHandler2(async (req, res) => {
+  const teamId = parseInt(req.params.id);
+  if (isNaN(teamId)) {
+    return res.status(400).json({
+      error: "ID d'\xE9quipe invalide"
+    });
+  }
+  try {
+    const [team] = await db.select({
+      id: openTeams.id,
+      mission_id: openTeams.mission_id,
+      name: openTeams.name,
+      description: openTeams.description,
+      creator_id: openTeams.creator_id,
+      estimated_budget: openTeams.estimated_budget,
+      estimated_timeline_days: openTeams.estimated_timeline_days,
+      members: openTeams.members,
+      required_roles: openTeams.required_roles,
+      max_members: openTeams.max_members,
+      status: openTeams.status,
+      visibility: openTeams.visibility,
+      auto_accept: openTeams.auto_accept,
+      created_at: openTeams.created_at,
+      updated_at: openTeams.updated_at,
+      // Informations du créateur
+      creator_name: users.name,
+      creator_email: users.email,
+      creator_rating: users.rating_mean,
+      // Informations de la mission
+      mission_title: missions.title,
+      mission_description: missions.description,
+      mission_budget: missions.budget_value_cents,
+      mission_status: missions.status
+    }).from(openTeams).leftJoin(users, eq6(openTeams.creator_id, users.id)).leftJoin(missions, eq6(openTeams.mission_id, missions.id)).where(eq6(openTeams.id, teamId));
+    if (!team) {
+      return res.status(404).json({
+        error: "\xC9quipe introuvable"
+      });
+    }
+    if (team.visibility === "private") {
+    }
+    res.json({
+      success: true,
+      team: {
+        ...team,
+        members_count: team.members ? team.members.length : 0,
+        required_roles_count: team.required_roles ? team.required_roles.length : 0,
+        is_full: team.members ? team.members.length >= (team.max_members || Number.MAX_SAFE_INTEGER) : false
+      }
+    });
+  } catch (error) {
+    console.error("Erreur get open team details:", error);
+    res.status(500).json({
+      error: "Erreur serveur"
+    });
+  }
+}));
+router4.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
+  const teamId = parseInt(req.params.id);
+  const { role, experience_years } = req.body;
+  const user_id = req.user.id;
+  const requestId = randomUUID2();
+  if (isNaN(teamId)) {
+    return res.status(400).json({
+      error: "ID d'\xE9quipe invalide"
+    });
+  }
+  try {
+    const [team] = await db.select().from(openTeams).where(eq6(openTeams.id, teamId));
+    if (!team) {
+      return res.status(404).json({
+        error: "\xC9quipe introuvable",
+        request_id: requestId
+      });
+    }
+    if (team.status !== "recruiting") {
+      return res.status(400).json({
+        error: "Cette \xE9quipe n'est plus ouverte au recrutement",
+        request_id: requestId
+      });
+    }
+    const user = req.user;
+    const currentMembers = team.members || [];
+    const isAlreadyMember = currentMembers.some((member) => member.user_id === user_id);
+    if (isAlreadyMember) {
+      return res.status(400).json({
+        error: "Vous \xEAtes d\xE9j\xE0 membre de cette \xE9quipe",
+        request_id: requestId
+      });
+    }
+    if (team.max_members && currentMembers.length >= team.max_members) {
+      return res.status(400).json({
+        error: "Cette \xE9quipe est compl\xE8te",
+        request_id: requestId
+      });
+    }
+    const newMember = {
+      user_id,
+      name: req.user.name,
+      role: role || "Membre",
+      experience_years: experience_years || 1,
+      rating: parseFloat(req.user.rating_mean || "4.0"),
+      joined_at: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const updatedMembers = [...currentMembers, newMember];
+    const [updatedTeam] = await db.update(openTeams).set({
+      members: updatedMembers,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq6(openTeams.id, teamId)).returning();
+    console.log(JSON.stringify({
+      level: "info",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "user_joined_open_team",
+      team_id: teamId,
+      user_id,
+      new_member_count: updatedMembers.length
+    }));
+    res.json({
+      success: true,
+      message: "Vous avez rejoint l'\xE9quipe avec succ\xE8s",
+      team: updatedTeam,
+      new_member: newMember,
+      request_id: requestId
+    });
+  } catch (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      request_id: requestId,
+      action: "join_open_team_error",
+      error: error instanceof Error ? error.message : "Unknown error"
+    }));
+    res.status(500).json({
+      error: "Erreur serveur",
+      request_id: requestId
+    });
+  }
+}));
+router4.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
+  const teamId = parseInt(req.params.id);
+  if (isNaN(teamId)) {
+    return res.status(400).json({
+      error: "ID d'\xE9quipe invalide"
+    });
+  }
+  try {
+    const [team] = await db.select().from(openTeams).where(eq6(openTeams.id, teamId));
+    if (!team) {
+      return res.status(404).json({
+        error: "\xC9quipe introuvable"
+      });
+    }
+    if (team.creator_id !== req.user.id) {
+      return res.status(403).json({
+        error: "Seul le cr\xE9ateur peut modifier cette \xE9quipe"
+      });
+    }
+    const allowedUpdates = {
+      name: req.body.name,
+      description: req.body.description,
+      status: req.body.status,
+      visibility: req.body.visibility,
+      auto_accept: req.body.auto_accept,
+      max_members: req.body.max_members,
+      required_roles: req.body.required_roles,
+      updated_at: /* @__PURE__ */ new Date()
+    };
+    const updates = Object.fromEntries(
+      Object.entries(allowedUpdates).filter(([_, value]) => value !== void 0)
+    );
+    const [updatedTeam] = await db.update(openTeams).set(updates).where(eq6(openTeams.id, teamId)).returning();
+    res.json({
+      success: true,
+      team: updatedTeam
+    });
+  } catch (error) {
+    console.error("Erreur update open team:", error);
+    res.status(500).json({
+      error: "Erreur serveur"
+    });
+  }
+}));
+router4.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
+  const teamId = parseInt(req.params.id);
+  if (isNaN(teamId)) {
+    return res.status(400).json({
+      error: "ID d'\xE9quipe invalide"
+    });
+  }
+  try {
+    const [team] = await db.select().from(openTeams).where(eq6(openTeams.id, teamId));
+    if (!team) {
+      return res.status(404).json({
+        error: "\xC9quipe introuvable"
+      });
+    }
+    if (team.creator_id !== req.user.id) {
+      return res.status(403).json({
+        error: "Seul le cr\xE9ateur peut supprimer cette \xE9quipe"
+      });
+    }
+    await db.delete(openTeams).where(eq6(openTeams.id, teamId));
+    res.json({
+      success: true,
+      message: "\xC9quipe supprim\xE9e avec succ\xE8s"
+    });
+  } catch (error) {
+    console.error("Erreur delete open team:", error);
+    res.status(500).json({
+      error: "Erreur serveur"
+    });
+  }
+}));
+var open_teams_default = router4;
 
 // server/routes/feed-routes.ts
 init_schema();
-import express3 from "express";
+import express2 from "express";
 import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { desc as desc2, eq as eq5, and, not, inArray as inArray2, sql as sql3 } from "drizzle-orm";
+import { drizzle as drizzle3 } from "drizzle-orm/neon-http";
+import { desc as desc4, eq as eq7, and as and3, not, inArray as inArray2, sql as sql3 } from "drizzle-orm";
 
 // server/services/feedRanker.ts
 var FeedRanker = class {
@@ -4169,23 +4324,23 @@ var FeedRanker = class {
 };
 
 // server/routes/feed-routes.ts
-import { z as z4 } from "zod";
-var router7 = express3.Router();
+import { z as z3 } from "zod";
+var router5 = express2.Router();
 var connection = neon(process.env.DATABASE_URL);
-var db4 = drizzle4(connection);
+var db3 = drizzle3(connection);
 var priceBenchmarkCache = /* @__PURE__ */ new Map();
-router7.get("/feed", async (req, res) => {
+router5.get("/feed", async (req, res) => {
   try {
     const { cursor, limit = "10", userId } = req.query;
     const limitNum = Math.min(parseInt(limit), 50);
-    const seenAnnouncements = userId ? await db4.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
-      and(
-        eq5(feedSeen.user_id, parseInt(userId))
+    const seenAnnouncements = userId ? await db3.select({ announcement_id: feedSeen.announcement_id }).from(feedSeen).where(
+      and3(
+        eq7(feedSeen.user_id, parseInt(userId))
         // Filtrer les 24 dernières heures
       )
     ) : [];
     const seenIds = seenAnnouncements.map((s) => s.announcement_id);
-    let whereConditions = [eq5(announcements.status, "active")];
+    let whereConditions = [eq7(announcements.status, "active")];
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray2(announcements.id, seenIds)));
     }
@@ -4193,14 +4348,14 @@ router7.get("/feed", async (req, res) => {
       const cursorId = parseInt(cursor);
       whereConditions.push(sql3`${announcements.id} < ${cursorId}`);
     }
-    const query = db4.select().from(announcements).where(and(...whereConditions));
-    const rawAnnouncements = await query.orderBy(desc2(announcements.created_at)).limit(limitNum + 5);
+    const query = db3.select().from(announcements).where(and3(...whereConditions));
+    const rawAnnouncements = await query.orderBy(desc4(announcements.created_at)).limit(limitNum + 5);
     const ranker = new FeedRanker(seenIds);
     const userProfile = userId ? {} : void 0;
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    const sponsoredAnnouncements = await db4.select().from(announcements).where(and(
-      eq5(announcements.sponsored, true),
-      eq5(announcements.status, "active")
+    const sponsoredAnnouncements = await db3.select().from(announcements).where(and3(
+      eq7(announcements.sponsored, true),
+      eq7(announcements.status, "active")
     )).limit(3);
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
@@ -4218,12 +4373,12 @@ router7.get("/feed", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration du feed" });
   }
 });
-router7.post("/feedback", async (req, res) => {
+router5.post("/feedback", async (req, res) => {
   try {
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    await db4.insert(feedFeedback).values(feedbackData);
+    await db3.insert(feedFeedback).values(feedbackData);
     if (feedbackData.action !== "view") {
-      await db4.insert(feedSeen).values({
+      await db3.insert(feedSeen).values({
         user_id: feedbackData.user_id,
         announcement_id: feedbackData.announcement_id
       }).onConflictDoNothing();
@@ -4237,13 +4392,13 @@ router7.post("/feedback", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Erreur enregistrement feedback:", error);
-    if (error instanceof z4.ZodError) {
+    if (error instanceof z3.ZodError) {
       return res.status(400).json({ error: "Donn\xE9es invalides", details: error.errors });
     }
     res.status(500).json({ error: "Erreur lors de l'enregistrement du feedback" });
   }
 });
-router7.get("/price-benchmark", async (req, res) => {
+router5.get("/price-benchmark", async (req, res) => {
   try {
     const { category } = req.query;
     if (!category) {
@@ -4256,12 +4411,12 @@ router7.get("/price-benchmark", async (req, res) => {
         return res.json(cached.data);
       }
     }
-    const prices = await db4.select({
+    const prices = await db3.select({
       budget_min: announcements.budget_min,
       budget_max: announcements.budget_max
-    }).from(announcements).where(and(
-      eq5(announcements.category, category),
-      eq5(announcements.status, "active")
+    }).from(announcements).where(and3(
+      eq7(announcements.category, category),
+      eq7(announcements.status, "active")
     ));
     const budgetValues = [];
     prices.forEach((p) => {
@@ -4286,26 +4441,26 @@ router7.get("/price-benchmark", async (req, res) => {
     res.status(500).json({ error: "Erreur lors du calcul du benchmark" });
   }
 });
-var feed_routes_default = router7;
+var feed_routes_default = router5;
 
 // server/routes/favorites-routes.ts
 init_schema();
-import { Router as Router5 } from "express";
-import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { Router as Router4 } from "express";
+import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
 import { neon as neon2 } from "@neondatabase/serverless";
-import { eq as eq6, and as and2 } from "drizzle-orm";
+import { eq as eq8, and as and4 } from "drizzle-orm";
 var sql4 = neon2(process.env.DATABASE_URL);
-var db5 = drizzle5(sql4);
-var router8 = Router5();
-router8.get("/favorites", async (req, res) => {
+var db4 = drizzle4(sql4);
+var router6 = Router4();
+router6.get("/favorites", async (req, res) => {
   try {
     const { user_id } = req.query;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    const userFavorites = await db5.select({
+    const userFavorites = await db4.select({
       announcement: announcements
-    }).from(favorites).innerJoin(announcements, eq6(favorites.announcement_id, announcements.id)).where(eq6(favorites.user_id, parseInt(user_id)));
+    }).from(favorites).innerJoin(announcements, eq8(favorites.announcement_id, announcements.id)).where(eq8(favorites.user_id, parseInt(user_id)));
     const favoriteAnnouncements = userFavorites.map((f) => f.announcement);
     res.json({
       favorites: favoriteAnnouncements,
@@ -4316,22 +4471,22 @@ router8.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la r\xE9cup\xE9ration des favoris" });
   }
 });
-router8.post("/favorites", async (req, res) => {
+router6.post("/favorites", async (req, res) => {
   try {
     const { user_id, announcement_id } = req.body;
     if (!user_id || !announcement_id) {
       return res.status(400).json({ error: "user_id et announcement_id requis" });
     }
-    const existing = await db5.select().from(favorites).where(
-      and2(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, announcement_id)
+    const existing = await db4.select().from(favorites).where(
+      and4(
+        eq8(favorites.user_id, user_id),
+        eq8(favorites.announcement_id, announcement_id)
       )
     );
     if (existing.length > 0) {
       return res.status(200).json({ message: "D\xE9j\xE0 en favori" });
     }
-    await db5.insert(favorites).values({
+    await db4.insert(favorites).values({
       user_id,
       announcement_id,
       created_at: /* @__PURE__ */ new Date()
@@ -4342,17 +4497,17 @@ router8.post("/favorites", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'ajout aux favoris" });
   }
 });
-router8.delete("/favorites/:announcementId", async (req, res) => {
+router6.delete("/favorites/:announcementId", async (req, res) => {
   try {
     const { announcementId } = req.params;
     const { user_id } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "user_id requis" });
     }
-    await db5.delete(favorites).where(
-      and2(
-        eq6(favorites.user_id, user_id),
-        eq6(favorites.announcement_id, parseInt(announcementId))
+    await db4.delete(favorites).where(
+      and4(
+        eq8(favorites.user_id, user_id),
+        eq8(favorites.announcement_id, parseInt(announcementId))
       )
     );
     res.json({ message: "Supprim\xE9 des favoris" });
@@ -4361,7 +4516,1465 @@ router8.delete("/favorites/:announcementId", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression des favoris" });
   }
 });
-var favorites_routes_default = router8;
+var favorites_routes_default = router6;
+
+// server/routes/reviews.ts
+init_database();
+init_schema();
+import { Router as Router5 } from "express";
+import { eq as eq9, and as and5, desc as desc5, sql as sql5 } from "drizzle-orm";
+var router7 = Router5();
+router7.post("/", async (req, res) => {
+  try {
+    const { mission_id, reviewee_id, rating, comment, criteria } = req.body;
+    const reviewer_id = req.user?.id;
+    if (!reviewer_id) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const mission = await db.query.missions.findFirst({
+      where: eq9(missions.id, mission_id),
+      with: { bids: true }
+    });
+    if (!mission || mission.status !== "completed") {
+      return res.status(400).json({ error: "Mission non termin\xE9e" });
+    }
+    const existingReview = await db.query.reviews.findFirst({
+      where: and5(
+        eq9(reviews.mission_id, mission_id),
+        eq9(reviews.reviewer_id, reviewer_id)
+      )
+    });
+    if (existingReview) {
+      return res.status(400).json({ error: "Review d\xE9j\xE0 cr\xE9\xE9e" });
+    }
+    const [newReview] = await db.insert(reviews).values({
+      mission_id,
+      reviewer_id,
+      reviewee_id,
+      rating,
+      comment,
+      criteria: criteria || {}
+    }).returning();
+    await updateUserRating(reviewee_id);
+    res.status(201).json(newReview);
+  } catch (error) {
+    console.error("Erreur cr\xE9ation review:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router7.get("/user/:userId", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const userReviews = await db.query.reviews.findMany({
+      where: eq9(reviews.reviewee_id, userId),
+      with: {
+        reviewer: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        mission: {
+          columns: { id: true, title: true }
+        }
+      },
+      orderBy: [desc5(reviews.created_at)]
+    });
+    res.json(userReviews);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration reviews:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router7.get("/mission/:missionId", async (req, res) => {
+  try {
+    const missionId = parseInt(req.params.missionId);
+    const missionReviews = await db.query.reviews.findMany({
+      where: eq9(reviews.mission_id, missionId),
+      with: {
+        reviewer: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        reviewee: {
+          columns: { id: true, name: true, avatar_url: true }
+        }
+      },
+      orderBy: [desc5(reviews.created_at)]
+    });
+    res.json(missionReviews);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration reviews mission:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router7.post("/:id/helpful", async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const existing = await db.query.reviewHelpful.findFirst({
+      where: and5(
+        eq9(reviewHelpful.review_id, reviewId),
+        eq9(reviewHelpful.user_id, userId)
+      )
+    });
+    if (existing) {
+      await db.delete(reviewHelpful).where(eq9(reviewHelpful.id, existing.id));
+      await db.update(reviews).set({ helpful_count: sql5`${reviews.helpful_count} - 1` }).where(eq9(reviews.id, reviewId));
+    } else {
+      await db.insert(reviewHelpful).values({
+        review_id: reviewId,
+        user_id: userId
+      });
+      await db.update(reviews).set({ helpful_count: sql5`${reviews.helpful_count} + 1` }).where(eq9(reviews.id, reviewId));
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur marquage helpful:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router7.post("/:id/response", async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+    const { response } = req.body;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const review = await db.query.reviews.findFirst({
+      where: eq9(reviews.id, reviewId)
+    });
+    if (!review || review.reviewee_id !== userId) {
+      return res.status(403).json({ error: "Non autoris\xE9" });
+    }
+    await db.update(reviews).set({ response, updated_at: /* @__PURE__ */ new Date() }).where(eq9(reviews.id, reviewId));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur r\xE9ponse review:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+async function updateUserRating(userId) {
+  const userReviews = await db.query.reviews.findMany({
+    where: eq9(reviews.reviewee_id, userId)
+  });
+  if (userReviews.length > 0) {
+    const totalRating = userReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalRating / userReviews.length;
+    await db.update(users).set({
+      rating_mean: Math.round(averageRating * 10) / 10,
+      rating_count: userReviews.length
+    }).where(eq9(users.id, userId));
+  }
+}
+var reviews_default = router7;
+
+// server/routes/contracts.ts
+init_database();
+init_schema();
+import { Router as Router6 } from "express";
+import { eq as eq11, and as and7, or } from "drizzle-orm";
+
+// server/services/contract-service.ts
+init_database();
+init_schema();
+import { eq as eq10 } from "drizzle-orm";
+async function createContract(data) {
+  try {
+    const [contract] = await db.insert(contracts).values({
+      ...data,
+      status: "pending_signature"
+    }).returning();
+    if (data.deliverables && data.deliverables.length > 0) {
+      await db.insert(deliverables).values(
+        data.deliverables.map((deliverable) => ({
+          contract_id: contract.id,
+          title: deliverable.title,
+          description: deliverable.description
+        }))
+      );
+    }
+    await createNotification(data.client_id, {
+      type: "contract_created",
+      title: "Contrat cr\xE9\xE9",
+      message: "Un nouveau contrat a \xE9t\xE9 cr\xE9\xE9 et attend votre signature",
+      link: `/contracts/${contract.id}`
+    });
+    await createNotification(data.provider_id, {
+      type: "contract_created",
+      title: "Contrat cr\xE9\xE9",
+      message: "Un nouveau contrat a \xE9t\xE9 cr\xE9\xE9 et attend votre signature",
+      link: `/contracts/${contract.id}`
+    });
+    return contract;
+  } catch (error) {
+    console.error("Erreur cr\xE9ation contrat:", error);
+    throw error;
+  }
+}
+async function signContract(contractId, userId) {
+  try {
+    const contract = await db.query.contracts.findFirst({
+      where: eq10(contracts.id, contractId)
+    });
+    if (!contract) {
+      throw new Error("Contrat non trouv\xE9");
+    }
+    const now = /* @__PURE__ */ new Date();
+    let updateData = {};
+    if (contract.client_id === userId && !contract.client_signed_at) {
+      updateData.client_signed_at = now;
+    } else if (contract.provider_id === userId && !contract.provider_signed_at) {
+      updateData.provider_signed_at = now;
+    } else {
+      throw new Error("Non autoris\xE9 \xE0 signer ce contrat");
+    }
+    const updatedContract = await db.query.contracts.findFirst({
+      where: eq10(contracts.id, contractId)
+    });
+    if (updatedContract?.client_signed_at && updatedContract?.provider_signed_at) {
+      updateData.status = "active";
+      updateData.start_date = now;
+    }
+    await db.update(contracts).set(updateData).where(eq10(contracts.id, contractId));
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur signature contrat:", error);
+    throw error;
+  }
+}
+async function transitionContract(contractId, newStatus, userId) {
+  try {
+    const contract = await db.query.contracts.findFirst({
+      where: eq10(contracts.id, contractId)
+    });
+    if (!contract) {
+      throw new Error("Contrat non trouv\xE9");
+    }
+    if (contract.client_id !== userId && contract.provider_id !== userId) {
+      throw new Error("Non autoris\xE9");
+    }
+    const validTransitions = getValidTransitions(contract.status);
+    if (!validTransitions.includes(newStatus)) {
+      throw new Error("Transition invalide");
+    }
+    let updateData = { status: newStatus, updated_at: /* @__PURE__ */ new Date() };
+    if (newStatus === "completed") {
+      updateData.actual_end_date = /* @__PURE__ */ new Date();
+    }
+    await db.update(contracts).set(updateData).where(eq10(contracts.id, contractId));
+    const otherUserId = contract.client_id === userId ? contract.provider_id : contract.client_id;
+    await createNotification(otherUserId, {
+      type: "contract_status_changed",
+      title: "Statut du contrat modifi\xE9",
+      message: `Le contrat est maintenant : ${newStatus}`,
+      link: `/contracts/${contractId}`
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur transition contrat:", error);
+    throw error;
+  }
+}
+async function submitDeliverable(deliverableId, userId, data) {
+  try {
+    await db.update(deliverables).set({
+      status: "submitted",
+      file_urls: data.file_urls,
+      submitted_at: /* @__PURE__ */ new Date()
+    }).where(eq10(deliverables.id, deliverableId));
+    const deliverable = await db.query.deliverables.findFirst({
+      where: eq10(deliverables.id, deliverableId),
+      with: { contract: true }
+    });
+    if (deliverable?.contract) {
+      await createNotification(deliverable.contract.client_id, {
+        type: "deliverable_submitted",
+        title: "Livrable soumis",
+        message: "Un nouveau livrable a \xE9t\xE9 soumis pour validation",
+        link: `/contracts/${deliverable.contract.id}`
+      });
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur soumission livrable:", error);
+    throw error;
+  }
+}
+async function reviewDeliverable(deliverableId, userId, data) {
+  try {
+    await db.update(deliverables).set({
+      status: data.approved ? "approved" : "rejected",
+      feedback: data.feedback,
+      reviewed_at: /* @__PURE__ */ new Date()
+    }).where(eq10(deliverables.id, deliverableId));
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur validation livrable:", error);
+    throw error;
+  }
+}
+function getValidTransitions(currentStatus) {
+  const transitions = {
+    "pending_signature": ["active", "cancelled"],
+    "active": ["in_progress", "cancelled"],
+    "in_progress": ["under_review", "disputed", "cancelled"],
+    "under_review": ["completed", "in_progress", "disputed"],
+    "completed": [],
+    "disputed": ["in_progress", "cancelled"],
+    "cancelled": []
+  };
+  return transitions[currentStatus] || [];
+}
+async function createNotification(userId, data) {
+  await db.insert(notifications).values({
+    user_id: userId,
+    ...data
+  });
+}
+
+// server/routes/contracts.ts
+var router8 = Router6();
+router8.post("/", async (req, res) => {
+  try {
+    const { mission_id, bid_id, provider_id, terms, deliverables: deliverables3 } = req.body;
+    const client_id = req.user?.id;
+    if (!client_id) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const contract = await createContract({
+      mission_id,
+      bid_id,
+      client_id,
+      provider_id,
+      terms,
+      deliverables: deliverables3
+    });
+    res.status(201).json(contract);
+  } catch (error) {
+    console.error("Erreur cr\xE9ation contrat:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router8.get("/", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const userContracts = await db.query.contracts.findMany({
+      where: or(
+        eq11(contracts.client_id, userId),
+        eq11(contracts.provider_id, userId)
+      ),
+      with: {
+        mission: {
+          columns: { id: true, title: true }
+        },
+        client: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        provider: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        deliverables: true
+      },
+      orderBy: [contracts.created_at]
+    });
+    res.json(userContracts);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration contrats:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router8.get("/:id", async (req, res) => {
+  try {
+    const contractId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const contract = await db.query.contracts.findFirst({
+      where: and7(
+        eq11(contracts.id, contractId),
+        or(
+          eq11(contracts.client_id, userId),
+          eq11(contracts.provider_id, userId)
+        )
+      ),
+      with: {
+        mission: true,
+        bid: true,
+        client: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        provider: {
+          columns: { id: true, name: true, avatar_url: true }
+        },
+        deliverables: true
+      }
+    });
+    if (!contract) {
+      return res.status(404).json({ error: "Contrat non trouv\xE9" });
+    }
+    res.json(contract);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration contrat:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router8.post("/:id/sign", async (req, res) => {
+  try {
+    const contractId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    await signContract(contractId, userId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur signature contrat:", error);
+    res.status(500).json({ error: error.message || "Erreur serveur" });
+  }
+});
+router8.patch("/:id/status", async (req, res) => {
+  try {
+    const contractId = parseInt(req.params.id);
+    const { status } = req.body;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    await transitionContract(contractId, status, userId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur changement statut:", error);
+    res.status(500).json({ error: error.message || "Erreur serveur" });
+  }
+});
+router8.post("/deliverables/:id/submit", async (req, res) => {
+  try {
+    const deliverableId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    const { file_urls, description } = req.body;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    await submitDeliverable(deliverableId, userId, { file_urls, description });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur soumission livrable:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router8.post("/deliverables/:id/review", async (req, res) => {
+  try {
+    const deliverableId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    const { approved, feedback } = req.body;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    await reviewDeliverable(deliverableId, userId, { approved, feedback });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur validation livrable:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+var contracts_default = router8;
+
+// server/routes/files.ts
+import { Router as Router7 } from "express";
+import multer from "multer";
+
+// server/services/file-service.ts
+init_schema();
+init_database();
+import { eq as eq12, and as and8 } from "drizzle-orm";
+import path from "path";
+import fs from "fs/promises";
+var UPLOAD_DIR = "./uploads";
+var MAX_FILE_SIZE = 10 * 1024 * 1024;
+var ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+async function ensureUploadDir() {
+  try {
+    await fs.access(UPLOAD_DIR);
+  } catch {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  }
+}
+async function uploadFile(fileData, userId, context) {
+  try {
+    await ensureUploadDir();
+    if (fileData.size > MAX_FILE_SIZE) {
+      throw new Error("Fichier trop volumineux (max 10MB)");
+    }
+    if (!ALLOWED_TYPES.includes(fileData.mimetype)) {
+      throw new Error("Type de fichier non autoris\xE9");
+    }
+    const ext = path.extname(fileData.originalname);
+    const filename = `${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`;
+    const filepath = path.join(UPLOAD_DIR, filename);
+    const fileUrl = `/uploads/${filename}`;
+    await fs.writeFile(filepath, fileData.buffer);
+    const [file] = await db.insert(files).values({
+      user_id: userId,
+      filename,
+      original_filename: fileData.originalname,
+      file_type: fileData.mimetype,
+      file_size: fileData.size,
+      file_url: fileUrl,
+      context_type: context.type,
+      context_id: context.id || null
+    }).returning();
+    return file;
+  } catch (error) {
+    console.error("Erreur upload fichier:", error);
+    throw error;
+  }
+}
+async function deleteFile(fileId, userId) {
+  try {
+    const file = await db.query.files.findFirst({
+      where: and8(
+        eq12(files.id, fileId),
+        eq12(files.user_id, userId)
+      )
+    });
+    if (!file) {
+      throw new Error("Fichier non trouv\xE9");
+    }
+    const filepath = path.join(UPLOAD_DIR, file.filename);
+    try {
+      await fs.unlink(filepath);
+    } catch (error) {
+      console.warn("Impossible de supprimer le fichier physique:", error);
+    }
+    await db.delete(files).where(eq12(files.id, fileId));
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur suppression fichier:", error);
+    throw error;
+  }
+}
+async function getFilesByContext(contextType, contextId) {
+  try {
+    const contextFiles = await db.query.files.findMany({
+      where: and8(
+        eq12(files.context_type, contextType),
+        eq12(files.context_id, contextId)
+      ),
+      orderBy: [files.created_at]
+    });
+    return contextFiles;
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration fichiers:", error);
+    throw error;
+  }
+}
+async function getUserFiles(userId, contextType) {
+  try {
+    let whereClause = eq12(files.user_id, userId);
+    if (contextType) {
+      whereClause = and8(whereClause, eq12(files.context_type, contextType));
+    }
+    const userFiles = await db.query.files.findMany({
+      where: whereClause,
+      orderBy: [files.created_at]
+    });
+    return userFiles;
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration fichiers utilisateur:", error);
+    throw error;
+  }
+}
+
+// server/routes/files.ts
+var router9 = Router7();
+var upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+    // 10MB
+  }
+});
+router9.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier fourni" });
+    }
+    const { context_type, context_id } = req.body;
+    const file = await uploadFile(req.file, userId, {
+      type: context_type,
+      id: context_id ? parseInt(context_id) : void 0
+    });
+    res.status(201).json(file);
+  } catch (error) {
+    console.error("Erreur upload:", error);
+    res.status(500).json({ error: error.message || "Erreur serveur" });
+  }
+});
+router9.get("/user", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    const { context_type } = req.query;
+    const files2 = await getUserFiles(userId, context_type);
+    res.json(files2);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration fichiers utilisateur:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router9.get("/context/:type/:id", async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const files2 = await getFilesByContext(type, parseInt(id));
+    res.json(files2);
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration fichiers contexte:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router9.delete("/:id", async (req, res) => {
+  try {
+    const fileId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Non authentifi\xE9" });
+    }
+    await deleteFile(fileId, userId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur suppression fichier:", error);
+    res.status(500).json({ error: error.message || "Erreur serveur" });
+  }
+});
+var files_default = router9;
+
+// server/api-routes.ts
+var pool3 = new Pool3({ connectionString: process.env.DATABASE_URL });
+var db5 = drizzle5(pool3);
+var router10 = express3.Router();
+var authMiddleware = (req, res, next) => {
+  console.log("Authentication middleware placeholder passed.");
+  next();
+};
+router10.get("/demo-providers", async (req, res) => {
+  try {
+    const providers = await db5.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      rating_mean: users.rating_mean,
+      rating_count: users.rating_count,
+      profile_data: users.profile_data,
+      created_at: users.created_at
+    }).from(users).where(eq13(users.role, "PRO"));
+    res.json({ providers });
+  } catch (error) {
+    console.error("Erreur get demo providers:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router10.get("/demo-projects", async (req, res) => {
+  try {
+    const projectsWithClients = await db5.select({
+      id: users.id,
+      title: users.name,
+      description: users.email,
+      budget: users.role,
+      category: users.rating_mean,
+      quality_target: users.rating_count,
+      status: users.profile_data,
+      created_at: users.created_at,
+      client_name: users.name,
+      client_email: users.email
+    }).from(users).leftJoin(users, eq13(users.id, users.id));
+    res.json({ projects: projectsWithClients });
+  } catch (error) {
+    console.error("Erreur get demo projects:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router10.get("/demo-bids", async (req, res) => {
+  try {
+    const bidsWithInfo = await db5.select({
+      id: bids.id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      message: bids.message,
+      score_breakdown: bids.score_breakdown,
+      is_leading: bids.is_leading,
+      created_at: bids.created_at,
+      project_title: users.name,
+      project_budget: users.email,
+      provider_name: users.name,
+      provider_email: users.email,
+      provider_profile: users.profile_data
+    }).from(bids).leftJoin(users, eq13(bids.project_id, users.id)).leftJoin(users, eq13(bids.provider_id, users.id));
+    res.json({ bids: bidsWithInfo });
+  } catch (error) {
+    console.error("Erreur get demo bids:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router10.get("/provider/:id", async (req, res) => {
+  try {
+    const providerId = parseInt(req.params.id);
+    const provider = await db5.select().from(users).where(eq13(users.id, providerId)).limit(1);
+    if (provider.length === 0) {
+      return res.status(404).json({ error: "Prestataire non trouv\xE9" });
+    }
+    const providerData = provider[0];
+    const providerBids = await db5.select({
+      id: bids.id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      message: bids.message,
+      is_leading: bids.is_leading,
+      created_at: bids.created_at,
+      project_title: users.name,
+      project_budget: users.email
+    }).from(bids).leftJoin(users, eq13(bids.project_id, users.id)).where(eq13(bids.provider_id, providerId));
+    res.json({
+      provider: {
+        id: providerData.id,
+        email: providerData.email,
+        name: providerData.name,
+        role: providerData.role,
+        rating_mean: providerData.rating_mean,
+        rating_count: providerData.rating_count,
+        profile_data: providerData.profile_data,
+        created_at: providerData.created_at,
+        bids: providerBids
+      }
+    });
+  } catch (error) {
+    console.error("Erreur get provider:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router10.get("/ai-analysis-demo", async (req, res) => {
+  try {
+    const recentProjects = await db5.select({
+      id: users.id,
+      title: users.name,
+      description: users.email,
+      budget: users.role,
+      category: users.rating_mean,
+      created_at: users.created_at
+    }).from(users).limit(3);
+    const recentBids = await db5.select({
+      id: bids.id,
+      amount: bids.amount,
+      timeline_days: bids.timeline_days,
+      score_breakdown: bids.score_breakdown,
+      created_at: bids.created_at
+    }).from(bids).limit(5);
+    const aiAnalysis = {
+      totalProjects: recentProjects.length,
+      totalBids: recentBids.length,
+      averageProjectBudget: recentProjects.reduce((sum, p) => {
+        const budgetRange = p.budget?.split("-") || ["0"];
+        const avgBudget = budgetRange.length > 1 ? (parseInt(budgetRange[0]) + parseInt(budgetRange[1])) / 2 : parseInt(budgetRange[0]) || 0;
+        return sum + avgBudget;
+      }, 0) / recentProjects.length || 0,
+      popularCategories: Array.from(new Set(recentProjects.map((p) => p.category))),
+      averageBidAmount: recentBids.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0) / recentBids.length || 0,
+      successRate: 0.87,
+      timeToMatch: 2.3,
+      // days
+      projects: recentProjects,
+      bids: recentBids
+    };
+    res.json({ analysis: aiAnalysis });
+  } catch (error) {
+    console.error("Erreur get AI analysis:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+router10.use("/missions", authMiddleware, missions_default);
+router10.use("/bids", authMiddleware, bids_default);
+router10.use("/teams", authMiddleware, open_teams_default);
+router10.use("/feed", feed_routes_default);
+router10.use("/favorites", authMiddleware, favorites_routes_default);
+router10.use("/reviews", authMiddleware, reviews_default);
+router10.use("/contracts", authMiddleware, contracts_default);
+router10.use("/files", authMiddleware, files_default);
+var api_routes_default = router10;
+
+// server/routes/ai-monitoring-routes.ts
+init_event_logger();
+import { Router as Router8 } from "express";
+var router11 = Router8();
+router11.get("/health", async (req, res) => {
+  try {
+    const modelMetrics = [
+      {
+        name: "Neural Pricing Engine",
+        version: "v2.1.0",
+        accuracy: 91.2 + (Math.random() * 2 - 1),
+        // Simule variations réelles
+        latency_ms: 45 + Math.round(Math.random() * 10 - 5),
+        error_rate: 0.8 + (Math.random() * 0.4 - 0.2),
+        requests_24h: 2847 + Math.round(Math.random() * 200 - 100),
+        uptime: 99.7 + (Math.random() * 0.3 - 0.1),
+        last_update: new Date(Date.now() - Math.random() * 6e5).toISOString(),
+        drift_score: 0.12 + (Math.random() * 0.08 - 0.04),
+        confidence_avg: 85.4 + (Math.random() * 4 - 2),
+        status: Math.random() > 0.1 ? "healthy" : "warning"
+      },
+      {
+        name: "Semantic Matching Engine",
+        version: "v3.2.1",
+        accuracy: 92.1 + (Math.random() * 2 - 1),
+        latency_ms: 38 + Math.round(Math.random() * 8 - 4),
+        error_rate: 0.6 + (Math.random() * 0.3 - 0.15),
+        requests_24h: 4231 + Math.round(Math.random() * 300 - 150),
+        uptime: 99.9 + (Math.random() * 0.1 - 0.05),
+        last_update: new Date(Date.now() - Math.random() * 3e5).toISOString(),
+        drift_score: 0.08 + (Math.random() * 0.06 - 0.03),
+        confidence_avg: 88.7 + (Math.random() * 3 - 1.5),
+        status: Math.random() > 0.05 ? "healthy" : "warning"
+      },
+      {
+        name: "Feed Ranker",
+        version: "v2.1.0",
+        accuracy: 87.9 + (Math.random() * 3 - 1.5),
+        latency_ms: 22 + Math.round(Math.random() * 6 - 3),
+        error_rate: 1.2 + (Math.random() * 0.6 - 0.3),
+        requests_24h: 15632 + Math.round(Math.random() * 1e3 - 500),
+        uptime: 99.5 + (Math.random() * 0.4 - 0.2),
+        last_update: new Date(Date.now() - Math.random() * 24e4).toISOString(),
+        drift_score: 0.23 + (Math.random() * 0.12 - 0.06),
+        confidence_avg: 82.1 + (Math.random() * 5 - 2.5),
+        status: Math.random() > 0.15 ? "warning" : "healthy"
+      },
+      {
+        name: "Fraud Detection",
+        version: "v1.8.2",
+        accuracy: 95.1 + (Math.random() * 1 - 0.5),
+        latency_ms: 28 + Math.round(Math.random() * 4 - 2),
+        error_rate: 0.3 + (Math.random() * 0.2 - 0.1),
+        requests_24h: 1456 + Math.round(Math.random() * 100 - 50),
+        uptime: 100,
+        last_update: new Date(Date.now() - Math.random() * 18e4).toISOString(),
+        drift_score: 0.05 + (Math.random() * 0.04 - 0.02),
+        confidence_avg: 94.2 + (Math.random() * 2 - 1),
+        status: "healthy"
+      },
+      {
+        name: "Predictive Analytics",
+        version: "v1.9.1",
+        accuracy: 89.3 + (Math.random() * 2 - 1),
+        latency_ms: 52 + Math.round(Math.random() * 12 - 6),
+        error_rate: 1.8 + (Math.random() * 0.8 - 0.4),
+        requests_24h: 892 + Math.round(Math.random() * 80 - 40),
+        uptime: 98.2 + (Math.random() * 1.5 - 0.5),
+        last_update: new Date(Date.now() - Math.random() * 9e5).toISOString(),
+        drift_score: 0.31 + (Math.random() * 0.15 - 0.075),
+        confidence_avg: 79.8 + (Math.random() * 6 - 3),
+        status: Math.random() > 0.7 ? "critical" : "warning"
+      }
+    ];
+    res.json({
+      success: true,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      models: modelMetrics.map((model) => ({
+        ...model,
+        accuracy: Math.round(model.accuracy * 10) / 10,
+        uptime: Math.round(model.uptime * 10) / 10,
+        drift_score: Math.round(model.drift_score * 100) / 100,
+        confidence_avg: Math.round(model.confidence_avg * 10) / 10,
+        error_rate: Math.round(model.error_rate * 10) / 10
+      }))
+    });
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration sant\xE9 mod\xE8les:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques des mod\xE8les"
+    });
+  }
+});
+router11.get("/experiments", async (req, res) => {
+  try {
+    const experiments = [
+      {
+        id: "exp-001",
+        name: "Pricing Algorithm V2.1 vs V2.0",
+        model_variant: "Neural Pricing V2.1",
+        conversion_lift: 8.7 + (Math.random() * 2 - 1),
+        confidence_interval: [4.2, 13.1],
+        sample_size: 2847,
+        significance: 0.95,
+        status: "completed",
+        duration_days: 14,
+        created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1e3).toISOString()
+      },
+      {
+        id: "exp-002",
+        name: "Enhanced Semantic Matching",
+        model_variant: "Semantic V3.2.1",
+        conversion_lift: 12.4 + (Math.random() * 1.5 - 0.75),
+        confidence_interval: [7.8, 16.9],
+        sample_size: 1923,
+        significance: 0.99,
+        status: "running",
+        duration_days: 7,
+        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3).toISOString()
+      },
+      {
+        id: "exp-003",
+        name: "Feed Ranking Optimization",
+        model_variant: "FeedRanker V2.1",
+        conversion_lift: -2.1 + (Math.random() * 1 - 0.5),
+        confidence_interval: [-5.7, 1.5],
+        sample_size: 4521,
+        significance: 0.68,
+        status: "failed",
+        duration_days: 10,
+        created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1e3).toISOString()
+      }
+    ];
+    res.json({
+      success: true,
+      experiments: experiments.map((exp) => ({
+        ...exp,
+        conversion_lift: Math.round(exp.conversion_lift * 10) / 10
+      }))
+    });
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration exp\xE9riences:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de r\xE9cup\xE9rer les exp\xE9riences"
+    });
+  }
+});
+router11.post("/events", async (req, res) => {
+  try {
+    const { event_type, user_id, mission_id, provider_id, session_id, metadata } = req.body;
+    if (!event_type || !session_id) {
+      return res.status(400).json({
+        success: false,
+        error: "event_type et session_id sont requis"
+      });
+    }
+    switch (event_type) {
+      case "view":
+        eventLogger.logAnnouncementView(
+          user_id || "anonymous",
+          mission_id,
+          session_id,
+          metadata?.dwell_time_ms || 0,
+          metadata
+        );
+        break;
+      case "save":
+        eventLogger.logSave(
+          user_id,
+          mission_id,
+          session_id,
+          metadata
+        );
+        break;
+      case "proposal":
+        eventLogger.logProposal(
+          provider_id,
+          mission_id,
+          session_id,
+          metadata
+        );
+        break;
+      case "win":
+        eventLogger.logWin(
+          provider_id,
+          mission_id,
+          session_id,
+          metadata
+        );
+        break;
+      case "dispute":
+        eventLogger.logDispute(
+          user_id,
+          mission_id,
+          session_id,
+          metadata
+        );
+        break;
+      default:
+        eventLogger.logUserEvent(
+          event_type,
+          user_id || "anonymous",
+          session_id,
+          metadata
+        );
+    }
+    res.json({
+      success: true,
+      message: "\xC9v\xE9nement enregistr\xE9",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("Erreur logging \xE9v\xE9nement:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible d'enregistrer l'\xE9v\xE9nement"
+    });
+  }
+});
+router11.get("/performance-metrics", async (req, res) => {
+  try {
+    const performanceMetrics = eventLogger.getPerformanceMetrics();
+    const aggregated = {
+      neural_pricing: {
+        avg_latency_ms: 45.2,
+        accuracy_rate: 0.912,
+        prediction_count_24h: 2847,
+        success_rate: 0.876,
+        last_updated: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      semantic_matching: {
+        avg_latency_ms: 38.1,
+        accuracy_rate: 0.921,
+        prediction_count_24h: 4231,
+        success_rate: 0.903,
+        last_updated: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      feed_ranking: {
+        avg_latency_ms: 22.3,
+        accuracy_rate: 0.879,
+        prediction_count_24h: 15632,
+        success_rate: 0.823,
+        last_updated: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    };
+    res.json({
+      success: true,
+      performance_metrics: aggregated,
+      raw_metrics_count: performanceMetrics.size
+    });
+  } catch (error) {
+    console.error("Erreur m\xE9triques performance:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques de performance"
+    });
+  }
+});
+router11.post("/clear-cache", async (req, res) => {
+  try {
+    const maxAgeMs = req.body.max_age_ms || 36e5;
+    eventLogger.cleanupOldMetrics(maxAgeMs);
+    res.json({
+      success: true,
+      message: "Cache nettoy\xE9",
+      max_age_used: maxAgeMs
+    });
+  } catch (error) {
+    console.error("Erreur nettoyage cache:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de nettoyer le cache"
+    });
+  }
+});
+router11.get("/business-metrics", async (req, res) => {
+  try {
+    const { period = "7d" } = req.query;
+    const businessMetrics = {
+      revenue: {
+        total: 45280 + Math.round(Math.random() * 5e3),
+        growth: 12.5 + (Math.random() * 3 - 1.5),
+        aiContribution: 28.7 + (Math.random() * 2 - 1),
+        projectedNext30Days: 52e3 + Math.round(Math.random() * 8e3)
+      },
+      conversions: {
+        totalMissions: 342 + Math.round(Math.random() * 50),
+        aiAssistedMissions: 287 + Math.round(Math.random() * 30),
+        conversionRate: 76.3 + (Math.random() * 4 - 2),
+        avgMissionValue: 523 + Math.round(Math.random() * 100)
+      },
+      userEngagement: {
+        activeUsers: 1847 + Math.round(Math.random() * 200),
+        aiFeatureUsage: 68.4 + (Math.random() * 5 - 2.5),
+        sessionDuration: 8.7 + (Math.random() * 1 - 0.5),
+        retentionRate: 82.1 + (Math.random() * 3 - 1.5)
+      },
+      aiROI: {
+        costSavings: 34.2 + (Math.random() * 5 - 2.5),
+        timeReduction: 45.8 + (Math.random() * 4 - 2),
+        qualityImprovement: 23.5 + (Math.random() * 3 - 1.5),
+        customerSatisfaction: 91.2 + (Math.random() * 2 - 1)
+      },
+      trends: {
+        hourlyActivity: Array.from({ length: 24 }, () => Math.round(Math.random() * 100)),
+        categoryGrowth: [
+          { category: "D\xE9veloppement", growth: 18.5 + (Math.random() * 2 - 1), aiImpact: 12.3 },
+          { category: "Design", growth: 15.2 + (Math.random() * 2 - 1), aiImpact: 8.7 },
+          { category: "Marketing", growth: 22.1 + (Math.random() * 2 - 1), aiImpact: 15.4 },
+          { category: "R\xE9daction", growth: 9.8 + (Math.random() * 2 - 1), aiImpact: 6.2 }
+        ],
+        regionalPerformance: [
+          { region: "\xCEle-de-France", missions: 156 + Math.round(Math.random() * 20), revenue: 18200 + Math.round(Math.random() * 2e3) },
+          { region: "Auvergne-Rh\xF4ne-Alpes", missions: 89 + Math.round(Math.random() * 15), revenue: 12400 + Math.round(Math.random() * 1500) },
+          { region: "Provence-Alpes-C\xF4te d'Azur", missions: 73 + Math.round(Math.random() * 10), revenue: 9800 + Math.round(Math.random() * 1200) },
+          { region: "Nouvelle-Aquitaine", missions: 45 + Math.round(Math.random() * 8), revenue: 6100 + Math.round(Math.random() * 800) }
+        ]
+      },
+      period_info: {
+        period,
+        start_date: new Date(Date.now() - (period === "24h" ? 864e5 : period === "7d" ? 6048e5 : period === "30d" ? 2592e6 : 7776e6)),
+        end_date: /* @__PURE__ */ new Date(),
+        data_freshness: "live"
+      }
+    };
+    res.json({
+      success: true,
+      metrics: businessMetrics,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    console.error("Erreur m\xE9triques business:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de r\xE9cup\xE9rer les m\xE9triques business"
+    });
+  }
+});
+router11.get("/alerts", async (req, res) => {
+  try {
+    const alerts = [
+      {
+        id: "alert-001",
+        type: "performance",
+        level: "warning",
+        title: "Latence \xE9lev\xE9e d\xE9tect\xE9e",
+        message: "Le moteur de pricing affiche une latence de 85ms (seuil: 80ms)",
+        timestamp: new Date(Date.now() - 3e5).toISOString(),
+        affected_service: "neural-pricing",
+        auto_resolve: false
+      },
+      {
+        id: "alert-002",
+        type: "business",
+        level: "info",
+        title: "Pic d'activit\xE9 d\xE9tect\xE9",
+        message: "Augmentation de 34% du trafic sur les derni\xE8res 2h",
+        timestamp: new Date(Date.now() - 12e4).toISOString(),
+        affected_service: "global",
+        auto_resolve: true
+      },
+      {
+        id: "alert-003",
+        type: "quality",
+        level: "critical",
+        title: "D\xE9gradation pr\xE9cision mod\xE8le",
+        message: "Pr\xE9cision du matching s\xE9mantique tomb\xE9e \xE0 78% (seuil: 85%)",
+        timestamp: new Date(Date.now() - 6e5).toISOString(),
+        affected_service: "semantic-matching",
+        auto_resolve: false
+      }
+    ];
+    res.json({
+      success: true,
+      alerts,
+      total_count: alerts.length,
+      critical_count: alerts.filter((a) => a.level === "critical").length,
+      warning_count: alerts.filter((a) => a.level === "warning").length
+    });
+  } catch (error) {
+    console.error("Erreur r\xE9cup\xE9ration alertes:", error);
+    res.status(500).json({
+      success: false,
+      error: "Impossible de r\xE9cup\xE9rer les alertes"
+    });
+  }
+});
+var ai_monitoring_routes_default = router11;
+
+// server/routes/ai-suggestions-routes.ts
+import { Router as Router9 } from "express";
+import { z as z4 } from "zod";
+var router12 = Router9();
+var assistantSuggestionsSchema = z4.object({
+  page: z4.string(),
+  userContext: z4.object({
+    isClient: z4.boolean().optional(),
+    isProvider: z4.boolean().optional(),
+    missions: z4.number().optional(),
+    completedProjects: z4.number().optional(),
+    completeness: z4.number().optional(),
+    hasContent: z4.object({
+      bio: z4.boolean().optional(),
+      headline: z4.boolean().optional(),
+      skills: z4.boolean().optional(),
+      portfolio: z4.boolean().optional()
+    }).optional()
+  }).optional()
+});
+async function generatePageSuggestions(page, userContext = {}) {
+  const suggestions = [];
+  switch (page) {
+    case "create-mission":
+      suggestions.push(
+        {
+          type: "optimization",
+          title: "Optimisez votre description",
+          description: "Une description d\xE9taill\xE9e attire 3x plus de candidats qualifi\xE9s",
+          action: "Am\xE9liorer avec l'IA",
+          priority: "high",
+          impact: "increase_applications"
+        },
+        {
+          type: "pricing",
+          title: "Budget sugg\xE9r\xE9",
+          description: "Obtenez une estimation de prix bas\xE9e sur le march\xE9",
+          action: "Calculer le budget",
+          priority: "medium",
+          impact: "fair_pricing"
+        }
+      );
+      break;
+    case "marketplace":
+      if (userContext.isProvider) {
+        suggestions.push(
+          {
+            type: "recommendation",
+            title: "Missions recommand\xE9es",
+            description: "Nous avons trouv\xE9 3 missions correspondant \xE0 votre profil",
+            action: "Voir les missions",
+            priority: "high",
+            impact: "find_work"
+          }
+        );
+      }
+      break;
+    case "profile-general":
+      if (userContext.completeness < 50) {
+        suggestions.push(
+          {
+            type: "completion",
+            title: "Compl\xE9tez votre profil",
+            description: "Un profil complet re\xE7oit 5x plus de vues",
+            action: "Compl\xE9ter",
+            priority: "high",
+            impact: "profile_visibility"
+          }
+        );
+      }
+      if (!userContext.hasContent?.headline) {
+        suggestions.push(
+          {
+            type: "headline",
+            title: "Ajoutez un titre accrocheur",
+            description: "Un bon titre augmente vos chances d'\xEAtre contact\xE9",
+            action: "G\xE9n\xE9rer un titre",
+            priority: "medium",
+            impact: "profile_attraction"
+          }
+        );
+      }
+      break;
+    case "profile-skills":
+      if (!userContext.hasContent?.skills || userContext.hasContent.skills === 0) {
+        suggestions.push(
+          {
+            type: "skills",
+            title: "Ajoutez vos comp\xE9tences",
+            description: "Les profils avec comp\xE9tences ont 4x plus de succ\xE8s",
+            action: "Ajouter des comp\xE9tences",
+            priority: "high",
+            impact: "skill_matching"
+          }
+        );
+      }
+      break;
+    case "dashboard":
+      suggestions.push(
+        {
+          type: "insight",
+          title: "Votre performance cette semaine",
+          description: "Vos vues de profil ont augment\xE9 de 15%",
+          action: "Voir les d\xE9tails",
+          priority: "low",
+          impact: "analytics"
+        }
+      );
+      break;
+    default:
+      suggestions.push(
+        {
+          type: "general",
+          title: "Optimisez votre pr\xE9sence",
+          description: "L'IA peut vous aider \xE0 am\xE9liorer votre profil",
+          action: "Analyser mon profil",
+          priority: "medium",
+          impact: "general_improvement"
+        }
+      );
+  }
+  return suggestions;
+}
+router12.post("/assistant-suggestions", async (req, res) => {
+  try {
+    const { page, userContext } = assistantSuggestionsSchema.parse(req.body);
+    const suggestions = await generatePageSuggestions(page, userContext);
+    res.json({
+      success: true,
+      suggestions,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    if (error instanceof z4.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: "Donn\xE9es invalides",
+        details: error.errors
+      });
+    }
+    console.error("Erreur suggestions assistant:", error);
+    res.json({
+      success: false,
+      suggestions: [
+        {
+          type: "fallback",
+          title: "Suggestions temporairement indisponibles",
+          description: "R\xE9essayez dans quelques instants",
+          action: "R\xE9essayer",
+          priority: "low",
+          impact: "fallback"
+        }
+      ],
+      fallback: true
+    });
+  }
+});
+var ai_suggestions_routes_default = router12;
+
+// server/routes/ai-missions-routes.ts
+import { Router as Router10 } from "express";
+import { z as z5 } from "zod";
+var router13 = Router10();
+var missionSuggestionSchema = z5.object({
+  title: z5.string().min(3, "Titre trop court"),
+  description: z5.string().min(10, "Description trop courte"),
+  category: z5.string().min(1, "Cat\xE9gorie requise"),
+  budget_min: z5.number().optional(),
+  budget_max: z5.number().optional(),
+  deadline_ts: z5.string().optional(),
+  geo_required: z5.boolean().optional(),
+  onsite_radius_km: z5.number().optional()
+});
+router13.post("/suggest", async (req, res) => {
+  try {
+    console.log("Requ\xEAte re\xE7ue:", req.body);
+    const { title, description, category } = missionSuggestionSchema.parse(req.body);
+    console.log("Validation OK pour:", { title, category });
+    const categoryConfig = {
+      "web-development": {
+        skills: ["React", "Node.js", "TypeScript", "CSS"],
+        minPrice: 1500,
+        medPrice: 4e3,
+        maxPrice: 8e3,
+        avgDays: 21,
+        criteria: ["Interface responsive", "Tests fonctionnels", "D\xE9ploiement"]
+      },
+      "mobile-development": {
+        skills: ["React Native", "Flutter", "iOS", "Android"],
+        minPrice: 3e3,
+        medPrice: 7e3,
+        maxPrice: 15e3,
+        avgDays: 35,
+        criteria: ["Compatibilit\xE9 multi-plateformes", "Tests sur appareils", "Publication stores"]
+      },
+      "design": {
+        skills: ["Figma", "Adobe XD", "UI/UX", "Photoshop"],
+        minPrice: 800,
+        medPrice: 2500,
+        maxPrice: 5e3,
+        avgDays: 14,
+        criteria: ["Maquettes haute fid\xE9lit\xE9", "Guide de style", "Prototypes interactifs"]
+      },
+      "marketing": {
+        skills: ["SEO", "Google Ads", "Analytics", "Copywriting"],
+        minPrice: 1e3,
+        medPrice: 3e3,
+        maxPrice: 6e3,
+        avgDays: 28,
+        criteria: ["Strat\xE9gie d\xE9finie", "KPIs mesurables", "Rapport de performance"]
+      },
+      "data-science": {
+        skills: ["Python", "Machine Learning", "SQL", "Visualisation"],
+        minPrice: 2e3,
+        medPrice: 6e3,
+        maxPrice: 12e3,
+        avgDays: 42,
+        criteria: ["Nettoyage des donn\xE9es", "Mod\xE8le valid\xE9", "Dashboard interactif"]
+      }
+    };
+    const config = categoryConfig[category] || categoryConfig["web-development"];
+    res.json({
+      success: true,
+      suggestion: {
+        title,
+        summary: description,
+        acceptance_criteria: config.criteria,
+        category_std: category,
+        sub_category_std: category,
+        skills_std: config.skills,
+        tags_std: config.skills.map((s) => s.toLowerCase()),
+        brief_quality_score: 0.7 + description.length / 1e3,
+        richness_score: 0.6 + description.split(" ").length / 200,
+        missing_info: [
+          { id: "budget", q: `Quel est votre budget ? (${config.minPrice}\u20AC - ${config.maxPrice}\u20AC recommand\xE9)` },
+          { id: "timeline", q: `Quand souhaitez-vous livrer ? (${config.avgDays} jours en moyenne)` }
+        ],
+        price_suggested_min: config.minPrice,
+        price_suggested_med: config.medPrice,
+        price_suggested_max: config.maxPrice,
+        delay_suggested_days: config.avgDays,
+        loc_base: Math.floor(config.medPrice / 80),
+        // Estimation lignes de code
+        loc_uplift_reco: {
+          new_budget: Math.floor(config.maxPrice * 0.9),
+          new_delay: Math.floor(config.avgDays * 1.3),
+          delta_loc: Math.floor(config.medPrice / 60)
+        },
+        reasons: [
+          `Suggestions bas\xE9es sur ${category}`,
+          `Prix align\xE9 sur le march\xE9 ${category}`,
+          `D\xE9lais optimis\xE9s pour ce type de projet`
+        ]
+      },
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  } catch (error) {
+    if (error instanceof z5.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: "Donn\xE9es invalides",
+        details: error.errors
+      });
+    }
+    console.error("Erreur suggestions mission:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur lors de la g\xE9n\xE9ration des suggestions de mission"
+    });
+  }
+});
+var ai_missions_routes_default = router13;
 
 // server/routes/ai-quick-analysis.ts
 import express4 from "express";
@@ -4737,8 +6350,8 @@ var PricingAnalysisService = class {
 };
 
 // server/routes/ai-quick-analysis.ts
-var router9 = express4.Router();
-router9.post("/ai/quick-analysis", async (req, res) => {
+var router14 = express4.Router();
+router14.post("/ai/quick-analysis", async (req, res) => {
   try {
     const { description, title, category } = req.body;
     if (!description) {
@@ -4755,7 +6368,7 @@ router9.post("/ai/quick-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse" });
   }
 });
-router9.post("/ai/price-analysis", async (req, res) => {
+router14.post("/ai/price-analysis", async (req, res) => {
   try {
     const { category, description, location, complexity, urgency } = req.body;
     if (!category || !description || complexity === void 0) {
@@ -4776,12 +6389,12 @@ router9.post("/ai/price-analysis", async (req, res) => {
     res.status(500).json({ error: "Erreur lors de l'analyse de prix" });
   }
 });
-var ai_quick_analysis_default = router9;
+var ai_quick_analysis_default = router14;
 
 // server/routes/ai-diagnostic-routes.ts
-import { Router as Router6 } from "express";
-var router10 = Router6();
-router10.get("/diagnostic", async (req, res) => {
+import { Router as Router11 } from "express";
+var router15 = Router11();
+router15.get("/diagnostic", async (req, res) => {
   try {
     console.log("\u{1F50D} Lancement diagnostic IA Gemini...");
     const diagnostics = {
@@ -4845,10 +6458,10 @@ router10.get("/diagnostic", async (req, res) => {
     });
   }
 });
-var ai_diagnostic_routes_default = router10;
+var ai_diagnostic_routes_default = router15;
 
 // server/routes/ai-learning-routes.ts
-import { Router as Router7 } from "express";
+import { Router as Router12 } from "express";
 
 // apps/api/src/ai/learning-engine.ts
 console.warn("\u26A0\uFE0F AI Learning Engine supprim\xE9 - syst\xE8me simplifi\xE9 sans apprentissage automatique");
@@ -4869,8 +6482,8 @@ var SimpleLearningEngine = class {
 var aiLearningEngine = new SimpleLearningEngine();
 
 // server/routes/ai-learning-routes.ts
-var router11 = Router7();
-router11.post("/analyze-patterns", async (req, res) => {
+var router16 = Router12();
+router16.post("/analyze-patterns", async (req, res) => {
   try {
     console.log("\u{1F9E0} D\xE9marrage analyse patterns d'apprentissage...");
     await aiLearningEngine.analyzePastInteractions(1e3);
@@ -4888,7 +6501,7 @@ router11.post("/analyze-patterns", async (req, res) => {
     });
   }
 });
-router11.get("/stats", (req, res) => {
+router16.get("/stats", (req, res) => {
   try {
     const stats = aiLearningEngine.getLearningStats();
     res.json({ success: true, stats });
@@ -4900,39 +6513,39 @@ router11.get("/stats", (req, res) => {
     });
   }
 });
-var ai_learning_routes_default = router11;
+var ai_learning_routes_default = router16;
 
 // server/routes/team-routes.ts
-import { Router as Router8 } from "express";
-import { z as z5 } from "zod";
-var router12 = Router8();
-var teamAnalysisSchema = z5.object({
-  description: z5.string().min(10),
-  title: z5.string().min(3),
-  category: z5.string().min(2),
-  budget: z5.union([z5.string(), z5.number()])
+import { Router as Router13 } from "express";
+import { z as z6 } from "zod";
+var router17 = Router13();
+var teamAnalysisSchema = z6.object({
+  description: z6.string().min(10),
+  title: z6.string().min(3),
+  category: z6.string().min(2),
+  budget: z6.union([z6.string(), z6.number()])
 });
-var teamProjectSchema = z5.object({
-  projectData: z5.object({
-    title: z5.string().min(3),
-    description: z5.string().min(10),
-    category: z5.string().min(2),
-    budget: z5.union([z5.string(), z5.number()]),
-    location: z5.string().optional(),
-    isTeamMode: z5.boolean()
+var teamProjectSchema = z6.object({
+  projectData: z6.object({
+    title: z6.string().min(3),
+    description: z6.string().min(10),
+    category: z6.string().min(2),
+    budget: z6.union([z6.string(), z6.number()]),
+    location: z6.string().optional(),
+    isTeamMode: z6.boolean()
   }),
-  teamRequirements: z5.array(z5.object({
-    profession: z5.string(),
-    description: z5.string(),
-    required_skills: z5.array(z5.string()),
-    estimated_budget: z5.number(),
-    estimated_days: z5.number(),
-    min_experience: z5.number(),
-    is_lead_role: z5.boolean(),
-    importance: z5.enum(["high", "medium", "low"])
+  teamRequirements: z6.array(z6.object({
+    profession: z6.string(),
+    description: z6.string(),
+    required_skills: z6.array(z6.string()),
+    estimated_budget: z6.number(),
+    estimated_days: z6.number(),
+    min_experience: z6.number(),
+    is_lead_role: z6.boolean(),
+    importance: z6.enum(["high", "medium", "low"])
   }))
 });
-router12.post("/analyze", async (req, res) => {
+router17.post("/analyze", async (req, res) => {
   try {
     const parsed = teamAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4977,7 +6590,7 @@ router12.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-router12.post("/create-project", async (req, res) => {
+router17.post("/create-project", async (req, res) => {
   try {
     const parsed = teamProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -5032,728 +6645,7 @@ router12.post("/create-project", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la cr\xE9ation du projet" });
   }
 });
-var team_routes_default = router12;
-
-// server/routes/open-teams.ts
-init_database();
-init_schema();
-init_schema();
-import { Router as Router9 } from "express";
-import { eq as eq8, desc as desc3, and as and3 } from "drizzle-orm";
-import { randomUUID as randomUUID2 } from "crypto";
-
-// server/middleware/auth.ts
-init_database();
-init_schema();
-import { eq as eq7 } from "drizzle-orm";
-var requireAuth = async (req, res, next) => {
-  try {
-    const userIdHeader = req.headers["x-user-id"];
-    if (!userIdHeader) {
-      return res.status(401).json({
-        error: "Authentication required",
-        message: "No user ID provided"
-      });
-    }
-    const userId = parseInt(userIdHeader);
-    if (isNaN(userId)) {
-      return res.status(401).json({
-        error: "Authentication required",
-        message: "Invalid user ID format"
-      });
-    }
-    const [user] = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      rating_mean: users.rating_mean
-    }).from(users).where(eq7(users.id, userId)).limit(1);
-    if (!user) {
-      return res.status(401).json({
-        error: "Authentication required",
-        message: "Invalid user"
-      });
-    }
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error("Auth middleware error:", error);
-    return res.status(500).json({
-      error: "Authentication error",
-      message: "Internal server error"
-    });
-  }
-};
-var optionalAuth = async (req, res, next) => {
-  try {
-    const userIdHeader = req.headers["x-user-id"];
-    if (userIdHeader) {
-      const userId = parseInt(userIdHeader);
-      if (!isNaN(userId)) {
-        const [user] = await db.select({
-          id: users.id,
-          email: users.email,
-          name: users.name,
-          role: users.role,
-          rating_mean: users.rating_mean
-        }).from(users).where(eq7(users.id, userId)).limit(1);
-        if (user) {
-          req.user = user;
-        }
-      }
-    }
-    next();
-  } catch (error) {
-    console.error("Optional auth middleware error:", error);
-    next();
-  }
-};
-
-// server/routes/open-teams.ts
-var router13 = Router9();
-var asyncHandler2 = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-router13.post("/", requireAuth, asyncHandler2(async (req, res) => {
-  const requestId = randomUUID2();
-  console.log(JSON.stringify({
-    level: "info",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    request_id: requestId,
-    action: "open_team_create_start",
-    body_size: JSON.stringify(req.body).length
-  }));
-  try {
-    const validatedData = insertOpenTeamSchema.parse(req.body);
-    const missionExists = await db.select().from(missions).where(eq8(missions.id, validatedData.mission_id));
-    if (missionExists.length === 0) {
-      return res.status(404).json({
-        error: "Mission introuvable",
-        request_id: requestId
-      });
-    }
-    const [newTeam] = await db.insert(openTeams).values({
-      mission_id: validatedData.mission_id,
-      name: validatedData.name,
-      description: validatedData.description,
-      creator_id: req.user.id,
-      estimated_budget: validatedData.estimated_budget,
-      estimated_timeline_days: validatedData.estimated_timeline_days,
-      members: validatedData.members,
-      required_roles: validatedData.required_roles,
-      max_members: validatedData.max_members,
-      status: validatedData.status || "recruiting",
-      visibility: validatedData.visibility || "public",
-      auto_accept: validatedData.auto_accept !== void 0 ? validatedData.auto_accept : true
-    }).returning();
-    console.log(JSON.stringify({
-      level: "info",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "open_team_created",
-      team_id: newTeam.id,
-      team_name: newTeam.name
-    }));
-    res.status(201).json({
-      success: true,
-      team: newTeam,
-      request_id: requestId
-    });
-  } catch (error) {
-    console.error(JSON.stringify({
-      level: "error",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "open_team_create_error",
-      error: error instanceof Error ? error.message : "Unknown error"
-    }));
-    if (error instanceof Error && error.message.includes("validation")) {
-      return res.status(400).json({
-        error: "Donn\xE9es invalides",
-        details: error.message,
-        request_id: requestId
-      });
-    }
-    res.status(500).json({
-      error: "Erreur serveur",
-      request_id: requestId
-    });
-  }
-}));
-router13.get("/", asyncHandler2(async (req, res) => {
-  const missionId = req.query.mission_id;
-  try {
-    const whereConditions = [eq8(openTeams.visibility, "public")];
-    if (missionId && !isNaN(parseInt(missionId))) {
-      whereConditions.push(eq8(openTeams.mission_id, parseInt(missionId)));
-    }
-    const teams = await db.select({
-      id: openTeams.id,
-      mission_id: openTeams.mission_id,
-      name: openTeams.name,
-      description: openTeams.description,
-      creator_id: openTeams.creator_id,
-      estimated_budget: openTeams.estimated_budget,
-      estimated_timeline_days: openTeams.estimated_timeline_days,
-      members: openTeams.members,
-      required_roles: openTeams.required_roles,
-      max_members: openTeams.max_members,
-      status: openTeams.status,
-      visibility: openTeams.visibility,
-      auto_accept: openTeams.auto_accept,
-      created_at: openTeams.created_at,
-      // Informations du créateur
-      creator_name: users.name,
-      creator_email: users.email,
-      creator_rating: users.rating_mean,
-      // Informations de la mission
-      mission_title: missions.title,
-      mission_budget: missions.budget_value_cents
-    }).from(openTeams).leftJoin(users, eq8(openTeams.creator_id, users.id)).leftJoin(missions, eq8(openTeams.mission_id, missions.id)).where(and3(...whereConditions)).orderBy(desc3(openTeams.created_at));
-    res.json({
-      success: true,
-      teams: teams.map((team) => ({
-        ...team,
-        members_count: team.members ? team.members.length : 0,
-        required_roles_count: team.required_roles ? team.required_roles.length : 0
-      }))
-    });
-  } catch (error) {
-    console.error("Erreur get open teams:", error);
-    res.status(500).json({
-      error: "Erreur serveur"
-    });
-  }
-}));
-router13.get("/:id", asyncHandler2(async (req, res) => {
-  const teamId = parseInt(req.params.id);
-  if (isNaN(teamId)) {
-    return res.status(400).json({
-      error: "ID d'\xE9quipe invalide"
-    });
-  }
-  try {
-    const [team] = await db.select({
-      id: openTeams.id,
-      mission_id: openTeams.mission_id,
-      name: openTeams.name,
-      description: openTeams.description,
-      creator_id: openTeams.creator_id,
-      estimated_budget: openTeams.estimated_budget,
-      estimated_timeline_days: openTeams.estimated_timeline_days,
-      members: openTeams.members,
-      required_roles: openTeams.required_roles,
-      max_members: openTeams.max_members,
-      status: openTeams.status,
-      visibility: openTeams.visibility,
-      auto_accept: openTeams.auto_accept,
-      created_at: openTeams.created_at,
-      updated_at: openTeams.updated_at,
-      // Informations du créateur
-      creator_name: users.name,
-      creator_email: users.email,
-      creator_rating: users.rating_mean,
-      // Informations de la mission
-      mission_title: missions.title,
-      mission_description: missions.description,
-      mission_budget: missions.budget_value_cents,
-      mission_status: missions.status
-    }).from(openTeams).leftJoin(users, eq8(openTeams.creator_id, users.id)).leftJoin(missions, eq8(openTeams.mission_id, missions.id)).where(eq8(openTeams.id, teamId));
-    if (!team) {
-      return res.status(404).json({
-        error: "\xC9quipe introuvable"
-      });
-    }
-    if (team.visibility === "private") {
-    }
-    res.json({
-      success: true,
-      team: {
-        ...team,
-        members_count: team.members ? team.members.length : 0,
-        required_roles_count: team.required_roles ? team.required_roles.length : 0,
-        is_full: team.members ? team.members.length >= (team.max_members || Number.MAX_SAFE_INTEGER) : false
-      }
-    });
-  } catch (error) {
-    console.error("Erreur get open team details:", error);
-    res.status(500).json({
-      error: "Erreur serveur"
-    });
-  }
-}));
-router13.post("/:id/join", requireAuth, asyncHandler2(async (req, res) => {
-  const teamId = parseInt(req.params.id);
-  const { role, experience_years } = req.body;
-  const user_id = req.user.id;
-  const requestId = randomUUID2();
-  if (isNaN(teamId)) {
-    return res.status(400).json({
-      error: "ID d'\xE9quipe invalide"
-    });
-  }
-  try {
-    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
-    if (!team) {
-      return res.status(404).json({
-        error: "\xC9quipe introuvable",
-        request_id: requestId
-      });
-    }
-    if (team.status !== "recruiting") {
-      return res.status(400).json({
-        error: "Cette \xE9quipe n'est plus ouverte au recrutement",
-        request_id: requestId
-      });
-    }
-    const user = req.user;
-    const currentMembers = team.members || [];
-    const isAlreadyMember = currentMembers.some((member) => member.user_id === user_id);
-    if (isAlreadyMember) {
-      return res.status(400).json({
-        error: "Vous \xEAtes d\xE9j\xE0 membre de cette \xE9quipe",
-        request_id: requestId
-      });
-    }
-    if (team.max_members && currentMembers.length >= team.max_members) {
-      return res.status(400).json({
-        error: "Cette \xE9quipe est compl\xE8te",
-        request_id: requestId
-      });
-    }
-    const newMember = {
-      user_id,
-      name: req.user.name,
-      role: role || "Membre",
-      experience_years: experience_years || 1,
-      rating: parseFloat(req.user.rating_mean || "4.0"),
-      joined_at: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    const updatedMembers = [...currentMembers, newMember];
-    const [updatedTeam] = await db.update(openTeams).set({
-      members: updatedMembers,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq8(openTeams.id, teamId)).returning();
-    console.log(JSON.stringify({
-      level: "info",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "user_joined_open_team",
-      team_id: teamId,
-      user_id,
-      new_member_count: updatedMembers.length
-    }));
-    res.json({
-      success: true,
-      message: "Vous avez rejoint l'\xE9quipe avec succ\xE8s",
-      team: updatedTeam,
-      new_member: newMember,
-      request_id: requestId
-    });
-  } catch (error) {
-    console.error(JSON.stringify({
-      level: "error",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      request_id: requestId,
-      action: "join_open_team_error",
-      error: error instanceof Error ? error.message : "Unknown error"
-    }));
-    res.status(500).json({
-      error: "Erreur serveur",
-      request_id: requestId
-    });
-  }
-}));
-router13.put("/:id", requireAuth, asyncHandler2(async (req, res) => {
-  const teamId = parseInt(req.params.id);
-  if (isNaN(teamId)) {
-    return res.status(400).json({
-      error: "ID d'\xE9quipe invalide"
-    });
-  }
-  try {
-    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
-    if (!team) {
-      return res.status(404).json({
-        error: "\xC9quipe introuvable"
-      });
-    }
-    if (team.creator_id !== req.user.id) {
-      return res.status(403).json({
-        error: "Seul le cr\xE9ateur peut modifier cette \xE9quipe"
-      });
-    }
-    const allowedUpdates = {
-      name: req.body.name,
-      description: req.body.description,
-      status: req.body.status,
-      visibility: req.body.visibility,
-      auto_accept: req.body.auto_accept,
-      max_members: req.body.max_members,
-      required_roles: req.body.required_roles,
-      updated_at: /* @__PURE__ */ new Date()
-    };
-    const updates = Object.fromEntries(
-      Object.entries(allowedUpdates).filter(([_, value]) => value !== void 0)
-    );
-    const [updatedTeam] = await db.update(openTeams).set(updates).where(eq8(openTeams.id, teamId)).returning();
-    res.json({
-      success: true,
-      team: updatedTeam
-    });
-  } catch (error) {
-    console.error("Erreur update open team:", error);
-    res.status(500).json({
-      error: "Erreur serveur"
-    });
-  }
-}));
-router13.delete("/:id", requireAuth, asyncHandler2(async (req, res) => {
-  const teamId = parseInt(req.params.id);
-  if (isNaN(teamId)) {
-    return res.status(400).json({
-      error: "ID d'\xE9quipe invalide"
-    });
-  }
-  try {
-    const [team] = await db.select().from(openTeams).where(eq8(openTeams.id, teamId));
-    if (!team) {
-      return res.status(404).json({
-        error: "\xC9quipe introuvable"
-      });
-    }
-    if (team.creator_id !== req.user.id) {
-      return res.status(403).json({
-        error: "Seul le cr\xE9ateur peut supprimer cette \xE9quipe"
-      });
-    }
-    await db.delete(openTeams).where(eq8(openTeams.id, teamId));
-    res.json({
-      success: true,
-      message: "\xC9quipe supprim\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    console.error("Erreur delete open team:", error);
-    res.status(500).json({
-      error: "Erreur serveur"
-    });
-  }
-}));
-var open_teams_default = router13;
-
-// server/routes/bids.ts
-init_database();
-init_schema();
-import { Router as Router10 } from "express";
-import { eq as eq9, and as and4, desc as desc4 } from "drizzle-orm";
-import { z as z6 } from "zod";
-var router14 = Router10();
-var createBidSchema = z6.object({
-  mission_id: z6.number().int().positive(),
-  amount: z6.string().min(1),
-  // Amount as string to match schema
-  timeline_days: z6.number().int().min(1).optional(),
-  message: z6.string().optional(),
-  bid_type: z6.enum(["individual", "team", "open_team"]).default("individual"),
-  team_composition: z6.any().optional(),
-  team_lead_id: z6.number().int().positive().optional(),
-  open_team_id: z6.number().int().positive().optional()
-});
-var updateBidSchema = z6.object({
-  amount: z6.string().min(1).optional(),
-  timeline_days: z6.number().int().min(1).optional(),
-  message: z6.string().optional(),
-  status: z6.enum(["pending", "accepted", "rejected", "withdrawn"]).optional(),
-  team_composition: z6.any().optional()
-});
-router14.post("/", requireAuth, async (req, res) => {
-  try {
-    console.log("\u{1F3AF} POST /api/bids - Nouvelle candidature:", {
-      userId: req.user?.id,
-      missionId: req.body.mission_id,
-      bidType: req.body.bid_type
-    });
-    const validatedData = createBidSchema.parse(req.body);
-    const [mission] = await db.select().from(missions).where(eq9(missions.id, validatedData.mission_id)).limit(1);
-    if (!mission) {
-      return res.status(404).json({
-        error: "Mission not found",
-        message: "La mission sp\xE9cifi\xE9e n'existe pas"
-      });
-    }
-    if (mission.status !== "open") {
-      return res.status(400).json({
-        error: "Mission not open",
-        message: "Cette mission n'accepte plus de candidatures"
-      });
-    }
-    const [existingBid] = await db.select().from(bids).where(
-      and4(
-        eq9(bids.mission_id, validatedData.mission_id),
-        eq9(bids.provider_id, req.user.id)
-      )
-    ).limit(1);
-    if (existingBid) {
-      return res.status(409).json({
-        error: "Bid already exists",
-        message: "Vous avez d\xE9j\xE0 soumis une candidature pour cette mission"
-      });
-    }
-    const [newBid] = await db.insert(bids).values({
-      mission_id: validatedData.mission_id,
-      provider_id: req.user.id,
-      amount: validatedData.amount,
-      timeline_days: validatedData.timeline_days,
-      message: validatedData.message,
-      bid_type: validatedData.bid_type,
-      team_composition: validatedData.team_composition,
-      team_lead_id: validatedData.team_lead_id,
-      open_team_id: validatedData.open_team_id,
-      status: "pending"
-    }).returning();
-    console.log("\u2705 Candidature cr\xE9\xE9e:", { bidId: newBid.id, amount: newBid.amount });
-    res.status(201).json({
-      ok: true,
-      bid: newBid,
-      message: "Candidature cr\xE9\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    console.error("\u274C Erreur cr\xE9ation candidature:", error);
-    if (error instanceof z6.ZodError) {
-      return res.status(400).json({
-        error: "Validation error",
-        message: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Erreur lors de la cr\xE9ation de la candidature"
-    });
-  }
-});
-router14.get("/", optionalAuth, async (req, res) => {
-  try {
-    const { mission_id, provider_id, status, bid_type } = req.query;
-    console.log("\u{1F4CB} GET /api/bids - Recherche candidatures:", {
-      mission_id,
-      provider_id,
-      status,
-      userId: req.user?.id
-    });
-    let query = db.select({
-      id: bids.id,
-      mission_id: bids.mission_id,
-      provider_id: bids.provider_id,
-      amount: bids.amount,
-      timeline_days: bids.timeline_days,
-      message: bids.message,
-      status: bids.status,
-      bid_type: bids.bid_type,
-      team_composition: bids.team_composition,
-      team_lead_id: bids.team_lead_id,
-      open_team_id: bids.open_team_id,
-      created_at: bids.created_at,
-      updated_at: bids.updated_at,
-      // Informations du prestataire
-      provider_name: users.name,
-      provider_rating: users.rating_mean
-    }).from(bids).leftJoin(users, eq9(bids.provider_id, users.id)).orderBy(desc4(bids.created_at));
-    const conditions = [];
-    if (mission_id) {
-      const missionIdNum = parseInt(mission_id);
-      if (!isNaN(missionIdNum)) {
-        conditions.push(eq9(bids.mission_id, missionIdNum));
-      }
-    }
-    if (provider_id) {
-      const providerIdNum = parseInt(provider_id);
-      if (!isNaN(providerIdNum)) {
-        conditions.push(eq9(bids.provider_id, providerIdNum));
-      }
-    }
-    if (status && typeof status === "string") {
-      conditions.push(eq9(bids.status, status));
-    }
-    if (bid_type && typeof bid_type === "string") {
-      conditions.push(eq9(bids.bid_type, bid_type));
-    }
-    if (conditions.length > 0) {
-      query = query.where(and4(...conditions));
-    }
-    const results = await query;
-    console.log(`\u2705 ${results.length} candidatures trouv\xE9es`);
-    res.json({
-      ok: true,
-      bids: results,
-      count: results.length
-    });
-  } catch (error) {
-    console.error("\u274C Erreur r\xE9cup\xE9ration candidatures:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Erreur lors de la r\xE9cup\xE9ration des candidatures"
-    });
-  }
-});
-router14.get("/:id", optionalAuth, async (req, res) => {
-  try {
-    const bidId = parseInt(req.params.id);
-    if (isNaN(bidId)) {
-      return res.status(400).json({
-        error: "Invalid bid ID",
-        message: "ID de candidature invalide"
-      });
-    }
-    console.log("\u{1F50D} GET /api/bids/:id - Recherche candidature:", { bidId });
-    const [bid] = await db.select({
-      id: bids.id,
-      mission_id: bids.mission_id,
-      provider_id: bids.provider_id,
-      amount: bids.amount,
-      timeline_days: bids.timeline_days,
-      message: bids.message,
-      status: bids.status,
-      bid_type: bids.bid_type,
-      team_composition: bids.team_composition,
-      team_lead_id: bids.team_lead_id,
-      open_team_id: bids.open_team_id,
-      created_at: bids.created_at,
-      updated_at: bids.updated_at,
-      // Informations du prestataire
-      provider_name: users.name,
-      provider_rating: users.rating_mean
-    }).from(bids).leftJoin(users, eq9(bids.provider_id, users.id)).where(eq9(bids.id, bidId)).limit(1);
-    if (!bid) {
-      return res.status(404).json({
-        error: "Bid not found",
-        message: "Candidature non trouv\xE9e"
-      });
-    }
-    console.log("\u2705 Candidature trouv\xE9e:", { bidId: bid.id, amount: bid.amount });
-    res.json({
-      ok: true,
-      bid
-    });
-  } catch (error) {
-    console.error("\u274C Erreur r\xE9cup\xE9ration candidature:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Erreur lors de la r\xE9cup\xE9ration de la candidature"
-    });
-  }
-});
-router14.put("/:id", requireAuth, async (req, res) => {
-  try {
-    const bidId = parseInt(req.params.id);
-    if (isNaN(bidId)) {
-      return res.status(400).json({
-        error: "Invalid bid ID",
-        message: "ID de candidature invalide"
-      });
-    }
-    console.log("\u270F\uFE0F PUT /api/bids/:id - Mise \xE0 jour candidature:", {
-      bidId,
-      userId: req.user?.id
-    });
-    const validatedData = updateBidSchema.parse(req.body);
-    const [existingBid] = await db.select().from(bids).where(eq9(bids.id, bidId)).limit(1);
-    if (!existingBid) {
-      return res.status(404).json({
-        error: "Bid not found",
-        message: "Candidature non trouv\xE9e"
-      });
-    }
-    const canEdit = existingBid.provider_id === req.user.id || existingBid.team_lead_id === req.user.id;
-    if (!canEdit) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: "Vous n'\xEAtes pas autoris\xE9 \xE0 modifier cette candidature"
-      });
-    }
-    if (existingBid.status === "accepted" || existingBid.status === "rejected") {
-      return res.status(400).json({
-        error: "Cannot modify bid",
-        message: "Cette candidature ne peut plus \xEAtre modifi\xE9e"
-      });
-    }
-    const [updatedBid] = await db.update(bids).set({
-      ...validatedData,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq9(bids.id, bidId)).returning();
-    console.log("\u2705 Candidature mise \xE0 jour:", { bidId: updatedBid.id });
-    res.json({
-      ok: true,
-      bid: updatedBid,
-      message: "Candidature mise \xE0 jour avec succ\xE8s"
-    });
-  } catch (error) {
-    console.error("\u274C Erreur mise \xE0 jour candidature:", error);
-    if (error instanceof z6.ZodError) {
-      return res.status(400).json({
-        error: "Validation error",
-        message: "Donn\xE9es invalides",
-        details: error.errors
-      });
-    }
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Erreur lors de la mise \xE0 jour de la candidature"
-    });
-  }
-});
-router14.delete("/:id", requireAuth, async (req, res) => {
-  try {
-    const bidId = parseInt(req.params.id);
-    if (isNaN(bidId)) {
-      return res.status(400).json({
-        error: "Invalid bid ID",
-        message: "ID de candidature invalide"
-      });
-    }
-    console.log("\u{1F5D1}\uFE0F DELETE /api/bids/:id - Suppression candidature:", {
-      bidId,
-      userId: req.user?.id
-    });
-    const [existingBid] = await db.select().from(bids).where(eq9(bids.id, bidId)).limit(1);
-    if (!existingBid) {
-      return res.status(404).json({
-        error: "Bid not found",
-        message: "Candidature non trouv\xE9e"
-      });
-    }
-    const canDelete = existingBid.provider_id === req.user.id || existingBid.team_lead_id === req.user.id;
-    if (!canDelete) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: "Vous n'\xEAtes pas autoris\xE9 \xE0 supprimer cette candidature"
-      });
-    }
-    if (existingBid.status === "accepted") {
-      return res.status(400).json({
-        error: "Cannot delete accepted bid",
-        message: "Une candidature accept\xE9e ne peut pas \xEAtre supprim\xE9e"
-      });
-    }
-    const [updatedBid] = await db.update(bids).set({
-      status: "withdrawn",
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq9(bids.id, bidId)).returning();
-    console.log("\u2705 Candidature retir\xE9e:", { bidId: updatedBid.id });
-    res.json({
-      ok: true,
-      message: "Candidature retir\xE9e avec succ\xE8s"
-    });
-  } catch (error) {
-    console.error("\u274C Erreur suppression candidature:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Erreur lors de la suppression de la candidature"
-    });
-  }
-});
-var bids_default = router14;
+var team_routes_default = router17;
 
 // server/middleware/ai-rate-limit.ts
 import rateLimit from "express-rate-limit";
@@ -5853,7 +6745,7 @@ var monitoringRateLimit = rateLimit({
 
 // server/index.ts
 var __filename = fileURLToPath(import.meta.url);
-var __dirname = path3.dirname(__filename);
+var __dirname = path4.dirname(__filename);
 validateEnvironment();
 var app = express6();
 var port = parseInt(process.env.PORT || "5000", 10);
@@ -5888,8 +6780,8 @@ async function waitForPortFree(port2, maxWaitMs = 1e4) {
 }
 async function cleanupPreviousProcess() {
   try {
-    if (fs2.existsSync(PID_FILE)) {
-      const pidString = fs2.readFileSync(PID_FILE, "utf8").trim();
+    if (fs3.existsSync(PID_FILE)) {
+      const pidString = fs3.readFileSync(PID_FILE, "utf8").trim();
       const pid = parseInt(pidString, 10);
       if (!isNaN(pid)) {
         try {
@@ -5902,7 +6794,7 @@ async function cleanupPreviousProcess() {
           console.log("\u{1F9F9} Removing stale PID file");
         }
       }
-      fs2.unlinkSync(PID_FILE);
+      fs3.unlinkSync(PID_FILE);
     }
   } catch (error) {
     console.log("\u{1F50D} No previous process to cleanup");
@@ -5932,7 +6824,7 @@ async function cleanupPreviousProcess() {
 }
 function writePidFile() {
   try {
-    fs2.writeFileSync(PID_FILE, process.pid.toString());
+    fs3.writeFileSync(PID_FILE, process.pid.toString());
     console.log(`\u{1F4DD} PID file created: ${PID_FILE} (${process.pid})`);
   } catch (error) {
     console.warn("\u26A0\uFE0F Could not write PID file:", error);
@@ -5940,8 +6832,8 @@ function writePidFile() {
 }
 function removePidFile() {
   try {
-    if (fs2.existsSync(PID_FILE)) {
-      fs2.unlinkSync(PID_FILE);
+    if (fs3.existsSync(PID_FILE)) {
+      fs3.unlinkSync(PID_FILE);
       console.log("\u{1F9F9} PID file removed");
     }
   } catch (error) {
