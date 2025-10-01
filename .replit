@@ -12,10 +12,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 40219
-externalPort = 3003
-
-[[ports]]
 localPort = 42463
 externalPort = 5173
 
@@ -72,11 +68,8 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start"
+args = "npm run dev"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "SwipDEAL Production"
