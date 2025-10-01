@@ -290,12 +290,6 @@ import aiLearningRoutes from './routes/ai-learning-routes.js';
 import teamRoutes from './routes/team-routes.js';
 import openTeamsRoutes from './routes/open-teams.js';
 import bidsRoutes from './routes/bids.js';
-import reviewsRouter from './routes/reviews';
-import contractsRouter from './routes/contracts';
-import filesRouter from './routes/files';
-import messagingRouter from './routes/messaging';
-import notificationsRouter from './routes/notifications';
-import { setupWebSocket } from './websocket';
 
 // Import rate limiting middleware
 import { aiRateLimit, strictAiRateLimit, monitoringRateLimit } from './middleware/ai-rate-limit.js';
@@ -369,14 +363,6 @@ app.use('/api/bids', (req, res, next) => {
   });
   next();
 }, bidsRoutes);
-
-// Register reviews, contracts, and files routes
-app.use('/api/reviews', reviewsRouter);
-app.use('/api/contracts', contractsRouter);
-app.use('/api/files', filesRouter);
-app.use('/api/conversations', messagingRouter);
-app.use('/api/notifications', notificationsRouter);
-
 
 // Performance stats endpoint
 app.get('/api/performance', (req, res) => {
@@ -554,10 +540,6 @@ async function startServerWithRetry(): Promise<void> {
           } catch (importError) {
             console.error('❌ Failed to import modules:', importError);
           }
-
-          // Configurer WebSocket
-          setupWebSocket(server);
-
           resolve();
         });
 
