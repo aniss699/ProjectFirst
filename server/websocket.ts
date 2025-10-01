@@ -4,7 +4,7 @@ import { IncomingMessage } from 'http';
 import { db } from './database.js';
 import { conversations, messages, notifications } from '../shared/schema.js';
 import { eq, and, or } from 'drizzle-orm';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 
 interface ClientConnection {
   ws: WebSocket;
