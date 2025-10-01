@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,7 @@ interface AppearanceSettings {
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
     newMissions: true,
@@ -95,15 +96,57 @@ export default function Settings() {
     showAnimations: true
   });
 
+  // Charger les paramètres au montage
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!user) return;
+
+      try {
+        const response = await fetch('/api/user-settings', {
+          headers: {
+            'x-user-id': user.id.toString()
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.notifications) setNotificationSettings(data.notifications);
+          if (data.privacy) setPrivacySettings(data.privacy);
+          if (data.appearance) setAppearanceSettings(data.appearance);
+        }
+      } catch (error) {
+        console.error('Erreur chargement paramètres:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [user]);
+
   const handleSaveNotifications = async () => {
     try {
-      // API call pour sauvegarder les paramètres de notifications
-      // await saveNotificationSettings(notificationSettings);
-      
-      toast({
-        title: "Paramètres sauvegardés",
-        description: "Vos préférences de notifications ont été mises à jour.",
+      const response = await fetch('/api/user-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user!.id.toString()
+        },
+        body: JSON.stringify({
+          notifications: notificationSettings,
+          privacy: privacySettings,
+          appearance: appearanceSettings
+        })
       });
+
+      if (response.ok) {
+        toast({
+          title: "Paramètres sauvegardés",
+          description: "Vos préférences de notifications ont été mises à jour.",
+        });
+      } else {
+        throw new Error('Erreur réseau');
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -115,13 +158,27 @@ export default function Settings() {
 
   const handleSavePrivacy = async () => {
     try {
-      // API call pour sauvegarder les paramètres de confidentialité
-      // await savePrivacySettings(privacySettings);
-      
-      toast({
-        title: "Paramètres sauvegardés",
-        description: "Vos préférences de confidentialité ont été mises à jour.",
+      const response = await fetch('/api/user-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user!.id.toString()
+        },
+        body: JSON.stringify({
+          notifications: notificationSettings,
+          privacy: privacySettings,
+          appearance: appearanceSettings
+        })
       });
+
+      if (response.ok) {
+        toast({
+          title: "Paramètres sauvegardés",
+          description: "Vos préférences de confidentialité ont été mises à jour.",
+        });
+      } else {
+        throw new Error('Erreur réseau');
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -133,13 +190,27 @@ export default function Settings() {
 
   const handleSaveAppearance = async () => {
     try {
-      // API call pour sauvegarder les paramètres d'apparence
-      // await saveAppearanceSettings(appearanceSettings);
-      
-      toast({
-        title: "Paramètres sauvegardés",
-        description: "Vos préférences d'apparence ont été mises à jour.",
+      const response = await fetch('/api/user-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user!.id.toString()
+        },
+        body: JSON.stringify({
+          notifications: notificationSettings,
+          privacy: privacySettings,
+          appearance: appearanceSettings
+        })
       });
+
+      if (response.ok) {
+        toast({
+          title: "Paramètres sauvegardés",
+          description: "Vos préférences d'apparence ont été mises à jour.",
+        });
+      } else {
+        throw new Error('Erreur réseau');
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -156,6 +227,19 @@ export default function Settings() {
           <CardContent className="p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Connexion requise</h2>
             <p className="text-gray-600">Connectez-vous pour accéder aux paramètres</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Chargement...</h2>
+            <p className="text-gray-600">Récupération de vos paramètres</p>
           </CardContent>
         </Card>
       </div>

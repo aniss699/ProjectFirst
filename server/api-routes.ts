@@ -15,6 +15,7 @@ import contractsRoutes from './routes/contracts.js';
 import filesRoutes from './routes/files.js';
 import messagingRoutes from './routes/messaging.js'; // Import messaging routes
 import notificationsRoutes from './routes/notifications.js'; // Import notifications routes
+import userSettingsRoutes from './routes/user-settings.js'; // Import user settings routes
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
@@ -220,5 +221,6 @@ router.get('/ai-analysis-demo', async (req, res) => {
 // Add new routes for messaging and notifications
 router.use('/', messagingRoutes);
 router.use('/', notificationsRoutes);
+router.use('/', userSettingsRoutes);
 
 export default router;

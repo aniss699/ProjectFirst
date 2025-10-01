@@ -428,6 +428,23 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   })
 }));
 
+export const userSettings = pgTable('user_settings', {
+  id: serial('id').primaryKey(),
+  user_id: integer('user_id').references(() => users.id).notNull().unique(),
+  notifications: jsonb('notifications'),
+  privacy: jsonb('privacy'),
+  appearance: jsonb('appearance'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSettings.user_id],
+    references: [users.id]
+  })
+}));
+
 // Relations pour fichiers
 export const filesRelations = relations(files, ({ one }) => ({
   user: one(users, {
