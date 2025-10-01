@@ -14,6 +14,10 @@ import reviewsRoutes from './routes/reviews.js';
 import contractsRoutes from './routes/contracts.js';
 import filesRoutes from './routes/files.js';
 
+// Import new routes for Phase 3
+import messagingRouter from './routes/messaging.js';
+import notificationsRouter from './routes/notifications.js';
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
 
@@ -214,5 +218,12 @@ router.get('/ai-analysis-demo', async (req, res) => {
   router.use('/reviews', authMiddleware, reviewsRoutes);
   router.use('/contracts', authMiddleware, contractsRoutes);
   router.use('/files', authMiddleware, filesRoutes);
+
+  // Mount new routes for Phase 3
+  console.log('💬 Registering messaging routes...');
+  router.use('/conversations', messagingRouter); // Using router instead of app
+
+  console.log('🔔 Registering notifications routes...');
+  router.use('/notifications', notificationsRouter); // Using router instead of app
 
 export default router;
