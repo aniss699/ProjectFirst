@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,7 +60,7 @@ interface AvailableSlot {
 }
 
 export default function CollectiveCoursesPage() {
-  const [mode, setMode] = useState<'create' | 'browse'>('browse');
+  const [mode, setMode] = useState<'create' | 'browse' | 'exchange'>('browse');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
@@ -138,7 +137,7 @@ export default function CollectiveCoursesPage() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateStr = tomorrow.toISOString().split('T')[0];
-    
+
     setTimeSlots(prev => [...prev, {
       date: dateStr,
       time: '10:00',
@@ -163,14 +162,14 @@ export default function CollectiveCoursesPage() {
         ...data,
         timeSlots
       };
-      
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       toast({
         title: "Cours collectif créé !",
         description: "Votre cours est maintenant visible par tous les élèves intéressés.",
       });
-      
+
       form.reset();
       setTimeSlots([]);
       setMode('browse');
@@ -232,6 +231,14 @@ export default function CollectiveCoursesPage() {
               <User className="w-4 h-4 mr-2" />
               Proposer un cours
             </Button>
+            <Button
+              variant={mode === 'exchange' ? 'default' : 'ghost'}
+              onClick={() => setMode('exchange')}
+              className="rounded-md"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Échange Lieu vs Cours
+            </Button>
           </div>
         </div>
 
@@ -283,7 +290,7 @@ export default function CollectiveCoursesPage() {
                           </div>
                         </div>
                         <p className="text-gray-700 mb-4">{course.description}</p>
-                        
+
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                           <div className="text-center">
                             <div className="font-semibold text-emerald-600">{course.pricePerStudent}€</div>
@@ -311,7 +318,7 @@ export default function CollectiveCoursesPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex justify-between items-center">
                       <Badge 
                         variant={course.studentsEnrolled < course.maxStudents ? "default" : "secondary"}
@@ -319,7 +326,7 @@ export default function CollectiveCoursesPage() {
                       >
                         {course.studentsEnrolled < course.maxStudents ? "Places disponibles" : "Complet"}
                       </Badge>
-                      
+
                       <Button 
                         onClick={() => enrollInCourse(course.id)}
                         disabled={course.studentsEnrolled >= course.maxStudents}
@@ -334,7 +341,7 @@ export default function CollectiveCoursesPage() {
               ))}
             </div>
           </div>
-        ) : (
+        ) : mode === 'create' ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -606,6 +613,281 @@ export default function CollectiveCoursesPage() {
               </Form>
             </CardContent>
           </Card>
+        ) : mode === 'exchange' ? (
+          <div className="space-y-6">
+            {/* Formulaire d'échange lieu contre cours */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MapPin className="w-5 h-5 text-emerald-600" />
+                  <span>Proposer un lieu en échange d'un cours gratuit</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-lg border border-emerald-200">
+                    <h3 className="font-semibold text-emerald-800 mb-2">💡 Comment ça marche ?</h3>
+                    <p className="text-sm text-emerald-700">
+                      Vous mettez à disposition un lieu pour organiser un cours collectif, et en échange vous participez gratuitement au cours !
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Domaine souhaité
+                      </label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Cours recherché" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subjects.map(subject => (
+                            <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Niveau souhaité
+                      </label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Votre niveau" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {levels.map(level => (
+                            <SelectItem key={level} value={level}>{level}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Description du cours recherché
+                    </label>
+                    <Textarea 
+                      placeholder="Ex: Cours de français conversation, perfectionnement écrit..."
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold text-gray-800 mb-4">📍 Votre lieu</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Type de lieu
+                        </label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="salon">Salon/séjour</SelectItem>
+                            <SelectItem value="bureau">Bureau/espace de travail</SelectItem>
+                            <SelectItem value="salle_reunion">Salle de réunion</SelectItem>
+                            <SelectItem value="jardin">Jardin/terrasse</SelectItem>
+                            <SelectItem value="local_asso">Local associatif</SelectItem>
+                            <SelectItem value="autre">Autre</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Capacité max
+                        </label>
+                        <Input 
+                          type="number" 
+                          min={3}
+                          max={15}
+                          placeholder="6"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Adresse du lieu
+                      </label>
+                      <Input 
+                        placeholder="Adresse complète du lieu de cours"
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Équipements disponibles
+                      </label>
+                      <Textarea 
+                        placeholder="Ex: WiFi, tableau blanc, projecteur, cuisine accessible..."
+                        className="min-h-[60px]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Disponibilités
+                        </label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Quand êtes-vous disponible ?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekend">Week-end uniquement</SelectItem>
+                            <SelectItem value="soir_semaine">Soirs de semaine</SelectItem>
+                            <SelectItem value="mercredi">Mercredi</SelectItem>
+                            <SelectItem value="flexible">Très flexible</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Durée max souhaitée
+                        </label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Durée de cours" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="60">1 heure</SelectItem>
+                            <SelectItem value="90">1h30</SelectItem>
+                            <SelectItem value="120">2 heures</SelectItem>
+                            <SelectItem value="180">3 heures</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-2">✨ Vos avantages</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Cours entièrement gratuit pour vous</li>
+                      <li>• Apprentissage dans un cadre familier</li>
+                      <li>• Rencontre avec d'autres passionnés près de chez vous</li>
+                      <li>• Professeurs qualifiés qui viennent à vous</li>
+                    </ul>
+                  </div>
+
+                  <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 py-3 text-lg font-semibold">
+                    <MapPin className="w-5 h-5 mr-2" />
+                    Proposer mon lieu en échange
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Offres d'échange existantes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>🏠 Offres d'échange en cours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Exemple d'offre */}
+                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">Cours d'anglais conversationnel</h3>
+                        <p className="text-gray-600 text-sm">Recherche prof pour groupe de 4-6 personnes • Niveau intermédiaire</p>
+                      </div>
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        Lieu disponible
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Lieu:</span>
+                        <div className="font-medium">Salon 25m²</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Capacité:</span>
+                        <div className="font-medium">6 personnes</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Zone:</span>
+                        <div className="font-medium">Paris 11ème</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Équipements:</span>
+                        <div className="font-medium">WiFi, tableau</div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        Proposé par <span className="font-medium">Marie L.</span> • il y a 2 jours
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          Voir détails
+                        </Button>
+                        <Button className="bg-emerald-500 hover:bg-emerald-600" size="sm">
+                          Proposer un cours
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Autre exemple */}
+                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">Cours de cuisine italienne</h3>
+                        <p className="text-gray-600 text-sm">Recherche chef pour cours pratique • Tous niveaux</p>
+                      </div>
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        Cuisine équipée
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Lieu:</span>
+                        <div className="font-medium">Cuisine ouverte</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Capacité:</span>
+                        <div className="font-medium">4 personnes</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Zone:</span>
+                        <div className="font-medium">Lyon 2ème</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Équipements:</span>
+                        <div className="font-medium">Four, plaques, ustensiles</div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        Proposé par <span className="font-medium">Thomas B.</span> • il y a 1 jour
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          Voir détails
+                        </Button>
+                        <Button className="bg-emerald-500 hover:bg-emerald-600" size="sm">
+                          Proposer un cours
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>
