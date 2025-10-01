@@ -237,7 +237,7 @@ export default function CollectiveCoursesPage() {
               className="rounded-md"
             >
               <MapPin className="w-4 h-4 mr-2" />
-              Échange Lieu vs Cours
+              J'ai un lieu
             </Button>
           </div>
         </div>
@@ -620,16 +620,32 @@ export default function CollectiveCoursesPage() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <MapPin className="w-5 h-5 text-emerald-600" />
-                  <span>Proposer un lieu en échange d'un cours gratuit</span>
+                  <span>J'ai un lieu - Cours gratuit en échange</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-lg border border-emerald-200">
-                    <h3 className="font-semibold text-emerald-800 mb-2">💡 Comment ça marche ?</h3>
-                    <p className="text-sm text-emerald-700">
-                      Vous mettez à disposition un lieu pour organiser un cours collectif, et en échange vous participez gratuitement au cours !
-                    </p>
+                    <h3 className="font-semibold text-emerald-800 mb-3">💡 Le concept : Lieu contre Cours</h3>
+                    <div className="text-sm text-emerald-700 space-y-2">
+                      <p className="font-medium">Vous cherchez un cours mais vous n'avez pas le budget ?</p>
+                      <p>
+                        <strong>Votre solution :</strong> Mettez votre salon, bureau ou jardin à disposition pour organiser un cours collectif ! 
+                        En échange, vous participez <span className="font-semibold text-emerald-800">entièrement gratuitement</span> au cours que vous souhaitez.
+                      </p>
+                      <div className="flex items-start space-x-2 mt-3">
+                        <span className="text-emerald-600">🏠</span>
+                        <span>Vous : un lieu confortable pour 4-8 personnes</span>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <span className="text-emerald-600">👨‍🏫</span>
+                        <span>Professeur : vient chez vous donner le cours</span>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <span className="text-emerald-600">🎓</span>
+                        <span>Résultat : cours gratuit + convivialité à domicile</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
