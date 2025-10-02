@@ -38,7 +38,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       console.log('🔄 Chargement feed avec mappers...', { reset, cursor });
       
       // Utiliser le service API centralisé avec mappers
-      const feedData = await dataApi.getFeed(cursor, 10);
+      const feedData = await dataApi.feed.getFeed(cursor, 10);
       
       set({
         items: reset ? feedData.items : [...state.items, ...feedData.items],
@@ -51,10 +51,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       console.log('✅ Feed normalisé chargé:', feedData.items.length, 'annonces');
 
     } catch (error) {
-      console.error('Erreur loadFeed:', error);
+      console.error('❌ Erreur loadFeed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur de connexion au serveur';
       set({ 
         loading: false, 
-        error: error instanceof Error ? error.message : 'Erreur inconnue'
+        error: errorMessage
       });
     }
   },

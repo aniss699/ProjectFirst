@@ -322,26 +322,41 @@ export const dataApi = {
    * Récupère le feed d'annonces
    */
   async getFeed(cursor?: string, limit = 10): Promise<{ items: AnnouncementView[]; hasMore: boolean }> {
-    const queryParams = new URLSearchParams({ limit: limit.toString() });
-    if (cursor) queryParams.append('cursor', cursor);
+    try {
+      const queryParams = new URLSearchParams({ limit: limit.toString() });
+      if (cursor) queryParams.append('cursor', cursor);
 
-    const response = await fetch(`/api/feed?${queryParams}`);
+      const response = await fetch(`/api/feed?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        signal: AbortSignal.timeout(10000)
+      });
 
-    if (!response.ok) {
-      throw new Error('Erreur lors du chargement du feed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur API feed:', response.status, errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText || 'Impossible de charger le feed'}`);
+      }
+
+      const data = await response.json();
+      const rawItems = data.items || [];
+
+      // Appliquer le mapper à chaque annonce
+      const normalizedItems = rawItems.map((item: any) => mapToAnnouncementView(item));
+
+      console.log('✅ Feed normalisé:', normalizedItems.length, 'annonces');
+      return {
+        items: normalizedItems,
+        hasMore: data.hasMore ?? normalizedItems.length === limit
+      };
+    } catch (error) {
+      console.error('❌ Erreur réseau feed:', error);
+      throw new Error(error instanceof Error ? error.message : 'Erreur de connexion au feed');
     }
-
-    const data = await response.json();
-    const rawItems = data.items || [];
-
-    // Appliquer le mapper à chaque annonce
-    const normalizedItems = rawItems.map((item: any) => mapToAnnouncementView(item));
-
-    console.log('✅ Feed normalisé:', normalizedItems.length, 'annonces');
-    return {
-      items: normalizedItems,
-      hasMore: normalizedItems.length === limit
-    };
   },
 
   /**

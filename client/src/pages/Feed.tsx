@@ -26,12 +26,21 @@ const Feed: React.FC = () => {
   const { addToFavorites } = useFavoritesStore();
 
   useEffect(() => {
+    let mounted = true;
     const initFeed = async () => {
-      await loadFeed(true);
-      setInitialLoading(false);
+      try {
+        await loadFeed(true);
+      } catch (err) {
+        console.error('❌ Erreur init feed:', err);
+      } finally {
+        if (mounted) {
+          setInitialLoading(false);
+        }
+      }
     };
     initFeed();
-  }, [loadFeed]);
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     if (currentIndex >= 0 && currentIndex < items.length - 2 && hasMore) {
