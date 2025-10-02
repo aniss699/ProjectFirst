@@ -348,4 +348,5 @@ export const dataApi = {
     console.log('✅ Favoris normalisés:', normalizedFavorites.length);
     return normalizedFavorites;
   }
+  }
 };
