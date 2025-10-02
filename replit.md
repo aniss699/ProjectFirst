@@ -5,6 +5,26 @@ SwipDEAL est une plateforme moderne de mise en relation entre clients et prestat
 
 ## Recent Changes
 
+### 2025-10-02 - Complete Button Inventory & Backend Implementation
+- **Comprehensive Button Audit Completed**: Inventoried all 75+ clickable buttons across the platform
+- **Backend Services Implemented**: Created full backend for special services
+- **New Backend Routes**:
+  - ✅ POST /api/services/flash-deals - Flash Deal creation
+  - ✅ POST /api/services/subscriptions/reverse - Reverse subscription
+  - ✅ POST /api/services/group-requests - Group request creation
+  - ✅ GET /api/services/group-requests/interest - Interest count
+  - ✅ POST /api/services/team-building-projects - Team building
+  - ✅ POST /api/services/ia-human-jobs - IA+Human job creation
+  - ✅ GET /api/services/opportunities/live-slots - Live slots availability
+  - ✅ POST /api/services/opportunities/reserve - Slot reservation
+- **Updated Files**:
+  - Created `server/routes/services-routes.ts` (all services backend)
+  - Updated `client/src/lib/api/services.ts` (switched from simulation to real API)
+  - Updated `server/index.ts` (registered new routes)
+  - Created `INVENTAIRE_BOUTONS.md` (complete documentation)
+- **Status**: ✅ 85% of buttons fully functional, 15% require GEMINI_API_KEY
+- **Documentation**: See INVENTAIRE_BOUTONS.md for complete button inventory
+
 ### 2025-10-01 - GitHub Import and Environment Cleanup
 - **GitHub Import Completed**: Successfully imported and configured project from GitHub
 - **Changes**:
@@ -62,10 +82,17 @@ SwipDEAL est une plateforme moderne de mise en relation entre clients et prestat
 ### Key Features
 - Authentication système avec rôles (CLIENT, PRO, ADMIN)
 - Mission matching avec scoring IA
-- Feed personnalisé d'annonces
+- Feed personnalisé d'annonces (TikTok-style)
 - Système de réputation et badges
 - Analytics avancées
 - Interface de chat intégrée
+- **Special Services** (Newly Implemented):
+  - ⚡ Flash Deals (limited time offers with slots)
+  - 🔄 Reverse Subscriptions (recurring service requests)
+  - 👥 Group Requests (collective purchasing)
+  - 🏗️ Team Building (multi-role projects)
+  - 🤖 IA+Human Jobs (hybrid AI/human tasks)
+  - ⏰ Live Slots (real-time availability booking)
 
 ## User Preferences
 - Code style: TypeScript strict, imports organisés
@@ -98,6 +125,48 @@ SwipDEAL est une plateforme moderne de mise en relation entre clients et prestat
 - ✅ Authentication routes functional
 
 ## Next Steps
-- Monitor database performance with new pg driver
-- Consider adding connection pooling optimizations
-- Implement better error handling for database operations
+
+### High Priority
+- Add GEMINI_API_KEY to activate all AI features (currently limited)
+- Integrate Nominatim API for real geocoding (currently simulated)
+- Complete calendar availability system
+
+### Medium Priority
+- Enhance AI features with user context
+- Improve slot booking system
+- Add E2E automated tests
+
+### Low Priority
+- Performance optimizations
+- User analytics and tracking
+- Advanced AI learning features
+
+## Button Inventory Summary
+- **Total Buttons**: 75+
+- **Fully Functional**: 60+ (85%)
+- **Partially Functional**: 15+ (AI features requiring GEMINI_API_KEY)
+- **Documentation**: See INVENTAIRE_BOUTONS.md for complete details
+
+## API Endpoints
+
+### Core Endpoints
+- `/api/auth/*` - Authentication
+- `/api/missions/*` - Mission management
+- `/api/bids/*` - Bid management
+- `/api/feed/*` - Personalized feed
+- `/api/favorites/*` - User favorites
+
+### Special Services (New)
+- `/api/services/flash-deals` - Flash deals
+- `/api/services/subscriptions/reverse` - Reverse subscriptions
+- `/api/services/group-requests` - Group requests
+- `/api/services/team-building-projects` - Team building
+- `/api/services/ia-human-jobs` - IA+Human jobs
+- `/api/services/opportunities/live-slots` - Live slots
+- `/api/services/opportunities/reserve` - Slot reservation
+
+### AI Features
+- `/api/ai/*` - AI suggestions and analysis
+- `/api/ai/monitoring` - AI metrics and monitoring
+- `/api/ai/diagnostic` - AI diagnostics
+- `/api/ai/learning` - AI learning features
