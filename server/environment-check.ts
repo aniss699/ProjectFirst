@@ -1,21 +1,18 @@
 
 export function validateEnvironment() {
-  const requiredVars = [
-    'DATABASE_URL',
-    'GEMINI_API_KEY'
-  ];
+  // Vérifier DATABASE_URL (critique)
+  if (!process.env.DATABASE_URL) {
+    console.error('❌ DATABASE_URL is required. Please set up Replit PostgreSQL in the Database tab.');
+    process.exit(1);
+  }
 
-  const missing = requiredVars.filter(varName => !process.env[varName]);
+  // Vérifier GEMINI_API_KEY (optionnel pour IA)
+  const optionalVars = ['GEMINI_API_KEY'];
+  const missingOptional = optionalVars.filter(varName => !process.env[varName]);
   
-  if (missing.length > 0) {
-    console.warn('⚠️ Variables d\'environnement manquantes:', missing);
-    console.warn('📝 Ajoutez-les dans l\'onglet Secrets de Replit pour une fonctionnalité complète');
-    
-    // Exit if critical variables are missing
-    if (missing.includes('DATABASE_URL')) {
-      console.error('❌ DATABASE_URL is required');
-      process.exit(1);
-    }
+  if (missingOptional.length > 0) {
+    console.warn('⚠️ Variables optionnelles manquantes:', missingOptional);
+    console.warn('📝 Ajoutez-les dans l\'onglet Secrets de Replit pour activer les fonctionnalités IA');
   }
 
   console.log('✅ Variables d\'environnement validées');
@@ -28,8 +25,8 @@ export function validateEnvironment() {
   // Log de l'environnement (sans révéler les secrets)
   console.log('🔍 Configuration d\'environnement:', {
     NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL ? '✅ Configuré' : '❌ Manquant',
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ Configuré' : '❌ Manquant',
-    PORT: process.env.PORT || 5000
+    DATABASE_URL: '✅ Replit PostgreSQL',
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ Configuré' : '⚠️ Non configuré',
+    PORT: process.env.PORT || 5000cess.env.PORT || 5000
   });
 }

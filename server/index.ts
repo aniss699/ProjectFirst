@@ -142,7 +142,12 @@ function removePidFile(): void {
 }
 
 // Initialize services with Replit PostgreSQL
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error('❌ DATABASE_URL not configured. Please set up Replit PostgreSQL in the Database tab.');
+  process.exit(1);
+}
 
 console.log('🔗 Using Replit PostgreSQL connection');
 

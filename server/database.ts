@@ -5,8 +5,13 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import * as schema from '../shared/schema.js';
 import { users, missions, bids, announcements } from '../shared/schema.js';
 
-// Get database URL from environment
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/swideal';
+// Get database URL from Replit environment
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error('❌ DATABASE_URL not configured. Please set up Replit PostgreSQL in the Database tab.');
+  process.exit(1);
+}
 
 // Create connection pool with error handling
 const pool = new Pool({ 
