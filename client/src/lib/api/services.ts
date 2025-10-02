@@ -190,40 +190,55 @@ export const dataApi = {
    * Récupère toutes les missions du marketplace et les normalise
    */
   async getMissions(): Promise<{ missions: MissionView[]; metadata?: any }> {
-    const response = await fetch('/api/missions', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include'
-    });
+    try {
+      const response = await fetch('/api/missions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Erreur API missions:', response.status, errorText);
-      throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur API missions:', response.status, errorText);
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
 
-    const data = await response.json();
+      const data = await response.json();
 
-    // Normaliser la réponse et appliquer les mappers
-    let missions = [];
-    let metadata = { total: 0 };
+      // Normaliser la réponse et appliquer les mappers
+      let missions = [];
+      let metadata = { total: 0 };
 
-    if (data.missions && Array.isArray(data.missions)) {
-      missions = data.missions;
-      metadata = data.metadata || { total: data.missions.length };
-    } else if (Array.isArray(data)) {
-      missions = data;
-      metadata = { total: data.length };
-    }
+      if (data.missions && Array.isArray(data.missions)) {
+        missions = data.missions;
+        metadata = data.metadata || { total: data.missions.length };
+      } else if (Array.isArray(data)) {
+        missions = data;
+        metadata = { total: data.length };
+      }
 
-    // Appliquer le mapper à chaque mission
-    const normalizedMissions = missions.map(mission => mapToMissionView(mission));
+      // Appliquer le mapper à chaque mission
+      const normalizedMissions = missions.map(mission => mapToMissionView(mission));
 
-    console.log('✅ Missions normalisées avec mappers:', normalizedMissions.length);
-    return { missions: normalizedMissions, metadata };
+      console.log('✅ Missions normalisées avec mappers:', normalizedMissions.length);
+      return { missions: normalizedMissions, metadata };
+    } catch (networkError) {
+        console.error('❌ Erreur réseau détaillée:', networkError);
+
+        // Mieux logger l'erreur
+        const errorMessage = networkError instanceof Error 
+          ? networkError.message 
+          : JSON.stringify(networkError) || 'Erreur de connexion inconnue';
+
+        console.error('Type d\'erreur:', typeof networkError);
+        console.error('Stack:', networkError instanceof Error ? networkError.stack : 'N/A');
+
+        // Re-throw pour forcer le retry au lieu d'utiliser le fallback
+        throw new Error(`Erreur réseau missions: ${errorMessage}`);
+      }
   },
 
   /**

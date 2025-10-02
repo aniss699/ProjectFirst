@@ -320,7 +320,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 router.get('/', asyncHandler(async (req, res) => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2)}`;
   const startTime = Date.now();
-  
+
   console.log(JSON.stringify({
     level: 'info',
     timestamp: new Date().toISOString(),
@@ -328,6 +328,9 @@ router.get('/', asyncHandler(async (req, res) => {
     action: 'get_missions_start',
     user_agent: req.headers['user-agent']
   }));
+  console.log('📋 GET /api/missions - Requête reçue');
+  console.log('📋 Headers:', req.headers);
+  console.log('📋 Query params:', req.query);
 
   try {
     // Phase 3.1 : Requête simple pour éviter les erreurs Drizzle
@@ -390,7 +393,7 @@ router.get('/', asyncHandler(async (req, res) => {
           mission_id: mission.id,
           error: mappingError.message
         }));
-        
+
         // Ajouter une version minimale de la mission en cas d'erreur
         missionsWithBids.push({
           id: mission.id,
@@ -440,7 +443,7 @@ router.get('/', asyncHandler(async (req, res) => {
         has_errors: mappingErrors > 0
       }
     });
-    
+
   } catch (error: any) {
     // Phase 3.5 : Gestion d'erreur robuste avec logs structurés
     console.error(JSON.stringify({
