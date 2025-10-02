@@ -14,10 +14,10 @@ import {
   User,
   Send
 } from 'lucide-react';
-import { Announcement } from '@shared/schema';
+import { AnnouncementView } from '@shared/types';
 
 interface SwipeCardProps {
-  announcement: Announcement;
+  announcement: AnnouncementView;
   onSwipeDown: () => void;
   onSwipeUp: () => void;
   onLike: () => void;
@@ -126,7 +126,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
               )}
             </div>
             <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 shadow-lg">
-              ✨ {Math.round((announcement.quality_score || 0.8) * 100)}%
+              ✨ {Math.round((announcement.qualityScore || 0.8) * 100)}%
             </Badge>
           </div>
 
@@ -150,7 +150,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
                   <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">Budget</span>
                 </div>
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  {formatBudget(announcement.budget_min, announcement.budget_max)}
+                  {formatBudget(announcement.budgetMin, announcement.budgetMax)}
                 </span>
               </div>
 
@@ -182,7 +182,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
                   <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">Client</span>
                 </div>
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  Client #{announcement.user_id}
+                  Client #{announcement.userId}
                 </span>
               </div>
             </div>

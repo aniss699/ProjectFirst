@@ -6,6 +6,8 @@ import { AnnouncementDetailModal } from '@/components/feed/AnnouncementDetailMod
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { AnnouncementView } from '@shared/types';
 
 const Feed: React.FC = () => {
   const { 
@@ -20,8 +22,9 @@ const Feed: React.FC = () => {
   } = useFeedStore();
   
   const [initialLoading, setInitialLoading] = useState(true);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementView | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const { toast } = useToast();
   
   const { addToFavorites } = useFavoritesStore();
 
@@ -53,22 +56,20 @@ const Feed: React.FC = () => {
     loadFeed(true).finally(() => setInitialLoading(false));
   };
 
-  // Loading initial
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <RefreshCw className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-600 dark:text-gray-300">Chargement du feed...</p>
+          <RefreshCw className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-lg text-white">Chargement du feed...</p>
         </div>
       </div>
     );
   }
 
-  // Erreur
   if (error && items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-black p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -83,16 +84,15 @@ const Feed: React.FC = () => {
     );
   }
 
-  // Pas d'annonces
   if (!loading && items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-black p-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📱</span>
           </div>
-          <h2 className="text-xl font-semibold mb-2">Aucune annonce disponible</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+          <h2 className="text-xl font-semibold mb-2 text-white">Aucune annonce disponible</h2>
+          <p className="text-gray-400 mb-4">
             Revenez plus tard pour découvrir de nouvelles opportunités !
           </p>
           <Button onClick={handleRetry}>
@@ -104,16 +104,15 @@ const Feed: React.FC = () => {
     );
   }
 
-  // Annonces terminées
   if (currentIndex >= items.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-black p-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">🎉</span>
           </div>
-          <h2 className="text-xl font-semibold mb-2">Vous avez tout vu !</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+          <h2 className="text-xl font-semibold mb-2 text-white">Vous avez tout vu !</h2>
+          <p className="text-gray-400 mb-4">
             Vous avez parcouru toutes les annonces disponibles.
           </p>
           <Button onClick={handleRetry}>
@@ -127,77 +126,102 @@ const Feed: React.FC = () => {
 
   const currentAnnouncement = items[currentIndex];
 
+  const handleLike = () => {
+    handleAction('save', currentAnnouncement.id);
+    addToFavorites(currentAnnouncement);
+    toast({
+      title: "❤️ Ajouté aux favoris",
+      description: "La mission a été ajoutée à vos favoris"
+    });
+  };
+
+  const handleOffer = () => {
+    setSelectedAnnouncement(currentAnnouncement);
+    setShowDetailModal(true);
+    toast({
+      title: "📝 Faire une offre",
+      description: "Consultez les détails pour faire une offre"
+    });
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: currentAnnouncement.title,
+        text: currentAnnouncement.description,
+        url: window.location.href
+      }).catch(() => {
+        toast({
+          title: "🔗 Lien copié",
+          description: "Le lien a été copié dans votre presse-papiers"
+        });
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "🔗 Lien copié",
+        description: "Le lien a été copié dans votre presse-papiers"
+      });
+    }
+  };
+
+  const handleDetails = () => {
+    setSelectedAnnouncement(currentAnnouncement);
+    setShowDetailModal(true);
+  };
+
+  const handleSwipeUp = () => {
+    handleAction('skip', currentAnnouncement.id);
+  };
+
+  const handleSwipeDown = () => {
+    handleAction('skip', currentAnnouncement.id);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" data-testid="feed-container">
-      {/* Header moderne avec logo et stats */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
+    <div className="h-screen bg-black overflow-hidden" data-testid="feed-container">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-black/50 backdrop-blur-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
-            <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               AppelsPro
             </h1>
           </div>
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+            <span className="text-sm font-medium text-white">
               {currentIndex + 1} / {hasMore ? `${items.length}+` : items.length}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="relative h-screen overflow-hidden pt-20">
-        <div className="absolute inset-0 flex items-start justify-center px-4 pt-2">
+      <div className="relative h-full pt-16">
+        <div className="h-full flex items-center justify-center px-4">
           {currentAnnouncement && (
             <SwipeCard
               key={currentAnnouncement.id}
               announcement={currentAnnouncement}
-              onSwipeLeft={() => handleAction('skip', currentAnnouncement.id)}
-              onSwipeRight={() => {
-                handleAction('save', currentAnnouncement.id);
-                addToFavorites(currentAnnouncement);
-              }}
-              onSwipeUp={() => {
-                setSelectedAnnouncement(currentAnnouncement);
-                setShowDetailModal(true);
-              }}
-              onTap={() => {
-                setSelectedAnnouncement(currentAnnouncement);
-                setShowDetailModal(true);
-              }}
+              onSwipeDown={handleSwipeDown}
+              onSwipeUp={handleSwipeUp}
+              onLike={handleLike}
+              onOffer={handleOffer}
+              onShare={handleShare}
+              onDetails={handleDetails}
             />
           )}
         </div>
         
-        {/* Instructions directement sous la carte */}
-        <div className="absolute top-[480px] left-1/2 transform -translate-x-1/2 z-10">
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg border border-gray-200/50 dark:border-gray-700/50 rounded-full px-4 py-2 shadow-lg">
-            <div className="flex items-center justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 dark:text-red-400 text-sm font-bold">←</span>
-                </div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Pas intéressé</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">👆</span>
-                </div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Cliquer = Détails</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 dark:text-green-400 text-sm font-bold">→</span>
-                </div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Favori</span>
-              </div>
-            </div>
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-full px-6 py-3">
+            <p className="text-sm font-medium text-white text-center">
+              Swipe ↑↓ pour changer • Utilisez les boutons
+            </p>
           </div>
         </div>
         
-        {/* Modal de détails */}
         <AnnouncementDetailModal
           announcement={selectedAnnouncement}
           isOpen={showDetailModal}
