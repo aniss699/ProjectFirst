@@ -23,16 +23,17 @@ router.get('/feed', async (req, res) => {
     const { cursor, limit = '10', userId } = req.query;
     const limitNum = Math.min(parseInt(limit as string), 50);
     
+    console.log('📡 Feed request:', { cursor, limit: limitNum, userId });
+    
     // Récupérer les annonces vues par l'utilisateur (dernières 24h)
     const seenAnnouncements = userId ? await db
       .select({ announcement_id: feedSeen.announcement_id })
       .from(feedSeen)
-      .where(
-        and(
-          eq(feedSeen.user_id, parseInt(userId as string)),
-          // Filtrer les 24 dernières heures
-        )
-      ) : [];
+      .where(eq(feedSeen.user_id, parseInt(userId as string)))
+      .catch(err => {
+        console.warn('⚠️ Feed seen query failed (non-blocking):', err.message);
+        return [];
+      }) : [];
     
     const seenIds = seenAnnouncements.map(s => s.announcement_id);
     
@@ -51,14 +52,18 @@ router.get('/feed', async (req, res) => {
     }
     
     // Récupérer les annonces actives
-    const query = db
+    const rawAnnouncements = await db
       .select()
       .from(announcements)
-      .where(and(...whereConditions));
-    
-    const rawAnnouncements = await query
+      .where(and(...whereConditions))
       .orderBy(desc(announcements.created_at))
-      .limit(limitNum + 5); // +5 pour avoir de la marge pour les sponsorisées
+      .limit(limitNum + 5)
+      .catch(err => {
+        console.error('❌ Database query failed:', err);
+        throw new Error('Database query failed: ' + err.message);
+      });
+    
+    console.log('✅ Raw announcements fetched:', rawAnnouncements.length);
     
     // Initialiser le ranker avec les annonces vues
     const ranker = new FeedRanker(seenIds);
@@ -77,7 +82,11 @@ router.get('/feed', async (req, res) => {
         eq(announcements.sponsored, true),
         eq(announcements.status, 'active')
       ))
-      .limit(3);
+      .limit(3)
+      .catch(err => {
+        console.warn('⚠️ Sponsored query failed (non-blocking):', err.message);
+        return [];
+      });
     
     // Insérer les slots sponsorisés
     const finalAnnouncements = ranker.insertSponsoredSlots(
@@ -91,6 +100,8 @@ router.get('/feed', async (req, res) => {
       ? finalAnnouncements[finalAnnouncements.length - 1].id.toString()
       : null;
     
+    console.log('✅ Feed response:', { items: finalAnnouncements.length, hasMore: rawAnnouncements.length > limitNum });
+    
     res.json({
       items: finalAnnouncements,
       nextCursor,
@@ -98,8 +109,13 @@ router.get('/feed', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Erreur récupération feed:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération du feed' });
+    console.error('❌ Erreur récupération feed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    res.status(500).json({ 
+      error: 'Erreur lors de la récupération du feed',
+      details: errorMessage,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
