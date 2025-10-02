@@ -292,6 +292,7 @@ import openTeamsRoutes from './routes/open-teams.js';
 import bidsRoutes from './routes/bids.js';
 import messagingRoutes from './routes/messaging.js';
 import notificationsRoutes from './routes/notifications.js';
+import servicesRoutes from './routes/services-routes.js';
 import { websocketManager } from './websocket.js';
 
 // Import rate limiting middleware
@@ -351,6 +352,7 @@ app.use('/api/ai/learning', aiLearningRoutes);
 app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
 // app.use('/api', missionDemoRoutes); // Supprimé - mode démo retiré
+app.use('/api/services', servicesRoutes);
 app.use('/api/team', teamRoutes);
 
 console.log('🤝 Registering open teams routes...');

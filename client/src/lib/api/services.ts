@@ -15,30 +15,55 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const servicesApi = {
   async createFlashDeal(data: FlashDealRequest): Promise<{ success: boolean; id: string }> {
-    await delay(400);
-    // TODO: wire to backend - POST /api/flash-deals
-    console.log('Creating flash deal:', data);
-    return { success: true, id: `flash_${Date.now()}` };
+    const response = await fetch('/api/services/flash-deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la création du flash deal');
+    }
+    
+    return await response.json();
   },
 
   async createReverseSubscription(data: ReverseSubscriptionRequest): Promise<{ success: boolean; id: string }> {
-    await delay(500);
-    // TODO: wire to backend - POST /api/subscriptions/reverse
-    console.log('Creating reverse subscription:', data);
-    return { success: true, id: `sub_${Date.now()}` };
+    const response = await fetch('/api/services/subscriptions/reverse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la création de l\'abonnement inversé');
+    }
+    
+    return await response.json();
   },
 
   async createGroupRequest(data: GroupRequest): Promise<{ success: boolean; id: string }> {
-    await delay(350);
-    // TODO: wire to backend - POST /api/group-requests
-    console.log('Creating group request:', data);
-    return { success: true, id: `group_${Date.now()}` };
+    const response = await fetch('/api/services/group-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la création de la demande groupée');
+    }
+    
+    return await response.json();
   },
 
   async getGroupInterest(location: string, category: string): Promise<{ count: number }> {
-    await delay(300);
-    // TODO: wire to backend - GET /api/group-requests/interest
-    return { count: Math.floor(Math.random() * 15) + 1 };
+    const response = await fetch(`/api/services/group-requests/interest?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}`);
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération de l\'intérêt');
+    }
+    
+    return await response.json();
   },
 
   async aiDraftBrief(description: string): Promise<AIDraftBrief> {
@@ -68,38 +93,47 @@ export const servicesApi = {
   },
 
   async createIaHumanJob(brief: AIDraftBrief): Promise<{ success: boolean; id: string }> {
-    await delay(400);
-    // TODO: wire to backend - POST /api/ia-human-jobs
-    console.log('Creating IA+Human job with brief:', brief);
-    return { success: true, id: `ia_${Date.now()}` };
+    const response = await fetch('/api/services/ia-human-jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(brief),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la création du job IA+Humain');
+    }
+    
+    return await response.json();
   },
 
   async getLiveSlots(filters: OpportunityFilters = {}): Promise<LiveSlot[]> {
-    await delay(450);
-    // TODO: wire to backend - GET /api/opportunities/live-slots
-    console.log('Fetching live slots with filters:', filters);
-
-    // Mock data
-    const providers = ['Alice M.', 'Thomas B.', 'Sophie L.', 'Marc D.', 'Emma P.'];
-    const categories = ['Développement', 'Design', 'Marketing', 'Conseil', 'Formation'];
-
-    return Array.from({ length: 8 }, (_, i) => ({
-      id: `slot_${i}_${Date.now()}`,
-      providerName: providers[Math.floor(Math.random() * providers.length)],
-      rating: 4 + Math.random(),
-      slot: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      duration: [30, 60, 90, 120][Math.floor(Math.random() * 4)],
-      pricePerHour: Math.floor(Math.random() * 80) + 40,
-      distance: Math.floor(Math.random() * 20) + 1,
-      tags: categories.slice(0, Math.floor(Math.random() * 3) + 1)
-    }));
+    const queryParams = new URLSearchParams();
+    if (filters.category) queryParams.append('category', filters.category);
+    if (filters.minRating) queryParams.append('minRating', filters.minRating.toString());
+    if (filters.maxPrice) queryParams.append('maxPrice', filters.maxPrice.toString());
+    if (filters.location) queryParams.append('location', filters.location);
+    
+    const response = await fetch(`/api/services/opportunities/live-slots?${queryParams.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des créneaux');
+    }
+    
+    return await response.json();
   },
 
   async reserveSlot(slotId: string): Promise<{ success: boolean }> {
-    await delay(300);
-    // TODO: wire to backend - POST /api/opportunities/reserve
-    console.log('Reserving slot:', slotId);
-    return { success: true };
+    const response = await fetch('/api/services/opportunities/reserve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la réservation du créneau');
+    }
+    
+    return await response.json();
   }
 };
 
