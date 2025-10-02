@@ -27,6 +27,6 @@ export function validateEnvironment() {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: '✅ Replit PostgreSQL',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ Configuré' : '⚠️ Non configuré',
-    PORT: process.env.PORT || 5000cess.env.PORT || 5000
+    PORT: process.env.PORT || 5000
   });
 }
