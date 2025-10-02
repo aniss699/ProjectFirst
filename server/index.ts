@@ -293,6 +293,7 @@ import bidsRoutes from './routes/bids.js';
 import messagingRoutes from './routes/messaging.js';
 import notificationsRoutes from './routes/notifications.js';
 import servicesRoutes from './routes/services-routes.js';
+import availabilityRoutes from './routes/availability-routes';
 import { websocketManager } from './websocket.js';
 
 // Import rate limiting middleware
@@ -313,8 +314,8 @@ app.all('/api', (req, res) => {
 console.log('📋 Registering missions routes...');
 // Mission routes avec logging amélioré
 app.use('/api/missions', (req, res, next) => {
-  console.log(`📋 Mission request: ${req.method} ${req.path}`, { 
-    body: req.body.title ? { title: req.body.title, userId: req.body.userId } : {} 
+  console.log(`📋 Mission request: ${req.method} ${req.path}`, {
+    body: req.body.title ? { title: req.body.title, userId: req.body.userId } : {}
   });
   next();
 }, missionsRoutes);
@@ -353,7 +354,10 @@ app.use('/api', feedRoutes);
 app.use('/api', favoritesRoutes);
 // app.use('/api', missionDemoRoutes); // Supprimé - mode démo retiré
 app.use('/api/services', servicesRoutes);
-app.use('/api/team', teamRoutes);
+app.use('/api/open-teams', openTeamsRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/availability', availabilityRoutes);
+console.log('📅 Registering availability routes...');
 
 console.log('🤝 Registering open teams routes...');
 app.use('/api/open-teams', (req, res, next) => {
@@ -363,8 +367,8 @@ app.use('/api/open-teams', (req, res, next) => {
 
 console.log('🎯 Registering bids routes...');
 app.use('/api/bids', (req, res, next) => {
-  console.log(`🎯 Bids request: ${req.method} ${req.path}`, { 
-    body: req.body.mission_id ? { mission_id: req.body.mission_id, bid_type: req.body.bid_type } : {} 
+  console.log(`🎯 Bids request: ${req.method} ${req.path}`, {
+    body: req.body.mission_id ? { mission_id: req.body.mission_id, bid_type: req.body.bid_type } : {}
   });
   next();
 }, bidsRoutes);

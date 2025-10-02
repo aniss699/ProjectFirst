@@ -67,6 +67,12 @@ export function AvailabilityCalendar({
     setNewSlot({ start: '09:00', end: '17:00', rate: 50 });
   };
 
+  const handleSave = async (data: AvailabilityDay[]) => {
+    if (onSave) {
+      onSave(data);
+    }
+  };
+
   const removeTimeSlot = (slotIndex: number) => {
     if (!selectedDate) return;
     
@@ -224,7 +230,7 @@ export function AvailabilityCalendar({
           {/* Bouton de sauvegarde */}
           {!readOnly && onSave && (
             <Button
-              onClick={() => onSave(availability)}
+              onClick={() => handleSave(availability)}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               <Save className="w-4 h-4 mr-2" />

@@ -20,11 +20,11 @@ export const servicesApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la création du flash deal');
     }
-    
+
     return await response.json();
   },
 
@@ -34,11 +34,11 @@ export const servicesApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la création de l\'abonnement inversé');
     }
-    
+
     return await response.json();
   },
 
@@ -48,21 +48,21 @@ export const servicesApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la création de la demande groupée');
     }
-    
+
     return await response.json();
   },
 
   async getGroupInterest(location: string, category: string): Promise<{ count: number }> {
     const response = await fetch(`/api/services/group-requests/interest?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}`);
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération de l\'intérêt');
     }
-    
+
     return await response.json();
   },
 
@@ -98,11 +98,11 @@ export const servicesApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(brief),
     });
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la création du job IA+Humain');
     }
-    
+
     return await response.json();
   },
 
@@ -112,13 +112,13 @@ export const servicesApi = {
     if (filters.minRating) queryParams.append('minRating', filters.minRating.toString());
     if (filters.maxPrice) queryParams.append('maxPrice', filters.maxPrice.toString());
     if (filters.location) queryParams.append('location', filters.location);
-    
+
     const response = await fetch(`/api/services/opportunities/live-slots?${queryParams.toString()}`);
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des créneaux');
     }
-    
+
     return await response.json();
   },
 
@@ -128,17 +128,64 @@ export const servicesApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slotId }),
     });
-    
+
     if (!response.ok) {
       throw new Error('Erreur lors de la réservation du créneau');
     }
-    
+
     return await response.json();
   }
 };
 
 // Services API avec mappers pour la normalisation des données
 export const dataApi = {
+  availability: {
+    get: async (userId: number, startDate?: string, endDate?: string) => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(`/api/availability/${userId}?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch availability');
+      return response.json();
+    },
+    save: async (availability: any[]) => {
+      const response = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ availability }),
+      });
+      if (!response.ok) throw new Error('Failed to save availability');
+      return response.json();
+    },
+    getSlots: async (userId: number, date: string) => {
+      const response = await fetch(`/api/availability/slots/${userId}/${date}`);
+      if (!response.ok) throw new Error('Failed to fetch slots');
+      return response.json();
+    },
+    deleteSlot: async (availabilityId: number) => {
+      const response = await fetch(`/api/availability/${availabilityId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete slot');
+      return response.json();
+    },
+    getRecurring: async (userId: number) => {
+      const response = await fetch(`/api/availability/recurring/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch recurring availability');
+      return response.json();
+    },
+    saveRecurring: async (pattern: any) => {
+      const response = await fetch('/api/availability/recurring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pattern),
+      });
+      if (!response.ok) throw new Error('Failed to save recurring pattern');
+      return response.json();
+    },
+  },
+  feed: {
   /**
    * Récupère toutes les missions du marketplace et les normalise
    */
