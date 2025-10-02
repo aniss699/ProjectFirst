@@ -69,7 +69,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   };
 
   const handleDragEnd = (event: any, info: PanInfo) => {
-    const threshold = 100;
+    const threshold = 80;
     const { offset, velocity } = info;
     
     setIsDragging(false);
@@ -86,7 +86,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   return (
     <motion.div
       ref={cardRef}
-      className="w-full h-full flex items-center justify-center select-none"
+      className="h-full w-full flex items-center justify-center select-none px-4"
       drag="y"
       dragConstraints={{ top: -100, bottom: 100 }}
       dragElastic={0.1}
@@ -108,7 +108,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
       }}
       data-testid={`swipe-card-${announcement.id}`}
     >
-      <Card className="h-[85vh] w-full max-w-md overflow-hidden shadow-2xl border-0 bg-white dark:bg-gray-800 relative">
+      <Card className="h-[90vh] w-full max-w-md overflow-hidden shadow-2xl border-0 bg-white dark:bg-gray-800 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
         </div>
 

@@ -58,7 +58,7 @@ const Feed: React.FC = () => {
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
           <RefreshCw className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-lg text-white">Chargement du feed...</p>
@@ -69,7 +69,7 @@ const Feed: React.FC = () => {
 
   if (error && items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="h-screen flex items-center justify-center bg-black p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -86,7 +86,7 @@ const Feed: React.FC = () => {
 
   if (!loading && items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="h-screen flex items-center justify-center bg-black p-4">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📱</span>
@@ -106,7 +106,7 @@ const Feed: React.FC = () => {
 
   if (currentIndex >= items.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="h-screen flex items-center justify-center bg-black p-4">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">🎉</span>
@@ -179,14 +179,14 @@ const Feed: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-black overflow-hidden" data-testid="feed-container">
-      <div className="absolute top-0 left-0 right-0 z-20 bg-black/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 py-4">
+    <div className="h-screen bg-black overflow-hidden relative" data-testid="feed-container">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+        <div className="flex items-center justify-between px-6 py-4 pointer-events-auto">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
-            <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-lg font-semibold text-white">
               AppelsPro
             </h1>
           </div>
@@ -198,44 +198,34 @@ const Feed: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative h-full pt-16">
-        <div className="h-full flex items-center justify-center px-4">
-          {currentAnnouncement && (
-            <SwipeCard
-              key={currentAnnouncement.id}
-              announcement={currentAnnouncement}
-              onSwipeDown={handleSwipeDown}
-              onSwipeUp={handleSwipeUp}
-              onLike={handleLike}
-              onOffer={handleOffer}
-              onShare={handleShare}
-              onDetails={handleDetails}
-            />
-          )}
-        </div>
-        
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-full px-6 py-3">
-            <p className="text-sm font-medium text-white text-center">
-              Swipe ↑↓ pour changer • Utilisez les boutons
-            </p>
-          </div>
-        </div>
-        
-        <AnnouncementDetailModal
-          announcement={selectedAnnouncement}
-          isOpen={showDetailModal}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedAnnouncement(null);
-          }}
-          onSave={(announcementId) => {
-            if (selectedAnnouncement) {
-              addToFavorites(selectedAnnouncement);
-            }
-          }}
-        />
+      <div className="h-full w-full">
+        {currentAnnouncement && (
+          <SwipeCard
+            key={currentAnnouncement.id}
+            announcement={currentAnnouncement}
+            onSwipeDown={handleSwipeDown}
+            onSwipeUp={handleSwipeUp}
+            onLike={handleLike}
+            onOffer={handleOffer}
+            onShare={handleShare}
+            onDetails={handleDetails}
+          />
+        )}
       </div>
+      
+      <AnnouncementDetailModal
+        announcement={selectedAnnouncement}
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedAnnouncement(null);
+        }}
+        onSave={(announcementId) => {
+          if (selectedAnnouncement) {
+            addToFavorites(selectedAnnouncement);
+          }
+        }}
+      />
     </div>
   );
 };
