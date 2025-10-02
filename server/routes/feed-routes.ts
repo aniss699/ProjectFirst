@@ -22,9 +22,9 @@ router.get('/feed', async (req, res) => {
   try {
     const { cursor, limit = '10', userId } = req.query;
     const limitNum = Math.min(parseInt(limit as string), 50);
-    
+
     console.log('📡 Feed request:', { cursor, limit: limitNum, userId });
-    
+
     // Récupérer les annonces vues par l'utilisateur (dernières 24h)
     const seenAnnouncements = userId ? await db
       .select({ announcement_id: feedSeen.announcement_id })
@@ -34,23 +34,23 @@ router.get('/feed', async (req, res) => {
         console.warn('⚠️ Feed seen query failed (non-blocking):', err.message);
         return [];
       }) : [];
-    
+
     const seenIds = seenAnnouncements.map(s => s.announcement_id);
-    
+
     // Construire les conditions de base
     let whereConditions = [eq(announcements.status, 'active')];
-    
+
     // Exclure les annonces déjà vues
     if (seenIds.length > 0) {
       whereConditions.push(not(inArray(announcements.id, seenIds)));
     }
-    
+
     // Gestion du cursor pour la pagination
     if (cursor) {
       const cursorId = parseInt(cursor as string);
       whereConditions.push(sql`${announcements.id} < ${cursorId}`);
     }
-    
+
     // Récupérer les annonces actives
     const rawAnnouncements = await db
       .select()
@@ -62,18 +62,18 @@ router.get('/feed', async (req, res) => {
         console.error('❌ Database query failed:', err);
         throw new Error('Database query failed: ' + err.message);
       });
-    
+
     console.log('✅ Raw announcements fetched:', rawAnnouncements.length);
-    
+
     // Initialiser le ranker avec les annonces vues
     const ranker = new FeedRanker(seenIds);
-    
+
     // TODO: Récupérer le profil utilisateur pour la personnalisation
     const userProfile = userId ? {} : undefined;
-    
+
     // Classer les annonces
     const rankedAnnouncements = ranker.rankAnnouncements(rawAnnouncements, userProfile);
-    
+
     // Récupérer les annonces sponsorisées
     const sponsoredAnnouncements = await db
       .select()
@@ -87,33 +87,33 @@ router.get('/feed', async (req, res) => {
         console.warn('⚠️ Sponsored query failed (non-blocking):', err.message);
         return [];
       });
-    
+
     // Insérer les slots sponsorisés
     const finalAnnouncements = ranker.insertSponsoredSlots(
       rankedAnnouncements.slice(0, limitNum),
       sponsoredAnnouncements,
       5
     );
-    
+
     // Générer le cursor pour la pagination suivante
     const nextCursor = finalAnnouncements.length > 0 
       ? finalAnnouncements[finalAnnouncements.length - 1].id.toString()
       : null;
-    
+
     console.log('✅ Feed response:', { items: finalAnnouncements.length, hasMore: rawAnnouncements.length > limitNum });
-    
+
     res.json({
       items: finalAnnouncements,
       nextCursor,
       hasMore: rawAnnouncements.length > limitNum
     });
-    
+
   } catch (error) {
     console.error('❌ Erreur récupération feed:', error);
     console.error('Stack:', error instanceof Error ? error.stack : 'No stack');
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    
-    // Retourner un objet vide plutôt qu'une erreur pour ne pas bloquer le feed
+
+    // Retourner un feed vide plutôt qu'une erreur pour ne pas bloquer l'interface
     res.status(200).json({ 
       items: [],
       nextCursor: null,
@@ -125,9 +125,6 @@ router.get('/feed', async (req, res) => {
       }
     });
   }
-});p: new Date().toISOString()
-    });
-  }
 });
 
 /**
@@ -137,10 +134,10 @@ router.post('/feedback', async (req, res) => {
   try {
     // Valider les données
     const feedbackData = insertFeedFeedbackSchema.parse(req.body);
-    
+
     // Insérer le feedback
     await db.insert(feedFeedback).values(feedbackData);
-    
+
     // Marquer comme vu si ce n'est pas déjà fait
     if (feedbackData.action !== 'view') {
       await db
@@ -151,7 +148,7 @@ router.post('/feedback', async (req, res) => {
         })
         .onConflictDoNothing();
     }
-    
+
     // Apprendre du feedback (optionnel)
     const ranker = new FeedRanker();
     ranker.learnFromFeedback(
@@ -159,9 +156,9 @@ router.post('/feedback', async (req, res) => {
       feedbackData.action, 
       feedbackData.dwell_ms ?? 0
     );
-    
+
     res.json({ success: true });
-    
+
   } catch (error) {
     console.error('Erreur enregistrement feedback:', error);
     if (error instanceof z.ZodError) {
@@ -177,11 +174,11 @@ router.post('/feedback', async (req, res) => {
 router.get('/price-benchmark', async (req, res) => {
   try {
     const { category } = req.query;
-    
+
     if (!category) {
       return res.status(400).json({ error: 'Catégorie requise' });
     }
-    
+
     // Vérifier le cache
     const cacheKey = `benchmark_${category}`;
     if (priceBenchmarkCache.has(cacheKey)) {
@@ -190,7 +187,7 @@ router.get('/price-benchmark', async (req, res) => {
         return res.json(cached.data);
       }
     }
-    
+
     // Calculer les benchmarks
     const prices = await db
       .select({
@@ -202,34 +199,34 @@ router.get('/price-benchmark', async (req, res) => {
         eq(announcements.category, category as string),
         eq(announcements.status, 'active')
       ));
-    
+
     // Extraire les valeurs numériques
     const budgetValues: number[] = [];
     prices.forEach(p => {
       if (p.budget_min) budgetValues.push(parseFloat(p.budget_min as string));
       if (p.budget_max) budgetValues.push(parseFloat(p.budget_max as string));
     });
-    
+
     if (budgetValues.length === 0) {
       return res.json({ median: 0, p25: 0, p75: 0 });
     }
-    
+
     // Calculer les percentiles
     budgetValues.sort((a, b) => a - b);
     const median = budgetValues[Math.floor(budgetValues.length / 2)];
     const p25 = budgetValues[Math.floor(budgetValues.length * 0.25)];
     const p75 = budgetValues[Math.floor(budgetValues.length * 0.75)];
-    
+
     const benchmark = { median, p25, p75 };
-    
+
     // Mettre en cache
     priceBenchmarkCache.set(cacheKey, {
       data: benchmark,
       timestamp: Date.now()
     });
-    
+
     res.json(benchmark);
-    
+
   } catch (error) {
     console.error('Erreur calcul benchmark:', error);
     res.status(500).json({ error: 'Erreur lors du calcul du benchmark' });
