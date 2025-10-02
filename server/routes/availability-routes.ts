@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { db } from '../db';
-import { auth } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
@@ -48,7 +48,7 @@ router.get('/:userId', async (req, res) => {
 });
 
 // Save user availability
-router.post('/', auth, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -128,7 +128,7 @@ router.get('/slots/:userId/:date', async (req, res) => {
 });
 
 // Delete specific availability slot
-router.delete('/:availabilityId', auth, async (req, res) => {
+router.delete('/:availabilityId', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const { availabilityId } = req.params;
@@ -152,7 +152,7 @@ router.delete('/:availabilityId', auth, async (req, res) => {
 });
 
 // Get recurring availability patterns
-router.get('/recurring/:userId', auth, async (req, res) => {
+router.get('/recurring/:userId', requireAuth, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -183,7 +183,7 @@ router.get('/recurring/:userId', auth, async (req, res) => {
 });
 
 // Save recurring availability pattern
-router.post('/recurring', auth, async (req, res) => {
+router.post('/recurring', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
