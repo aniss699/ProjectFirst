@@ -110,11 +110,22 @@ router.get('/feed', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Erreur récupération feed:', error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'No stack');
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    res.status(500).json({ 
-      error: 'Erreur lors de la récupération du feed',
-      details: errorMessage,
-      timestamp: new Date().toISOString()
+    
+    // Retourner un objet vide plutôt qu'une erreur pour ne pas bloquer le feed
+    res.status(200).json({ 
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+      metadata: {
+        error: true,
+        message: errorMessage,
+        fallback_mode: true
+      }
+    });
+  }
+});p: new Date().toISOString()
     });
   }
 });

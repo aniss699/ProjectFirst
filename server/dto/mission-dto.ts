@@ -1,4 +1,3 @@
-
 // ============================================
 // DTO MAPPER SÉCURISÉ POUR MISSIONS
 // ============================================
@@ -72,7 +71,7 @@ function extractLocationSafely(mission: MissionRow): {
     // 1. Essayer d'extraire depuis location_data (JSONB)
     if (mission.location_data && typeof mission.location_data === 'object') {
       const locationData = mission.location_data;
-      
+
       return {
         location: locationData.raw || locationData.city || locationData.address || 'Remote',
         location_raw: locationData.raw || mission.location_raw || null,
@@ -167,50 +166,50 @@ export function mapMission(mission: MissionRow): any {
     const mappedMission = {
       // Identifiants
       id: mission.id,
-      
+
       // Contenu
       title: mission.title || 'Mission sans titre',
       description: mission.description || '',
-      excerpt: mission.excerpt || (mission.description ? 
-        (mission.description.length > 200 ? 
-          mission.description.substring(0, 200) + '...' : 
+      excerpt: mission.excerpt || (mission.description ?
+        (mission.description.length > 200 ?
+          mission.description.substring(0, 200) + '...' :
           mission.description
-        ) : 
+        ) :
         'Description non disponible'
       ),
       category: mission.category || 'general',
-      
+
       // Budget
       ...budget,
-      
+
       // Localisation
       ...location,
-      
+
       // Relations utilisateur
       user_id: mission.user_id,
       client_id: mission.client_id || mission.user_id,
       userId: mission.user_id?.toString(),
       clientId: (mission.client_id || mission.user_id)?.toString(),
       clientName: 'Client', // TODO: Récupérer le vrai nom depuis une jointure
-      
+
       // Statut et timing
       status: mission.status || 'open',
       urgency: mission.urgency || 'medium',
       deadline: mission.deadline?.toISOString(),
-      
+
       // Métadonnées
       ...metadata,
-      
+
       // Équipe
       is_team_mission: mission.is_team_mission || false,
       team_size: mission.team_size || 1,
-      
+
       // Timestamps
       created_at: mission.created_at,
       updated_at: mission.updated_at,
       createdAt: mission.created_at?.toISOString() || new Date().toISOString(),
       updatedAt: mission.updated_at?.toISOString(),
-      
+
       // Champs pour compatibilité frontend
       bids: [] // Sera rempli par les routes qui récupèrent les bids
     };
@@ -221,7 +220,7 @@ export function mapMission(mission: MissionRow): any {
   } catch (error) {
     console.error('❌ DTO Mapper: Erreur lors du mapping de la mission:', mission.id, error);
     console.error('❌ DTO Mapper: Données mission problématiques:', JSON.stringify(mission, null, 2));
-    
+
     // Retourner un objet minimal en cas d'erreur pour éviter le crash
     return {
       id: mission.id,
