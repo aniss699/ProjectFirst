@@ -111,17 +111,17 @@ router.get('/feed', async (req, res) => {
   } catch (error) {
     console.error('❌ Erreur récupération feed:', error);
     console.error('Stack:', error instanceof Error ? error.stack : 'No stack');
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
 
-    // Retourner un feed vide plutôt qu'une erreur pour ne pas bloquer l'interface
+    // Retourner un feed vide en mode dégradé au lieu d'une erreur 500
     res.status(200).json({ 
       items: [],
       nextCursor: null,
       hasMore: false,
       metadata: {
         error: true,
-        message: errorMessage,
-        fallback_mode: true
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+        fallback_mode: true,
+        timestamp: new Date().toISOString()
       }
     });
   }

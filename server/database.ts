@@ -21,13 +21,22 @@ pool.on('error', (err) => {
   console.error('❌ Database pool error:', {
     message: err.message,
     code: (err as any).code,
-    stack: err.stack,
     timestamp: new Date().toISOString()
   });
+  
+  // Ne pas logger le stack complet en production
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Stack:', err.stack);
+  }
 });
 
-pool.on('connect', (client) => {
+pool.on('connect', () => {
   console.log('✅ Database connection established');
+});
+
+// Retry logic pour les connexions
+pool.on('remove', () => {
+  console.log('🔄 Database connection removed from pool');
 });
 
 

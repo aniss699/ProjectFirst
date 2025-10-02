@@ -69,8 +69,18 @@ function extractLocationSafely(mission: MissionRow): {
 
   try {
     // 1. Essayer d'extraire depuis location_data (JSONB)
-    if (mission.location_data && typeof mission.location_data === 'object') {
-      const locationData = mission.location_data;
+    if (mission.location_data) {
+      let locationData = mission.location_data;
+
+      // Parser si c'est une string JSON
+      if (typeof locationData === 'string') {
+        try {
+          locationData = JSON.parse(locationData);
+        } catch (e) {
+          console.warn('Failed to parse location_data JSON:', e);
+          locationData = { raw: locationData };
+        }
+      }
 
       return {
         location: locationData.raw || locationData.city || locationData.address || 'Remote',
