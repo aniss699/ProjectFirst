@@ -86,19 +86,57 @@ export const bids = pgTable('bids', {
 
 export const announcements = pgTable('announcements', {
   id: serial('id').primaryKey(),
+  
+  // Contenu principal
   title: text('title').notNull(),
-  content: text('content').notNull(),
-  type: text('type').$type<'info' | 'warning' | 'error' | 'success'>().default('info'),
-  priority: integer('priority').default(1),
-  is_active: boolean('is_active').default(true),
-  status: text('status').$type<'active' | 'completed' | 'cancelled' | 'draft'>().default('active'),
-  category: text('category'),
-  budget: integer('budget'),
-  location: text('location'),
-  user_id: integer('user_id').references(() => users.id),
-  sponsored: boolean('sponsored').default(false),
-  created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow()
+  description: text('description').notNull(),
+  excerpt: text('excerpt').notNull(),
+  
+  // Catégorisation pour le feed
+  category: text('category').notNull(),
+  tags: text('tags').array().default([]),
+  
+  // Budget pour affichage (format display)
+  budget_display: text('budget_display').notNull(),
+  budget_value_cents: integer('budget_value_cents'),
+  currency: text('currency').default('EUR'),
+  
+  // Localisation simplifiée
+  location_display: text('location_display'),
+  city: text('city'),
+  country: text('country'),
+  
+  // Métadonnées feed
+  client_id: integer('client_id').notNull().references(() => users.id),
+  client_display_name: text('client_display_name').notNull(),
+  
+  // Stats engagements
+  bids_count: integer('bids_count').default(0),
+  lowest_bid_cents: integer('lowest_bid_cents'),
+  views_count: integer('views_count').default(0),
+  saves_count: integer('saves_count').default(0),
+  
+  // Scoring pour algorithme feed
+  quality_score: decimal('quality_score', { precision: 3, scale: 2 }).default('0.0'),
+  engagement_score: decimal('engagement_score', { precision: 5, scale: 2 }).default('0.0'),
+  freshness_score: decimal('freshness_score', { precision: 3, scale: 2 }).default('1.0'),
+  
+  // Status et timing
+  status: text('status').$type<'active' | 'closed' | 'inactive'>().notNull().default('active'),
+  urgency: text('urgency').$type<'low' | 'medium' | 'high' | 'urgent'>().default('medium'),
+  deadline: timestamp('deadline'),
+  
+  // Metadata pour feed
+  is_sponsored: boolean('is_sponsored').default(false),
+  boost_score: decimal('boost_score', { precision: 3, scale: 2 }).default('0.0'),
+  
+  // Recherche optimisée
+  search_text: text('search_text').notNull(),
+  
+  // Audit
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
+  synced_at: timestamp('synced_at').defaultNow()
 });
 
 export const feedFeedback = pgTable('feed_feedback', {
