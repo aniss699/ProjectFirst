@@ -34,7 +34,8 @@ export default defineConfig({
     hmr: {
       port: 5001,
       host: '0.0.0.0'
-    }
+    },
+    allowedHosts: 'all'
   },
   preview: {
     host: '0.0.0.0',
