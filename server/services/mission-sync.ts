@@ -1,5 +1,5 @@
 
-import { db } from '../database.js';
+import { db, pool } from '../database.js';
 import { missions, announcements } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import { MissionDetailResponse } from '../types/api-responses.js';
@@ -151,7 +151,7 @@ export class MissionSyncService {
       feedItem.quality_score          // p_quality_score
     ];
     
-    const result = await db.execute(query, params);
+    const result = await pool.query(query, params);
     console.log(`📤 Upserted announcement for mission ${feedItem.id}`);
   }
   
@@ -168,7 +168,7 @@ export class MissionSyncService {
       WHERE m.id = $1
     `;
     
-    const result = await db.execute(query, [missionId]);
+    const result = await pool.query(query, [missionId]);
     return result.rows[0] || null;
   }
   
@@ -358,7 +358,7 @@ export class MissionSyncService {
       SELECT update_announcement_stats($1, $2, $3, $4, $5)
     `;
     
-    await db.execute(query, [
+    await pool.query(query, [
       missionId,
       stats.bidsCount || null,
       stats.lowestBidCents || null,

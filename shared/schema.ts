@@ -332,8 +332,8 @@ export const bidsRelations = relations(bids, ({ one }) => ({
 }));
 
 export const announcementsRelations = relations(announcements, ({ one, many }) => ({
-  user: one(users, {
-    fields: [announcements.user_id],
+  client: one(users, {
+    fields: [announcements.client_id],
     references: [users.id]
   }),
   feedbacks: many(feedFeedback),
