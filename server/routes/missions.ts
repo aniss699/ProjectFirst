@@ -337,7 +337,7 @@ router.get('/', asyncHandler(async (req, res) => {
     const allMissions = await db
       .select()
       .from(missionsTable)
-      .where(inArray(missionsTable.status, ['open', 'in_progress']))
+      .where(inArray(missionsTable.status, ['open', 'in_progress', 'published']))
       .orderBy(desc(missionsTable.created_at))
       .limit(100);
 
